@@ -1,0 +1,49 @@
+import core::{ScopeId, SymbolId, TypeId}
+import diagnostics::{DiagnosticSpec}
+
+pub ExpressionResolution {
+  kind: ExpressionKind = ExpressionKind.Unknown
+  typeName: string = ""
+  targetTypeName: string = ""
+  receiverTypeName: string = ""
+  operatorSymbol: string = ""
+  symbolId: SymbolId = {}
+  typeId: TypeId = {}
+  scopeId: ScopeId = {}
+  argumentCount: i64 = 0
+  genericArgumentCount: i64 = 0
+  assignment: bool = false
+  constructor: bool = false
+  member: bool = false
+  propagation: bool = false
+  communication: bool = false
+  parallel: bool = false
+  atomic: bool = false
+  diagnostic: DiagnosticSpec = {}
+  diagnosticSubject: string = ""
+}
+
+impl view ExpressionResolution {
+  pub diagnosticCode: string => this.diagnostic.code.display
+
+  pub diagnosticMessage: string => this.diagnostic.format(this.diagnosticSubject)
+
+  pub resolved: bool => typeName != "" && diagnostic.missing
+
+  pub call: bool => kind == ExpressionKind.CallAccess
+
+  pub operator: bool =>
+    kind == ExpressionKind.BinaryOperator ||
+    kind == ExpressionKind.UnaryOperator ||
+    kind == ExpressionKind.AssignmentOperator ||
+    kind == ExpressionKind.MemberAccess ||
+    kind == ExpressionKind.IndexAccess ||
+    kind == ExpressionKind.CastOperator ||
+    kind == ExpressionKind.PropagateOperator
+
+  pub valid: bool =>
+    kind != ExpressionKind.Unknown &&
+    typeName != "" &&
+    scopeId.valid &&
+    diagnostic.missing
+}

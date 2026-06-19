@@ -1,0 +1,78 @@
+pub TextSpan {
+  start: i64 = 0
+  end: i64 = 0
+}
+
+impl TextSpan {
+  pub TextSpan(start: i64, end: i64) =
+    This { start, end }
+
+  pub fromStartLength(start: i64, length: i64) -> TextSpan {
+    return TextSpan(start, start + length)
+  }
+
+  pub contains(offset: i64) -> bool {
+    return offset >= start && offset < end
+  }
+
+  pub overlaps(other: TextSpan) -> bool {
+    return this.valid &&
+      other.valid &&
+      start < other.end &&
+      other.start < end
+  }
+
+  pub touches(other: TextSpan) -> bool {
+    return this.valid &&
+      other.valid &&
+      (end == other.start || other.end == start)
+  }
+
+  pub merge(other: TextSpan) -> TextSpan {
+    if !this.valid {
+      return other
+    }
+    if !other.valid {
+      return this
+    }
+    let nextStart = start
+    if other.start < nextStart {
+      nextStart = other.start
+    }
+    let nextEnd = end
+    if other.end > nextEnd {
+      nextEnd = other.end
+    }
+    return TextSpan(nextStart, nextEnd)
+  }
+
+  pub clamp(length: i64) -> TextSpan {
+    let nextStart = start
+    let nextEnd = end
+    if nextStart < 0 {
+      nextStart = 0
+    }
+    if nextEnd < nextStart {
+      nextEnd = nextStart
+    }
+    if nextStart > length {
+      nextStart = length
+    }
+    if nextEnd > length {
+      nextEnd = length
+    }
+    return TextSpan(nextStart, nextEnd)
+  }
+
+  pub toView(text: string) -> TextView {
+    let span = this.clamp(text.byteLength() as i64)
+    return TextView(text, span.start, span.end)
+  }
+}
+
+impl view TextSpan {
+  pub length: i64 => end - start
+  pub empty: bool => start == end
+  pub nonEmpty: bool => end > start
+  pub valid: bool => start >= 0 && end >= start
+}

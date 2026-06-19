@@ -1,0 +1,104 @@
+import query::{BuildDatabase, Fingerprint, QdbCommitRow, QdbJournal, QdbJournalEntry, QdbRecoveryAction, QdbRevisionRow}
+
+pub QdbRevisionJournalProof {
+  completedCommitDurable: bool
+  hashChainValid: bool
+  continuousCommitVisible: bool
+  atomicPublication: bool
+  replayRecovery: bool
+  truncateRecovery: bool
+  buildDatabaseIntegrated: bool
+  valid: bool
+}
+
+pub qdbRevisionJournalProof() -> QdbRevisionJournalProof {
+  let productHash = Fingerprint.fromParts(101, 102)
+  let previousHash = Fingerprint.fromParts(201, 202)
+  let commitHash = Fingerprint.fromParts(301, 302)
+  let snapshotHash = Fingerprint.fromParts(401, 402)
+  let journalHash = Fingerprint.fromParts(501, 502)
+
+  let row = QdbCommitRow.completed(
+    8,
+    1,
+    11,
+    12,
+    productHash,
+    previousHash,
+    commitHash
+  )
+  let journal = QdbJournal(
+    0,
+    0,
+    0,
+    7,
+    7,
+    previousHash
+  ).recordCompleted(row)
+  let revision = QdbRevisionRow.begin(8, 7).seal(
+    1,
+    1,
+    snapshotHash,
+    journalHash
+  )
+  let commitEntry = QdbJournalEntry.fromCommit(row)
+  let revisionEntry = QdbJournalEntry.fromRevision(
+    revision,
+    2,
+    commitHash
+  )
+  let sealedJournal = journal.sealRevision(revision)
+  let published = sealedJournal.publish(revision.publish())
+  let replay = journal.recoveryPlan(0)
+  let truncate = journal.recoveryPlan(1)
+  let database = BuildDatabase.clean(
+    8,
+    "/home/user/.cache/qtlc"
+  ).withJournal(journal).commitCompleted(row)
+
+  let completedCommitDurable = row.valid && row.durable
+  let hashChainValid =
+    row.hashChained &&
+    commitEntry.valid &&
+    revisionEntry.valid
+  let continuousCommitVisible =
+    sealedJournal.valid &&
+    sealedJournal.commitCount == 1 &&
+    sealedJournal.durableCommitCount == 1 &&
+    sealedJournal.durableRevision == 8 &&
+    sealedJournal.revisionCount == 1 &&
+    sealedJournal.entryCount == 2
+  let atomicPublication =
+    published.valid &&
+    published.publishedRevision == 8 &&
+    published.atomicPublication
+  let replayRecovery =
+    replay.valid &&
+    replay.action == QdbRecoveryAction.ReplayDurable
+  let truncateRecovery =
+    truncate.valid &&
+    truncate.action == QdbRecoveryAction.TruncateIncompleteTail &&
+    truncate.preservesPublished
+  let buildDatabaseIntegrated =
+    database.revisionJournalReady &&
+    database.store.writes > 0
+  let valid =
+    completedCommitDurable &&
+    hashChainValid &&
+    continuousCommitVisible &&
+    atomicPublication &&
+    replayRecovery &&
+    truncateRecovery &&
+    buildDatabaseIntegrated
+
+  return QdbRevisionJournalProof {
+    completedCommitDurable
+    hashChainValid
+    continuousCommitVisible
+    atomicPublication
+    replayRecovery
+    truncateRecovery
+    buildDatabaseIntegrated
+    valid
+  }
+}

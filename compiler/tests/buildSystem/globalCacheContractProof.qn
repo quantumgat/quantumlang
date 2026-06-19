@@ -1,0 +1,63 @@
+import storage::{CacheOwnership, CacheProductKind, DeliveryArtifactKind, GlobalCacheContract}
+
+pub GlobalCacheContractProof {
+  normalProjectCacheLocked: bool
+  toolchainStoreDeferred: bool
+  contentFormatsLocked: bool
+  deliveryFormatsLocked: bool
+  projectOutputClean: bool
+  valid: bool
+}
+
+pub globalCacheContractProof() -> GlobalCacheContractProof {
+  let contract = GlobalCacheContract()
+
+  let normalProjectCacheLocked =
+    contract.rootFor(CacheOwnership.NormalProject) == "~/.cache/qtlc" &&
+    contract.contentBucketCount == 256 &&
+    contract.hashedWorkspaceIdentity
+
+  let toolchainStoreDeferred =
+    contract.rootFor(CacheOwnership.ToolchainSelfHost) == "~/.quantumlang/qstore" &&
+    contract.rootFor(CacheOwnership.InstalledToolchain) == "~/.quantumlang/toolchains" &&
+    contract.qstoreDeferredUntilQtlc2
+
+  let contentFormatsLocked =
+    contract.extensionFor(CacheProductKind.Metadata) == ".qcm" &&
+    contract.extensionFor(CacheProductKind.NativeObject) == ".qco" &&
+    contract.extensionFor(CacheProductKind.NativeArchive) == ".qca" &&
+    contract.extensionFor(CacheProductKind.Executable) == ".qcx" &&
+    contract.extensionFor(CacheProductKind.Diagnostic) == ".qcd" &&
+    contract.extensionFor(CacheProductKind.ActionIndex) == ".qci"
+
+  let deliveryFormatsLocked =
+    contract.deliveryExtension(DeliveryArtifactKind.NativeLibrary) == ".a" &&
+    contract.deliveryExtension(DeliveryArtifactKind.QuantumCapsule) == ".qcap" &&
+    contract.deliveryExtension(DeliveryArtifactKind.QuantumIndex) == ".qidx" &&
+    contract.deliveryExtension(DeliveryArtifactKind.QuantumNativeArchive) == ".qna" &&
+    contract.deliveryExtension(DeliveryArtifactKind.QuantumPackage) == ".qpkg" &&
+    contract.deliveryExtension(DeliveryArtifactKind.BootstrapPackage) == ".qnpkg"
+
+  let projectOutputClean =
+    contract.cleanProjectOutput &&
+    contract.projectNameInIdentity == false &&
+    contract.projectInternalsVisible == false &&
+    contract.projectBuildStampAllowed == false
+
+  let valid =
+    contract.valid &&
+    normalProjectCacheLocked &&
+    toolchainStoreDeferred &&
+    contentFormatsLocked &&
+    deliveryFormatsLocked &&
+    projectOutputClean
+
+  return GlobalCacheContractProof {
+    normalProjectCacheLocked
+    toolchainStoreDeferred
+    contentFormatsLocked
+    deliveryFormatsLocked
+    projectOutputClean
+    valid
+  }
+}

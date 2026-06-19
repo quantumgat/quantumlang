@@ -1,0 +1,131 @@
+import core::{Arena, NameId, Slice, TypeId, Vec}
+
+pub CandidateIndex {
+  entries: Arena<CandidateEntry> = {}
+  entryValues: Vec<CandidateEntry> = []
+  buckets: Arena<CandidateBucket> = {}
+  bucketValues: Vec<CandidateBucket> = []
+  bucketLookup: TypeNameLookupIndex = {}
+  conformanceLookup: TypeNameLookupIndex = {}
+  deterministic: bool = true
+}
+
+impl CandidateIndex {
+  pub withCapacity(expectedCount: usize) =
+    This {
+      bucketLookup: TypeNameLookupIndex.withCapacity(expectedCount)
+      conformanceLookup: TypeNameLookupIndex.withCapacity(expectedCount)
+    }
+
+  pub add(key: CandidateKey, entry: CandidateEntry) {
+    let storageKey = key.storageKey
+    match bucketLookup.rowFor(storageKey) {
+      Some(row) => {
+        let bucket = bucketValues[row]
+        bucket.add(entry.id)
+        bucketValues[row] = bucket
+      }
+      None => {
+        let bucket = CandidateBucket { key }
+        bucket.add(entry.id)
+        bucketValues.push(bucket)
+        bucketLookup.add(
+          "",
+          storageKey,
+          (bucketValues.count - 1) as usize
+        )
+      }
+    }
+    entryValues.push(entry)
+  }
+
+  pub candidates(key: CandidateKey) -> CandidateSet {
+    return match bucketLookup.rowFor(key.storageKey) {
+      Some(row) => CandidateSet.fromBucket(bucketValues[row])
+      None => CandidateSet { key }
+    }
+  }
+
+  pub free(name: string) -> CandidateSet {
+    return candidates(CandidateKey.free(NameId(), name))
+  }
+
+  pub member(ownerName: string, name: string) -> CandidateSet {
+    return candidates(
+      CandidateKey.member(TypeId(), ownerName, NameId(), name)
+    )
+  }
+
+  pub constructor(typeName: string) -> CandidateSet {
+    return candidates(CandidateKey.constructor(TypeId(), typeName))
+  }
+
+  pub operator(symbol: string, form: string) -> CandidateSet {
+    return candidates(CandidateKey.operator(symbol, form))
+  }
+
+  pub addConformance(typeName: string, roleName: string) {
+    conformanceLookup.add(typeName, roleName, conformanceLookup.count)
+  }
+
+  pub conforms(typeName: string, roleName: string) -> bool {
+    return conformanceLookup.contains(typeName, roleName)
+  }
+
+  pub entry(id: CandidateId) -> CandidateEntry {
+    if !id.valid || id.value as i64 > entryValues.count {
+      return CandidateEntry()
+    }
+    return entryValues[id.value as i64 - 1]
+  }
+
+  pub uniqueForCall(
+    set: CandidateSet,
+    argumentCount: i64,
+    genericArgumentCount: i64
+  ) -> CandidateEntry {
+    let selected = CandidateEntry()
+    let matches: i64 = 0
+    let row: i64 = 0
+    while row < set.candidateValues.count {
+      let candidate = entry(set.candidateValues[row])
+      let argumentsMatch =
+        argumentCount as usize >= candidate.minimumArity &&
+        argumentCount as usize <= candidate.maximumArity
+      let genericsMatch =
+        genericArgumentCount == 0 ||
+        genericArgumentCount as usize == candidate.genericParameterCount
+      if argumentsMatch && genericsMatch {
+        selected = candidate
+        matches = matches + 1
+      }
+      row = row + 1
+    }
+    if matches == 1 {
+      return selected
+    }
+    return CandidateEntry()
+  }
+
+  pub seal() {
+    entries = Arena(entryValues.count)
+    buckets = Arena(bucketValues.count)
+  }
+}
+
+impl view CandidateIndex {
+  pub entryCount: i64 => entryValues.count
+
+  pub bucketCount: i64 => bucketValues.count
+
+  pub valid: bool =>
+    deterministic &&
+    entries.valid &&
+    buckets.valid &&
+    entryValues.valid &&
+    bucketValues.valid &&
+    bucketLookup.valid &&
+    conformanceLookup.valid &&
+    entries.count == entryCount &&
+    buckets.count == bucketCount
+}

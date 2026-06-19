@@ -1,0 +1,49 @@
+import core::{FileId, NameId, Range}
+
+pub SourceFile {
+  id: FileId = {}
+  path: string
+  pathId: NameId = {}
+  modulePathId: NameId = {}
+  byteRange: Range<u8> = {}
+  textHashHigh: u64
+  textHashLow: u64
+}
+
+impl SourceFile {
+  pub SourceFile(id: FileId, path: string, textHashHigh: u64, textHashLow: u64) =
+    This {
+      id,
+      path,
+      textHashHigh,
+      textHashLow,
+    }
+
+  pub SourceFile(
+    id: FileId,
+    path: string,
+    pathId: NameId,
+    modulePathId: NameId,
+    byteRange: Range<u8>,
+    textHashHigh: u64,
+    textHashLow: u64
+  ) =
+    This {
+      id
+      path
+      pathId
+      modulePathId
+      byteRange
+      textHashHigh
+      textHashLow
+    }
+}
+
+impl view SourceFile {
+  pub valid => id.valid && path != ""
+  pub indexed => pathId.valid
+  pub moduleScoped => modulePathId.valid
+  pub hasByteRange => byteRange.valid
+  pub fingerprintStable => textHashHigh != 0 || textHashLow != 0
+  pub cacheIdentity => "{id.id.localHash}:{textHashHigh}:{textHashLow}"
+}

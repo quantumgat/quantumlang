@@ -1,0 +1,24 @@
+pub LinuxPlatform {
+  name: string
+  syscallAbi: string
+  objectFormat: string
+  dynamicLinker: bool
+  valid: bool
+}
+
+impl LinuxPlatform {
+  pub LinuxPlatform() =
+    This {
+      name: "linux"
+      syscallAbi: "linux-syscall"
+      objectFormat: "elf"
+      dynamicLinker: true
+      valid: true
+    }
+}
+
+impl view LinuxPlatform {
+  pub hosted => dynamicLinker
+  pub elf => objectFormat == "elf"
+  pub nativeLinkable => valid && elf
+}

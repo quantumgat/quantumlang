@@ -1,0 +1,7 @@
+pub takesRoleObject(value: Authenticated<HttpCtx<AuthUser>>) -> i64 {
+  return value.user()?.id
+}
+
+pub implicitRoleObject(ctx: HttpCtx<AuthUser>) -> i64 {
+  return takesRoleObject(ctx)
+}

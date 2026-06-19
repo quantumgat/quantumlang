@@ -1,0 +1,237 @@
+import core::{AsciiByte, FileId}
+import host::{CompilerIo}
+import source::{SourceSpan}
+
+pub SourceLexer {
+  fileId: FileId = {}
+  text: string = ""
+}
+
+impl SourceLexer {
+  pub SourceLexer(fileId: FileId, text: string) =
+    This { fileId, text }
+
+  pub lex() -> LexProduct {
+    let io = CompilerIo(".")
+    let length = io.textLength(text)
+    let result = LexProduct(fileId, length)
+    let position: i64 = 0
+
+    while position < length {
+      let start = position
+      let current = io.textByteAt(text, position)
+
+      if AsciiByte(current).isWhitespace() {
+        position = position + 1
+        while position < length && AsciiByte(io.textByteAt(text, position)).isWhitespace() {
+          position = position + 1
+        }
+
+        let kind: TriviaKind = match current {
+          10 => TriviaKind.Newline
+          _ => TriviaKind.Whitespace
+        }
+        result.addTrivia(Trivia(kind, text.slice(start, position).toString(), SourceSpan(fileId, start, position)))
+        continue
+      }
+
+      if current == 35 {
+        position = position + 1
+        while position < length && io.textByteAt(text, position) != 10 {
+          position = position + 1
+        }
+        result.addTrivia(Trivia(TriviaKind.LineComment, text.slice(start, position).toString(), SourceSpan(fileId, start, position)))
+        continue
+      }
+
+      if AsciiByte(current).isIdentifierStart() {
+        position = position + 1
+        while position < length && AsciiByte(io.textByteAt(text, position)).isIdentifierContinue() {
+          position = position + 1
+        }
+
+        let value = text.slice(start, position).toString()
+        result.addToken(SyntaxToken(kindForWord(value), value, SourceSpan(fileId, start, position)))
+        continue
+      }
+
+      if AsciiByte(current).isDigit() {
+        let floating = false
+        position = position + 1
+        while position < length && AsciiByte(io.textByteAt(text, position)).isDigit() {
+          position = position + 1
+        }
+        if position < length && io.textByteAt(text, position) == 46 {
+          floating = true
+          position = position + 1
+          while position < length && AsciiByte(io.textByteAt(text, position)).isDigit() {
+            position = position + 1
+          }
+        }
+
+        if position < length && AsciiByte(io.textByteAt(text, position)).isIdentifierStart() {
+          let suffixStart = position
+          let suffixEnd = position + 1
+          while suffixEnd < length && AsciiByte(io.textByteAt(text, suffixEnd)).isIdentifierContinue() {
+            suffixEnd = suffixEnd + 1
+          }
+          let suffix = text.slice(suffixStart, suffixEnd).toString()
+          if isNumericLiteralSuffix(suffix) {
+            position = suffixEnd
+            if numericLiteralTypeIsFloat(numericLiteralSuffixType(suffix)) {
+              floating = true
+            }
+          }
+        }
+
+        let value = text.slice(start, position).toString()
+        let kind = match floating {
+          true => TokenKind.floatLiteral()
+          false => TokenKind.integerLiteral()
+        }
+        result.addToken(SyntaxToken(kind, value, SourceSpan(fileId, start, position)))
+        continue
+      }
+
+      if current == 34 {
+        let escaped = false
+        position = position + 1
+        while position < length {
+          let value = io.textByteAt(text, position)
+          if escaped {
+            escaped = false
+            position = position + 1
+            continue
+          }
+          if value == 92 {
+            escaped = true
+            position = position + 1
+            continue
+          }
+          position = position + 1
+          if value == 34 {
+            break
+          }
+        }
+
+        let value = text.slice(start, position).toString()
+        result.addToken(SyntaxToken(TokenKind.stringLiteral(), value, SourceSpan(fileId, start, position)))
+        continue
+      }
+
+      let operatorLength = matchedOperatorLength(text, position, io)
+      if operatorLength > 0 {
+        position = position + operatorLength
+        let value = text.slice(start, position).toString()
+        result.addToken(SyntaxToken(TokenKind.operator(value), value, SourceSpan(fileId, start, position)))
+        continue
+      }
+
+      if AsciiByte(current).isDelimiter() {
+        position = position + 1
+        let value = text.slice(start, position).toString()
+        result.addToken(SyntaxToken(TokenKind.delimiter(value), value, SourceSpan(fileId, start, position)))
+        continue
+      }
+
+      position = position + 1
+      result.addDiagnostic(SourceSpan(fileId, start, position))
+      continue
+    }
+
+    return result
+  }
+}
+
+matchedOperatorLength(text: string, position: i64, io: CompilerIo) -> i64 {
+  let length = io.textLength(text)
+  let first = io.textByteAt(text, position)
+  let second = match position + 1 < length {
+    true => io.textByteAt(text, position + 1)
+    false => -1
+  }
+  let third = match position + 2 < length {
+    true => io.textByteAt(text, position + 2)
+    false => -1
+  }
+
+  if first == 46 && second == 46 && third == 60 {
+    return 3
+  }
+  if (first == 58 && second == 58) ||
+     (first == 45 && second == 62) ||
+     (first == 61 && second == 62) ||
+     (first == 61 && second == 61) ||
+     (first == 33 && second == 61) ||
+     (first == 60 && second == 61) ||
+     (first == 62 && second == 61) ||
+     (first == 38 && second == 38) ||
+     (first == 124 && second == 124) ||
+     (first == 46 && second == 46) ||
+     (first == 42 && second == 42) ||
+     (first == 63 && second == 63) ||
+     (first == 38 && second == 33) {
+    return 2
+  }
+  if AsciiByte(first).isOperatorStart() {
+    return 1
+  }
+  return 0
+}
+
+kindForWord(value: string) -> TokenKind {
+  let keyword = keywordForWord(value)
+  if keyword != KeywordKind.Unknown {
+    return TokenKind.keyword(keyword, value)
+  }
+  if isPrimitiveTokenText(value) {
+    return TokenKind.primitiveType(value)
+  }
+  return TokenKind.identifier()
+}
+
+keywordForWord(value: string) -> KeywordKind {
+  if value == "pub" { return KeywordKind.Pub }
+  if value == "private" { return KeywordKind.Private }
+  if value == "internal" { return KeywordKind.Internal }
+  if value == "protected" { return KeywordKind.Protected }
+  if value == "impl" { return KeywordKind.Impl }
+  if value == "view" { return KeywordKind.View }
+  if value == "context" { return KeywordKind.Context }
+  if value == "extract" { return KeywordKind.Extract }
+  if value == "extend" { return KeywordKind.Extend }
+  if value == "role" { return KeywordKind.Role }
+  if value == "enum" { return KeywordKind.Enum }
+  if value == "unsafe" { return KeywordKind.Unsafe }
+  if value == "module" { return KeywordKind.Module }
+  if value == "mod" { return KeywordKind.Mod }
+  if value == "export" { return KeywordKind.Export }
+  if value == "except" { return KeywordKind.Except }
+  if value == "import" { return KeywordKind.Import }
+  if value == "as" { return KeywordKind.As }
+  if value == "let" { return KeywordKind.Let }
+  if value == "mut" { return KeywordKind.Mut }
+  if value == "return" { return KeywordKind.Return }
+  if value == "if" { return KeywordKind.If }
+  if value == "else" { return KeywordKind.Else }
+  if value == "match" { return KeywordKind.Match }
+  if value == "par" { return KeywordKind.Par }
+  if value == "shard" { return KeywordKind.Shard }
+  if value == "parallel" { return KeywordKind.Parallel }
+  if value == "using" { return KeywordKind.Using }
+  if value == "merge" { return KeywordKind.Merge }
+  if value == "into" { return KeywordKind.Into }
+  if value == "for" { return KeywordKind.For }
+  if value == "while" { return KeywordKind.While }
+  if value == "loop" { return KeywordKind.Loop }
+  if value == "qif" { return KeywordKind.Qif }
+  if value == "qfor" { return KeywordKind.Qfor }
+  if value == "qwhile" { return KeywordKind.Qwhile }
+  if value == "qloop" { return KeywordKind.Qloop }
+  if value == "break" { return KeywordKind.Break }
+  if value == "continue" { return KeywordKind.Continue }
+  if value == "none" { return KeywordKind.None }
+  if value == "true" { return KeywordKind.True }
+  if value == "false" { return KeywordKind.False }
+  return KeywordKind.Unknown
+}

@@ -1,0 +1,6 @@
+[module]
+name = "communication"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/core/communication"
+role = "communication-capability-model"

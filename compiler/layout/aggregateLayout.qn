@@ -1,0 +1,32 @@
+import core::{TypeId, Vec}
+
+pub AggregateLayout {
+  typeId: TypeId
+  fields: Vec<FieldLayout> = []
+  size: u64
+  alignment: u64
+  packed: bool = false
+  deterministic: bool = true
+}
+
+impl AggregateLayout {
+  pub AggregateLayout(
+    typeId: TypeId,
+    fields: Vec<FieldLayout>,
+    size: u64,
+    alignment: u64
+  ) =
+    This { typeId, fields, size, alignment }
+}
+
+impl view AggregateLayout {
+  pub fieldCount: i64 => fields.count
+
+  pub valid: bool =>
+    typeId.id.valid &&
+    fields.valid &&
+    fieldCount > 0 &&
+    alignment > 0 &&
+    size % alignment == 0 &&
+    deterministic
+}

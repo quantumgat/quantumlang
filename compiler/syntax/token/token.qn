@@ -1,0 +1,41 @@
+import core::{FileId}
+import source::{SourceSpan}
+
+pub SyntaxToken {
+  kind: TokenKind
+  text: string
+  span: SourceSpan = {}
+  leadingTriviaCount: i64
+  trailingTriviaCount: i64
+}
+
+impl SyntaxToken {
+  pub SyntaxToken(kind: TokenKind, text: string, span: SourceSpan) =
+    This {
+      kind
+      text
+      span
+      leadingTriviaCount: 0
+      trailingTriviaCount: 0
+    }
+
+  pub SyntaxToken(
+    kind: TokenKind,
+    text: string,
+    fileId: u64,
+    start: i64,
+    end: i64
+  ) =
+    This(kind, text, SourceSpan(FileId(0, 0, fileId), start, end))
+}
+
+impl view SyntaxToken {
+  pub fileId => span.fileId.id.value
+  pub start => span.start
+  pub end => span.end
+  pub valid => kind.known && span.valid
+  pub length => span.length
+  pub empty => start == end
+  pub hasTrivia => leadingTriviaCount > 0 || trailingTriviaCount > 0
+  pub spanKey => "{fileId}:{start}:{end}"
+}

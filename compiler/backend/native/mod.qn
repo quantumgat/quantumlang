@@ -1,0 +1,35 @@
+module native
+
+mod {
+  nativeBackend
+  lower.lowerMir as lowerMir
+  lower.instructionSelect as instructionSelect
+  regalloc.registerAllocate as registerAllocate
+  frame.frameLayout as frameLayout
+  object.objectEmit as objectEmit
+  object.objectUnitKey as objectUnitKey
+  object.stableObjectHash as stableObjectHash
+  object.objectUnit as objectUnit
+  object.objectProduct as objectProduct
+  link.linkPlan as linkPlan
+  link.linkInputSet as linkInputSet
+  link.linkProduct as linkProduct
+  link.artifactLayout as artifactLayout
+}
+
+export {
+  nativeBackend.NativeBackend
+  lowerMir.NativeMirLowering
+  instructionSelect.InstructionSelection
+  registerAllocate.RegisterAllocation
+  frameLayout.{FrameLayout}
+  objectEmit.ObjectEmission
+  objectUnitKey.NativeObjectUnitKey
+  stableObjectHash.*
+  objectUnit.NativeObjectUnit
+  objectProduct.NativeObjectProduct
+  linkPlan.LinkPlan
+  linkInputSet.LinkInputSet
+  linkProduct.LinkProduct
+  artifactLayout.NativeArtifactLayout
+}

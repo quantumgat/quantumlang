@@ -1,0 +1,2 @@
+impl HttpCtx<...Caps> : pub Authenticated<HttpCtx<...Caps>> {
+}

@@ -1,0 +1,58 @@
+pub enum TypeBodyStatus {
+  Unchecked
+  Checked
+  BlockedBySignature
+  BlockedByDependency
+  Failed
+}
+
+pub TypeBodyProduct {
+  bodyId: StableId
+  ownerSymbolId: StableId
+  key: QueryKey
+  signatureFingerprint: Fingerprint
+  bodyFingerprint: Fingerprint
+  status: TypeBodyStatus
+  expressionCount: usize
+  statementCount: usize
+  localSymbolCount: usize
+  diagnosticCount: usize = 0
+  schemaVersion: u64 = 1
+}
+
+impl TypeBodyProduct {
+  pub init(
+    bodyId: StableId,
+    ownerSymbolId: StableId,
+    signatureFingerprint: Fingerprint,
+    bodyFingerprint: Fingerprint,
+    status: TypeBodyStatus,
+    expressionCount: usize,
+    statementCount: usize,
+    localSymbolCount: usize,
+    diagnosticCount: usize
+  ) =
+    This {
+      bodyId
+      ownerSymbolId
+      key: QueryKey.typeBody(bodyId)
+      signatureFingerprint
+      bodyFingerprint
+      status
+      expressionCount
+      statementCount
+      localSymbolCount
+      diagnosticCount
+    }
+
+  pub productFingerprint() =
+    ProductFingerprint(signatureFingerprint, bodyFingerprint)
+}
+
+impl view TypeBodyProduct {
+  pub checked => status == TypeBodyStatus.Checked
+  pub blocked => status == TypeBodyStatus.BlockedBySignature || status == TypeBodyStatus.BlockedByDependency
+  pub failed => status == TypeBodyStatus.Failed || diagnosticCount > 0
+  pub replayable => failed == false && blocked == false
+  pub hasBody => expressionCount > 0 || statementCount > 0
+}

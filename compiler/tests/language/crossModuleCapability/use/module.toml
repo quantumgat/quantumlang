@@ -1,0 +1,9 @@
+[module]
+name = "use"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/tests/language/crossModuleCapability/use"
+role = "cross-module-proof-use"
+
+[dependencies]
+modules = ["model", "behavior"]

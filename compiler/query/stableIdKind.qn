@@ -1,0 +1,16 @@
+pub enum StableIdKind {
+  Package
+  Module
+  File
+  Item
+  Body
+  Node
+  Symbol
+  Type
+  Effect
+  QuantumResource
+  GenericInstance
+  CodegenUnit
+  ObjectUnit
+  LinkTarget
+}

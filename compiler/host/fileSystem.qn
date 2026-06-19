@@ -1,0 +1,19 @@
+pub HostFileSystem {
+  root: string
+  readable: bool = true
+  writable: bool = true
+  atomicPublish: bool = true
+}
+
+impl HostFileSystem {
+  pub HostFileSystem(root: string) =
+    This { root }
+}
+
+impl view HostFileSystem {
+  pub valid: bool =>
+    root != "" &&
+    readable &&
+    writable &&
+    atomicPublish
+}

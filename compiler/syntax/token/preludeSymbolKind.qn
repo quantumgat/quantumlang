@@ -1,0 +1,8 @@
+pub enum PreludeSymbolKind {
+  Print
+  Println
+  Eprint
+  Eprintln
+  Debug
+  Unknown
+}

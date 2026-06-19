@@ -1,0 +1,53 @@
+pub Map<K, V> {
+  index: Index<K, V> = {}
+  entryCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl Map<K, V> {
+  pub Map(index: Index<K, V>) =
+    This {
+      index
+      entryCount: index.count
+    }
+
+  pub Map(keys: Range<K>, values: Range<V>) =
+    This {
+      index: Index<K, V>(keys, values)
+      entryCount: keys.count
+    }
+
+  pub fromIndex(index: Index<K, V>) =
+    This {
+      index
+      entryCount: index.count
+    }
+
+  pub fromRows(keys: Range<K>, values: Range<V>) =
+    This {
+      index: Index<K, V>(keys, values)
+      entryCount: keys.count
+    }
+
+  pub withIndex(nextIndex: Index<K, V>) =
+    this {
+      index: nextIndex
+      entryCount: nextIndex.count
+    }
+}
+
+impl view Map<K, V> {
+  pub count => entryCount
+
+  pub empty => entryCount == 0
+
+  pub isEmpty => empty
+
+  pub nonEmpty => count > 0
+
+  pub indexed => index.valid
+
+  pub countMatchesIndex => entryCount == index.count
+
+  pub valid => deterministic && indexed && countMatchesIndex
+}

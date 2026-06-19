@@ -1,0 +1,187 @@
+pub ByteCursor {
+  view: ByteView = {}
+  position: usize = 0
+  order: ByteOrder = ByteOrder.LittleEndian
+}
+
+impl ByteCursor {
+  pub ByteCursor(value: BytesView) =
+    This { view: ByteView(value) }
+
+  pub ByteCursor(value: BytesView, order: ByteOrder) =
+    This { view: ByteView(value), order }
+
+  pub ByteCursor(view: ByteView) =
+    This { view }
+
+  pub ByteCursor(view: ByteView, order: ByteOrder) =
+    This { view, order }
+
+  pub require(count: usize) -> Result<void, ByteError>
+
+  pub seek(position: usize) -> Result<void, ByteError>
+
+  pub skip(count: usize) -> Result<void, ByteError>
+
+  pub rewind(count: usize) -> Result<void, ByteError> {
+    if count > position {
+      return Err(ByteError(
+        ByteErrorKind.OutOfBounds,
+        position,
+        count,
+        position
+      ))
+    }
+
+    position = position - count
+    return Ok(0)
+  }
+
+  pub align(alignment: usize) -> Result<void, ByteError>
+
+  pub bool() -> Result<bool, ByteError>
+
+  pub u8() -> Result<u8, ByteError>
+
+  pub i8() -> Result<i8, ByteError>
+
+  pub u16le() -> Result<u16, ByteError>
+
+  pub u16be() -> Result<u16, ByteError>
+
+  pub i16le() -> Result<i16, ByteError>
+
+  pub i16be() -> Result<i16, ByteError>
+
+  pub u32le() -> Result<u32, ByteError>
+
+  pub u32be() -> Result<u32, ByteError>
+
+  pub i32le() -> Result<i32, ByteError>
+
+  pub i32be() -> Result<i32, ByteError>
+
+  pub u64le() -> Result<u64, ByteError>
+
+  pub u64be() -> Result<u64, ByteError>
+
+  pub i64le() -> Result<i64, ByteError>
+
+  pub i64be() -> Result<i64, ByteError>
+
+  pub u128le() -> Result<u128, ByteError>
+
+  pub u128be() -> Result<u128, ByteError>
+
+  pub i128le() -> Result<i128, ByteError>
+
+  pub i128be() -> Result<i128, ByteError>
+
+  pub u256le() -> Result<u256, ByteError>
+
+  pub u256be() -> Result<u256, ByteError>
+
+  pub i256le() -> Result<i256, ByteError>
+
+  pub i256be() -> Result<i256, ByteError>
+
+  pub f32le() -> Result<f32, ByteError>
+
+  pub f32be() -> Result<f32, ByteError>
+
+  pub f64le() -> Result<f64, ByteError>
+
+  pub f64be() -> Result<f64, ByteError>
+
+  pub varU64() -> Result<u64, ByteError>
+
+  pub varI64() -> Result<i64, ByteError>
+
+  pub varU128() -> Result<u128, ByteError>
+
+  pub varI128() -> Result<i128, ByteError>
+
+  pub zigzag32() -> Result<i32, ByteError>
+
+  pub zigzag64() -> Result<i64, ByteError>
+
+  pub read(count: usize) -> Result<ByteView, ByteError>
+
+  pub peek(count: usize) -> Result<ByteView, ByteError> {
+    this.require(count)?
+    return this.view.slice(position, count)
+  }
+
+  pub readRemaining() -> Result<ByteView, ByteError> {
+    return this.read(this.remaining)
+  }
+
+  pub bytes8() -> Result<ByteView, ByteError>
+
+  pub bytes16le() -> Result<ByteView, ByteError>
+
+  pub bytes16be() -> Result<ByteView, ByteError>
+
+  pub bytes32le() -> Result<ByteView, ByteError>
+
+  pub bytes32be() -> Result<ByteView, ByteError>
+
+  pub bytes64le() -> Result<ByteView, ByteError>
+
+  pub bytes64be() -> Result<ByteView, ByteError>
+
+  pub varBytes() -> Result<ByteView, ByteError>
+
+  pub str8() -> Result<string, ByteError>
+
+  pub str16le() -> Result<string, ByteError>
+
+  pub str16be() -> Result<string, ByteError>
+
+  pub str32le() -> Result<string, ByteError>
+
+  pub str32be() -> Result<string, ByteError>
+
+  pub str64le() -> Result<string, ByteError>
+
+  pub str64be() -> Result<string, ByteError>
+
+  pub varStr() -> Result<string, ByteError>
+
+  pub hash128() -> Result<Hash128, ByteError> {
+    let value = this.read(16)?
+    return Ok(Hash128(value.toBytes()))
+  }
+
+  pub hash256() -> Result<Hash256, ByteError> {
+    let value = this.read(32)?
+    return Ok(Hash256(value.toBytes()))
+  }
+
+  pub hash512() -> Result<Hash512, ByteError> {
+    let value = this.read(64)?
+    return Ok(Hash512(value.toBytes()))
+  }
+
+  pub cstring() -> Result<string, ByteError>
+
+  pub utf8(count: usize) -> Result<string, ByteError>
+
+  pub expect(value: BytesView) -> Result<void, ByteError>
+
+  pub magic(value: BytesView) -> Result<void, ByteError>
+
+  pub checksum32() -> u32
+
+  pub fork() -> ByteCursor {
+    return This { view, position, order }
+  }
+}
+
+impl view ByteCursor {
+  pub absolutePosition: usize => view.offset + position
+  pub remaining: usize => view.length - position
+  pub empty: bool => remaining == 0
+  pub hasRemaining: bool => remaining > 0
+  pub valid: bool => view.valid && position <= view.length
+}

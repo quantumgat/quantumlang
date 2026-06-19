@@ -1,0 +1,111 @@
+import typeSystem::{*}
+pub ExpressionTypingProof {
+  literalTyping: bool
+  optionalTyping: bool
+  aggregateTyping: bool
+  thisResolution: bool
+  voidReturnTyping: bool
+  binaryOperatorTyping: bool
+  operatorFamilyTyping: bool
+  valid: bool
+}
+
+pub expressionTypingProof() -> ExpressionTypingProof {
+  let empty = ExpressionTypingContext("", "", "", false, false)
+  let optionString = ExpressionTypingContext("Option<string>", "", "", true, false)
+  let optionInteger = ExpressionTypingContext("Option<i64>", "", "", true, false)
+  let plainString = ExpressionTypingContext("string", "", "", true, false)
+  let clearVec = ExpressionTypingContext("", "", "", true, false)
+  let quotedMap = ExpressionTypingContext("", "", "", false, true)
+  let currentSourceSpan = ExpressionTypingContext("", "SourceSpan", "", false, false)
+  let arithmetic = ExpressionTypingContext("i64", "", "+", false, false)
+  let remainder = ExpressionTypingContext("i64", "", "%", false, false)
+  let bitwise = ExpressionTypingContext("u64", "", "&", false, false)
+  let shift = ExpressionTypingContext("u64", "", "<<", false, false)
+  let compare = ExpressionTypingContext("", "", "==", false, false)
+  let assignment = ExpressionTypingContext("i64", "", "+=", false, false)
+  let unaryBool = ExpressionTypingContext("bool", "", "!", false, false)
+  let unaryAddress = ExpressionTypingContext("ptr<i64>", "", "&", false, false)
+  let indexContext = ExpressionTypingContext("Token", "", "[]", false, false)
+  let callContext = ExpressionTypingContext("CheckReport", "", "()", false, false)
+  let memberContext = ExpressionTypingContext("usize", "", ".", false, false)
+  let castContext = ExpressionTypingContext("u64", "", "as", false, false)
+  let propagateContext = ExpressionTypingContext("User", "", "?", false, false)
+
+  let stringLiteral = ExpressionTypeRule.fromExpression(ExpressionKind.Literal, TypeLiteralKind.String, empty)
+  let stringLift = ExpressionTypeRule.fromExpression(ExpressionKind.Literal, TypeLiteralKind.String, optionString)
+  let integerLift = ExpressionTypeRule.fromExpression(ExpressionKind.Literal, TypeLiteralKind.Integer, optionInteger)
+  let noneHit = ExpressionTypeRule.fromExpression(ExpressionKind.NoneLiteral, TypeLiteralKind.None, optionString)
+  let noneMiss = ExpressionTypeRule.fromExpression(ExpressionKind.NoneLiteral, TypeLiteralKind.None, empty)
+  let noneWrongTarget = ExpressionTypeRule.fromExpression(ExpressionKind.NoneLiteral, TypeLiteralKind.None, plainString)
+  let vecHit = ExpressionTypeRule.fromExpression(ExpressionKind.VecLiteral, TypeLiteralKind.Vec, clearVec)
+  let mapHit = ExpressionTypeRule.fromExpression(ExpressionKind.MapLiteral, TypeLiteralKind.Map, quotedMap)
+  let recordHit = ExpressionTypeRule.fromExpression(ExpressionKind.RecordLiteral, TypeLiteralKind.Record, empty)
+  let thisHit = ExpressionTypeRule.fromExpression(ExpressionKind.ThisValue, TypeLiteralKind.Unknown, currentSourceSpan)
+  let thisTypeHit = ExpressionTypeRule.fromExpression(ExpressionKind.ThisType, TypeLiteralKind.Unknown, currentSourceSpan)
+  let voidHit = ExpressionTypeRule.fromExpression(ExpressionKind.VoidReturn, TypeLiteralKind.Unknown, empty)
+  let plusHit = ExpressionTypeRule.fromExpression(ExpressionKind.BinaryOperator, TypeLiteralKind.Unknown, arithmetic)
+  let remainderHit = ExpressionTypeRule.fromExpression(ExpressionKind.BinaryOperator, TypeLiteralKind.Unknown, remainder)
+  let bitwiseHit = ExpressionTypeRule.fromExpression(ExpressionKind.BinaryOperator, TypeLiteralKind.Unknown, bitwise)
+  let shiftHit = ExpressionTypeRule.fromExpression(ExpressionKind.BinaryOperator, TypeLiteralKind.Unknown, shift)
+  let compareHit = ExpressionTypeRule.fromExpression(ExpressionKind.BinaryOperator, TypeLiteralKind.Unknown, compare)
+  let assignmentHit = ExpressionTypeRule.fromExpression(ExpressionKind.AssignmentOperator, TypeLiteralKind.Unknown, assignment)
+  let unaryBoolHit = ExpressionTypeRule.fromExpression(ExpressionKind.UnaryOperator, TypeLiteralKind.Unknown, unaryBool)
+  let unaryAddressHit = ExpressionTypeRule.fromExpression(ExpressionKind.UnaryOperator, TypeLiteralKind.Unknown, unaryAddress)
+  let indexHit = ExpressionTypeRule.fromExpression(ExpressionKind.IndexAccess, TypeLiteralKind.Unknown, indexContext)
+  let callHit = ExpressionTypeRule.fromExpression(ExpressionKind.CallAccess, TypeLiteralKind.Unknown, callContext)
+  let memberHit = ExpressionTypeRule.fromExpression(ExpressionKind.MemberAccess, TypeLiteralKind.Unknown, memberContext)
+  let castHit = ExpressionTypeRule.fromExpression(ExpressionKind.CastOperator, TypeLiteralKind.Unknown, castContext)
+  let propagateHit = ExpressionTypeRule.fromExpression(ExpressionKind.PropagateOperator, TypeLiteralKind.Unknown, propagateContext)
+
+  let literalTyping = stringLiteral.resolvedType == "string"
+
+  let optionalTyping = stringLift.resolvedType == "Option<string>" &&
+    integerLift.resolvedType == "Option<i64>" &&
+    noneHit.resolvedType == "Option<string>" &&
+    noneMiss.diagnosticCode == "QTLIT0001" &&
+    noneWrongTarget.diagnosticCode == "QTLIT0001"
+
+  let aggregateTyping = vecHit.resolvedType == "Vec<T>" &&
+    mapHit.resolvedType == "Map<string,T>" &&
+    recordHit.resolvedType == "record"
+
+  let thisResolution = thisHit.resolvedType == "SourceSpan" &&
+    thisTypeHit.resolvedType == "SourceSpan"
+
+  let voidReturnTyping = voidHit.resolvedType == "void"
+
+  let binaryOperatorTyping = plusHit.resolvedType == "i64" &&
+    remainderHit.resolvedType == "i64" &&
+    bitwiseHit.resolvedType == "u64" &&
+    shiftHit.resolvedType == "u64" &&
+    compareHit.resolvedType == "bool"
+
+  let operatorFamilyTyping = assignmentHit.resolvedType == "i64" &&
+    unaryBoolHit.resolvedType == "bool" &&
+    unaryAddressHit.resolvedType == "ptr<i64>" &&
+    indexHit.resolvedType == "Token" &&
+    callHit.resolvedType == "CheckReport" &&
+    memberHit.resolvedType == "usize" &&
+    castHit.resolvedType == "u64" &&
+    propagateHit.resolvedType == "User"
+
+  let valid = literalTyping &&
+    optionalTyping &&
+    aggregateTyping &&
+    thisResolution &&
+    voidReturnTyping &&
+    binaryOperatorTyping &&
+    operatorFamilyTyping
+
+  return ExpressionTypingProof {
+    literalTyping: literalTyping,
+    optionalTyping: optionalTyping,
+    aggregateTyping: aggregateTyping,
+    thisResolution: thisResolution,
+    voidReturnTyping: voidReturnTyping,
+    binaryOperatorTyping: binaryOperatorTyping,
+    operatorFamilyTyping: operatorFamilyTyping,
+    valid: valid,
+  }
+}

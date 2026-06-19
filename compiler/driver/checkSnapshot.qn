@@ -1,0 +1,205 @@
+pub PackageSnapshot {
+  files: i64
+  boundaries: i64
+  manifest: bool
+  sourceRoot: bool
+  appMain: bool
+}
+
+impl PackageSnapshot {
+  pub PackageSnapshot(
+    files: i64,
+    boundaries: i64,
+    manifest: bool,
+    sourceRoot: bool,
+    appMain: bool
+  ) =
+    This {
+      files,
+      boundaries,
+      manifest,
+      sourceRoot,
+      appMain,
+    }
+}
+
+impl view PackageSnapshot {
+  pub valid => manifest && sourceRoot && appMain
+
+  pub boundariesValid => manifest && sourceRoot && appMain && boundaries != 0
+}
+
+pub SourceSnapshot {
+  bytes: i64
+  main: bool
+  quantumImports: bool
+}
+
+impl SourceSnapshot {
+  pub SourceSnapshot(bytes: i64, main: bool, quantumImports: bool) =
+    This {
+      bytes,
+      main,
+      quantumImports,
+    }
+}
+
+impl view SourceSnapshot {
+  pub valid => main && quantumImports && bytes != 0
+}
+
+pub LexerSnapshot {
+  tokens: i64
+  imports: bool
+  modulePaths: bool
+  printCalls: bool
+}
+
+impl LexerSnapshot {
+  pub LexerSnapshot(
+    tokens: i64,
+    imports: bool,
+    modulePaths: bool,
+    printCalls: bool
+  ) =
+    This {
+      tokens,
+      imports,
+      modulePaths,
+      printCalls,
+    }
+}
+
+impl view LexerSnapshot {
+  pub valid => tokens != 0 && imports && modulePaths && printCalls
+}
+
+pub ParserSnapshot {
+  functions: i64
+  moduleRoot: bool
+  imports: bool
+  functionItems: bool
+  returns: bool
+  calls: bool
+}
+
+impl ParserSnapshot {
+  pub ParserSnapshot(
+    functions: i64,
+    moduleRoot: bool,
+    imports: bool,
+    functionItems: bool,
+    returns: bool,
+    calls: bool
+  ) =
+    This {
+      functions,
+      moduleRoot,
+      imports,
+      functionItems,
+      returns,
+      calls,
+    }
+}
+
+impl view ParserSnapshot {
+  pub valid =>
+    functions != 0 &&
+    moduleRoot &&
+    imports &&
+    functionItems &&
+    returns &&
+    calls
+}
+
+pub CheckSnapshot {
+  target: string
+  package: PackageSnapshot
+  source: SourceSnapshot
+  lexer: LexerSnapshot
+  parser: ParserSnapshot
+}
+
+impl CheckSnapshot {
+  pub CheckSnapshot(
+    target: string,
+    package: PackageSnapshot,
+    source: SourceSnapshot,
+    lexer: LexerSnapshot,
+    parser: ParserSnapshot
+  ) =
+    This {
+      target,
+      package,
+      source,
+      lexer,
+      parser,
+    }
+
+  pub fromHost(target: string) -> This {
+    let host = Host(target)
+    let package = host.package
+    let source = host.source
+    let lexer = host.lexer
+    let parser = host.parser
+
+    This {
+      target,
+      package: PackageSnapshot(
+        package.files,
+        package.boundaries,
+        package.manifest,
+        package.sourceRoot,
+        package.appMain
+      ),
+      source: SourceSnapshot(
+        source.bytes,
+        source.main,
+        source.quantumStyleImports
+      ),
+      lexer: LexerSnapshot(
+        lexer.tokens,
+        lexer.imports,
+        lexer.modulePaths,
+        lexer.printCalls
+      ),
+      parser: ParserSnapshot(
+        parser.functions,
+        parser.moduleRoot,
+        parser.imports,
+        parser.functionItems,
+        parser.returns,
+        parser.calls
+      ),
+    }
+  }
+}
+
+impl view CheckSnapshot {
+  pub manifestValid => true
+
+  pub sourceFileCount => package.files
+
+  pub packageScanValid => package.manifest && package.sourceRoot && package.appMain
+
+  pub hostSourceValid => source.main && source.quantumImports && source.bytes != 0
+
+  pub hostLexerValid =>
+    lexer.tokens != 0 &&
+    lexer.imports &&
+    lexer.modulePaths
+
+  pub hostParserValid =>
+    parser.functions != 0 &&
+    parser.moduleRoot &&
+    parser.imports &&
+    parser.functionItems &&
+    parser.returns &&
+    parser.calls
+
+  pub moduleBoundaryValid =>
+    package.manifest &&
+    package.sourceRoot &&
+    package.appMain &&
+    package.boundaries != 0
+}

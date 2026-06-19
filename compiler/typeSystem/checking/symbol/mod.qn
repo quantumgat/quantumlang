@@ -1,0 +1,17 @@
+module symbol
+
+mod {
+  typeSymbolKind
+  typeSymbol
+  stableTypeHash
+  typeLookupIndex
+  typeSymbolTable
+}
+
+export {
+  typeSymbolKind.*
+  typeSymbol.*
+  stableTypeHash.*
+  typeLookupIndex.*
+  typeSymbolTable.*
+}

@@ -1,0 +1,149 @@
+import core::{FileId, Vec}
+import declaration::{DeclarationRecord}
+import syntax::{SourceLexer, SourceParser}
+import typeSystem::{CandidateAccessKind, CandidateId, CandidateIndexBuilder, TypeScopeTable, TypeSymbol, TypeSymbolTable}
+
+pub OverloadGenericRowsProof {
+  genericRowsParsed: bool
+  parameterRowsParsed: bool
+  callRowsParsed: bool
+  frontendRowsPreserved: bool
+  symbolRowsPreserved: bool
+  overloadBucketPreserved: bool
+  constructorCandidatePreserved: bool
+  operatorCandidatePreserved: bool
+  protectedAccessPreserved: bool
+  valid: bool
+}
+
+pub overloadGenericRowsProof() -> OverloadGenericRowsProof {
+  let source =
+    "module proof\n" +
+    "pub encode<T: Codec<T> = string>(value: T, mode: i64 = 1, ...rest: T) -> T {{ value }}\n" +
+    "pub encode(value: string) -> string {{ value }}\n" +
+    "pub User {{ id: i64 }}\n" +
+    "role Inspectable {{ inspect() -> i64 }}\n" +
+    "extend User : protected Inspectable {{" +
+    " inspect() -> i64 {{ id }}" +
+    "}}\n" +
+    "main() {{ encode<string>(1, mode: 2) }}\n"
+  let parsed = SourceParser(
+    SourceLexer(FileId(1, 13, 1), source).lex(),
+    "proof::overloadRows"
+  ).parse()
+
+  let callable = parsed.declarationAt(1)
+  let callNode = parsed.nodeAt(0)
+  let nodeRow: i64 = 0
+  while nodeRow < parsed.nodeCount {
+    let candidate = parsed.nodeAt(nodeRow)
+    if candidate.text == "encode" &&
+       candidate.callArguments.count == 2 &&
+       candidate.callArguments[0].expressionText == "1" {
+      callNode = candidate
+    }
+    nodeRow = nodeRow + 1
+  }
+
+  let record = DeclarationRecord.fromAst(1, callable)
+  let symbol = TypeSymbol.fromRecord(record)
+
+  let genericRowsParsed =
+    callable.genericParameterRows.count == 1 &&
+    callable.genericParameterRows[0].name == "T" &&
+    callable.genericParameterRows[0].bounds.count == 1 &&
+    callable.genericParameterRows[0].bounds[0] == "Codec<T>" &&
+    callable.genericParameterRows[0].defaultTypeName == "string"
+
+  let parameterRowsParsed =
+    callable.parameterRows.count == 3 &&
+    callable.parameterRows[0].name == "value" &&
+    callable.parameterRows[0].typeName == "T" &&
+    callable.parameterRows[0].required &&
+    callable.parameterRows[1].name == "mode" &&
+    callable.parameterRows[1].typeName == "i64" &&
+    callable.parameterRows[1].defaultValueText == "1" &&
+    callable.parameterRows[1].defaulted &&
+    callable.parameterRows[2].name == "rest" &&
+    callable.parameterRows[2].typeName == "T" &&
+    callable.parameterRows[2].variadic
+
+  let callRowsParsed =
+    callNode.callArguments.count == 2 &&
+    callNode.structuredCallArguments &&
+    callNode.callArguments[0].position == 0 &&
+    callNode.callArguments[0].named == false &&
+    callNode.callArguments[0].inferredTypeName == "i32" &&
+    callNode.callArguments[1].position == 1 &&
+    callNode.callArguments[1].name == "mode" &&
+    callNode.callArguments[1].expressionText == "2" &&
+    callNode.callArguments[1].named
+
+  let frontendRowsPreserved =
+    record.structuredGenericParameters &&
+    record.structuredParameters &&
+    record.genericParameterRows[0].defaultTypeName == "string" &&
+    record.parameterRows[1].defaulted
+
+  let symbolRowsPreserved =
+    symbol.structuredGenericParameters &&
+    symbol.structuredParameters &&
+    symbol.callableParameterCount == 3 &&
+    symbol.genericParameterRows[0].bounds[0] == "Codec<T>" &&
+    symbol.parameterRows[2].variadic
+
+  let records: Vec<DeclarationRecord> = []
+  let declarationRow: i64 = 0
+  while declarationRow < parsed.declarationCount {
+    records.push(
+      DeclarationRecord.fromAst(
+        declarationRow + 1,
+        parsed.declarationAt(declarationRow)
+      )
+    )
+    declarationRow = declarationRow + 1
+  }
+  let symbols = TypeSymbolTable.fromRecords(records, parsed.valid)
+  let scopes = TypeScopeTable.fromSymbols(symbols)
+  let candidates = CandidateIndexBuilder.build(symbols, scopes)
+  let encodeCandidates = candidates.free("encode")
+  let constructorCandidates = candidates.constructor("User")
+  let operatorCandidates = candidates.operator("+", "binary")
+  let inspectCandidates = candidates.member("User", "inspect")
+  let inspectEntry = match inspectCandidates.count {
+    1 => candidates.entry(inspectCandidates.candidateValues[0])
+    _ => candidates.entry(CandidateId())
+  }
+
+  let overloadBucketPreserved = encodeCandidates.count == 2
+  let constructorCandidatePreserved = constructorCandidates.count == 1
+  let operatorCandidatePreserved = operatorCandidates.count == 1
+  let protectedAccessPreserved =
+    inspectCandidates.count == 1 &&
+    inspectEntry.access.kind == CandidateAccessKind.Protected
+
+  let valid =
+    parsed.valid &&
+    genericRowsParsed &&
+    parameterRowsParsed &&
+    callRowsParsed &&
+    frontendRowsPreserved &&
+    symbolRowsPreserved &&
+    overloadBucketPreserved &&
+    constructorCandidatePreserved &&
+    operatorCandidatePreserved &&
+    protectedAccessPreserved
+
+  return OverloadGenericRowsProof {
+    genericRowsParsed
+    parameterRowsParsed
+    callRowsParsed
+    frontendRowsPreserved
+    symbolRowsPreserved
+    overloadBucketPreserved
+    constructorCandidatePreserved
+    operatorCandidatePreserved
+    protectedAccessPreserved
+    valid
+  }
+}

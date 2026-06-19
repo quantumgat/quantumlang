@@ -1,0 +1,98 @@
+import core::{ModuleId, ScopeId, SymbolId}
+
+pub TypeScopeIndexes {
+  bindings: TypeScopeLookupIndex = {}
+  scopeRows: TypeScopeLookupIndex = {}
+  scopes: TypeNameLookupIndex = {}
+  modules: TypeNameLookupIndex = {}
+  owners: TypeNameLookupIndex = {}
+}
+
+impl TypeScopeIndexes {
+  pub withCapacity(expectedCount: usize) =
+    This {
+      bindings: TypeScopeLookupIndex.withCapacity(expectedCount)
+      scopeRows: TypeScopeLookupIndex.withCapacity(expectedCount)
+      scopes: TypeNameLookupIndex.withCapacity(expectedCount)
+      modules: TypeNameLookupIndex.withCapacity(expectedCount)
+      owners: TypeNameLookupIndex.withCapacity(expectedCount)
+    }
+
+  pub recordScope(scope: TypeScope, row: usize) {
+    scopeRows.add(scope.id, "#", row)
+    scopes.add("", scopeKey(scope.id), row)
+    if scope.kind == TypeScopeKind.Module {
+      modules.add("", moduleScopeKey(scope.module.id.moduleHash), row)
+    }
+    recordOwnerScope(scope, row)
+  }
+
+  pub recordOwnerScope(scope: TypeScope, row: usize) {
+    if scope.owner.valid && scope.kind != TypeScopeKind.Generic {
+      owners.add("", symbolScopeKey(scope.owner), row)
+    }
+  }
+
+  pub recordBinding(binding: TypeScopeBinding, row: usize) -> bool {
+    return bindings.add(binding.scope, binding.name, row)
+  }
+
+  pub rowForBinding(scope: ScopeId, name: string) -> Option<usize> {
+    return bindings.rowFor(scope, name)
+  }
+
+  pub containsBinding(scope: ScopeId, name: string) -> bool {
+    return bindings.contains(scope, name)
+  }
+
+  pub containsScope(id: ScopeId) -> bool {
+    return scopes.contains("", scopeKey(id))
+  }
+
+  pub rowForScope(id: ScopeId) -> Option<usize> {
+    match scopeRows.rowFor(id, "#") {
+      Some(row) => return Some(row)
+      None => {}
+    }
+    match scopes.rowFor("", scopeKey(id)) {
+      Some(row) => return Some(row)
+      None => {}
+    }
+    return None
+  }
+
+  pub rowForModule(module: ModuleId) -> Option<usize> {
+    return rowForModuleHash(module.id.moduleHash)
+  }
+
+  pub rowForModuleHash(moduleHash: u64) -> Option<usize> {
+    return modules.rowFor("", moduleScopeKey(moduleHash))
+  }
+
+  pub rowForOwner(owner: SymbolId) -> Option<usize> {
+    return owners.rowFor("", symbolScopeKey(owner))
+  }
+}
+
+impl view TypeScopeIndexes {
+  pub bindingsOwned: bool =>
+    bindings.valid &&
+    scopeRows.valid &&
+    scopes.valid &&
+    modules.valid &&
+    owners.valid
+
+  pub valid: bool => bindingsOwned
+}
+
+scopeKey(id: ScopeId) -> string {
+  return "{id.id.packageHash}:{id.id.moduleHash}:{id.id.localHash}:{id.id.disambiguator}"
+}
+
+symbolScopeKey(id: SymbolId) -> string {
+  return "{id.id.packageHash}:{id.id.moduleHash}:{id.id.localHash}:{id.id.disambiguator}"
+}
+
+moduleScopeKey(moduleHash: u64) -> string {
+  return "{moduleHash}"
+}

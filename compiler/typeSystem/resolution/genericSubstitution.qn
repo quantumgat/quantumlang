@@ -1,0 +1,20 @@
+pub enum GenericInferenceSource {
+  Explicit
+  Argument
+  Receiver
+  Default
+  Unknown
+}
+
+pub GenericSubstitution {
+  parameterName: string = ""
+  argumentType: string = ""
+  source: GenericInferenceSource = GenericInferenceSource.Unknown
+}
+
+impl view GenericSubstitution {
+  pub valid: bool =>
+    parameterName != "" &&
+    argumentType != "" &&
+    source != GenericInferenceSource.Unknown
+}

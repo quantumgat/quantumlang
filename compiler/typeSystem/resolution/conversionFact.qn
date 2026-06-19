@@ -1,0 +1,72 @@
+pub enum ConversionKind {
+  Exact
+  Alias
+  NumericWiden
+  Generic
+  Deferred
+  Invalid
+}
+
+pub ConversionFact {
+  sourceType: string = ""
+  targetType: string = ""
+  kind: ConversionKind = ConversionKind.Invalid
+  cost: usize = 0
+}
+
+impl ConversionFact {
+  pub between(sourceType: string, targetType: string) -> This {
+    if targetType == "" {
+      return This { sourceType, targetType, kind: ConversionKind.Deferred, cost: 8 }
+    }
+    if sourceType == "" {
+      return This { sourceType, targetType, kind: ConversionKind.Deferred, cost: 8 }
+    }
+    if sourceType == targetType {
+      return This { sourceType, targetType, kind: ConversionKind.Exact }
+    }
+    let sourceCanonical = canonicalTypeAliasName(sourceType)
+    let targetCanonical = canonicalTypeAliasName(targetType)
+    if sourceCanonical == targetCanonical {
+      return This { sourceType, targetType, kind: ConversionKind.Alias, cost: 1 }
+    }
+    if isPrimitiveIntegerTypeName(sourceCanonical) &&
+       isPrimitiveIntegerTypeName(targetCanonical) &&
+       primitiveIntegerBitWidth(sourceCanonical) <=
+         primitiveIntegerBitWidth(targetCanonical) {
+      return This {
+        sourceType
+        targetType
+        kind: ConversionKind.NumericWiden
+        cost: 2
+      }
+    }
+    if isPrimitiveIntegerTypeName(sourceCanonical) &&
+       isPrimitiveFloatTypeName(targetCanonical) {
+      return This {
+        sourceType
+        targetType
+        kind: ConversionKind.NumericWiden
+        cost: 3
+      }
+    }
+    if isPrimitiveFloatTypeName(sourceCanonical) &&
+       isPrimitiveFloatTypeName(targetCanonical) &&
+       primitiveFloatBitWidth(sourceCanonical) <=
+         primitiveFloatBitWidth(targetCanonical) {
+      return This {
+        sourceType
+        targetType
+        kind: ConversionKind.NumericWiden
+        cost: 2
+      }
+    }
+    return This { sourceType, targetType }
+  }
+}
+
+impl view ConversionFact {
+  pub exact: bool => kind == ConversionKind.Exact
+
+  pub valid: bool => kind != ConversionKind.Invalid
+}

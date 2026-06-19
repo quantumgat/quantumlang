@@ -1,0 +1,102 @@
+import behavior::counterBehavior::{*}
+import model::counter::{CrossModuleBox, CrossModuleCounter}
+
+pub CrossModuleCapabilityProof {
+  counter: CrossModuleCounter = {}
+  bumped: CrossModuleCounter = {}
+  boxed: CrossModuleBox<CrossModuleCounter> = {}
+}
+
+impl view CrossModuleCapabilityProof {
+  pub implCallValid: bool =>
+    bumped.current() == 12
+
+  pub viewValid: bool =>
+    counter.named &&
+    counter.summary == "counter:7" &&
+    counter.implicitSummary == "counter:7"
+
+  pub contextValid: bool =>
+    counter.contextValue(3) == 10
+
+  pub extractValid: bool =>
+    counter.extractedValue() == 7 &&
+    counter.extractedSummary() == "counter:7"
+
+  pub concreteExtendValid: bool =>
+    counter.current() == 7 &&
+    counter.name() == "counter"
+
+  pub design10MultiRoleVisibilityValid: bool =>
+    counter.internalValue() == 27 &&
+    design10PrivateAccessProof(counter)
+
+  pub genericExtendValid: bool =>
+    counter.doubledCurrent() == 14
+
+  pub normalImplReadableValid: bool =>
+    counter.readableFunction() == "counter:7"
+
+  pub normalImplWritableValid: bool =>
+    counter.writableFunction(4).current() == 11
+
+  pub implViewReadableValid: bool =>
+    counter.readableProperty == "counter:7"
+
+  pub implViewWritableValid: bool =>
+    counter.writableProperty == 8
+
+  pub genericImplReadableValid: bool =>
+    counter.genericReadableFunction() == 7
+
+  pub genericImplWritableValid: bool =>
+    counter.genericWritableFunction(6) == 13
+
+  pub roleValid: bool =>
+    boxed.boxCurrent() == 7
+
+  pub genericOwnerExtendValid: bool =>
+    boxed.doubledBoxCurrent() == 14
+
+  pub explicitThisValid: bool =>
+    this.counter.explicitThisValue() == 7
+
+  pub implicitThisValid: bool =>
+    counter.implicitThisValue() == 7
+
+  pub shadowingValid: bool =>
+    counter.shadowedValue(100) == 107
+
+  pub valid: bool => {
+    implCallValid &&
+    viewValid &&
+    contextValid &&
+    extractValid &&
+    concreteExtendValid &&
+    design10MultiRoleVisibilityValid &&
+    genericExtendValid &&
+    normalImplReadableValid &&
+    normalImplWritableValid &&
+    implViewReadableValid &&
+    implViewWritableValid &&
+    genericImplReadableValid &&
+    genericImplWritableValid &&
+    roleValid &&
+    genericOwnerExtendValid &&
+    explicitThisValid &&
+    implicitThisValid &&
+    shadowingValid
+  }
+}
+
+pub crossModuleCapabilityProof() -> CrossModuleCapabilityProof {
+  let counter = CrossModuleCounter(7, "counter")
+  let bumped = counter.bump(5)
+  let boxed = CrossModuleBox<CrossModuleCounter> { value: counter }
+
+  return CrossModuleCapabilityProof {
+    counter
+    bumped
+    boxed
+  }
+}

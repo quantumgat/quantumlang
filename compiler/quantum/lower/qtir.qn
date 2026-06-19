@@ -1,0 +1,23 @@
+pub Qtir {
+  nodeCount: i64
+  targetName: string
+  profileName: string
+  scheduleSteps: i64
+  deterministic: bool
+}
+
+impl Qtir {
+  pub Qtir(nodeCount: i64, targetName: string, profileName: string, scheduleSteps: i64) =
+    This {
+      nodeCount
+      targetName
+      profileName
+      scheduleSteps
+      deterministic: true
+    }
+}
+
+impl view Qtir {
+  pub targetKnown => targetName != ""
+  pub scheduled => scheduleSteps >= 0
+}

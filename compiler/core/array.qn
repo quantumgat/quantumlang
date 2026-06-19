@@ -1,0 +1,55 @@
+pub Array<T, N> {
+  rows: Range<T> = {}
+  length: i64 = 0
+  fixed: bool = true
+}
+
+impl Array<T, N> {
+  pub Array(rows: Range<T>) -> This {
+    return This {
+      rows
+      length: rows.count
+    }
+  }
+
+  pub Array(start: i64, count: i64) =
+    This {
+      rows: Range<T>(start, count)
+      length: count
+    }
+
+  pub Array(count: i64) =
+    This {
+      rows: Range<T>(0, count)
+      length: count
+    }
+
+  pub fixed(rows: Range<T>, length: i64) -> This {
+    return This {
+      rows
+      length
+      fixed: true
+    }
+  }
+
+  pub asSlice() -> Slice<T> {
+    let owner: CompilerId = {}
+    return Slice<T>.borrowed(rows, owner, 0)
+  }
+}
+
+impl view Array<T, N> {
+  pub start => rows.start
+
+  pub count => length
+
+  pub end => rows.end
+
+  pub empty => length == 0
+
+  pub nonEmpty => length > 0
+
+  pub rangeMatchesLength => rows.count == length
+
+  pub valid => rows.valid && length >= 0 && rangeMatchesLength
+}

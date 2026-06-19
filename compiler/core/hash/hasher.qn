@@ -1,0 +1,109 @@
+pub Hasher {
+  policy: HashPolicy = HashPolicy.content()
+  buffer: ByteBuffer = {}
+  key: HashKey = {}
+  seed: HashSeed = {}
+  finalized: bool = false
+}
+
+impl Hasher {
+  pub forDomain(domain: HashDomain) =
+    This { policy: HashPolicy.forDomain(domain) }
+
+  pub content() =
+    This { policy: HashPolicy.content() }
+
+  pub action() =
+    This { policy: HashPolicy.action() }
+
+  pub security(key: HashKey) =
+    This {
+      policy: HashPolicy.security()
+      key
+    }
+
+  pub fast64(seed: HashSeed) =
+    This {
+      policy: HashPolicy.fastTable()
+      seed
+    }
+
+  pub fast128(seed: HashSeed) =
+    This {
+      policy: HashPolicy.fastFingerprint()
+      seed
+    }
+
+  pub write(value: byte) -> Result<void, ByteError> {
+    return buffer.append(value)
+  }
+
+  pub write(value: bytes) -> Result<void, ByteError> {
+    return buffer.append(value)
+  }
+
+  pub write(value: BytesView) -> Result<void, ByteError> {
+    return buffer.append(value)
+  }
+
+  pub write(value: ByteView) -> Result<void, ByteError> {
+    return buffer.append(value)
+  }
+
+  pub write(value: string) -> Result<void, ByteError> {
+    return buffer.append(value)
+  }
+
+  pub finish256() -> Result<Hash256, HashError> {
+    if policy.algorithm != HashAlgorithm.Blake3 ||
+       policy.width != HashWidth.Bits256 {
+      return Err(HashError { kind: HashErrorKind.InvalidWidth })
+    }
+    if policy.keyed && key.valid == false {
+      return Err(HashError {
+        kind: HashErrorKind.KeyRequired
+        expected: 32
+        actual: key.length
+      })
+    }
+    let digest: bytes = blake3Bytes()
+    if policy.keyed {
+      digest = blake3KeyedBytes()
+    }
+    finalized = true
+    return Ok(Hash256 { value: digest })
+  }
+
+  pub finish128() -> Result<Hash128, HashError> {
+    if policy.algorithm != HashAlgorithm.Xxh3 ||
+       policy.width != HashWidth.Bits128 {
+      return Err(HashError { kind: HashErrorKind.InvalidWidth })
+    }
+    let digest: bytes = xxh3_128Bytes()
+    finalized = true
+    return Ok(Hash128 { value: digest })
+  }
+
+  pub finish64() -> Result<u64, HashError> {
+    if policy.algorithm != HashAlgorithm.Xxh3 ||
+       policy.width != HashWidth.Bits64 {
+      return Err(HashError { kind: HashErrorKind.InvalidWidth })
+    }
+    finalized = true
+    return Ok(xxh3_64Value())
+  }
+
+  pub blake3Bytes() -> bytes
+  pub blake3KeyedBytes() -> bytes
+  pub xxh3_64Value() -> u64
+  pub xxh3_128Bytes() -> bytes
+}
+
+impl view Hasher {
+  pub bytesProcessed: usize => buffer.length
+  pub empty: bool => bytesProcessed == 0
+  pub active: bool => policy.valid && finalized == false
+  pub valid: bool =>
+    policy.valid &&
+    (policy.keyed == false || key.valid)
+}

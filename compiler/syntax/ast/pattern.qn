@@ -1,0 +1,27 @@
+pub enum AstPatternKind {
+  Name
+  Tuple
+  Vec
+  Record
+  Literal
+  Wildcard
+  Unknown
+}
+
+pub AstPattern {
+  id: i64
+  node: AstNode
+  kind: AstPatternKind
+}
+
+impl AstPattern {
+  pub AstPattern(id: i64, kind: AstPatternKind, node: AstNode) =
+    This { id, node, kind }
+}
+
+impl view AstPattern {
+  pub valid => id > 0 && node.valid && kind != AstPatternKind.Unknown
+  pub destructuring => kind == AstPatternKind.Tuple || kind == AstPatternKind.Vec || kind == AstPatternKind.Record
+  pub binding => kind == AstPatternKind.Name
+  pub wildcard => kind == AstPatternKind.Wildcard
+}

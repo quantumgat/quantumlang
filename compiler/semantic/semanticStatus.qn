@@ -1,0 +1,8 @@
+pub enum SemanticStatus {
+  Ready
+  Empty
+  Dirty
+  Nondeterministic
+  InvalidCounts
+}
+

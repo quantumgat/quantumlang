@@ -1,0 +1,62 @@
+import frontend::{FrontendProduct}
+
+pub TypecheckState {
+  environment: TypeEnvironment
+  diagnosticCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl TypecheckState {
+  pub forFrontend(frontend: FrontendProduct) -> This {
+    let environment = TypeEnvironment.forFrontend(frontend)
+    return This.forEnvironment(environment)
+  }
+
+  pub forEnvironment(environment: TypeEnvironment) =
+    This {
+      environment
+      diagnosticCount: environment.diagnosticCount
+      deterministic: environment.deterministic
+    }
+
+  pub typedNodeAt(index: i64) -> TypedNodeFact {
+    return environment.registry.typedNodeAt(index)
+  }
+}
+
+impl view TypecheckState {
+  pub fileCount: i64 => environment.fileScopeCount
+
+  pub moduleCount: i64 => environment.moduleScopeCount
+
+  pub typedNodeCount: i64 => environment.typedNodeCount
+
+  pub typeContextCount: i64 => environment.typeContextCount
+
+  pub typeFactCount: i64 => environment.typeFactCount + environment.symbolCount
+
+  pub publicSymbolCount: i64 => environment.publicSymbolCount
+
+  pub firstDiagnosticMessage: string => environment.firstDiagnosticMessage
+
+  pub clean: bool => diagnosticCount == 0 && environment.clean
+
+  pub hasSymbols: bool => environment.symbolEnvironmentReady
+
+  pub hasFacts: bool => environment.factEnvironmentReady
+
+  pub valid: bool =>
+    deterministic &&
+    clean &&
+    hasSymbols &&
+    hasFacts
+
+  pub statusValue: string => match true {
+    deterministic == false => "failed:qtlc1-typecheck-nondeterministic"
+    clean == false => "failed:qtlc1-typecheck-diagnostics"
+    hasSymbols == false => "failed:qtlc1-typecheck-symbols"
+    hasFacts == false => "failed:qtlc1-typecheck-facts"
+    valid => "checked:qtlc1-typecheck"
+    _ => "failed:qtlc1-typecheck"
+  }
+}

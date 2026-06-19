@@ -1,0 +1,95 @@
+import driver::{ColorMode, Command, ProgressMode}
+
+hostRequestedJobs() -> i64
+hostArgPresent(shortName: string, longName: string) -> bool
+hostColorMode() -> i64
+hostTargetArg(fallback: string) -> string
+
+pub HostArgs {
+  command: Command
+  target: string
+  provided: bool
+  jobs: i64 = 1
+  quiet: bool = false
+  verbose: bool = false
+  colorMode: ColorMode = ColorMode.Auto
+}
+
+impl HostArgs {
+  pub defaultCheck() = This(Command.check(), "qtlang/compiler", false)
+
+  pub check(target: string) = This(Command.check(), target, true)
+
+  pub build(target: string) = This(Command.build(), target, true)
+
+  pub help() = This(Command.help(), "", false)
+
+  pub version() = This(Command.version(), "", false)
+}
+
+impl view HostArgs {
+  pub kind => command.kind
+
+  pub targetPath => target
+
+  pub hasTarget => target != ""
+
+  pub commandName => command.name
+
+  pub packageTargetProvided => provided && target != ""
+
+  pub progressMode: ProgressMode =>
+    ProgressMode {
+      quiet
+      verbose
+      color: colorMode
+    }
+}
+
+hostArgEquals(index: usize, expected: string) -> bool
+extract HostArgs {
+  pub HostArgs() -> This {
+    let target = hostTargetArg("qtlang/compiler")
+    let jobs = hostRequestedJobs()
+    let quiet = hostArgPresent("-q", "--quiet")
+    let verbose = hostArgPresent("-v", "--verbose")
+    let colorMode = match hostColorMode() {
+      1 => ColorMode.Always
+      2 => ColorMode.Never
+      _ => ColorMode.Auto
+    }
+    if hostArgEquals(0, "build") {
+      return This(Command.build(), target, true, jobs, quiet, verbose, colorMode)
+    }
+    if hostArgEquals(0, "check") {
+      return This(Command.check(), target, true, jobs, quiet, verbose, colorMode)
+    }
+    if hostArgEquals(0, "--version") {
+      return This.version()
+    }
+    if hostArgEquals(0, "version") {
+      return This.version()
+    }
+    if hostArgEquals(0, "-V") {
+      return This.version()
+    }
+    if hostArgEquals(0, "--help") {
+      return This.help()
+    }
+    if hostArgEquals(0, "-h") {
+      return This.help()
+    }
+    if hostArgEquals(0, "help") {
+      return This.help()
+    }
+    This(Command.check(), target, false, jobs, quiet, verbose, colorMode)
+  }
+
+  targetOrDefault() -> string {
+    if hasTarget {
+      return target
+    }
+
+    return "qtlang/compiler"
+  }
+}

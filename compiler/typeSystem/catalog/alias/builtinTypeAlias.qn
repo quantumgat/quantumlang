@@ -1,0 +1,5 @@
+pub BuiltinTypeAlias {
+  alias: string
+  canonical: string
+  legacy: bool
+}

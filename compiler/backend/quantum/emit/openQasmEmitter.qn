@@ -1,0 +1,34 @@
+pub OpenQasmEmitter {
+  emittedPrograms: i64
+  programHash: string
+  version: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl OpenQasmEmitter {
+  pub OpenQasmEmitter(emittedPrograms: i64, programHash: string, version: string) =
+    This { emittedPrograms, programHash, version }
+
+  pub qasm3(emittedPrograms: i64, programHash: string) =
+    This {
+      emittedPrograms
+      programHash
+      version: "3.0"
+    }
+
+  addProgram() =
+    this {
+      emittedPrograms: emittedPrograms + 1
+    }
+}
+
+impl view OpenQasmEmitter {
+  pub valid => diagnosticCode == "" && emittedPrograms >= 0 && programHash != "" && version != ""
+  pub emitted => emittedPrograms > 0
+  pub qasm3Ready => version == "3.0"
+  pub artifactFormat => "openqasm{version}"
+  pub cacheKey => "{artifactFormat}:{programHash}:{emittedPrograms}"
+  pub lowerable => valid && deterministic
+  pub debugName => "quantum.openqasm.{version}.{programHash}"
+}

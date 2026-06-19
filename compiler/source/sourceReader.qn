@@ -1,0 +1,46 @@
+import core::{FileId}
+
+pub SourceReader {
+  target: string
+  packageRoot: string
+  deterministicCacheKeys: bool
+}
+
+impl SourceReader {
+  pub SourceReader(target: string, packageRoot: string) =
+    This {
+      target,
+      packageRoot,
+      deterministicCacheKeys: true,
+    }
+}
+
+context SourceReader {
+  readProduct(
+    request: SourceReadRequest,
+    fileId: FileId,
+    text: string,
+    byteLength: u64,
+    fingerprintHigh: u64,
+    fingerprintLow: u64,
+    fromCache: bool
+  ) -> SourceReadProduct {
+    let sourceText = SourceText(text, byteLength, fingerprintHigh, fingerprintLow)
+    let sourceFile = SourceFile(fileId, request.path, fingerprintHigh, fingerprintLow)
+
+    SourceReadProduct(
+      request,
+      sourceFile,
+      sourceText,
+      fingerprintHigh,
+      fingerprintLow,
+      fromCache
+    )
+  }
+}
+
+impl view SourceReader {
+  pub valid => target != "" && packageRoot != "" && deterministicCacheKeys
+  pub cacheStable => deterministicCacheKeys
+  pub debugName => "source.reader.{target}"
+}

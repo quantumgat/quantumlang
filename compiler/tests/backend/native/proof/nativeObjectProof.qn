@@ -1,0 +1,63 @@
+import backend::native::{*}
+pub NativeObjectProof {
+  unchangedMirReusesObject: bool
+  changedBodyRebuildsOneUnit: bool
+  targetChangeRejectsReuse: bool
+  productCountsStable: bool
+  emissionMatchesProduct: bool
+  valid: bool
+}
+
+pub nativeObjectProof() -> NativeObjectProof {
+  let baseKey = NativeObjectUnitKey("fn:compileModule", "x86_64-unknown-linux-gnu", "debug", "abi:v1", "mir:aaa", "native:v1")
+  let sameKey = NativeObjectUnitKey("fn:compileModule", "x86_64-unknown-linux-gnu", "debug", "abi:v1", "mir:aaa", "native:v1")
+  let changedMirKey = NativeObjectUnitKey("fn:compileModule", "x86_64-unknown-linux-gnu", "debug", "abi:v1", "mir:bbb", "native:v1")
+  let changedTargetKey = NativeObjectUnitKey("fn:compileModule", "aarch64-unknown-linux-gnu", "debug", "abi:v1", "mir:aaa", "native:v1")
+  let cached = NativeObjectUnit(baseKey, "compileModule", "obj:111", "~/.cache/qtlc/obj/x86_64/debug/111.o", true, "")
+  let same = NativeObjectUnit(sameKey, "compileModule", "obj:111", "~/.cache/qtlc/obj/x86_64/debug/111.o", true, "")
+  let rebuilt = NativeObjectUnit(changedMirKey, "compileModule", "obj:222", "~/.cache/qtlc/obj/x86_64/debug/222.o", false, "mir-changed")
+  let targetMiss = NativeObjectUnit(changedTargetKey, "compileModule", "obj:333", "~/.cache/qtlc/obj/aarch64/debug/333.o", false, "target-changed")
+  let product = NativeObjectProduct(3, 2, 1, "x86_64-unknown-linux-gnu", "debug")
+  let emission = ObjectEmission(product.unitCount, product.reusedCount, product.rebuiltCount)
+
+  let unchangedMirReusesObject = cached.valid &&
+    same.valid &&
+    cached.key.mirHash == same.key.mirHash &&
+    cached.objectHash == same.objectHash &&
+    same.reusable
+
+  let changedBodyRebuildsOneUnit = rebuilt.valid &&
+    !rebuilt.reusable &&
+    rebuilt.missReason == "mir-changed" &&
+    baseKey.mirHash != changedMirKey.mirHash
+
+  let targetChangeRejectsReuse = targetMiss.valid &&
+    !targetMiss.reusable &&
+    targetMiss.missReason == "target-changed" &&
+    baseKey.targetTriple != changedTargetKey.targetTriple
+
+  let productCountsStable = product.valid &&
+    product.deterministic &&
+    product.unitCount == 3 &&
+    product.rebuiltCount == 1
+
+  let emissionMatchesProduct = emission.valid &&
+    emission.objectCount == product.unitCount &&
+    emission.reusedCount == product.reusedCount &&
+    emission.rebuiltCount == product.rebuiltCount
+
+  let valid = unchangedMirReusesObject &&
+    changedBodyRebuildsOneUnit &&
+    targetChangeRejectsReuse &&
+    productCountsStable &&
+    emissionMatchesProduct
+
+  return NativeObjectProof {
+    unchangedMirReusesObject: unchangedMirReusesObject,
+    changedBodyRebuildsOneUnit: changedBodyRebuildsOneUnit,
+    targetChangeRejectsReuse: targetChangeRejectsReuse,
+    productCountsStable: productCountsStable,
+    emissionMatchesProduct: emissionMatchesProduct,
+    valid: valid,
+  }
+}

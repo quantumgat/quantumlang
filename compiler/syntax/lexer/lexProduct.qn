@@ -1,0 +1,100 @@
+import core::{FileId}
+import source::{SourceSpan}
+
+pub LexProduct {
+  fileId: FileId = {}
+  sourceLength: i64 = 0
+  tokens: TokenStream = {}
+  trivia: TriviaStream = {}
+  diagnosticRows: Vec<SourceSpan> = []
+  diagnosticRowCount: i64 = 0
+  imports: bool = false
+  modulePaths: bool = false
+  deterministic: bool = true
+}
+
+impl LexProduct {
+  pub LexProduct(fileId: FileId, sourceLength: i64) =
+    This {
+      fileId
+      sourceLength
+      tokens: TokenStream(fileId)
+      trivia: TriviaStream(fileId)
+    }
+
+  pub addToken(token: SyntaxToken) {
+    tokens.add(token)
+    if token.kind.keyword == KeywordKind.Import {
+      imports = true
+    }
+    if token.text == "::" {
+      modulePaths = true
+    }
+  }
+
+  pub addTrivia(row: Trivia) {
+    trivia.add(row)
+  }
+
+  pub addDiagnostic(span: SourceSpan) {
+    diagnosticRows.push(span)
+    diagnosticRowCount = diagnosticRowCount + 1
+  }
+}
+
+impl view LexProduct {
+  pub tokenCount: i64 => tokens.count
+  pub triviaCount: i64 => trivia.count
+  pub diagnosticCount: i64 => diagnosticRowCount
+  pub clean: bool => diagnosticCount == 0
+  pub rowsOwned: bool => tokens.fileId == fileId && trivia.fileId == fileId
+
+  pub tokenAt(index: i64) -> SyntaxToken {
+    tokens.tokenAt(index)
+  }
+
+  pub valid: bool =>
+    fileId.valid &&
+    sourceLength > 0 &&
+    tokenCount > 0 &&
+    rowsOwned &&
+    tokens.valid &&
+    trivia.valid &&
+    clean &&
+    deterministic
+}
+
+pub PackageLexProduct {
+  files: Vec<LexProduct> = []
+  fileRowCount: i64 = 0
+  tokenCount: i64 = 0
+  triviaCount: i64 = 0
+  diagnosticCount: i64 = 0
+  imports: bool = false
+  modulePaths: bool = false
+  deterministic: bool = true
+}
+
+impl PackageLexProduct {
+  pub addFile(product: LexProduct) {
+    fileRowCount = fileRowCount + 1
+    tokenCount = tokenCount + product.tokenCount
+    triviaCount = triviaCount + product.triviaCount
+    diagnosticCount = diagnosticCount + product.diagnosticCount
+    imports = imports || product.imports
+    modulePaths = modulePaths || product.modulePaths
+    files.push(product)
+  }
+}
+
+impl view PackageLexProduct {
+  pub fileCount: i64 => fileRowCount
+  pub clean: bool => diagnosticCount == 0
+  pub valid: bool =>
+    fileCount > 0 &&
+    tokenCount > 0 &&
+    imports &&
+    modulePaths &&
+    clean &&
+    deterministic
+}

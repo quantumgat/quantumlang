@@ -1,0 +1,21 @@
+pub ConstFoldPass {
+  folded: i64
+  literalsOnly: bool
+  debugSafe: bool
+  valid: bool
+}
+
+impl ConstFoldPass {
+  pub ConstFoldPass(folded: i64, literalsOnly: bool) =
+    This {
+      folded
+      literalsOnly
+      debugSafe: literalsOnly
+      valid: folded >= 0 && literalsOnly
+    }
+}
+
+impl view ConstFoldPass {
+  pub foldedAny => folded > 0
+  pub safe => valid && debugSafe
+}

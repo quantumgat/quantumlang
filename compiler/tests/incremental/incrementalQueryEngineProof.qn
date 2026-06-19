@@ -1,0 +1,72 @@
+import query::{*}
+import buildSystem::{ArtifactPolicy}
+
+pub IncrementalQueryEngineProof {
+  cleanBuildSkipsEverything: bool
+  privateBodyRebuildsOneFile: bool
+  publicApiRechecksDependents: bool
+  targetChangeKeepsFrontendGreen: bool
+  noGeneratedCOrCpp: bool
+  valid: bool
+}
+
+pub incrementalQueryEngineProof() -> IncrementalQueryEngineProof {
+  let packageId = StableId.package(100)
+  let engine = IncrementalQueryEngine(packageId)
+  let clean = engine.cleanPlan(1, 8)
+  let privateBody = engine.privateBodyChangePlan(2, 8, 1)
+  let publicApi = engine.publicApiChangePlan(3, 8, 1, 2)
+  let target = engine.targetChangePlan(4, 8)
+  let policy = ArtifactPolicy()
+
+  let cleanBuildSkipsEverything = clean.valid &&
+    clean.recomputedLexParseFiles == 0 &&
+    clean.recomputedTypeSignatures == 0 &&
+    clean.recomputedBodies == 0 &&
+    clean.skippedNativeObjects == 8 &&
+    clean.relinkRequired == false
+
+  let privateBodyRebuildsOneFile = privateBody.valid &&
+    privateBody.changedFiles == 1 &&
+    privateBody.recomputedLexParseFiles == 1 &&
+    privateBody.recomputedBodies == 1 &&
+    privateBody.recomputedNativeObjects == 1 &&
+    privateBody.fullSourceRecheckRequired == false &&
+    privateBody.skippedLexParseFiles == 7 &&
+    privateBody.skippedNativeObjects == 7
+
+  let publicApiRechecksDependents = publicApi.valid &&
+    publicApi.recomputedTypeSignatures == 3 &&
+    publicApi.recomputedBodies == 3 &&
+    publicApi.recomputedNativeObjects == 3 &&
+    publicApi.skippedNativeObjects == 5 &&
+    publicApi.fullSourceRecheckRequired == false
+
+  let targetChangeKeepsFrontendGreen = target.valid &&
+    target.recomputedLexParseFiles == 0 &&
+    target.recomputedTypeSignatures == 0 &&
+    target.recomputedBodies == 0 &&
+    target.recomputedNativeObjects == 8 &&
+    target.relinkRequired
+
+  let noGeneratedCOrCpp = policy.forbidsGeneratedCFamilySource &&
+    policy.allowsNativeProductsOnly
+
+  let valid = engine.tracksSymbolEdges &&
+    engine.tracksNativeObjects &&
+    engine.parallelReady &&
+    cleanBuildSkipsEverything &&
+    privateBodyRebuildsOneFile &&
+    publicApiRechecksDependents &&
+    targetChangeKeepsFrontendGreen &&
+    noGeneratedCOrCpp
+
+  return IncrementalQueryEngineProof {
+    cleanBuildSkipsEverything: cleanBuildSkipsEverything,
+    privateBodyRebuildsOneFile: privateBodyRebuildsOneFile,
+    publicApiRechecksDependents: publicApiRechecksDependents,
+    targetChangeKeepsFrontendGreen: targetChangeKeepsFrontendGreen,
+    noGeneratedCOrCpp: noGeneratedCOrCpp,
+    valid: valid,
+  }
+}

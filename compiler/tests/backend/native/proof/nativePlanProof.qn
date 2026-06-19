@@ -1,0 +1,60 @@
+import backend::native::{*}
+import machine::{CallingConvention, DataLayout, TargetMachine}
+import mir::{MirBody, MirControlFlowGraph}
+
+pub NativePlanProof {
+  mirLowered: bool
+  instructionsSelected: bool
+  registersAllocated: bool
+  frameLaidOut: bool
+  backendReady: bool
+  valid: bool
+}
+
+pub nativePlanProof() -> NativePlanProof {
+  let layout = DataLayout(64, "little", 64, 128)
+  let convention = CallingConvention("sysv", "gnu", true, true)
+  let target = TargetMachine("x86_64-unknown-linux-gnu", 2, layout, convention, "elf")
+  let body = MirBody("compileModule", 4, 8, 12)
+  let cfg = MirControlFlowGraph(5, body.blockCount)
+  let lowering = NativeMirLowering(12, body, cfg, target.triple)
+  let selection = InstructionSelection(12, target.triple, true)
+  let allocation = RegisterAllocation(12, 0, true, true)
+  let frame = FrameLayout(64, 16, true, 2)
+  let backend = NativeBackend(true, target.triple, target.nativeObjectFormat)
+
+  let mirLowered = lowering.valid &&
+    lowering.deterministic &&
+    lowering.lowered == body.instructionCount
+
+  let instructionsSelected = selection.valid &&
+    selection.selected == lowering.lowered &&
+    selection.legalInstructions
+
+  let registersAllocated = allocation.valid &&
+    allocation.registers > 0 &&
+    allocation.spills == 0
+
+  let frameLaidOut = frame.valid &&
+    frame.stackAlignBytes == 16 &&
+    frame.returnAddressSaved
+
+  let backendReady = backend.valid &&
+    target.valid &&
+    backend.objectFormat == "elf"
+
+  let valid = mirLowered &&
+    instructionsSelected &&
+    registersAllocated &&
+    frameLaidOut &&
+    backendReady
+
+  return NativePlanProof {
+    mirLowered: mirLowered,
+    instructionsSelected: instructionsSelected,
+    registersAllocated: registersAllocated,
+    frameLaidOut: frameLaidOut,
+    backendReady: backendReady,
+    valid: valid,
+  }
+}

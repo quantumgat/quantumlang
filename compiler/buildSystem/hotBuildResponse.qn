@@ -1,0 +1,50 @@
+pub enum HotBuildStatus {
+  Accepted
+  Rejected
+  Built
+  Checked
+  Failed
+}
+
+pub HotBuildResponse {
+  requestId: u64
+  status: HotBuildStatus
+  changedProductCount: usize
+  reusedProductCount: usize
+  diagnosticCount: usize
+  linkedTargetPath: string
+  elapsedMicros: u64
+  reason: string
+}
+
+impl HotBuildResponse {
+  pub HotBuildResponse(
+    requestId: u64,
+    status: HotBuildStatus,
+    changedProductCount: usize,
+    reusedProductCount: usize,
+    diagnosticCount: usize,
+    linkedTargetPath: string,
+    elapsedMicros: u64,
+    reason: string
+  ) =
+    This {
+      requestId
+      status
+      changedProductCount
+      reusedProductCount
+      diagnosticCount
+      linkedTargetPath
+      elapsedMicros
+      reason
+    }
+}
+
+impl view HotBuildResponse {
+  pub accepted => status == HotBuildStatus.Accepted
+  pub completed => status == HotBuildStatus.Built || status == HotBuildStatus.Checked
+  pub failed => status == HotBuildStatus.Failed || diagnosticCount > 0
+  pub rejected => status == HotBuildStatus.Rejected
+  pub linked => linkedTargetPath != ""
+  pub valid => requestId > 0 && elapsedMicros > 0 && failed == false
+}

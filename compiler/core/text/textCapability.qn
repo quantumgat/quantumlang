@@ -1,0 +1,82 @@
+pub role TextReadable<T> {
+  textView() -> TextView
+}
+
+pub role TextScannable<T> {
+  textCursor() -> TextCursor
+}
+
+pub role DiagnosticTextSafe<T> {
+  diagnosticTextView() -> TextView
+}
+
+pub role TextWritable<T> {
+  appendTo(out: TextBuilder) -> Result<void, ByteError>
+}
+
+pub extend<T: TextReadable<T>> T {
+  textByteLength() -> i64 {
+    return this.textView().byteLength
+  }
+
+  startsAsciiUpper() -> bool {
+    return this.textView().startsAsciiUpper()
+  }
+
+  startsAsciiLower() -> bool {
+    return this.textView().startsAsciiLower()
+  }
+
+  startsAsciiAlpha() -> bool {
+    return this.textView().startsAsciiAlpha()
+  }
+}
+
+pub extend<T: TextScannable<T>> T {
+  cursor() -> TextCursor {
+    return this.textCursor()
+  }
+}
+
+pub extend<T: DiagnosticTextSafe<T>> T {
+  diagnosticSafeText() -> string {
+    return this.diagnosticTextView().toText()
+  }
+}
+
+pub extend<T: TextWritable<T>> T {
+  toText() -> Result<string, ByteError> {
+    let out = TextBuilder()
+    this.appendTo(out)?
+    return Ok(out.finish())
+  }
+}
+
+pub extend string : pub TextReadable<string> {
+  textView() -> TextView {
+    return TextView(this)
+  }
+}
+
+pub extend string : pub TextScannable<string> {
+  textCursor() -> TextCursor {
+    return TextCursor(TextView(this))
+  }
+}
+
+pub extend string : pub DiagnosticTextSafe<string> {
+  diagnosticTextView() -> TextView {
+    return TextView(this)
+  }
+}
+
+pub extend string : pub TextWritable<string> {
+  toText() -> Result<string, ByteError> {
+    return Ok(this)
+  }
+
+  appendTo(out: TextBuilder) -> Result<void, ByteError> {
+    out.append(this)?
+    return Ok(0)
+  }
+}

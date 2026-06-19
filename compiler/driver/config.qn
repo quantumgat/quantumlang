@@ -1,0 +1,20 @@
+pub Config {
+  profile: string
+}
+
+impl Config {
+  pub Config(profile: string) =
+    This {
+      profile,
+    }
+
+  pub debug() = This("debug")
+
+  pub release() = This("release")
+}
+
+impl view Config {
+  debugProfile => profile == "debug"
+
+  releaseProfile => profile == "release"
+}

@@ -1,0 +1,21 @@
+pub QuantumGateSet {
+  gateCount: i64
+  targetName: string
+  universal: bool
+  valid: bool
+}
+
+impl QuantumGateSet {
+  pub QuantumGateSet(targetName: string, gateCount: i64, universal: bool) =
+    This {
+      gateCount
+      targetName
+      universal
+      valid: targetName != "" && gateCount > 0
+    }
+}
+
+impl view QuantumGateSet {
+  pub targetKnown => targetName != ""
+  pub complete => valid && universal
+}

@@ -1,0 +1,12 @@
+pub CandidateId {
+  value: u64 = 0
+}
+
+impl CandidateId {
+  pub CandidateId(value: u64) =
+    This { value }
+}
+
+impl view CandidateId {
+  pub valid: bool => value > 0
+}

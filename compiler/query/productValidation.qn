@@ -1,0 +1,19 @@
+pub ProductValidation {
+  state: ProductValidationState
+  fingerprint: ProductFingerprint
+  reason: string = ""
+}
+
+impl ProductValidation {
+  pub valid(fingerprint: ProductFingerprint) =
+    This { state: ProductValidationState.Valid, fingerprint, reason: "valid" }
+
+  pub reject(state: ProductValidationState, fingerprint: ProductFingerprint, reason: string) =
+    This { state, fingerprint, reason }
+}
+
+impl view ProductValidation {
+  pub usable => state == ProductValidationState.Valid
+  pub rejected => usable == false
+  pub missing => state == ProductValidationState.Missing
+}

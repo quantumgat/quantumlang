@@ -1,0 +1,74 @@
+import syntax::{*}
+pub LexerSubsetProof {
+  scannerTracksSource: bool
+  keywordsAndIdentifiers: bool
+  operatorsRecognized: bool
+  literalsRecognized: bool
+  commentsBecomeTrivia: bool
+  importShapesRecognized: bool
+  valid: bool
+}
+
+pub lexerSubsetProof() -> LexerSubsetProof {
+  let scan = Scanner(7, 64)
+  let cursor = scan.cursor()
+  let importToken = LexedTokenFact.fromText("import")
+  let identifierToken = LexedTokenFact.fromText("io")
+  let modulePath = LexedTokenFact.fromText("::")
+  let accessPath = LexedTokenFact.fromText(".")
+  let expressionBody = LexedTokenFact.fromText("=>")
+  let optionMarker = LexedTokenFact.fromText("?")
+  let noneToken = LexedTokenFact.fromText("none")
+  let stringToken = LexedTokenFact.fromText("\"hi\"")
+  let comment = Trivia(TriviaKind.LineComment, "# comment", 0, 0, 9)
+  let selectedImport = ImportTokenRule.fromImport("::", true, "", "io", false)
+  let moduleImport = ImportTokenRule.fromImport("::", false, "", "io", false)
+  let aliasImport = ImportTokenRule.fromImport("::", false, "console", "io", false)
+
+  let scannerTracksSource = cursor.fileId == 7 &&
+    cursor.offset == 0 &&
+    !cursor.atEnd
+
+  let keywordsAndIdentifiers = importToken.tokenKind.keyword == KeywordKind.Import &&
+    identifierToken.role == TokenRole.Identifier
+
+  let modulePathKind = modulePath.tokenKind
+  let accessPathKind = accessPath.tokenKind
+  let expressionBodyKind = expressionBody.tokenKind
+  let optionMarkerKind = optionMarker.tokenKind
+
+  let operatorsRecognized = modulePathKind.valid &&
+    modulePath.role == TokenRole.Operator &&
+    accessPathKind.valid &&
+    accessPath.role == TokenRole.Operator &&
+    expressionBodyKind.valid &&
+    expressionBody.role == TokenRole.Operator &&
+    optionMarkerKind.valid &&
+    optionMarker.role == TokenRole.Operator
+
+  let literalsRecognized = noneToken.valid &&
+    noneToken.role == TokenRole.Keyword
+
+  let commentsBecomeTrivia = comment.kind == TriviaKind.LineComment &&
+    comment.end == 9
+
+  let importShapesRecognized = importToken.role == TokenRole.Keyword &&
+    identifierToken.role == TokenRole.Identifier
+
+  let valid = scannerTracksSource &&
+    keywordsAndIdentifiers &&
+    operatorsRecognized &&
+    literalsRecognized &&
+    commentsBecomeTrivia &&
+    importShapesRecognized
+
+  return LexerSubsetProof {
+    scannerTracksSource: scannerTracksSource,
+    keywordsAndIdentifiers: keywordsAndIdentifiers,
+    operatorsRecognized: operatorsRecognized,
+    literalsRecognized: literalsRecognized,
+    commentsBecomeTrivia: commentsBecomeTrivia,
+    importShapesRecognized: importShapesRecognized,
+    valid: valid,
+  }
+}

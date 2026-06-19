@@ -1,0 +1,74 @@
+import host::compilerIntrinsics::{CompilerIntrinsics}
+
+pub CompilerIo {
+  packageRoot: string
+  intrinsics: CompilerIntrinsics = CompilerIntrinsics()
+}
+
+impl CompilerIo {
+  pub CompilerIo(packageRoot: string) =
+    This { packageRoot }
+}
+
+context CompilerIo {
+  pub sourceCount() -> i64 =
+    intrinsics.sourceCount(packageRoot)
+
+  pub sourcePathAt(index: i64) -> string =
+    intrinsics.sourcePathAt(packageRoot, index)
+
+  pub sourceModulePathAt(index: i64) -> string =
+    intrinsics.sourceModulePathAt(packageRoot, index)
+
+  pub sourceModuleHashAt(index: i64) -> u64 =
+    intrinsics.sourceModuleHashAt(packageRoot, index)
+
+  pub sourceFingerprintAt(index: i64) -> u64 =
+    intrinsics.sourceFingerprintAt(packageRoot, index)
+
+  pub textByteAt(text: string, index: i64) -> i64 =
+    intrinsics.textByteAt(text, index)
+
+  pub textLength(text: string) -> i64 =
+    intrinsics.textLength(text)
+
+  pub sourcePaths() -> string =
+    intrinsics.sourcePaths(packageRoot)
+
+  pub sourceModulePaths() -> string =
+    intrinsics.sourceModulePaths(packageRoot)
+
+  pub sourceByteLengths() -> string =
+    intrinsics.sourceByteLengths(packageRoot)
+
+  pub sourceFingerprints() -> string =
+    intrinsics.sourceFingerprints(packageRoot)
+
+  pub readText(path: string) -> string =
+    intrinsics.readText(path)
+
+  pub fileExists(path: string) -> bool =
+    intrinsics.fileExists(path)
+
+  pub createDirectories(path: string) -> i64 =
+    intrinsics.createDirectories(path)
+
+  pub atomicWriteText(path: string, text: string) -> i64 =
+    intrinsics.atomicWriteText(path, text)
+
+  pub rename(from: string, to: string) -> i64 =
+    intrinsics.rename(from, to)
+
+  pub buildNativeCompiler(
+    compilerPath: string,
+    target: string,
+    outputPath: string
+  ) -> i64 =
+    intrinsics.buildNativeCompiler(compilerPath, target, outputPath)
+}
+
+impl view CompilerIo {
+  pub valid: bool => packageRoot != ""
+  pub manifestPath: string => "{packageRoot}/quantum.toml"
+  pub debugOutputPath: string => "{packageRoot}/build/debug"
+}

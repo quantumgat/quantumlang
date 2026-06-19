@@ -1,0 +1,12 @@
+pub badNativeDirectProof() -> bool {
+  let artifact = NativeSurfaceArtifact {
+    userCall: NativeCallFact {
+      name: "HttpCtx.extend.user"
+      direct: true
+      monomorphized: true
+      roleTableDispatch: true
+    }
+  }
+
+  return artifact.directDispatchValid
+}

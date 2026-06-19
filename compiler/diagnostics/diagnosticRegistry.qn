@@ -1,0 +1,282 @@
+pub DiagnosticRegistry {
+}
+
+impl DiagnosticRegistry {
+  pub type(code: TypeDiagnosticCode) -> DiagnosticSpec {
+    if code == TypeDiagnosticCode.InvalidBinaryOperator {
+      return This.typeSpec(
+        code,
+        1,
+        "invalid binary operator",
+        "binary operator '",
+        "' has no compatible operand type",
+        "Use compatible operands or implement the operator role."
+      )
+    }
+    if code == TypeDiagnosticCode.InvalidUnaryOperator {
+      return This.typeSpec(
+        code,
+        2,
+        "invalid unary operator",
+        "unary operator '",
+        "' has no compatible operand type",
+        "Use an operand supported by this unary operator."
+      )
+    }
+    if code == TypeDiagnosticCode.InvalidAssignment {
+      return This.typeSpec(
+        code,
+        3,
+        "invalid assignment target",
+        "assignment operator '",
+        "' has no writable target",
+        "Assign to a mutable local, field, index, or mutable reference."
+      )
+    }
+    if code == TypeDiagnosticCode.UnresolvedNodeType {
+      return This.typeSpec(
+        code,
+        101,
+        "unresolved node type",
+        "unable to resolve a concrete type for '",
+        "'",
+        "Add a target type or make the expression type unambiguous."
+      )
+    }
+    if code == TypeDiagnosticCode.UnresolvedMemberCall {
+      return This.typeSpec(
+        code,
+        104,
+        "unresolved member call",
+        "unresolved member call '",
+        "'",
+        "Check the receiver type, imported extensions, arguments, and visibility."
+      )
+    }
+    if code == TypeDiagnosticCode.UnresolvedMember {
+      return This.typeSpec(
+        code,
+        105,
+        "unresolved member",
+        "unresolved member '",
+        "'",
+        "Check the receiver type, field/property name, and visibility."
+      )
+    }
+    if code == TypeDiagnosticCode.UnresolvedDeclaration {
+      return This.typeSpec(
+        code,
+        201,
+        "unresolved declaration",
+        "unresolved declaration symbol '",
+        "'",
+        "Declare or import the symbol before it is used."
+      )
+    }
+    if code == TypeDiagnosticCode.DuplicateDeclaration {
+      return This.typeSpec(
+        code,
+        202,
+        "duplicate declaration",
+        "duplicate declaration symbol '",
+        "'",
+        "Rename one declaration or move it to a different owner/module."
+      )
+    }
+    if code == TypeDiagnosticCode.DuplicateBinding {
+      return This.typeSpec(
+        code,
+        302,
+        "duplicate binding",
+        "duplicate binding '",
+        "' in lexical scope",
+        "Rename the local or remove the duplicate declaration."
+      )
+    }
+    if code == TypeDiagnosticCode.AmbiguousOverload {
+      return This.typeSpec(
+        code,
+        401,
+        "ambiguous overload",
+        "call to '",
+        "' matches multiple overloads",
+        "Add explicit argument or generic types to select one overload."
+      )
+    }
+    if code == TypeDiagnosticCode.GenericMismatch {
+      return This.typeSpec(
+        code,
+        402,
+        "generic mismatch",
+        "generic arguments do not satisfy '",
+        "'",
+        "Check generic arity, bounds, and inferred argument types."
+      )
+    }
+    return This.typeSpec(
+      TypeDiagnosticCode.Unknown,
+      9999,
+      "unknown type diagnostic",
+      "unable to type expression '",
+      "'",
+      "Report this compiler diagnostic with a minimal source example."
+    )
+  }
+
+  pub literal(code: LiteralDiagnosticCode) -> DiagnosticSpec {
+    if code == LiteralDiagnosticCode.NoneWithoutOptionTarget {
+      return This.literalSpec(code, 1, "none requires Option target", "none literal requires Option<T> target type")
+    }
+    if code == LiteralDiagnosticCode.UnclearEmptyArray {
+      return This.literalSpec(code, 2, "unclear empty collection", "empty array literal requires target type or clear context")
+    }
+    if code == LiteralDiagnosticCode.UnclearMapLiteral {
+      return This.literalSpec(code, 3, "unclear map literal", "map/object literal requires quoted keys or target type")
+    }
+    if code == LiteralDiagnosticCode.DuplicateRecordField {
+      return This.literalSpec(code, 4, "duplicate record field", "record literal contains duplicate field")
+    }
+    if code == LiteralDiagnosticCode.MapKeyMismatch {
+      return This.literalSpec(code, 5, "map key mismatch", "map literal key does not match target key type")
+    }
+    if code == LiteralDiagnosticCode.ByteLiteralOverflow {
+      return This.literalSpec(code, 6, "byte literal overflow", "byte literal is outside byte range 0..255")
+    }
+    if code == LiteralDiagnosticCode.IntegerLiteralOverflow {
+      return This.literalSpec(code, 7, "integer literal overflow", "integer literal is outside target integer range")
+    }
+    if code == LiteralDiagnosticCode.InvalidLiteralTarget {
+      return This.literalSpec(code, 8, "invalid literal target", "literal target type is not valid for this literal kind")
+    }
+    return This.literalSpec(code, 9999, "unknown literal diagnostic", "unknown literal diagnostic")
+  }
+
+  pub function(code: FunctionDiagnosticCode) -> DiagnosticSpec {
+    if code == FunctionDiagnosticCode.MissingExpressionType {
+      return This.functionSpec(
+        code,
+        1,
+        "missing expression return type",
+        "expression body does not produce a concrete return type"
+      )
+    }
+    if code == FunctionDiagnosticCode.MissingReturn {
+      return This.functionSpec(
+        code,
+        2,
+        "missing return",
+        "function body does not return the declared value type"
+      )
+    }
+    if code == FunctionDiagnosticCode.BlockReturnInferenceRequiresType {
+      return This.functionSpec(
+        code,
+        3,
+        "block return inference requires type",
+        "block body with explicit return requires a declared return type"
+      )
+    }
+    return This.functionSpec(
+      code,
+      9999,
+      "unknown function diagnostic",
+      "unable to validate function return behavior"
+    )
+  }
+
+  pub literalKind(code: string) -> LiteralDiagnosticCode {
+    if code == "QTLIT0001" { return LiteralDiagnosticCode.NoneWithoutOptionTarget }
+    if code == "QTLIT0002" { return LiteralDiagnosticCode.UnclearEmptyArray }
+    if code == "QTLIT0003" { return LiteralDiagnosticCode.UnclearMapLiteral }
+    if code == "QTLIT0004" { return LiteralDiagnosticCode.DuplicateRecordField }
+    if code == "QTLIT0005" { return LiteralDiagnosticCode.MapKeyMismatch }
+    if code == "QTLIT0006" { return LiteralDiagnosticCode.ByteLiteralOverflow }
+    if code == "QTLIT0007" { return LiteralDiagnosticCode.IntegerLiteralOverflow }
+    if code == "QTLIT0008" { return LiteralDiagnosticCode.InvalidLiteralTarget }
+    return LiteralDiagnosticCode.Unknown
+  }
+
+  typeSpec(
+    kind: TypeDiagnosticCode,
+    numeric: i64,
+    title: string,
+    prefix: string,
+    suffix: string,
+    help: string
+  ) -> DiagnosticSpec {
+    return DiagnosticSpec {
+      code: DiagnosticCode(This.typeCode(kind, numeric), "type", numeric)
+      domain: DiagnosticDomain.TypeSystem
+      severity: DiagnosticSeverity.Error
+      title
+      messagePrefix: prefix
+      messageSuffix: suffix
+      help
+      documentation: "diagnostics/type/{numeric}"
+    }
+  }
+
+  literalSpec(
+    kind: LiteralDiagnosticCode,
+    numeric: i64,
+    title: string,
+    message: string
+  ) -> DiagnosticSpec {
+    return DiagnosticSpec {
+      code: DiagnosticCode(This.literalCode(kind, numeric), "literal", numeric)
+      domain: DiagnosticDomain.Literal
+      severity: DiagnosticSeverity.Error
+      title
+      messagePrefix: message
+      help: "Add an explicit compatible target type or correct the literal."
+      documentation: "diagnostics/literal/{numeric}"
+    }
+  }
+
+  functionSpec(
+    kind: FunctionDiagnosticCode,
+    numeric: i64,
+    title: string,
+    message: string
+  ) -> DiagnosticSpec {
+    return DiagnosticSpec {
+      code: DiagnosticCode(This.functionCode(kind, numeric), "function", numeric)
+      domain: DiagnosticDomain.TypeSystem
+      severity: DiagnosticSeverity.Error
+      title
+      messagePrefix: message
+      help: "Declare the return type or return a value compatible with it."
+      documentation: "diagnostics/function/{numeric}"
+    }
+  }
+
+  typeCode(kind: TypeDiagnosticCode, numeric: i64) -> string {
+    if kind == TypeDiagnosticCode.Unknown {
+      return "QTTYPE9999"
+    }
+    if numeric < 10 { return "QTTYPE000{numeric}" }
+    if numeric < 100 { return "QTTYPE00{numeric}" }
+    if numeric < 1000 { return "QTTYPE0{numeric}" }
+    return "QTTYPE{numeric}"
+  }
+
+  literalCode(kind: LiteralDiagnosticCode, numeric: i64) -> string {
+    if kind == LiteralDiagnosticCode.Unknown {
+      return "QTLIT9999"
+    }
+    if numeric < 10 { return "QTLIT000{numeric}" }
+    if numeric < 100 { return "QTLIT00{numeric}" }
+    if numeric < 1000 { return "QTLIT0{numeric}" }
+    return "QTLIT{numeric}"
+  }
+
+  functionCode(kind: FunctionDiagnosticCode, numeric: i64) -> string {
+    if kind == FunctionDiagnosticCode.Unknown {
+      return "QTFN9999"
+    }
+    if numeric < 10 { return "QTFN000{numeric}" }
+    if numeric < 100 { return "QTFN00{numeric}" }
+    if numeric < 1000 { return "QTFN0{numeric}" }
+    return "QTFN{numeric}"
+  }
+}

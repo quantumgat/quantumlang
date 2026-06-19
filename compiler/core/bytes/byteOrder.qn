@@ -1,0 +1,12 @@
+pub enum ByteOrder {
+  LittleEndian
+  BigEndian
+  NativeEndian
+}
+
+impl view ByteOrder {
+  pub little => this == ByteOrder.LittleEndian
+  pub big => this == ByteOrder.BigEndian
+  pub native => this == ByteOrder.NativeEndian
+  pub explicit => native == false
+}

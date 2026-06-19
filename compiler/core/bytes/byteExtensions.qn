@@ -1,0 +1,11 @@
+pub extend bytes {
+  length() -> usize
+}
+
+pub extend BytesView {
+  length() -> usize
+}
+
+pub extend BytesMutView {
+  length() -> usize
+}

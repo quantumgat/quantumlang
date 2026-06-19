@@ -1,0 +1,58 @@
+import core::{FileId}
+import source::{*}
+pub SourceModelProof {
+  sourceFileCarriesIdentity: bool
+  sourceTextCarriesFingerprint: bool
+  sourceSpanCarriesFile: bool
+  lineMapUsesByteOffsets: bool
+  sourceRulesValid: bool
+  valid: bool
+}
+
+pub sourceModelProof() -> SourceModelProof {
+  let text = SourceText("println(\"hi\")", 13, 11, 22)
+  let file = SourceFile(FileId(1, 2, 7), "main.qn", text.fingerprintHigh, text.fingerprintLow)
+  let span = SourceSpan(file.id, 0, 7)
+  let lineMap = LineMap(file.id, 1)
+  let positionRule = SourcePositionRule()
+  let fingerprintRule = SourceFingerprintRule()
+
+  let sourceFileCarriesIdentity = file.id.valid &&
+    file.id.id.localHash == 7 &&
+    file.path != "" &&
+    file.textHashHigh == 11 &&
+    file.textHashLow == 22
+
+  let sourceTextCarriesFingerprint = text.byteLength == 13 &&
+    text.fingerprintHigh == 11 &&
+    text.fingerprintLow == 22
+
+  let spanLength = span.length
+  let spanEmpty = span.empty
+  let sourceSpanCarriesFile = span.fileId == file.id &&
+    spanLength == 7 &&
+    !spanEmpty
+
+  let lineMapUsesByteOffsets = lineMap.fileId == file.id &&
+    lineMap.byteOffsetColumn &&
+    lineMap.displayColumnComputedLate
+
+  let sourceRulesValid = positionRule.valid &&
+    positionRule.diagnosticLabelsUseSourceSpan &&
+    fingerprintRule.usedForCacheKeys
+
+  let valid = sourceFileCarriesIdentity &&
+    sourceTextCarriesFingerprint &&
+    sourceSpanCarriesFile &&
+    lineMapUsesByteOffsets &&
+    sourceRulesValid
+
+  return SourceModelProof {
+    sourceFileCarriesIdentity: sourceFileCarriesIdentity,
+    sourceTextCarriesFingerprint: sourceTextCarriesFingerprint,
+    sourceSpanCarriesFile: sourceSpanCarriesFile,
+    lineMapUsesByteOffsets: lineMapUsesByteOffsets,
+    sourceRulesValid: sourceRulesValid,
+    valid: valid,
+  }
+}

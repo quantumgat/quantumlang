@@ -1,0 +1,51 @@
+import typeSystem::{*}
+pub LiteralDiagnosticProof {
+  targetDiagnostics: bool
+  duplicateFieldDiagnostic: bool
+  mapKeyDiagnostic: bool
+  byteOverflowDiagnostic: bool
+  integerOverflowDiagnostic: bool
+  valid: bool
+}
+
+pub literalDiagnosticProof() -> LiteralDiagnosticProof {
+  let empty = LiteralTargetContext("", false, false)
+  let noneMiss = empty.resolve(TypeLiteralKind.None)
+  let arrayMiss = empty.resolve(TypeLiteralKind.Vec)
+  let mapMiss = empty.resolve(TypeLiteralKind.Map)
+
+  let noneDiagnostic = literalTargetDiagnostic(noneMiss)
+  let arrayDiagnostic = literalTargetDiagnostic(arrayMiss)
+  let mapDiagnostic = literalTargetDiagnostic(mapMiss)
+  let duplicateDiagnostic = duplicateRecordFieldDiagnostic(true)
+  let keyDiagnostic = mapKeyMismatchDiagnostic(true)
+  let byteDiagnostic = byteLiteralOverflowDiagnostic(256)
+  let integerDiagnostic = integerLiteralOverflowDiagnostic(true)
+
+  let targetDiagnostics = noneDiagnostic.code == "QTLIT0001" &&
+    arrayDiagnostic.code == "QTLIT0002" &&
+    mapDiagnostic.code == "QTLIT0003"
+
+  let duplicateFieldDiagnostic = duplicateDiagnostic.code == "QTLIT0004"
+
+  let mapKeyDiagnostic = keyDiagnostic.code == "QTLIT0005"
+
+  let byteOverflowDiagnostic = byteDiagnostic.code == "QTLIT0006"
+
+  let integerOverflowDiagnostic = integerDiagnostic.code == "QTLIT0007"
+
+  let valid = targetDiagnostics &&
+    duplicateFieldDiagnostic &&
+    mapKeyDiagnostic &&
+    byteOverflowDiagnostic &&
+    integerOverflowDiagnostic
+
+  return LiteralDiagnosticProof {
+    targetDiagnostics: targetDiagnostics,
+    duplicateFieldDiagnostic: duplicateFieldDiagnostic,
+    mapKeyDiagnostic: mapKeyDiagnostic,
+    byteOverflowDiagnostic: byteOverflowDiagnostic,
+    integerOverflowDiagnostic: integerOverflowDiagnostic,
+    valid: valid,
+  }
+}

@@ -1,0 +1,186 @@
+import core::{Arena, CompilerId, DeclarationId, Slice}
+
+pub DeclarationArena {
+  records: Arena<DeclarationRecord> = Arena<DeclarationRecord>()
+  recordValues: Vec<DeclarationRecord> = []
+  ids: Slice<DeclarationId> = []
+  publicIds: Slice<DeclarationId> = []
+  moduleRecords: Slice<DeclarationRecord> = []
+  typeRecords: Slice<DeclarationRecord> = []
+  implRecords: Slice<DeclarationRecord> = []
+  viewRecords: Slice<DeclarationRecord> = []
+  roleRecords: Slice<DeclarationRecord> = []
+  functionRecords: Slice<DeclarationRecord> = []
+  importRecords: Slice<DeclarationRecord> = []
+  contextRecords: Slice<DeclarationRecord> = []
+  extractRecords: Slice<DeclarationRecord> = []
+  extendRecords: Slice<DeclarationRecord> = []
+  parserProduced: bool = false
+  parserOwned: bool = false
+  runtimeBridge: bool = false
+  parserRowsBacked: bool = false
+  parserSamplesReady: bool = false
+  deterministic: bool = true
+}
+
+impl DeclarationArena {
+  pub DeclarationArena(totalCount: i64, publicCount: i64) =
+    This {
+      records: Arena(totalCount)
+      ids: Slice(totalCount)
+      publicIds: Slice(publicCount)
+    }
+
+  pub parser(totalCount: i64, publicCount: i64) =
+    This {
+      records: Arena(totalCount)
+      ids: Slice(totalCount)
+      publicIds: Slice(publicCount)
+      parserProduced: true
+    }
+
+  pub owned(totalCount: i64, publicCount: i64, owner: CompilerId, generation: u64) =
+    This {
+      records: Arena(totalCount, owner, generation)
+      ids: Slice(totalCount, owner, generation)
+      publicIds: Slice(publicCount, owner, generation)
+    }
+
+  pub fromParserRows(rows: DeclarationParserRows) -> This {
+    let batch = DeclarationRecordBatch.fromRows(rows)
+    return This.fromBatch(batch)
+  }
+
+  pub fromBatch(batch: DeclarationRecordBatch) -> This {
+    return This.fromRecordRows(
+      batch.totalCount,
+      batch.declarationIds,
+      batch.publicDeclarationIds,
+      batch.recordRows,
+      batch.realParserRows,
+      batch.bridgedRuntimeRows,
+      batch.rows.valid,
+      batch.samplesReady && batch.recordRowsReady
+    )
+  }
+
+  pub fromRecordRows(
+    totalCount: i64,
+    declarationIds: Slice<DeclarationId>,
+    publicDeclarationIds: Slice<DeclarationId>,
+    recordRows: DeclarationRecordRows,
+    parserOwned: bool,
+    runtimeBridge: bool,
+    rowsValid: bool,
+    samplesReady: bool
+  ) =
+    This {
+      records: Arena(totalCount)
+      ids: declarationIds
+      publicIds: publicDeclarationIds
+      moduleRecords: recordRows.moduleRecords
+      typeRecords: recordRows.typeRecords
+      implRecords: recordRows.implRecords
+      viewRecords: recordRows.viewRecords
+      roleRecords: recordRows.roleRecords
+      functionRecords: recordRows.functionRecords
+      importRecords: recordRows.importRecords
+      contextRecords: recordRows.contextRecords
+      extractRecords: recordRows.extractRecords
+      extendRecords: recordRows.extendRecords
+      parserProduced: true
+      parserOwned
+      runtimeBridge
+      parserRowsBacked: rowsValid
+      parserSamplesReady: samplesReady
+    }
+
+  pub fromParserRows(rows: DeclarationParserRows, samples: DeclarationParserRecordSamples) -> This {
+    let batch = DeclarationRecordBatch.fromRowsAndSamples(rows, samples)
+    return This.fromBatch(batch)
+  }
+
+  pub attachRecordValues(values: Vec<DeclarationRecord>) {
+    recordValues = values
+  }
+}
+
+impl view DeclarationArena {
+  pub count: i64 => records.count
+
+  pub valueCount: i64 => recordValues.count
+
+  pub publicCount: i64 => publicIds.count
+
+  pub declarationIds: Slice<DeclarationId> => ids
+
+  pub publicDeclarationIds: Slice<DeclarationId> => publicIds
+
+  pub categoryRecordCount: i64 =>
+    moduleRecords.count +
+    typeRecords.count +
+    implRecords.count +
+    viewRecords.count +
+    roleRecords.count +
+    functionRecords.count +
+    importRecords.count +
+    contextRecords.count +
+    extractRecords.count +
+    extendRecords.count
+
+  pub empty: bool => count == 0
+
+  pub present: bool => count > 0
+
+  pub recordsAligned: bool =>
+    records.count == ids.count &&
+    ids.count == count &&
+    categoryRecordCount == count
+
+  pub valuesAligned: bool =>
+    parserOwned == false ||
+    valueCount == count
+
+  pub categoryRangesValid: bool =>
+    moduleRecords.valid &&
+    typeRecords.valid &&
+    implRecords.valid &&
+    viewRecords.valid &&
+    roleRecords.valid &&
+    functionRecords.valid &&
+    importRecords.valid &&
+    contextRecords.valid &&
+    extractRecords.valid &&
+    extendRecords.valid
+
+  pub publicWithinArena: bool => publicCount >= 0 && publicCount <= count
+
+  pub parserBacked: bool =>
+    parserProduced &&
+    (parserOwned || runtimeBridge) &&
+    parserRowsBacked &&
+    parserSamplesReady
+
+  pub realParserRows: bool => parserBacked && parserOwned && runtimeBridge == false
+
+  pub runtimeBridgeRows: bool => parserBacked && runtimeBridge && parserOwned == false
+
+  pub rangesValid: bool =>
+    records.start >= 0 &&
+    records.count >= 0 &&
+    ids.start >= 0 &&
+    ids.count >= 0 &&
+    publicIds.start >= 0 &&
+    publicIds.count >= 0
+
+  pub valid: bool =>
+    deterministic &&
+    rangesValid &&
+    categoryRangesValid &&
+    records.capacity >= 0 &&
+    records.capacity >= records.count &&
+    recordsAligned &&
+    valuesAligned &&
+    publicWithinArena &&
+    parserBacked
+}

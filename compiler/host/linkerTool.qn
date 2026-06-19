@@ -1,0 +1,19 @@
+pub LinkerTool {
+  executable: string
+  targetTriple: string
+  responseFiles: bool = true
+  deterministic: bool = true
+}
+
+impl LinkerTool {
+  pub LinkerTool(executable: string, targetTriple: string) =
+    This { executable, targetTriple }
+}
+
+impl view LinkerTool {
+  pub valid: bool =>
+    executable != "" &&
+    targetTriple != "" &&
+    responseFiles &&
+    deterministic
+}

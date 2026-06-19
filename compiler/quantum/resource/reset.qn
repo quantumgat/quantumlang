@@ -1,0 +1,29 @@
+pub QuantumReset {
+  requiredBeforeRelease: bool
+  performed: bool
+  diagnosticCode: string
+  valid: bool
+}
+
+impl QuantumReset {
+  pub QuantumReset(requiredBeforeRelease: bool, performed: bool) =
+    if requiredBeforeRelease && !performed {
+      This {
+        requiredBeforeRelease
+        performed
+        diagnosticCode: "QTQUANTUM0004"
+        valid: false
+      }
+    } else {
+      This {
+        requiredBeforeRelease
+        performed
+        diagnosticCode: ""
+        valid: true
+      }
+    }
+}
+
+impl view QuantumReset {
+  pub satisfied => valid && performed
+}

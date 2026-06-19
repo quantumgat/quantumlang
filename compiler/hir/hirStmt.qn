@@ -1,0 +1,53 @@
+pub HirStmt {
+  id: i64
+  kind: string
+  sourceNodeId: i64
+  controlRelevant: bool
+  diagnosticCode: string = ""
+}
+
+impl HirStmt {
+  pub HirStmt(id: i64, kind: string, sourceNodeId: i64, controlRelevant: bool) =
+    This { id, kind, sourceNodeId, controlRelevant }
+
+  pub expression(id: i64, sourceNodeId: i64) =
+    This {
+      id
+      kind: "expr"
+      sourceNodeId
+      controlRelevant: false
+    }
+
+  pub branch(id: i64, kind: string, sourceNodeId: i64) =
+    This {
+      id
+      kind
+      sourceNodeId
+      controlRelevant: true
+    }
+
+  pub invalid(id: i64, kind: string) =
+    This {
+      id
+      kind
+      sourceNodeId: -1
+      controlRelevant: false
+      diagnosticCode: "QHIR0501"
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QHIR0501"
+    }
+}
+
+impl view HirStmt {
+  pub valid => diagnosticCode == "" && validShape
+  pub validShape => id >= 0 && kind != ""
+  pub branchLike => kind == "if" || kind == "match" || kind == "loop"
+  pub returnLike => kind == "return" || kind == "require"
+  pub controlFlow => controlRelevant || branchLike || returnLike
+  pub sourceBacked => sourceNodeId >= 0
+  pub lowerable => valid
+  pub debugName => "hir.stmt.{id}.{kind}"
+}

@@ -1,0 +1,57 @@
+pub ByteContract {
+  literalBytes: bool = true
+  listBytes: bool = true
+  emptyBytes: bool = true
+  zeroCopyViews: bool = true
+  checkedCursor: bool = true
+  checkedBuffer: bool = true
+  fixedWidthIntegers: bool = true
+  wideIntegers: bool = true
+  floatingPoint: bool = true
+  variableIntegers: bool = true
+  fixedHashes: bool = true
+  largeStreams: bool = true
+  chunkedStreams: bool = true
+  endianAware: bool = true
+  codecRoles: bool = true
+  nativeBackendOnly: bool = true
+  dynamicDispatch: bool = false
+  reflection: bool = false
+}
+
+impl view ByteContract {
+  pub literals =>
+    literalBytes &&
+    listBytes &&
+    emptyBytes
+
+  pub io =>
+    zeroCopyViews &&
+    checkedCursor &&
+    checkedBuffer
+
+  pub numeric =>
+    fixedWidthIntegers &&
+    wideIntegers &&
+    floatingPoint &&
+    variableIntegers &&
+    endianAware
+
+  pub framing =>
+    fixedHashes &&
+    largeStreams &&
+    chunkedStreams
+
+  pub hotPath =>
+    nativeBackendOnly &&
+    dynamicDispatch == false &&
+    reflection == false
+
+  pub valid =>
+    literals &&
+    io &&
+    numeric &&
+    framing &&
+    codecRoles &&
+    hotPath
+}

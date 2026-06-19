@@ -1,0 +1,43 @@
+pub ExportSurfaceProduct {
+  moduleId: StableId
+  key: QueryKey
+  astFingerprint: Fingerprint
+  surfaceFingerprint: Fingerprint
+  exportedSymbolCount: usize
+  reexportCount: usize
+  hiddenSymbolCount: usize
+  schemaVersion: u64 = 1
+}
+
+impl ExportSurfaceProduct {
+  pub init(
+    moduleId: StableId,
+    astFingerprint: Fingerprint,
+    surfaceFingerprint: Fingerprint,
+    exportedSymbolCount: usize,
+    reexportCount: usize,
+    hiddenSymbolCount: usize
+  ) =
+    This {
+      moduleId
+      key: QueryKey.exportSurface(moduleId)
+      astFingerprint
+      surfaceFingerprint
+      exportedSymbolCount
+      reexportCount
+      hiddenSymbolCount
+    }
+
+  pub productFingerprint() =
+    ProductFingerprint(astFingerprint, surfaceFingerprint)
+
+  pub publicApiChanged(previous: ExportSurfaceProduct) =
+    surfaceFingerprint.high != previous.surfaceFingerprint.high ||
+    surfaceFingerprint.low != previous.surfaceFingerprint.low
+}
+
+impl view ExportSurfaceProduct {
+  pub replayable => surfaceFingerprint.nonzero
+  pub exportsAnything => exportedSymbolCount > 0 || reexportCount > 0
+  pub hidesSymbols => hiddenSymbolCount > 0
+}

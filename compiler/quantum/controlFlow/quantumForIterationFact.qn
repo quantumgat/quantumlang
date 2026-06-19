@@ -1,0 +1,42 @@
+pub QuantumForIterationFact {
+  sourceType: string
+  elementType: string
+  qregIteration: bool
+  borrowPerIteration: bool
+  staticTripCount: i64
+  diagnosticCode: string
+  valid: bool
+}
+
+impl QuantumForIterationFact {
+  pub QuantumForIterationFact(sourceType: string, elementType: string, staticTripCount: i64) {
+    let qregIteration = sourceType == "qreg" && elementType == "qubit"
+    let valid = qregIteration && staticTripCount >= 0
+
+    if valid {
+      return This {
+        sourceType
+        elementType
+        qregIteration: true
+        borrowPerIteration: true
+        staticTripCount
+        diagnosticCode: ""
+        valid: true
+      }
+    }
+
+    This {
+      sourceType
+      elementType
+      qregIteration
+      borrowPerIteration: false
+      staticTripCount
+      diagnosticCode: "QTQUANTUM0202"
+      valid: false
+    }
+  }
+}
+
+impl view QuantumForIterationFact {
+  pub qregSafe => qregIteration && borrowPerIteration
+}

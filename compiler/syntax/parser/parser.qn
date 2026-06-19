@@ -1,0 +1,54 @@
+import core::{FileId}
+import source::{SourceSpan}
+
+pub Parser {
+  cursor: i64
+  fileId: FileId = {}
+  tokenCount: i64
+  recovered: bool
+}
+
+pub ParseResult {
+  root: AstNode
+  diagnostics: i64
+  valid: bool
+}
+
+impl Parser {
+  pub Parser(fileId: FileId, tokenCount: i64) =
+    This {
+      cursor: 0
+      fileId
+      tokenCount
+      recovered: false
+    }
+
+  pub Parser(fileId: u64, tokenCount: i64) =
+    This(FileId(0, 0, fileId), tokenCount)
+
+  pub parseModule() -> ParseResult {
+    let root = AstNode(1, AstNodeKind.Module, SourceSpan(fileId, 0, tokenCount), 0)
+    return ParseResult(root, 0, true)
+  }
+}
+
+impl ParseResult {
+  pub ParseResult(root: AstNode, diagnostics: i64, valid: bool) =
+    This { root, diagnostics, valid }
+}
+
+impl view Parser {
+  pub atStart => cursor == 0
+  pub hasTokens => tokenCount > 0
+  pub valid => fileId.valid && cursor >= 0 && tokenCount >= 0 && cursor <= tokenCount
+  pub atEnd => cursor >= tokenCount
+  pub canRead => atEnd == false
+  pub fileKey => fileId.id.value
+}
+
+impl view ParseResult {
+  pub ok => valid && diagnostics == 0
+  pub failed => ok == false
+  pub diagnosticClean => diagnostics == 0
+  pub hasRoot => root.valid
+}

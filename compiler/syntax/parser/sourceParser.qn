@@ -1,0 +1,1345 @@
+import source::{SourceSpan}
+import syntax::{IdentifierText, TokenRole}
+import syntax::parser::sourceAnalysis::{nodeKindForToken, semanticKindForToken, inferredTypeForToken}
+import syntax::parser::sourceAnalysis::{nextIsCallOpen, callOpenIndex, genericArgumentsAt, callArgumentsAt}
+import syntax::parser::sourceAnalysis::{tokenText, nextStartsType, declarationLikeCall}
+
+pub SourceParser {
+  input: LexProduct
+  modulePath: string = "<source>"
+}
+
+impl SourceParser {
+  pub SourceParser(input: LexProduct) =
+    This { input }
+
+  pub SourceParser(input: LexProduct, modulePath: string) =
+    This { input, modulePath }
+
+  pub parse() -> AstProduct {
+    let fileId = input.fileId
+    let sourceLength = input.sourceLength
+    let tokenCount = input.tokenCount
+    let result = AstProduct(fileId)
+    let rootSpan = SourceSpan(fileId, 0, sourceLength)
+    let root = AstNode(1, AstNodeKind.Module, rootSpan, tokenCount)
+    root.text = modulePath
+    result.addNode(root)
+    result.setRoot(root.stableId)
+    result.addDeclaration(AstDeclaration(
+      AstDeclarationKind.Module,
+      modulePath,
+      modulePath,
+      rootSpan,
+      AstDeclarationVisibility.Public
+    ))
+
+    let index: i64 = 0
+    let blockDepth: i64 = 0
+    let parenDepth: i64 = 0
+    let behaviorOwner = ""
+    let pendingBehaviorOwner = ""
+    let behaviorView = false
+    let pendingBehaviorView = false
+    let behaviorVisibility = AstDeclarationVisibility.Private
+    let pendingBehaviorVisibility = AstDeclarationVisibility.Private
+    let behaviorDepth: i64 = -1
+    let typeOwner = ""
+    let pendingTypeOwner = ""
+    let typeEnum = false
+    let pendingTypeEnum = false
+    let typeDepth: i64 = -1
+    while index < tokenCount {
+      let token = input.tokenAt(index)
+      let kind = nodeKindForToken(input, index)
+      let node = AstNode.token(
+        index + 2,
+        kind,
+        token.span,
+        nodeTextForToken(input, index),
+        semanticKindForToken(input, index),
+        inferredTypeForToken(input, index)
+      )
+      let keywordCallable =
+        token.kind.keyword == KeywordKind.Module ||
+        token.kind.keyword == KeywordKind.Private ||
+        token.kind.keyword == KeywordKind.Loop ||
+        token.kind.keyword == KeywordKind.None ||
+        token.kind.keyword == KeywordKind.Parallel ||
+        token.kind.keyword == KeywordKind.View
+      let keywordPosition =
+        index > 0 &&
+        (input.tokenAt(index - 1).text == "." ||
+         input.tokenAt(index - 1).kind.keyword == KeywordKind.Pub)
+      let callableName =
+        token.kind.identifierToken || (keywordCallable && keywordPosition)
+      if callableName {
+        let receiverPath = memberReceiverPathAt(input, index)
+        node.receiverPath = receiverPath
+        node.receiverName = receiverPathName(receiverPath)
+      }
+      if callableName && nextIsCallOpen(input, index) {
+        node.callArguments = callArgumentsAt(input, index)
+        node.argumentCount = node.callArguments.count
+        node.genericArguments = genericArgumentsAt(input, index)
+        node.genericArgumentCount = node.genericArguments.count
+      }
+      result.addNode(node)
+
+      let visibilityDeclarationStart =
+        index == 0 ||
+        input.tokenAt(index - 1).text == "\n" ||
+        input.tokenAt(index - 1).text == "}" ||
+        tokensSeparatedByLineBreak(input, index - 1, index)
+
+      if blockDepth == 0 &&
+         token.kind.keyword == KeywordKind.Import {
+        result.importCount = result.importCount + 1
+        result.addDeclaration(importDeclarationForToken(input, index, modulePath))
+      } else if blockDepth == 0 &&
+                token.kind.keyword == KeywordKind.Export {
+        let exportCursor = index + 1
+        while exportCursor < tokenCount && input.tokenAt(exportCursor).text != "{" {
+          if declarationStart(input.tokenAt(exportCursor)) {
+            break
+          }
+          exportCursor = exportCursor + 1
+        }
+        if exportCursor < tokenCount && input.tokenAt(exportCursor).text == "{" {
+          exportCursor = exportCursor + 1
+          let exportDepth: i64 = 1
+          while exportCursor < tokenCount && exportDepth > 0 {
+            let exportToken = input.tokenAt(exportCursor)
+            if exportToken.text == "}" {
+              exportDepth = exportDepth - 1
+              exportCursor = exportCursor + 1
+              continue
+            }
+            if exportDepth != 1 {
+              if exportToken.text == "{" {
+                exportDepth = exportDepth + 1
+              }
+              exportCursor = exportCursor + 1
+              continue
+            }
+            if exportToken.text == "," ||
+               exportToken.text == ";" ||
+               exportToken.text == "\n" {
+              exportCursor = exportCursor + 1
+              continue
+            }
+            if !exportPathSegmentToken(exportToken) {
+              exportCursor = exportCursor + 1
+              continue
+            }
+
+            let exportPath = exportToken.text
+            let exportSpan = exportToken.span
+            exportCursor = exportCursor + 1
+            while exportCursor < tokenCount &&
+                  input.tokenAt(exportCursor).text == "." &&
+                  exportCursor + 1 < tokenCount &&
+                  input.tokenAt(exportCursor + 1).text != "*" &&
+                  input.tokenAt(exportCursor + 1).text != "{" {
+              exportCursor = exportCursor + 1
+              let exportSegment = input.tokenAt(exportCursor)
+              if !exportPathSegmentToken(exportSegment) {
+                break
+              }
+              exportPath = "{exportPath}.{exportSegment.text}"
+              exportCursor = exportCursor + 1
+            }
+
+            if exportCursor < tokenCount &&
+               input.tokenAt(exportCursor).text == "." &&
+               exportCursor + 1 < tokenCount &&
+               input.tokenAt(exportCursor + 1).text == "*" {
+              exportCursor = exportCursor + 2
+              let excluded: Vec<string> = []
+              if exportCursor < tokenCount &&
+                 input.tokenAt(exportCursor).kind.keyword == KeywordKind.Except {
+                exportCursor = exportCursor + 1
+                if exportCursor < tokenCount &&
+                   input.tokenAt(exportCursor).text == "{" {
+                  exportCursor = exportCursor + 1
+                  let exceptDepth: i64 = 1
+                  while exportCursor < tokenCount && exceptDepth > 0 {
+                    let exceptToken = input.tokenAt(exportCursor)
+                    if exceptToken.text == "{" {
+                      exceptDepth = exceptDepth + 1
+                    } else if exceptToken.text == "}" {
+                      exceptDepth = exceptDepth - 1
+                      exportCursor = exportCursor + 1
+                      continue
+                    } else if exceptDepth == 1 &&
+                              exportPathSegmentToken(exceptToken) {
+                      excluded.push(exceptToken.text)
+                    }
+                    exportCursor = exportCursor + 1
+                  }
+                }
+              }
+              let declaration = exportDeclaration(
+                modulePath,
+                exportPath,
+                "",
+                "",
+                true,
+                exportSpan
+              )
+              declaration.excludedSymbols = excluded
+              declaration.excludedSymbolCount = excluded.count
+              result.importCount = result.importCount + 1
+              result.addDeclaration(declaration)
+              continue
+            }
+
+            if exportCursor < tokenCount &&
+               input.tokenAt(exportCursor).text == "." &&
+               exportCursor + 1 < tokenCount &&
+               input.tokenAt(exportCursor + 1).text == "{" {
+              exportCursor = exportCursor + 2
+              let listDepth: i64 = 1
+              while exportCursor < tokenCount && listDepth > 0 {
+                let item = input.tokenAt(exportCursor)
+                if item.text == "{" {
+                  listDepth = listDepth + 1
+                } else if item.text == "}" {
+                  listDepth = listDepth - 1
+                  exportCursor = exportCursor + 1
+                  continue
+                } else if listDepth == 1 && exportPathSegmentToken(item) {
+                  let alias = ""
+                  if exportCursor + 2 < tokenCount &&
+                     input.tokenAt(exportCursor + 1).kind.keyword == KeywordKind.As &&
+                     exportPathSegmentToken(input.tokenAt(exportCursor + 2)) {
+                    alias = input.tokenAt(exportCursor + 2).text
+                    exportCursor = exportCursor + 2
+                  }
+                  result.importCount = result.importCount + 1
+                  result.addDeclaration(exportDeclaration(
+                    modulePath,
+                    exportPath,
+                    item.text,
+                    alias,
+                    false,
+                    item.span
+                  ))
+                }
+                exportCursor = exportCursor + 1
+              }
+              continue
+            }
+
+            let selected = ""
+            let targetPath = exportPath
+            let dot = exportPath.lastIndexOf(".")
+            if dot >= 0 && dot + 1 < exportPath.length() {
+              selected = exportPath.slice(dot + 1, exportPath.length()).toString()
+              targetPath = exportPath.slice(0, dot).toString()
+            }
+            result.importCount = result.importCount + 1
+            result.addDeclaration(exportDeclaration(
+              modulePath,
+              targetPath,
+              selected,
+              "",
+              false,
+              exportSpan
+            ))
+          }
+        }
+      } else if blockDepth == 0 &&
+                token.kind.keyword == KeywordKind.Impl {
+        pendingBehaviorOwner = declarationNameToken(input, index).text
+        pendingBehaviorVisibility = visibilityAt(input, index)
+        if nextKeywordIs(input, index, KeywordKind.View) {
+          pendingBehaviorView = true
+          result.viewCount = result.viewCount + 1
+          result.addDeclaration(declarationForToken(input, index, modulePath, AstDeclarationKind.View))
+        } else {
+          pendingBehaviorView = false
+          result.implCount = result.implCount + 1
+          result.addDeclaration(declarationForToken(input, index, modulePath, AstDeclarationKind.Impl))
+        }
+      } else if blockDepth == 0 &&
+                token.kind.keyword == KeywordKind.Role {
+        pendingBehaviorOwner = declarationNameToken(input, index).text
+        pendingBehaviorVisibility = visibilityAt(input, index)
+        pendingBehaviorView = false
+        result.roleCount = result.roleCount + 1
+        result.addDeclaration(declarationForToken(input, index, modulePath, AstDeclarationKind.Role))
+      } else if blockDepth == 0 &&
+                token.kind.keyword == KeywordKind.Context {
+        pendingBehaviorOwner = declarationNameToken(input, index).text
+        pendingBehaviorVisibility = visibilityAt(input, index)
+        pendingBehaviorView = false
+        result.contextCount = result.contextCount + 1
+        result.addDeclaration(declarationForToken(input, index, modulePath, AstDeclarationKind.Context))
+      } else if blockDepth == 0 &&
+                token.kind.keyword == KeywordKind.Extract {
+        pendingBehaviorOwner = declarationNameToken(input, index).text
+        pendingBehaviorVisibility = visibilityAt(input, index)
+        pendingBehaviorView = false
+        result.extractCount = result.extractCount + 1
+        result.addDeclaration(declarationForToken(input, index, modulePath, AstDeclarationKind.Extract))
+      } else if blockDepth == 0 &&
+                token.kind.keyword == KeywordKind.Extend {
+        pendingBehaviorOwner = declarationNameToken(input, index).text
+        pendingBehaviorVisibility = visibilityAt(input, index)
+        pendingBehaviorView = false
+        result.extendCount = result.extendCount + 1
+        let declaration = declarationForToken(
+          input,
+          index,
+          modulePath,
+          AstDeclarationKind.Extend
+        )
+        declaration.roleConformances = roleConformancesAt(input, index)
+        result.addDeclaration(declaration)
+      } else if token.kind.keyword == KeywordKind.Return {
+        result.returnCount = result.returnCount + 1
+      } else if blockDepth == 0 &&
+                token.kind.keyword == KeywordKind.Enum {
+        pendingTypeOwner = declarationNameToken(input, index).text
+        pendingTypeEnum = true
+        result.typeCount = result.typeCount + 1
+        result.addDeclaration(declarationForToken(input, index, modulePath, AstDeclarationKind.Type))
+      } else if blockDepth == 0 &&
+                token.kind.keyword == KeywordKind.Pub &&
+                visibilityDeclarationStart &&
+                !nextKeywordIs(input, index, KeywordKind.Enum) &&
+                nextStartsType(input, index) {
+        pendingTypeOwner = declarationNameToken(input, index).text
+        pendingTypeEnum = false
+        result.typeCount = result.typeCount + 1
+        result.addDeclaration(declarationForToken(input, index, modulePath, AstDeclarationKind.Type))
+      }
+
+      if callableName && nextIsCallOpen(input, index) {
+        result.callCount = result.callCount + 1
+        if parenDepth == 0 &&
+           (blockDepth == 0 ||
+            (behaviorOwner != "" && blockDepth == behaviorDepth)) &&
+           declarationLikeCall(input, index) {
+          result.functionCount = result.functionCount + 1
+          let declarationVisibility = visibilityAt(input, index)
+          let explicitMemberPrivate =
+            index > 0 &&
+            (input.tokenAt(index - 1).kind.keyword == KeywordKind.Private ||
+             input.tokenAt(index - 1).kind.keyword == KeywordKind.Internal)
+          if behaviorOwner != "" &&
+             !explicitMemberPrivate &&
+             declarationVisibility == AstDeclarationVisibility.Private &&
+             (behaviorVisibility == AstDeclarationVisibility.Public ||
+              behaviorVisibility == AstDeclarationVisibility.Exported) {
+            declarationVisibility = AstDeclarationVisibility.Public
+          }
+          let declaration = AstDeclaration(
+            AstDeclarationKind.Function,
+            modulePath,
+            token.text,
+            token.span,
+            declarationVisibility
+          )
+          declaration.genericParameterRows = genericParametersAt(input, index)
+          declaration.genericParameterCount = declaration.genericParameterRows.count
+          declaration.genericParameters = genericParameterNamesAt(input, index)
+          declaration.parameterRows = callableParametersAt(input, index)
+          declaration.parameters = parameterNamesAt(input, index)
+          declaration.returnTypeName = returnTypeNameAt(input, index)
+          if declaration.returnTypeName == "" {
+            declaration.returnTypeName =
+              inferredCallableReturnTypeNameAt(
+                input,
+                index,
+                behaviorOwner
+              )
+          }
+          declaration.ownerTypeName = behaviorOwner
+          if behaviorOwner != "" {
+            declaration.memberKind = "method"
+          }
+          result.addDeclaration(declaration)
+        }
+      } else if token.kind.identifierToken &&
+                typeOwner != "" &&
+                typeEnum &&
+                blockDepth == typeDepth &&
+                parenDepth == 0 {
+        result.functionCount = result.functionCount + 1
+        result.addDeclaration(enumVariantDeclarationForToken(
+          input,
+          index,
+          modulePath,
+          typeOwner
+        ))
+      } else if token.kind.identifierToken &&
+                typeOwner != "" &&
+                blockDepth == typeDepth &&
+                parenDepth == 0 &&
+                nextIsTypeAnnotation(input, index) {
+        result.addDeclaration(memberValueDeclarationForToken(
+          input,
+          index,
+          modulePath,
+          typeOwner,
+          "field"
+        ))
+      } else if token.kind.identifierToken &&
+                behaviorOwner != "" &&
+                behaviorView &&
+                blockDepth == behaviorDepth &&
+                parenDepth == 0 &&
+                propertyDeclarationAt(input, index) {
+        let declaration = memberValueDeclarationForToken(
+          input,
+          index,
+          modulePath,
+          behaviorOwner,
+          "property"
+        )
+        let explicitMemberPrivate =
+          index > 0 &&
+          (input.tokenAt(index - 1).kind.keyword == KeywordKind.Private ||
+           input.tokenAt(index - 1).kind.keyword == KeywordKind.Internal)
+        if !explicitMemberPrivate &&
+           declaration.visibility == AstDeclarationVisibility.Private &&
+           (behaviorVisibility == AstDeclarationVisibility.Public ||
+            behaviorVisibility == AstDeclarationVisibility.Exported) {
+          declaration.visibility = AstDeclarationVisibility.Public
+        }
+        result.addDeclaration(declaration)
+      }
+
+      if token.text == "{" {
+        blockDepth = blockDepth + 1
+        if pendingBehaviorOwner != "" {
+          behaviorOwner = pendingBehaviorOwner
+          behaviorView = pendingBehaviorView
+          behaviorVisibility = pendingBehaviorVisibility
+          behaviorDepth = blockDepth
+          pendingBehaviorOwner = ""
+          pendingBehaviorView = false
+          pendingBehaviorVisibility = AstDeclarationVisibility.Private
+        } else if pendingTypeOwner != "" {
+          typeOwner = pendingTypeOwner
+          typeEnum = pendingTypeEnum
+          typeDepth = blockDepth
+          pendingTypeOwner = ""
+          pendingTypeEnum = false
+        }
+      } else if token.text == "}" {
+        if behaviorDepth == blockDepth {
+          behaviorOwner = ""
+          behaviorView = false
+          behaviorVisibility = AstDeclarationVisibility.Private
+          behaviorDepth = -1
+        }
+        if typeDepth == blockDepth {
+          typeOwner = ""
+          typeEnum = false
+          typeDepth = -1
+        }
+        if blockDepth > 0 {
+          blockDepth = blockDepth - 1
+        }
+      }
+      if token.text == "(" {
+        parenDepth = parenDepth + 1
+      } else if token.text == ")" && parenDepth > 0 {
+        parenDepth = parenDepth - 1
+      }
+
+      index = index + 1
+    }
+
+    return result
+  }
+}
+
+memberReceiverPathAt(input: LexProduct, index: i64) -> Vec<string> {
+  let start = index
+  while start >= 2 && input.tokenAt(start - 1).text == "." {
+    let left = start - 2
+    if input.tokenAt(left).kind.identifierToken {
+      start = left
+    } else if input.tokenAt(left).text == "]" {
+      let open = left
+      let depth: i64 = 0
+      while open >= 0 {
+        let text = input.tokenAt(open).text
+        if text == "]" {
+          depth = depth + 1
+        } else if text == "[" {
+          depth = depth - 1
+          if depth == 0 {
+            break
+          }
+        }
+        open = open - 1
+      }
+      if open <= 0 || !input.tokenAt(open - 1).kind.identifierToken {
+        break
+      }
+      start = open - 1
+    } else {
+      break
+    }
+  }
+  if start < 0 || start == index {
+    return []
+  }
+  let path: Vec<string> = []
+  let cursor = start
+  while cursor < index {
+    let token = input.tokenAt(cursor)
+    if !token.kind.identifierToken {
+      return []
+    }
+    let segment = token.text
+    cursor = cursor + 1
+    if cursor < index && input.tokenAt(cursor).text == "[" {
+      let close = cursor
+      let depth: i64 = 0
+      while close < input.tokenCount {
+        let text = input.tokenAt(close).text
+        if text == "[" {
+          depth = depth + 1
+        } else if text == "]" {
+          depth = depth - 1
+          if depth == 0 {
+            break
+          }
+        }
+        close = close + 1
+      }
+      if close < 0 || close >= index {
+        return []
+      }
+      segment = "{segment}[]"
+      cursor = close + 1
+    }
+    path.push(segment)
+    if cursor < index {
+      if input.tokenAt(cursor).text != "." {
+        return []
+      }
+      cursor = cursor + 1
+    }
+  }
+  return path
+}
+
+receiverPathName(path: Vec<string>) -> string {
+  let result = ""
+  let index: i64 = 0
+  while index < path.count {
+    if result != "" {
+      result = "{result}."
+    }
+    result = "{result}{path[index]}"
+    index = index + 1
+  }
+  return result
+}
+
+nodeTextForToken(input: LexProduct, index: i64) -> string {
+  let token = input.tokenAt(index)
+  if token.kind.keyword == KeywordKind.Let &&
+     index + 1 < input.tokenCount {
+    return input.tokenAt(index + 1).text
+  }
+  let dot = token.text.lastIndexOf(".")
+  if dot >= 0 && dot + 1 < token.text.length() {
+    return token.text.slice(dot + 1, token.text.length()).toString()
+  }
+  return token.text
+}
+
+importDeclarationForToken(
+  input: LexProduct,
+  index: i64,
+  modulePath: string
+) -> AstDeclaration {
+  let nameToken = declarationNameToken(input, index)
+  let alias = importAliasAt(input, index)
+  return AstDeclaration.fromImport(
+    modulePath,
+    nameToken.text,
+    alias,
+    "",
+    false,
+    nameToken.span
+  )
+}
+
+importAliasAt(input: LexProduct, index: i64) -> string {
+  let cursor = index + 1
+  let limit = index + 16
+  while cursor < input.tokenCount && cursor < limit {
+    let token = input.tokenAt(cursor)
+    if token.kind.keyword == KeywordKind.As &&
+       cursor + 1 < input.tokenCount {
+      let alias = input.tokenAt(cursor + 1)
+      if alias.kind.identifierToken {
+        return alias.text
+      }
+      return ""
+    }
+    if cursor > index + 1 && declarationStart(token) {
+      return ""
+    }
+    cursor = cursor + 1
+  }
+  return ""
+}
+
+exportPathSegmentToken(token: SyntaxToken) -> bool {
+  return token.kind.identifierToken ||
+    token.kind.role == TokenRole.PrimitiveType
+}
+
+exportDeclaration(
+  ownerModulePath: string,
+  targetPath: string,
+  selectedSymbol: string,
+  alias: string,
+  wildcard: bool,
+  span: SourceSpan
+) -> AstDeclaration {
+  let declaration = AstDeclaration.fromImport(
+    ownerModulePath,
+    targetPath,
+    alias,
+    selectedSymbol,
+    wildcard,
+    span
+  )
+  declaration.visibility = AstDeclarationVisibility.Exported
+  return declaration
+}
+
+declarationStart(token: SyntaxToken) -> bool {
+  return token.kind.keyword == KeywordKind.Import ||
+    token.kind.keyword == KeywordKind.Export ||
+    token.kind.keyword == KeywordKind.Pub ||
+    token.kind.keyword == KeywordKind.Private ||
+    token.kind.keyword == KeywordKind.Internal ||
+    token.kind.keyword == KeywordKind.Impl ||
+    token.kind.keyword == KeywordKind.Role ||
+    token.kind.keyword == KeywordKind.Context ||
+    token.kind.keyword == KeywordKind.Extract ||
+    token.kind.keyword == KeywordKind.Extend ||
+    token.kind.keyword == KeywordKind.Enum
+}
+
+roleConformancesAt(
+  input: LexProduct,
+  index: i64
+) -> Vec<AstRoleConformance> {
+  let rows: Vec<AstRoleConformance> = []
+  let cursor = index + 1
+  let seenColon = false
+  let visibility = AstRoleVisibility.Private
+  while cursor < input.tokenCount {
+    let token = input.tokenAt(cursor)
+    if token.text == "{" || token.text == "\n" {
+      break
+    }
+    if token.text == ":" {
+      seenColon = true
+      cursor = cursor + 1
+      continue
+    }
+    if !seenColon {
+      cursor = cursor + 1
+      continue
+    }
+    if token.kind.keyword == KeywordKind.Pub {
+      visibility = AstRoleVisibility.Public
+    } else if token.kind.keyword == KeywordKind.Internal {
+      visibility = AstRoleVisibility.Internal
+    } else if token.kind.keyword == KeywordKind.Protected {
+      visibility = AstRoleVisibility.Protected
+    } else if token.kind.keyword == KeywordKind.Private {
+      visibility = AstRoleVisibility.Private
+    } else if token.kind.identifierToken {
+      let roleName = typeNameAt(input, cursor)
+      rows.push(AstRoleConformance {
+        roleName
+        visibility
+        span: token.span
+      })
+      visibility = AstRoleVisibility.Private
+      cursor = cursor + typeNameTokenWidth(input, cursor)
+      continue
+    }
+    cursor = cursor + 1
+  }
+  return rows
+}
+
+typeNameAt(input: LexProduct, index: i64) -> string {
+  let result = input.tokenAt(index).text
+  let cursor = index + 1
+  let depth: i64 = 0
+  while cursor < input.tokenCount {
+    let token = input.tokenAt(cursor)
+    if depth == 0 && (token.text == "," || token.text == "{") {
+      break
+    }
+    result = "{result}{token.text}"
+    if token.text == "<" {
+      depth = depth + 1
+    } else if token.text == ">" && depth > 0 {
+      depth = depth - 1
+    }
+    cursor = cursor + 1
+  }
+  return result
+}
+
+typeNameTokenWidth(input: LexProduct, index: i64) -> i64 {
+  let cursor = index + 1
+  let depth: i64 = 0
+  while cursor < input.tokenCount {
+    let token = input.tokenAt(cursor)
+    if depth == 0 && (token.text == "," || token.text == "{") {
+      break
+    }
+    if token.text == "<" {
+      depth = depth + 1
+    } else if token.text == ">" && depth > 0 {
+      depth = depth - 1
+    }
+    cursor = cursor + 1
+  }
+  return cursor - index
+}
+
+declarationForToken(
+  input: LexProduct,
+  index: i64,
+  modulePath: string,
+  kind: AstDeclarationKind
+) -> AstDeclaration {
+  let nameToken = declarationNameToken(input, index)
+  let declaration = AstDeclaration(
+    kind,
+    modulePath,
+    nameToken.text,
+    nameToken.span,
+    visibilityAt(input, index)
+  )
+  declaration.genericParameterRows = genericParametersAt(input, index)
+  declaration.genericParameterCount = declaration.genericParameterRows.count
+  declaration.genericParameters = genericParameterNamesAt(input, index)
+  return declaration
+}
+
+memberValueDeclarationForToken(
+  input: LexProduct,
+  index: i64,
+  modulePath: string,
+  ownerTypeName: string,
+  memberKind: string
+) -> AstDeclaration {
+  let token = input.tokenAt(index)
+  let declaration = AstDeclaration(
+    AstDeclarationKind.Function,
+    modulePath,
+    token.text,
+    token.span,
+    visibilityAt(input, index)
+  )
+  declaration.returnTypeName = memberValueTypeNameAt(
+    input,
+    index,
+    ownerTypeName
+  )
+  declaration.ownerTypeName = ownerTypeName
+  declaration.memberKind = memberKind
+  return declaration
+}
+
+enumVariantDeclarationForToken(
+  input: LexProduct,
+  index: i64,
+  modulePath: string,
+  ownerTypeName: string
+) -> AstDeclaration {
+  let token = input.tokenAt(index)
+  let declaration = AstDeclaration(
+    AstDeclarationKind.Function,
+    modulePath,
+    token.text,
+    token.span,
+    AstDeclarationVisibility.Public
+  )
+  declaration.returnTypeName = ownerTypeName
+  declaration.ownerTypeName = ownerTypeName
+  declaration.memberKind = "enum-variant"
+  return declaration
+}
+
+nextIsTypeAnnotation(input: LexProduct, index: i64) -> bool {
+  return index + 1 < input.tokenCount &&
+    input.tokenAt(index + 1).text == ":"
+}
+
+propertyDeclarationAt(input: LexProduct, index: i64) -> bool {
+  let token = input.tokenAt(index)
+  if index + 1 >= input.tokenCount ||
+     !token.kind.identifierToken ||
+     token.kind.role == TokenRole.PrimitiveType {
+    return false
+  }
+  if index > 0 {
+    let previous = input.tokenAt(index - 1).text
+    if previous == ":" || previous == "::" {
+      return false
+    }
+  }
+  let next = input.tokenAt(index + 1).text
+  if next == ":" || next == "=>" {
+    return true
+  }
+  return next == "=" &&
+    index + 2 < input.tokenCount &&
+    input.tokenAt(index + 2).text == ">"
+}
+
+memberValueTypeNameAt(
+  input: LexProduct,
+  index: i64,
+  ownerTypeName: string
+) -> string {
+  if index + 1 >= input.tokenCount ||
+     input.tokenAt(index + 1).text != ":" {
+    let inferred = inferredExpressionTypeNameAt(
+      input,
+      index + 1,
+      ownerTypeName
+    )
+    return match inferred == "" {
+      true => "value"
+      false => inferred
+    }
+  }
+
+  let cursor = index + 2
+  let result = ""
+  let depth: i64 = 0
+  while cursor < input.tokenCount {
+    let token = input.tokenAt(cursor)
+    if depth == 0 &&
+       (token.text == "=" || token.text == "=>" ||
+        token.text == "{" || token.text == "}" ||
+        token.text == ",") {
+      break
+    }
+    if depth == 0 && result != "" &&
+       token.text != "<" && token.text != "?" &&
+       token.text != "::" && token.text != "[" {
+      break
+    }
+    result = "{result}{token.text}"
+    if token.text == "<" || token.text == "(" || token.text == "[" {
+      depth = depth + 1
+    } else if (token.text == ">" || token.text == ")" || token.text == "]") &&
+              depth > 0 {
+      depth = depth - 1
+    }
+    cursor = cursor + 1
+  }
+  if result == "" {
+    return "value"
+  }
+  return result
+}
+
+inferredCallableReturnTypeNameAt(
+  input: LexProduct,
+  index: i64,
+  ownerTypeName: string
+) -> string {
+  let cursor = callOpenIndex(input, index)
+  if cursor < 0 {
+    return ""
+  }
+
+  let depth: i64 = 1
+  cursor = cursor + 1
+  while cursor < input.tokenCount && depth > 0 {
+    let token = input.tokenAt(cursor)
+    if token.text == "(" {
+      depth = depth + 1
+    } else if token.text == ")" {
+      depth = depth - 1
+    }
+    cursor = cursor + 1
+  }
+  return inferredExpressionTypeNameAt(input, cursor, ownerTypeName)
+}
+
+inferredExpressionTypeNameAt(
+  input: LexProduct,
+  index: i64,
+  ownerTypeName: string
+) -> string {
+  let cursor = index
+  while cursor < input.tokenCount &&
+        (input.tokenAt(cursor).text == "=" ||
+         input.tokenAt(cursor).text == "=>" ||
+         input.tokenAt(cursor).text == ">" ||
+         input.tokenAt(cursor).text == "\n") {
+    cursor = cursor + 1
+  }
+  if cursor >= input.tokenCount {
+    return ""
+  }
+
+  let token = input.tokenAt(cursor)
+  if token.text == "This" {
+    return ownerTypeName
+  }
+  if token.kind.keyword == KeywordKind.Match {
+    return inferredMatchResultTypeNameAt(input, cursor)
+  }
+  if token.kind.identifierToken &&
+     cursor + 1 < input.tokenCount &&
+     input.tokenAt(cursor + 1).text == "{" {
+    return token.text
+  }
+  if token.kind.identifierToken &&
+     cursor + 1 < input.tokenCount &&
+     input.tokenAt(cursor + 1).text == "(" {
+    if IdentifierText(token.text).isTypeName() {
+      return token.text
+    }
+  }
+
+  let inferred = inferredTypeForToken(input, cursor)
+  if inferred == "operator" || inferred == "callable-result" {
+    return ""
+  }
+  return inferred
+}
+
+inferredMatchResultTypeNameAt(input: LexProduct, index: i64) -> string {
+  let cursor = index
+  while cursor < input.tokenCount &&
+        input.tokenAt(cursor).text != "{" {
+    cursor = cursor + 1
+  }
+  if cursor >= input.tokenCount {
+    return ""
+  }
+
+  let depth: i64 = 1
+  let result = ""
+  cursor = cursor + 1
+  while cursor < input.tokenCount && depth > 0 {
+    let token = input.tokenAt(cursor)
+    if token.text == "{" {
+      depth = depth + 1
+    } else if token.text == "}" {
+      depth = depth - 1
+    } else {
+      let inferred = inferredTypeForToken(input, cursor)
+      if inferred != "" &&
+         inferred != "operator" &&
+         inferred != "callable-result" {
+        if result == "" {
+          result = inferred
+        } else if result != inferred {
+          return ""
+        }
+      }
+    }
+    cursor = cursor + 1
+  }
+  return result
+}
+
+tokensSeparatedByLineBreak(
+  input: LexProduct,
+  leftIndex: i64,
+  rightIndex: i64
+) -> bool {
+  if leftIndex < 0 || rightIndex >= input.tokenCount {
+    return false
+  }
+
+  let leftEnd = input.tokenAt(leftIndex).end
+  let rightStart = input.tokenAt(rightIndex).start
+  let row: i64 = 0
+  while row < input.triviaCount {
+    let trivia = input.trivia.triviaAt(row)
+    if trivia.start > rightStart {
+      return false
+    }
+    if trivia.start >= leftEnd &&
+       trivia.end <= rightStart &&
+       (trivia.linePreserving || trivia.text.contains("\n")) {
+      return true
+    }
+    row = row + 1
+  }
+  return false
+}
+
+declarationNameToken(input: LexProduct, index: i64) -> SyntaxToken {
+  let cursor = index + 1
+  if cursor < input.tokenCount &&
+     (input.tokenAt(cursor).kind.keyword == KeywordKind.View ||
+      input.tokenAt(cursor).text == "view") {
+    cursor = cursor + 1
+  }
+  if cursor < input.tokenCount && input.tokenAt(cursor).text == "<" {
+    cursor = cursor + genericParameterHeaderWidth(input, cursor)
+  }
+  while cursor < input.tokenCount {
+    let token = input.tokenAt(cursor)
+    if token.kind.identifierToken {
+      return token
+    }
+    cursor = cursor + 1
+  }
+  return input.tokenAt(index)
+}
+
+genericParameterCountAt(input: LexProduct, index: i64) -> i64 {
+  return genericParametersAt(input, index).count
+}
+
+genericParameterNamesAt(input: LexProduct, index: i64) -> Vec<string> {
+  let rows = genericParametersAt(input, index)
+  let names: Vec<string> = []
+  let row: i64 = 0
+  while row < rows.count {
+    names.push(rows[row].name)
+    row = row + 1
+  }
+  return names
+}
+
+genericParametersAt(input: LexProduct, index: i64) -> Vec<AstGenericParameter> {
+  let cursor = index
+  while cursor < input.tokenCount && !input.tokenAt(cursor).kind.identifierToken {
+    if input.tokenAt(cursor).text == "<" {
+      break
+    }
+    cursor = cursor + 1
+  }
+  if cursor >= input.tokenCount {
+    return []
+  }
+  if input.tokenAt(cursor).text != "<" {
+    if cursor + 1 >= input.tokenCount || input.tokenAt(cursor + 1).text != "<" {
+      return []
+    }
+    cursor = cursor + 1
+  }
+  if input.tokenAt(cursor).text != "<" {
+    return []
+  }
+
+  cursor = cursor + 1
+  let rows: Vec<AstGenericParameter> = []
+  let depth: i64 = 1
+  let start = cursor
+  while cursor < input.tokenCount && depth > 0 {
+    let token = input.tokenAt(cursor)
+    if token.text == "<" {
+      depth = depth + 1
+    } else if token.text == ">" {
+      depth = depth - 1
+      if depth == 0 && cursor > start {
+        rows.push(genericParameterFromRange(input, start, cursor, rows.count))
+      }
+    } else if depth == 1 && token.text == "," {
+      if cursor > start {
+        rows.push(genericParameterFromRange(input, start, cursor, rows.count))
+      }
+      start = cursor + 1
+    }
+    cursor = cursor + 1
+  }
+  return rows
+}
+
+genericParameterHeaderWidth(input: LexProduct, index: i64) -> i64 {
+  if index >= input.tokenCount || input.tokenAt(index).text != "<" {
+    return 0
+  }
+
+  let cursor = index
+  let depth: i64 = 0
+  while cursor < input.tokenCount {
+    let token = input.tokenAt(cursor)
+    if token.text == "<" {
+      depth = depth + 1
+    } else if token.text == ">" {
+      depth = depth - 1
+      if depth == 0 {
+        return cursor - index + 1
+      }
+    }
+    cursor = cursor + 1
+  }
+  return cursor - index
+}
+
+genericParameterFromRange(
+  input: LexProduct,
+  start: i64,
+  end: i64,
+  position: i64
+) -> AstGenericParameter {
+  let cursor = start
+  let variadic = false
+  if cursor < end && input.tokenAt(cursor).text == "..." {
+    variadic = true
+    cursor = cursor + 1
+  }
+  while cursor < end && !input.tokenAt(cursor).kind.identifierToken {
+    cursor = cursor + 1
+  }
+  if cursor >= end {
+    return AstGenericParameter()
+  }
+
+  let nameToken = input.tokenAt(cursor)
+  let colon: i64 = -1
+  let equal: i64 = -1
+  let depth: i64 = 0
+  let scan = cursor + 1
+  while scan < end {
+    let text = input.tokenAt(scan).text
+    if text == "<" || text == "(" || text == "[" {
+      depth = depth + 1
+    } else if (text == ">" || text == ")" || text == "]") && depth > 0 {
+      depth = depth - 1
+    } else if depth == 0 && text == ":" && colon < 0 {
+      colon = scan
+    } else if depth == 0 && text == "=" {
+      equal = scan
+      break
+    }
+    scan = scan + 1
+  }
+
+  let bounds: Vec<string> = []
+  if colon >= 0 {
+    let boundEnd = match equal >= 0 {
+      true => equal
+      false => end
+    }
+    let boundText = tokenText(input, colon + 1, boundEnd)
+    if boundText != "" {
+      bounds.push(boundText)
+    }
+  }
+
+  let defaultTypeName = ""
+  if equal >= 0 {
+    defaultTypeName = tokenText(input, equal + 1, end)
+  }
+  let last = input.tokenAt(end - 1)
+  return AstGenericParameter {
+    position: position as usize
+    name: nameToken.text
+    bounds
+    defaultTypeName
+    span: SourceSpan(nameToken.span.fileId, nameToken.span.start, last.span.end)
+    variadic
+  }
+}
+
+parameterNamesAt(input: LexProduct, index: i64) -> Vec<string> {
+  let rows = callableParametersAt(input, index)
+  let names: Vec<string> = []
+  let row: i64 = 0
+  while row < rows.count {
+    names.push(rows[row].name)
+    row = row + 1
+  }
+  return names
+}
+
+callableParametersAt(input: LexProduct, index: i64) -> Vec<AstCallableParameter> {
+  let rows: Vec<AstCallableParameter> = []
+  let cursor = callOpenIndex(input, index)
+  if cursor < 0 {
+    return rows
+  }
+  cursor = cursor + 1
+  if cursor < input.tokenCount && input.tokenAt(cursor).text == ")" {
+    return rows
+  }
+  let depth: i64 = 1
+  let angleDepth: i64 = 0
+  let start = cursor
+  while cursor < input.tokenCount && depth > 0 {
+    let token = input.tokenAt(cursor)
+    if token.text == "<" {
+      angleDepth = angleDepth + 1
+    } else if token.text == ">" && angleDepth > 0 {
+      angleDepth = angleDepth - 1
+    } else if angleDepth == 0 &&
+              (token.text == "(" || token.text == "[" || token.text == "{") {
+      depth = depth + 1
+    } else if angleDepth == 0 &&
+              (token.text == ")" || token.text == "]" || token.text == "}") {
+      depth = depth - 1
+      if depth == 0 && cursor > start {
+        rows.push(callableParameterFromRange(input, start, cursor, rows.count))
+      }
+    } else if depth == 1 && angleDepth == 0 && token.text == "," {
+      if cursor > start {
+        rows.push(callableParameterFromRange(input, start, cursor, rows.count))
+      }
+      start = cursor + 1
+    }
+    cursor = cursor + 1
+  }
+  return rows
+}
+
+callableParameterFromRange(
+  input: LexProduct,
+  start: i64,
+  end: i64,
+  position: i64
+) -> AstCallableParameter {
+  let cursor = start
+  let variadic = false
+  if cursor < end && input.tokenAt(cursor).text == "..." {
+    variadic = true
+    cursor = cursor + 1
+  }
+  while cursor < end && !input.tokenAt(cursor).kind.identifierToken {
+    cursor = cursor + 1
+  }
+  if cursor >= end {
+    return AstCallableParameter()
+  }
+
+  let nameToken = input.tokenAt(cursor)
+  let colon: i64 = -1
+  let equal: i64 = -1
+  let depth: i64 = 0
+  let scan = cursor + 1
+  while scan < end {
+    let text = input.tokenAt(scan).text
+    if text == "<" || text == "(" || text == "[" {
+      depth = depth + 1
+    } else if (text == ">" || text == ")" || text == "]") && depth > 0 {
+      depth = depth - 1
+    } else if depth == 0 && text == ":" && colon < 0 {
+      colon = scan
+    } else if depth == 0 && text == "=" {
+      equal = scan
+      break
+    }
+    scan = scan + 1
+  }
+
+  let typeName = ""
+  if colon >= 0 {
+    let typeEnd = match equal >= 0 {
+      true => equal
+      false => end
+    }
+    typeName = tokenText(input, colon + 1, typeEnd)
+  }
+  let defaultValueText = ""
+  if equal >= 0 {
+    defaultValueText = tokenText(input, equal + 1, end)
+  }
+  let last = input.tokenAt(end - 1)
+  return AstCallableParameter {
+    position: position as usize
+    name: nameToken.text
+    typeName
+    defaultValueText
+    span: SourceSpan(nameToken.span.fileId, nameToken.span.start, last.span.end)
+    defaulted: equal >= 0
+    variadic
+  }
+}
+
+returnTypeNameAt(input: LexProduct, index: i64) -> string {
+  let cursor = callOpenIndex(input, index)
+  if cursor < 0 {
+    return ""
+  }
+
+  let depth: i64 = 1
+  cursor = cursor + 1
+  while cursor < input.tokenCount && depth > 0 {
+    let token = input.tokenAt(cursor)
+    if token.text == "(" {
+      depth = depth + 1
+    } else if token.text == ")" {
+      depth = depth - 1
+    }
+    cursor = cursor + 1
+  }
+
+  if cursor < input.tokenCount && input.tokenAt(cursor).text == "->" {
+    cursor = cursor + 1
+  } else {
+    if cursor + 1 >= input.tokenCount ||
+       input.tokenAt(cursor).text != "-" ||
+       input.tokenAt(cursor + 1).text != ">" {
+      return ""
+    }
+    cursor = cursor + 2
+  }
+  let result = ""
+  let genericDepth: i64 = 0
+  while cursor < input.tokenCount {
+    let token = input.tokenAt(cursor)
+    if genericDepth == 0 &&
+       (token.text == "{" ||
+        token.text == "}" ||
+        token.text == "=" ||
+        token.text == "\n") {
+      break
+    }
+    result = "{result}{token.text}"
+    if token.text == "<" {
+      genericDepth = genericDepth + 1
+    } else if token.text == ">" && genericDepth > 0 {
+      genericDepth = genericDepth - 1
+    }
+    cursor = cursor + 1
+  }
+  return result
+}
+
+visibilityAt(input: LexProduct, index: i64) -> AstDeclarationVisibility {
+  if input.tokenAt(index).kind.keyword == KeywordKind.Pub {
+    return AstDeclarationVisibility.Public
+  }
+  if index > 0 && input.tokenAt(index - 1).kind.keyword == KeywordKind.Pub {
+    return AstDeclarationVisibility.Public
+  }
+  if index > 0 && input.tokenAt(index - 1).kind.keyword == KeywordKind.Private {
+    return AstDeclarationVisibility.Private
+  }
+  return AstDeclarationVisibility.Private
+}
+
+nextKeywordIs(input: LexProduct, index: i64, keyword: KeywordKind) -> bool {
+  if index + 1 >= input.tokenCount {
+    return false
+  }
+  if keyword == KeywordKind.View && input.tokenAt(index + 1).text == "view" {
+    return true
+  }
+  return input.tokenAt(index + 1).kind.keyword == keyword
+}

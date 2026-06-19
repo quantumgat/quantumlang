@@ -1,0 +1,6 @@
+pub badPack(ctx: HttpCtx<i64, string>) -> bool
+where
+  ...Caps: HttpCapability
+{
+  return ctx.has<i64>()
+}

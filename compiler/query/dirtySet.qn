@@ -1,0 +1,34 @@
+pub DirtySet {
+  revision: u64
+  dirtyFiles: usize
+  dirtySymbols: usize
+  manifestChanged: bool
+  targetChanged: bool
+}
+
+impl DirtySet {
+  pub clean(revision: u64) =
+    This {
+      revision
+      dirtyFiles: 0
+      dirtySymbols: 0
+      manifestChanged: false
+      targetChanged: false
+    }
+
+  pub fileChange(revision: u64, dirtyFiles: usize) =
+    This {
+      revision
+      dirtyFiles
+      dirtySymbols: 0
+      manifestChanged: false
+      targetChanged: false
+    }
+}
+
+impl view DirtySet {
+  pub clean => dirtyFiles == 0 && dirtySymbols == 0 && manifestChanged == false && targetChanged == false
+  pub dirty => clean == false
+  pub apiDirty => manifestChanged || dirtySymbols > 0
+  pub targetDirty => targetChanged
+}

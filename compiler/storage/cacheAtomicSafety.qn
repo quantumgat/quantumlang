@@ -1,0 +1,159 @@
+pub enum CacheWriteState {
+  Prepared
+  Committed
+  Aborted
+}
+
+pub enum CacheValidationStatus {
+  Valid
+  InvalidMagic
+  InvalidSchema
+  InvalidLength
+  InvalidContentHash
+  InvalidChecksum
+}
+
+pub CacheValidation {
+  status: CacheValidationStatus
+  magicValid: bool
+  schemaValid: bool
+  lengthValid: bool
+  contentHashValid: bool
+  checksumValid: bool
+}
+
+impl CacheValidation {
+  pub accepted() =
+    This {
+      status: CacheValidationStatus.Valid
+      magicValid: true
+      schemaValid: true
+      lengthValid: true
+      contentHashValid: true
+      checksumValid: true
+    }
+}
+
+impl view CacheValidation {
+  pub valid: bool =>
+    status == CacheValidationStatus.Valid &&
+    magicValid &&
+    schemaValid &&
+    lengthValid &&
+    contentHashValid &&
+    checksumValid
+}
+
+pub CacheLease {
+  action: CacheHash256
+  owner: string
+  expiresAt: u64
+  currentTime: u64
+  released: bool = false
+}
+
+impl view CacheLease {
+  pub active: bool =>
+    action.valid &&
+    action.actionHash &&
+    owner != "" &&
+    released == false &&
+    currentTime < expiresAt
+
+  pub expired: bool => currentTime >= expiresAt
+}
+
+pub CacheAtomicWrite {
+  temporaryPath: string
+  finalPath: string
+  content: CacheHash256
+  state: CacheWriteState = CacheWriteState.Prepared
+  payloadWritten: bool = false
+  payloadSynced: bool = false
+  directorySynced: bool = false
+  atomicRename: bool = false
+}
+
+impl view CacheAtomicWrite {
+  pub pathsSeparated: bool =>
+    temporaryPath != "" &&
+    finalPath != "" &&
+    temporaryPath != finalPath
+
+  pub publishable: bool =>
+    state == CacheWriteState.Prepared &&
+    content.valid &&
+    content.contentHash &&
+    pathsSeparated &&
+    payloadWritten &&
+    payloadSynced &&
+    directorySynced &&
+    atomicRename
+
+  pub committed: bool => state == CacheWriteState.Committed
+
+  pub aborted: bool => state == CacheWriteState.Aborted
+}
+
+pub CacheQuarantine {
+  sourcePath: string
+  quarantinePath: string
+  validation: CacheValidation
+  moved: bool = false
+}
+
+impl view CacheQuarantine {
+  pub required: bool => validation.valid == false
+
+  pub isolated: bool =>
+    required &&
+    sourcePath != "" &&
+    quarantinePath != "" &&
+    sourcePath != quarantinePath &&
+    moved
+}
+
+pub CacheSchemaMigration {
+  sourceVersion: u64
+  targetVersion: u64
+  readerCompatible: bool
+  deterministic: bool = true
+  preservesContentIdentity: bool = true
+}
+
+impl view CacheSchemaMigration {
+  pub current: bool => targetVersion == sourceVersion
+
+  pub upgrade: bool => targetVersion > sourceVersion
+
+  pub valid: bool =>
+    sourceVersion > 0 &&
+    targetVersion > 0 &&
+    (current || (upgrade && readerCompatible)) &&
+    deterministic &&
+    preservesContentIdentity
+}
+
+pub CacheSafetyContract {
+  lease: CacheLease
+  validation: CacheValidation
+  write: CacheAtomicWrite
+  migration: CacheSchemaMigration
+  quarantine: CacheQuarantine
+}
+
+impl view CacheSafetyContract {
+  pub publicationAllowed: bool =>
+    lease.active &&
+    validation.valid &&
+    write.publishable &&
+    migration.valid
+
+  pub invalidProductsQuarantined: bool =>
+    validation.valid ||
+    quarantine.isolated
+
+  pub valid: bool =>
+    publicationAllowed &&
+    invalidProductsQuarantined
+}

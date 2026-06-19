@@ -1,0 +1,9 @@
+[module]
+name = "declaration"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/declaration"
+role = "declaration-model"
+
+[dependencies]
+modules = ["core", "syntax"]

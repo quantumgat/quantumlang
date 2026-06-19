@@ -1,0 +1,52 @@
+import machine::{*}
+pub TargetMachineProof {
+  tripleParsed: bool
+  featuresTracked: bool
+  dataLayoutValid: bool
+  abiValid: bool
+  machineValid: bool
+  valid: bool
+}
+
+pub targetMachineProof() -> TargetMachineProof {
+  let triple = TargetTriple("x86_64-unknown-linux-gnu", "x86_64", "unknown", "linux", "gnu")
+  let feature = TargetFeature("sse2", true, true)
+  let features = TargetFeatureSet(2, 1)
+  let layout = DataLayout(64, "little", 64, 128)
+  let convention = CallingConvention("sysv", "gnu", true, true)
+  let abi = TargetAbiFact(triple, layout, convention, "elf", "gnu-ld")
+  let machine = TargetMachine(triple.text, features.enabledCount, layout, convention, abi.objectFormat)
+
+  let tripleParsed = triple.valid &&
+    triple.arch == "x86_64" &&
+    triple.os == "linux"
+
+  let featuresTracked = feature.valid &&
+    feature.enabled &&
+    feature.required &&
+    features.valid &&
+    features.deterministic
+
+  let dataLayoutValid = layout.valid &&
+    layout.pointerBits == 64 &&
+    layout.endian == "little"
+
+  let abiValid = abi.valid &&
+    abi.objectFormat == "elf" &&
+    abi.linkFamily == "gnu-ld"
+
+  let machineValid = machine.valid &&
+    machine.triple == triple.text &&
+    machine.nativeObjectFormat == "elf"
+
+  let valid = tripleParsed && featuresTracked && dataLayoutValid && abiValid && machineValid
+
+  return TargetMachineProof {
+    tripleParsed: tripleParsed,
+    featuresTracked: featuresTracked,
+    dataLayoutValid: dataLayoutValid,
+    abiValid: abiValid,
+    machineValid: machineValid,
+    valid: valid,
+  }
+}

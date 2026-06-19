@@ -1,0 +1,59 @@
+import compiler::quantum::{*}
+pub QuantumForFlowProof {
+  qregIterationOnly: bool
+  perIterationBorrowed: bool
+  noClonePreserved: bool
+  noLeakRejected: bool
+  diagnosticStable: bool
+  valid: bool
+}
+
+pub quantumForFlowProof() -> QuantumForFlowProof {
+  let qforFact = QuantumFor(4, true)
+  let iteration = QuantumForIterationFact("qreg", "qubit", 4)
+  let badIteration = QuantumForIterationFact("Vec<qubit>", "qubit", 4)
+  let ownership = QuantumOwnership(true, true, true)
+  let noClone = QuantumNoCloneRule.rejected()
+  let lifetime = QuantumLifetime(true, true, false)
+  let leakingLifetime = QuantumLifetime.leak()
+  let reset = QuantumReset(true, true)
+  let release = QuantumRelease(true, true)
+  let body = QuantumForBodyFact(ownership, noClone, lifetime, reset, release)
+  let leakingBody = QuantumForBodyFact(ownership, noClone, leakingLifetime, reset, release)
+
+  let qregIterationOnly = qforFact.valid &&
+    qforFact.iteratesQreg &&
+    iteration.valid &&
+    iteration.qregIteration &&
+    !badIteration.valid &&
+    badIteration.diagnosticCode == "QTQUANTUM0202"
+
+  let perIterationBorrowed = iteration.borrowPerIteration &&
+    iteration.staticTripCount == 4
+
+  let noClonePreserved = body.valid &&
+    body.ownershipPreserved &&
+    body.noClonePreserved &&
+    qforFact.noClonePreserved
+
+  let noLeakRejected = body.noLeak &&
+    !leakingBody.valid &&
+    !leakingBody.noLeak
+
+  let diagnosticStable = leakingBody.diagnosticCode == "QTQUANTUM0203"
+
+  let valid = qregIterationOnly &&
+    perIterationBorrowed &&
+    noClonePreserved &&
+    noLeakRejected &&
+    diagnosticStable
+
+  return QuantumForFlowProof {
+    qregIterationOnly: qregIterationOnly,
+    perIterationBorrowed: perIterationBorrowed,
+    noClonePreserved: noClonePreserved,
+    noLeakRejected: noLeakRejected,
+    diagnosticStable: diagnosticStable,
+    valid: valid,
+  }
+}

@@ -1,0 +1,23 @@
+pub OptimizePass {
+  name: string
+  preservesDebugInfo: bool
+  changesSemantics: bool
+  enabled: bool
+  valid: bool
+}
+
+impl OptimizePass {
+  pub OptimizePass(name: string, preservesDebugInfo: bool, changesSemantics: bool, enabled: bool) =
+    This {
+      name
+      preservesDebugInfo
+      changesSemantics
+      enabled
+      valid: name != "" && preservesDebugInfo && !changesSemantics
+    }
+}
+
+impl view OptimizePass {
+  pub debugSafe => preservesDebugInfo && changesSemantics == false
+  pub runnable => valid && enabled
+}

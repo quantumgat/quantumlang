@@ -1,0 +1,9 @@
+[module]
+name = "layout"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/layout"
+role = "target-type-layout"
+
+[dependencies]
+modules = ["core", "diagnostics", "machine", "monomorphize", "semantic", "typeSystem"]

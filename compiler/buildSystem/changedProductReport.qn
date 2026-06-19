@@ -1,0 +1,38 @@
+pub ChangedProductReport {
+  changedProductCount: usize
+  reusedProductCount: usize
+  changedBodyCount: usize
+  changedPublicApiCount: usize
+  affectedDependentCount: usize
+  unaffectedModuleCount: usize
+  linkSkipped: bool
+}
+
+impl ChangedProductReport {
+  pub ChangedProductReport(
+    changedProductCount: usize,
+    reusedProductCount: usize,
+    changedBodyCount: usize,
+    changedPublicApiCount: usize,
+    affectedDependentCount: usize,
+    unaffectedModuleCount: usize,
+    linkSkipped: bool
+  ) =
+    This {
+      changedProductCount
+      reusedProductCount
+      changedBodyCount
+      changedPublicApiCount
+      affectedDependentCount
+      unaffectedModuleCount
+      linkSkipped
+    }
+}
+
+impl view ChangedProductReport {
+  pub publicApiUnchanged => changedPublicApiCount == 0
+  pub privateOnlyChange => changedBodyCount > 0 && publicApiUnchanged
+  pub dependentsUnaffected => affectedDependentCount == 0
+  pub reusedAnything => reusedProductCount > 0 || unaffectedModuleCount > 0
+  pub valid => changedProductCount + reusedProductCount > 0 || linkSkipped
+}

@@ -1,0 +1,31 @@
+pub enum GenericArgumentKind {
+  Type
+  ConstValue
+  Effect
+  Capability
+  QuantumResource
+}
+
+pub GenericArgument {
+  parameterId: StableId
+  argumentId: StableId
+  kind: GenericArgumentKind
+  fingerprint: Fingerprint
+}
+
+impl GenericArgument {
+  pub init(
+    parameterId: StableId,
+    argumentId: StableId,
+    kind: GenericArgumentKind,
+    fingerprint: Fingerprint
+  ) =
+    This { parameterId, argumentId, kind, fingerprint }
+}
+
+impl view GenericArgument {
+  pub typeArgument => kind == GenericArgumentKind.Type
+  pub constArgument => kind == GenericArgumentKind.ConstValue
+  pub quantumArgument => kind == GenericArgumentKind.QuantumResource
+  pub valid => fingerprint.nonzero
+}

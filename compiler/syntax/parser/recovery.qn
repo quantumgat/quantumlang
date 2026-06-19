@@ -1,0 +1,140 @@
+import core::{FileId}
+import source::{SourceSpan}
+
+pub ParseRecovery {
+  synchronized: bool
+  syncToken: string
+  diagnostics: i64
+  canContinue: bool
+}
+
+pub RecoverySyncSet {
+  name: string
+  closeBrace: bool
+  semicolon: bool
+  newline: bool
+  eof: bool
+}
+
+pub ParserReplayDiagnostic {
+  id: u64
+  code: string
+  span: SourceSpan = {}
+  expected: string
+  actual: string
+  deterministicOrder: i64
+  replayable: bool
+}
+
+pub MissingTokenPlaceholder {
+  expected: string
+  span: SourceSpan = {}
+  inserted: bool
+}
+
+impl ParseRecovery {
+  pub ParseRecovery(syncToken: string, diagnostics: i64) =
+    This {
+      synchronized: syncToken != ""
+      syncToken
+      diagnostics
+      canContinue: syncToken != ""
+    }
+}
+
+impl RecoverySyncSet {
+  pub RecoverySyncSet(name: string, closeBrace: bool, semicolon: bool, newline: bool, eof: bool) =
+    This { name, closeBrace, semicolon, newline, eof }
+
+  pub fromName(name: string) -> This {
+    if name == "item" {
+      return This(name, true, false, true, true)
+    }
+    if name == "stmt" {
+      return This(name, true, true, true, true)
+    }
+    if name == "expr" {
+      return This(name, true, true, false, true)
+    }
+    return This(name, false, false, false, true)
+  }
+}
+
+impl ParserReplayDiagnostic {
+  pub ParserReplayDiagnostic(
+    id: u64,
+    code: string,
+    span: SourceSpan,
+    expected: string,
+    actual: string,
+    deterministicOrder: i64,
+    replayable: bool
+  ) =
+    This { id, code, span, expected, actual, deterministicOrder, replayable }
+
+  pub ParserReplayDiagnostic(
+    id: u64,
+    code: string,
+    fileId: u64,
+    start: i64,
+    end: i64,
+    expected: string,
+    actual: string,
+    deterministicOrder: i64,
+    replayable: bool
+  ) =
+    This(id, code, SourceSpan(FileId(0, 0, fileId), start, end), expected, actual, deterministicOrder, replayable)
+
+  pub expectedToken(
+    id: u64,
+    span: SourceSpan,
+    expected: string,
+    actual: string,
+    deterministicOrder: i64
+  ) =
+    This(id, "QTPARSE0001", span, expected, actual, deterministicOrder, true)
+
+  pub expectedToken(
+    id: u64,
+    fileId: u64,
+    start: i64,
+    end: i64,
+    expected: string,
+    actual: string,
+    deterministicOrder: i64
+  ) =
+    This.expectedToken(id, SourceSpan(FileId(0, 0, fileId), start, end), expected, actual, deterministicOrder)
+}
+
+impl MissingTokenPlaceholder {
+  pub MissingTokenPlaceholder(expected: string, span: SourceSpan) =
+    This {
+      expected
+      span
+      inserted: true
+    }
+
+  pub MissingTokenPlaceholder(expected: string, fileId: u64, offset: i64) =
+    This(expected, SourceSpan(FileId(0, 0, fileId), offset, offset))
+}
+
+impl view ParseRecovery {
+  pub ok => synchronized && canContinue
+}
+
+impl view RecoverySyncSet {
+  pub handlesStatementEnd => semicolon || newline || closeBrace
+}
+
+impl view ParserReplayDiagnostic {
+  pub deterministic => replayable && deterministicOrder >= 0
+  pub fileId => span.fileId.id.value
+  pub start => span.start
+  pub end => span.end
+}
+
+impl view MissingTokenPlaceholder {
+  pub valid => expected != "" && inserted
+  pub fileId => span.fileId.id.value
+  pub offset => span.start
+}

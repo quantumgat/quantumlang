@@ -1,0 +1,151 @@
+import typeSystem::{*}
+pub TypeCatalogProof {
+  bytePrimitive: bool
+  byteNotAlias: bool
+  textViewsCore: bool
+  bytesViewsCore: bool
+  onlyIntUintAliases: bool
+  dynamicTypesCore: bool
+  dec32Core: bool
+  coreFoundationCollections: bool
+  oldNamesRejected: bool
+  matrixSquareNormalized: bool
+  operatorCatalog: bool
+  deferredOperatorsCataloged: bool
+  valid: bool
+}
+
+pub typeCatalogProof() -> TypeCatalogProof {
+  let byteFact = primitiveTypeFact("byte")
+  let bytePrimitive = byteFact.valid &&
+    byteFact.family == PrimitiveTypeFamily.Byte &&
+    byteFact.bitCount == 8 &&
+    byteFact.sizeBytes == 1 &&
+    byteFact.alignBytes == 1 &&
+    byteFact.abiReturn == PrimitiveAbiReturnKind.Register
+
+  let byteNotAlias = !isTypeCompatibilityAlias("byte") &&
+    canonicalTypeAliasName("byte") == "byte"
+
+  let textViewsCore = isCoreTypeName("string") &&
+    isCoreTypeName("str") &&
+    isTextBytesTypeName("str") &&
+    !isTypeCompatibilityAlias("str")
+
+  let bytesViewsCore = isCoreTypeName("bytes") &&
+    isCoreTypeName("BytesView") &&
+    isCoreTypeName("BytesMutView") &&
+    !isTypeCompatibilityAlias("BytesView") &&
+    !isTypeCompatibilityAlias("BytesMutView")
+
+  let onlyIntUintAliases = typeAliasCount() == 4 &&
+    isTypeCompatibilityAlias("int") &&
+    isTypeCompatibilityAlias("uint") &&
+    canonicalTypeAliasName("int") == "i64" &&
+    canonicalTypeAliasName("uint") == "u64"
+
+  let dynamicTypesCore = isBuiltinTypeName("any") &&
+    isBuiltinTypeName("qany") &&
+    coreTypeFamily("any") == CoreTypeFamily.Dynamic &&
+    coreTypeFamily("qany") == CoreTypeFamily.Quantum &&
+    coreTypeFamily("atomic<u64>") == CoreTypeFamily.Concurrency &&
+    builtinTypeKind("any") == BuiltinTypeKind.Any &&
+    builtinTypeKind("qany") == BuiltinTypeKind.QAny
+
+  let dec32Core = isBuiltinTypeName("dec32") &&
+    isDecimalFixedBigTypeName("dec32") &&
+    coreTypeFamily("dec32") == CoreTypeFamily.Decimal &&
+    builtinTypeKind("dec32") == BuiltinTypeKind.Decimal &&
+    builtinNumericBitWidth("dec32") == 32
+
+  let coreFoundationCollections = isCollectionFamilyTypeName("Range") &&
+    isCollectionFamilyTypeName("Index") &&
+    isCollectionFamilyTypeName("Arena") &&
+    builtinTypeKind("Range") == BuiltinTypeKind.Range &&
+    builtinTypeKind("Index") == BuiltinTypeKind.Index &&
+    builtinTypeKind("Arena") == BuiltinTypeKind.Arena
+
+  let oldNamesRejected = !isBuiltinTypeName("Unit") &&
+    !isBuiltinTypeName("Bool") &&
+    !isBuiltinTypeName("Text") &&
+    !isBuiltinTypeName("String") &&
+    !isBuiltinTypeName("Bytes") &&
+    !isBuiltinTypeName("Vector3F64") &&
+    !isBuiltinTypeName("Matrix3x3F64") &&
+    !isBuiltinTypeName("Tensor2x2x2F64")
+
+  let matrixSquareNormalized = canonicalTypeAliasName("matrix<2,2,f64>") == "matrix<2,f64>" &&
+    canonicalTypeAliasName("matrix<3,3,f64>") == "matrix<3,f64>" &&
+    !isTypeCompatibilityAlias("matrix<2,2,f64>") &&
+    !isTypeCompatibilityAlias("matrix<3,3,f64>")
+
+  let addOp = BuiltinOperatorFact.fromSymbol("+")
+  let compareOp = BuiltinOperatorFact.fromSymbol("==")
+  let assignOp = BuiltinOperatorFact.fromSymbol("+=")
+  let indexOp = BuiltinOperatorFact.fromSymbol("[]")
+  let propagateOp = BuiltinOperatorFact.fromSymbol("?")
+  let operatorCatalog = addOp.arithmetic &&
+    addOp.requiresTarget &&
+    compareOp.comparison &&
+    compareOp.resultTypeName == "bool" &&
+    assignOp.assignment &&
+    assignOp.mutates &&
+    indexOp.index &&
+    propagateOp.propagate
+
+  let rejectedCoalesceOp = BuiltinOperatorFact.fromSymbol("??")
+  let rangeOp = BuiltinOperatorFact.fromSymbol("..")
+  let inclusiveRangeOp = BuiltinOperatorFact.fromSymbol("..=")
+  let powerOp = BuiltinOperatorFact.fromSymbol("**")
+  let bodyOp = BuiltinOperatorFact.fromSymbol("=>")
+  let incrementOp = BuiltinOperatorFact.fromSymbol("++")
+  let rejectedStrictEqual = BuiltinOperatorFact.fromSymbol("===")
+  let referenceOp = BuiltinOperatorFact.fromForm("&", BuiltinOperatorForm.Reference)
+  let moveOp = BuiltinOperatorFact.fromForm("^", BuiltinOperatorForm.Move)
+  let dereferenceOp = BuiltinOperatorFact.fromForm("*", BuiltinOperatorForm.Dereference)
+  let optionalTypeOp = BuiltinOperatorFact.fromForm("?", BuiltinOperatorForm.OptionalType)
+  let spreadOp = BuiltinOperatorFact.fromForm("...", BuiltinOperatorForm.Spread)
+  let pathOp = BuiltinOperatorFact.fromForm("::", BuiltinOperatorForm.Path)
+  let deferredOperatorsCataloged = !rejectedCoalesceOp.valid &&
+    rangeOp.range &&
+    inclusiveRangeOp.range &&
+    powerOp.arithmetic &&
+    bodyOp.syntaxBody &&
+    incrementOp.increment &&
+    referenceOp.address &&
+    moveOp.move &&
+    dereferenceOp.dereference &&
+    optionalTypeOp.optionalType &&
+    spreadOp.spread &&
+    pathOp.path &&
+    !rejectedStrictEqual.valid
+
+  let valid = bytePrimitive &&
+    byteNotAlias &&
+    textViewsCore &&
+    bytesViewsCore &&
+    onlyIntUintAliases &&
+    dynamicTypesCore &&
+    dec32Core &&
+    coreFoundationCollections &&
+    oldNamesRejected &&
+    matrixSquareNormalized &&
+    operatorCatalog &&
+    deferredOperatorsCataloged
+
+  return TypeCatalogProof {
+    bytePrimitive: bytePrimitive,
+    byteNotAlias: byteNotAlias,
+    textViewsCore: textViewsCore,
+    bytesViewsCore: bytesViewsCore,
+    onlyIntUintAliases: onlyIntUintAliases,
+    dynamicTypesCore: dynamicTypesCore,
+    dec32Core: dec32Core,
+    coreFoundationCollections: coreFoundationCollections,
+    oldNamesRejected: oldNamesRejected,
+    matrixSquareNormalized: matrixSquareNormalized,
+    operatorCatalog: operatorCatalog,
+    deferredOperatorsCataloged: deferredOperatorsCataloged,
+    valid: valid,
+  }
+}

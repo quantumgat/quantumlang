@@ -1,0 +1,114 @@
+pub CompilerIntrinsics {
+  abiMarker: i64
+}
+
+impl CompilerIntrinsics {
+  pub CompilerIntrinsics() =
+    This { abiMarker: 1 }
+}
+
+context CompilerIntrinsics {
+  pub sourcePaths(target: string) -> string =
+    compilerSourcePaths(target)
+
+  pub sourceCount(target: string) -> i64 =
+    compilerSourceCount(target)
+
+  pub sourcePathAt(target: string, index: i64) -> string =
+    compilerSourcePathAt(target, index)
+
+  pub sourceModulePathAt(target: string, index: i64) -> string =
+    compilerSourceModulePathAt(target, index)
+
+  pub sourceModuleHashAt(target: string, index: i64) -> u64 =
+    compilerSourceModuleHashAt(target, index)
+
+  pub sourceFingerprintAt(target: string, index: i64) -> u64 =
+    compilerSourceFingerprintAt(target, index)
+
+  pub textByteAt(text: string, index: i64) -> i64 =
+    compilerTextByteAt(text, index)
+
+  pub textLength(text: string) -> i64 =
+    compilerTextLength(text)
+
+  pub sourceModulePaths(target: string) -> string =
+    compilerSourceModulePaths(target)
+
+  pub sourceByteLengths(target: string) -> string =
+    compilerSourceByteLengths(target)
+
+  pub sourceFingerprints(target: string) -> string =
+    compilerSourceFingerprints(target)
+
+  pub readText(path: string) -> string =
+    compilerReadText(path)
+
+  pub fileExists(path: string) -> bool =
+    compilerFileExists(path)
+
+  pub createDirectories(path: string) -> i64 =
+    compilerCreateDirectories(path)
+
+  pub atomicWriteText(path: string, text: string) -> i64 =
+    compilerAtomicWriteText(path, text)
+
+  pub rename(from: string, to: string) -> i64 =
+    compilerRename(from, to)
+
+  pub buildNativeCompiler(
+    compilerPath: string,
+    target: string,
+    outputPath: string
+  ) -> i64 =
+    compilerBuildNative(compilerPath, target, outputPath)
+
+  pub advanceProgress(
+    phase: string,
+    completed: i64,
+    total: i64,
+    moduleName: string,
+    diagnosticCount: i64,
+    tokenCount: i64,
+    symbolCount: i64,
+    scopeCount: i64
+  ) -> i64 =
+    compilerProgressAdvance(
+      phase,
+      completed,
+      total,
+      moduleName,
+      diagnosticCount,
+      tokenCount,
+      symbolCount,
+      scopeCount
+    )
+}
+
+compilerSourcePaths(target: string) -> string
+compilerSourceCount(target: string) -> i64
+compilerSourcePathAt(target: string, index: i64) -> string
+compilerSourceModulePathAt(target: string, index: i64) -> string
+compilerSourceModuleHashAt(target: string, index: i64) -> u64
+compilerSourceFingerprintAt(target: string, index: i64) -> u64
+compilerTextByteAt(text: string, index: i64) -> i64
+compilerTextLength(text: string) -> i64
+compilerSourceModulePaths(target: string) -> string
+compilerSourceByteLengths(target: string) -> string
+compilerSourceFingerprints(target: string) -> string
+compilerReadText(path: string) -> string
+compilerFileExists(path: string) -> bool
+compilerCreateDirectories(path: string) -> i64
+compilerAtomicWriteText(path: string, text: string) -> i64
+compilerRename(from: string, to: string) -> i64
+compilerBuildNative(compilerPath: string, target: string, outputPath: string) -> i64
+compilerProgressAdvance(
+  phase: string,
+  completed: i64,
+  total: i64,
+  moduleName: string,
+  diagnosticCount: i64,
+  tokenCount: i64,
+  symbolCount: i64,
+  scopeCount: i64
+) -> i64

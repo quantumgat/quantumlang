@@ -1,0 +1,18 @@
+pub LayoutProduct {
+  typeLayout: TypeLayout
+  layoutClass: LayoutClass
+  context: TargetLayoutContext
+  fingerprint: StableLayoutHash
+  diagnosticCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl view LayoutProduct {
+  pub valid: bool =>
+    typeLayout.valid &&
+    layoutClass.valid &&
+    context.valid &&
+    fingerprint.valid &&
+    diagnosticCount == 0 &&
+    deterministic
+}

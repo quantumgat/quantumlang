@@ -1,0 +1,16 @@
+pub enum CoreKind {
+  TypedId
+  NameId
+  QualifiedName
+  Range
+  Slice
+  Vec
+  Arena
+  Map
+  Index
+  OptionCarrier
+  ResultCarrier
+  Interner
+  QueryHandle
+  Unknown
+}

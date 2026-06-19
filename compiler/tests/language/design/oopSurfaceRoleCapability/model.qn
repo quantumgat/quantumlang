@@ -1,0 +1,223 @@
+// design-only: target QuantumLang syntax for future qtlc0/qtlc1 proof.
+
+pub TraceId {
+  value: i64 = 0
+}
+
+impl TraceId {
+  pub new() -> TraceId {
+    return TraceId { value: 1 }
+  }
+}
+
+pub RequestId {
+  value: i64 = 0
+}
+
+pub SessionId {
+  value: i64 = 0
+}
+
+pub HttpMethod {
+  value: string = ""
+}
+
+pub HttpRequest {
+  id: RequestId = {}
+  path: string = ""
+  method: HttpMethod = {}
+  clientIp: string = ""
+  valid: bool = false
+}
+
+pub Header {
+  name: string = ""
+  value: string = ""
+}
+
+impl Header {
+  pub Header(name: TextView, value: TextView) =
+    This { name: name.toText(), value: value.toText() }
+}
+
+pub HeaderBag {
+  count: i64 = 0
+}
+
+impl HeaderBag {
+  pub add(header: Header) -> HeaderBag {
+    return HeaderBag { count: this.count + 1 }
+  }
+
+  pub contains(name: TextView) -> bool {
+    return this.count > 0 && name.length > 0
+  }
+}
+
+pub IntoHttpError {
+  code: i64 = 0
+  message: string = ""
+}
+
+impl IntoHttpError {
+  pub badRequest(message: TextView) -> IntoHttpError {
+    return IntoHttpError { code: 400, message: message.toText() }
+  }
+
+  pub forbidden(message: TextView) -> IntoHttpError {
+    return IntoHttpError { code: 403, message: message.toText() }
+  }
+}
+
+pub AuthUser {
+  id: i64 = 0
+  name: string = ""
+}
+
+pub UserSession {
+  tenantId: i64 = 0
+}
+
+pub CreateUserBody {
+  name: string = ""
+}
+
+pub UserDto {
+  id: i64 = 0
+  name: string = ""
+  tenantId: i64 = 0
+}
+
+impl UserDto {
+  pub UserDto(id: i64, name: string, tenantId: i64) =
+    This { id, name, tenantId }
+}
+
+pub CsrfToken {
+  value: string = ""
+}
+
+pub JsonBody<T> {
+  value: T
+}
+
+pub Frozen<T> {
+  value: T
+}
+
+impl<T> Frozen<T> {
+  pub Frozen(value: T) =
+    This { value }
+}
+
+pub Valid<T> {
+  value: T
+  source: string = ""
+}
+
+impl<T> Valid<T> {
+  pub Valid(value: T, source: string) =
+    This { value, source }
+}
+
+pub Session<T> {
+  value: T
+  id: SessionId = {}
+}
+
+pub AuditEvent {
+  trace: TraceId = {}
+  action: string = ""
+  path: string = ""
+}
+
+impl AuditEvent {
+  pub AuditEvent(trace: TraceId, action: TextView, path: TextView) =
+    This { trace, action: action.toText(), path: path.toText() }
+}
+
+pub RouteReady<T> {
+  ctx: T
+  user: AuthUser = {}
+  session: UserSession = {}
+}
+
+impl<T> RouteReady<T> {
+  pub RouteReady(ctx: T, user: AuthUser, session: UserSession) =
+    This { ctx, user, session }
+}
+
+extend AuthUser : pub HttpCapability {
+  pub capabilityName() -> string {
+    return "auth-user"
+  }
+}
+
+extend CsrfToken : pub HttpCapability {
+  pub capabilityName() -> string {
+    return "csrf-token"
+  }
+}
+
+extend<T> JsonBody<T> : pub HttpCapability {
+  pub capabilityName() -> string {
+    return "json-body"
+  }
+}
+
+extend<T> Session<T> : pub HttpCapability {
+  pub capabilityName() -> string {
+    return "session"
+  }
+}
+
+pub BodyChunk<T> {
+  value: T
+  index: i64 = 0
+  final: bool = false
+}
+
+pub BodyStream<T> {
+  first: BodyChunk<T>
+  backpressureWindow: i64 = 0
+}
+
+impl<T> BodyStream<T> {
+  pub next() -> Result<BodyChunk<T>, IntoHttpError> {
+    return Ok(first)
+  }
+}
+
+pub Uploaded<T> {
+  value: T
+  byteCount: i64 = 0
+}
+
+pub BodySpec<T> {
+  limitBytes: i64 = 0
+  streaming: bool = false
+}
+
+pub Next<T> {
+  value: T
+}
+
+impl<T> Next<T> {
+  pub run(ctx: T) -> Result<T, IntoHttpError> {
+    return Ok(ctx)
+  }
+}
+
+pub Pipeline<T> {
+  value: T
+}
+
+impl<T> Pipeline<T> {
+  pub run(ctx: T) -> Result<T, IntoHttpError> {
+    return Ok(ctx)
+  }
+}
+
+pub RoleObjectCarrier<T> {
+  value: T
+}

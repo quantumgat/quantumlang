@@ -1,0 +1,143 @@
+pub isPrimitiveTokenText(text: string) -> bool {
+  return text == "void" ||
+    text == "bool" ||
+    text == "char" ||
+    text == "byte" ||
+    text == "i8" ||
+    text == "i16" ||
+    text == "i32" ||
+    text == "i64" ||
+    text == "i128" ||
+    text == "i256" ||
+    text == "isize" ||
+    text == "u8" ||
+    text == "u16" ||
+    text == "u32" ||
+    text == "u64" ||
+    text == "u128" ||
+    text == "u256" ||
+    text == "usize" ||
+    text == "f16" ||
+    text == "f32" ||
+    text == "f64" ||
+    text == "f128" ||
+    text == "int" ||
+    text == "uint"
+}
+
+pub isNumericLiteralSuffix(text: string) -> bool {
+  return text == "i8" ||
+    text == "i16" ||
+    text == "i32" ||
+    text == "i64" ||
+    text == "i128" ||
+    text == "i256" ||
+    text == "isize" ||
+    text == "u8" ||
+    text == "u16" ||
+    text == "u32" ||
+    text == "u64" ||
+    text == "u128" ||
+    text == "u256" ||
+    text == "usize" ||
+    text == "f16" ||
+    text == "f32" ||
+    text == "f64" ||
+    text == "f128" ||
+    text == "dec64" ||
+    text == "dec128" ||
+    text == "dec256" ||
+    text == "dec" ||
+    text == "d"
+}
+
+pub numericLiteralSuffixType(text: string) -> string {
+  if text == "d" {
+    return "dec"
+  }
+  if isNumericLiteralSuffix(text) {
+    return text
+  }
+  return ""
+}
+
+pub numericLiteralTypeForText(text: string) -> string {
+  if text.endsWith("dec256") {
+    return "dec256"
+  }
+  if text.endsWith("dec128") {
+    return "dec128"
+  }
+  if text.endsWith("dec64") {
+    return "dec64"
+  }
+  if text.endsWith("usize") {
+    return "usize"
+  }
+  if text.endsWith("isize") {
+    return "isize"
+  }
+  if text.endsWith("i256") {
+    return "i256"
+  }
+  if text.endsWith("u256") {
+    return "u256"
+  }
+  if text.endsWith("i128") {
+    return "i128"
+  }
+  if text.endsWith("u128") {
+    return "u128"
+  }
+  if text.endsWith("f128") {
+    return "f128"
+  }
+  if text.endsWith("i64") {
+    return "i64"
+  }
+  if text.endsWith("u64") {
+    return "u64"
+  }
+  if text.endsWith("f64") {
+    return "f64"
+  }
+  if text.endsWith("i32") {
+    return "i32"
+  }
+  if text.endsWith("u32") {
+    return "u32"
+  }
+  if text.endsWith("f32") {
+    return "f32"
+  }
+  if text.endsWith("i16") {
+    return "i16"
+  }
+  if text.endsWith("u16") {
+    return "u16"
+  }
+  if text.endsWith("f16") {
+    return "f16"
+  }
+  if text.endsWith("i8") {
+    return "i8"
+  }
+  if text.endsWith("u8") {
+    return "u8"
+  }
+  if text.endsWith("dec") || text.endsWith("d") {
+    return "dec"
+  }
+  return ""
+}
+
+pub numericLiteralTypeIsFloat(typeName: string) -> bool {
+  return typeName == "f16" ||
+    typeName == "f32" ||
+    typeName == "f64" ||
+    typeName == "f128" ||
+    typeName == "dec" ||
+    typeName == "dec64" ||
+    typeName == "dec128" ||
+    typeName == "dec256"
+}

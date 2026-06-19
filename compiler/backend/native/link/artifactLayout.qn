@@ -1,0 +1,46 @@
+pub NativeArtifactLayout {
+  packageName: string
+  profile: string
+  debugDir: string
+  releaseDir: string
+  cachePrivate: bool
+  diagnosticCode: string = ""
+}
+
+impl NativeArtifactLayout {
+  pub NativeArtifactLayout(packageName: string, profile: string) =
+    This {
+      packageName
+      profile
+      debugDir: "build/debug"
+      releaseDir: "build/release"
+      cachePrivate: true
+    }
+
+  withProfile(profile: string) =
+    this {
+      profile
+    }
+
+  publicCache() =
+    this {
+      cachePrivate: false
+    }
+}
+
+impl view NativeArtifactLayout {
+  pub valid => diagnosticCode == "" && packageName != "" && profile != "" && debugDir != "" && releaseDir != ""
+  pub debugProfile => profile == "debug"
+  pub releaseProfile => profile == "release"
+  pub outputDir: string => {
+    if releaseProfile {
+      releaseDir
+    } else {
+      debugDir
+    }
+  }
+  pub executablePath => "{outputDir}/{packageName}"
+  pub cacheIsPrivate => cachePrivate
+  pub lowerable => valid
+  pub debugName => "native.artifact.{packageName}.{profile}"
+}

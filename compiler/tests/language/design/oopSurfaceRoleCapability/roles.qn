@@ -1,0 +1,81 @@
+// design-only: target QuantumLang syntax for future qtlc0/qtlc1 proof.
+// Do not build this file until qtlc0 supports role-capable OOP surfaces,
+// variadic generic packs, spread substitution, and extract/context role lists.
+
+pub role HttpCapability {
+  capabilityName() -> string
+}
+
+pub role HttpLifecycle<T> {
+  withTrace(trace: TraceId) -> T
+  freeze() -> Frozen<T>
+}
+
+pub role HttpReadableView<T> {
+  path() -> string
+  method() -> HttpMethod
+  traceId() -> TraceId
+  capCount() -> i64
+}
+
+pub role HttpDebugView<T> {
+  debugSummary() -> string
+}
+
+pub role CapabilityContext<...Caps> {
+  has<T>() -> bool
+  require<T>() -> Result<T, IntoHttpError>
+}
+
+pub role RequestContext<T> {
+  requestId() -> RequestId
+  clientIp() -> string
+}
+
+pub role BodyExtractor<...Caps> {
+  path<T>(name: TextView) -> Result<T, IntoHttpError>
+  query<T>(name: TextView = TextView("")) -> Result<T, IntoHttpError>
+  body<T>() -> Result<T, IntoHttpError>
+  valid<T>() -> Result<Valid<T>, IntoHttpError>
+}
+
+pub role SessionExtractor<...Caps> {
+  session<T>() -> Result<Session<T>, IntoHttpError>
+  sessionData<T>() -> Result<T, IntoHttpError>
+}
+
+pub role Authenticated<T> {
+  user() -> Result<AuthUser, IntoHttpError>
+}
+
+pub role AuditRole<T> {
+  auditEvent(action: TextView) -> AuditEvent
+}
+
+pub role HealthSignal<T> {
+  healthy() -> bool
+}
+
+pub role Omg<T> {
+  omgValue() -> i64
+}
+
+pub role OmgPack<T, ...Caps> {
+  packValue() -> i64
+}
+
+pub role OmgView<T> {
+  omgViewValue() -> string
+}
+
+pub role OmgContext<...Caps> {
+  omgContextValue<T>() -> Result<T, IntoHttpError>
+}
+
+pub role OmgExtract<...Caps> {
+  omgExtractValue<T>() -> Result<T, IntoHttpError>
+}
+
+pub role OmgExtend<T> {
+  omgExtendedValue() -> i64
+}

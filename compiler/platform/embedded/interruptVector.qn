@@ -1,0 +1,20 @@
+pub InterruptVector {
+  entryCount: i64
+  resetHandlerPresent: bool
+  deterministic: bool
+  valid: bool
+}
+
+impl InterruptVector {
+  pub InterruptVector(entryCount: i64, resetHandlerPresent: bool) =
+    This {
+      entryCount
+      resetHandlerPresent
+      deterministic: true
+      valid: entryCount > 0 && resetHandlerPresent
+    }
+}
+
+impl view InterruptVector {
+  pub bootable => valid && resetHandlerPresent
+}

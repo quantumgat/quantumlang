@@ -1,0 +1,35 @@
+import core::{Vec}
+
+pub PackageDependency {
+  package: PackageIdentity
+  public: bool = false
+}
+
+impl view PackageDependency {
+  pub valid: bool => package.valid
+}
+
+pub PackageGraph {
+  root: PackageIdentity
+  dependencies: Vec<PackageDependency> = []
+  acyclic: bool = true
+  deterministic: bool = true
+}
+
+impl PackageGraph {
+  pub PackageGraph(root: PackageIdentity) =
+    This { root }
+
+  pub withDependencies(dependencies: Vec<PackageDependency>) =
+    This { root, dependencies }
+}
+
+impl view PackageGraph {
+  pub dependencyCount: i64 => dependencies.count
+
+  pub valid: bool =>
+    root.valid &&
+    dependencies.valid &&
+    acyclic &&
+    deterministic
+}

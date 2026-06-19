@@ -1,0 +1,58 @@
+pub ByteView {
+  value: BytesView = b""
+  offset: usize = 0
+  length: usize = 0
+}
+
+impl ByteView {
+  pub ByteView(value: BytesView) =
+    This { value, length: value.length() }
+
+  pub ByteView(value: BytesView, offset: usize, length: usize) =
+    This { value, offset, length }
+
+  pub slice(start: usize, count: usize) -> Result<ByteView, ByteError> {
+    if start > length || count > length - start {
+      return Err(ByteError(
+        ByteErrorKind.OutOfBounds,
+        offset + start,
+        count,
+        length
+      ))
+    }
+
+    return Ok(This(value, offset + start, count))
+  }
+
+  pub take(count: usize) -> Result<ByteView, ByteError> =
+    slice(0, count)
+
+  pub drop(count: usize) -> Result<ByteView, ByteError> {
+    if count > length {
+      return Err(ByteError(
+        ByteErrorKind.OutOfBounds,
+        offset,
+        count,
+        length
+      ))
+    }
+
+    return Ok(This(value, offset + count, length - count))
+  }
+
+}
+
+impl view ByteView {
+  pub toBytes() -> bytes
+
+  pub same(other: ByteView) -> bool {
+    return value == other.value &&
+      offset == other.offset &&
+      length == other.length
+  }
+
+  pub end => offset + length
+  pub empty => length == 0
+  pub nonEmpty => length > 0
+  pub valid => end <= value.length()
+}

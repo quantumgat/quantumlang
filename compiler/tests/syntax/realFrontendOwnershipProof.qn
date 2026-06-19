@@ -1,0 +1,97 @@
+import core::{FileId}
+import syntax::{AstNodeKind, SourceLexer, SourceParser}
+
+pub RealFrontendOwnershipProof {
+  tokenRowsOwned: bool
+  triviaRowsOwned: bool
+  astRowsOwned: bool
+  spansPreserved: bool
+  syntaxClassified: bool
+  memberDeclarationsOwned: bool
+  deepReceiverPathOwned: bool
+  valid: bool
+}
+
+pub realFrontendOwnershipProof() -> RealFrontendOwnershipProof {
+  let fileId = FileId(1, 1, 7)
+  let source = "import std::io\npub Profile { name: string }\npub User { profile: Profile }\nimpl view User { pub label: string => profile.name }\nmain() -> string { return User.profile.name }\n"
+  let lexed = SourceLexer(fileId, source).lex()
+  let parsed = SourceParser(lexed).parse()
+  let firstToken = lexed.tokenAt(0)
+  let moduleNode = parsed.nodeAt(0)
+  let importNode = parsed.nodeAt(1)
+
+  let tokenRowsOwned =
+    lexed.tokens.nonEmpty &&
+    lexed.tokenCount == lexed.tokens.count
+
+  let triviaRowsOwned =
+    lexed.triviaCount == lexed.trivia.count &&
+    lexed.trivia.count > 0
+
+  let astRowsOwned =
+    parsed.arena.records.count > 0 &&
+    parsed.nodeCount == parsed.arena.count &&
+    parsed.rootCount == parsed.arena.rootCount
+
+  let spansPreserved =
+    firstToken.text == "import" &&
+    firstToken.span.fileId == fileId &&
+    firstToken.span.start == 0 &&
+    firstToken.span.end == 6
+
+  let syntaxClassified =
+    moduleNode.kind == AstNodeKind.Module &&
+    importNode.kind == AstNodeKind.Import &&
+    parsed.imports &&
+    parsed.functionItems &&
+    parsed.returns &&
+    parsed.calls
+
+  let memberDeclarationsOwned = false
+  let declarationIndex: i64 = 0
+  while declarationIndex < parsed.declarationCount {
+    let declaration = parsed.declarationAt(declarationIndex)
+    if declaration.ownerTypeName == "User" &&
+       declaration.name == "profile" &&
+       declaration.memberKind == "field" &&
+       declaration.returnTypeName == "Profile" {
+      memberDeclarationsOwned = true
+    }
+    declarationIndex = declarationIndex + 1
+  }
+
+  let deepReceiverPathOwned = false
+  let nodeIndex: i64 = 0
+  while nodeIndex < parsed.nodeCount {
+    let node = parsed.nodeAt(nodeIndex)
+    if node.text == "name" &&
+       node.receiverName == "User.profile" &&
+       node.receiverPath.count == 2 {
+      deepReceiverPathOwned = true
+    }
+    nodeIndex = nodeIndex + 1
+  }
+
+  let valid =
+    lexed.valid &&
+    parsed.valid &&
+    tokenRowsOwned &&
+    triviaRowsOwned &&
+    astRowsOwned &&
+    spansPreserved &&
+    syntaxClassified &&
+    memberDeclarationsOwned &&
+    deepReceiverPathOwned
+
+  return RealFrontendOwnershipProof {
+    tokenRowsOwned
+    triviaRowsOwned
+    astRowsOwned
+    spansPreserved
+    syntaxClassified
+    memberDeclarationsOwned
+    deepReceiverPathOwned
+    valid
+  }
+}

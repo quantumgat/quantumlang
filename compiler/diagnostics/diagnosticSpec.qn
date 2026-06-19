@@ -1,0 +1,39 @@
+pub DiagnosticSpec {
+  code: DiagnosticCode = {}
+  domain: DiagnosticDomain = DiagnosticDomain.Unknown
+  severity: DiagnosticSeverity = DiagnosticSeverity.Error
+  title: string = ""
+  messagePrefix: string = ""
+  messageSuffix: string = ""
+  help: string = ""
+  documentation: string = ""
+}
+
+impl DiagnosticSpec {
+  pub format(subject: string) -> string {
+    if messagePrefix == "" {
+      return ""
+    }
+    if subject == "" {
+      return messagePrefix
+    }
+    return "{messagePrefix}{subject}{messageSuffix}"
+  }
+}
+
+impl view DiagnosticSpec {
+  pub present: bool => code.valid
+
+  pub missing: bool => !present
+
+  pub blocking: bool =>
+    severity == DiagnosticSeverity.Error ||
+    severity == DiagnosticSeverity.Fatal
+
+  pub valid: bool =>
+    code.valid &&
+    domain != DiagnosticDomain.Unknown &&
+    title != "" &&
+    messagePrefix != "" &&
+    documentation != ""
+}

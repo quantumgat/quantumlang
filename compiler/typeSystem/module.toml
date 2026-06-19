@@ -1,0 +1,9 @@
+[module]
+name = "typeSystem"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/typeSystem"
+role = "type-system"
+
+[dependencies]
+modules = ["declaration", "diagnostics", "frontend", "host", "moduleSystem", "nameResolve"]

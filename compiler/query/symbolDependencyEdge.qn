@@ -1,0 +1,43 @@
+pub enum SymbolDependencyKind {
+  Import
+  Reexport
+  TypeReference
+  FunctionCall
+  FieldAccess
+  TraitRequirement
+  EffectRequirement
+  QuantumResourceUse
+}
+
+pub SymbolDependencyEdge {
+  fromSymbolId: StableId
+  toSymbolId: StableId
+  fromQuery: QueryKey
+  toQuery: QueryKey
+  kind: SymbolDependencyKind
+  fingerprint: Fingerprint
+  publicApiRelevant: bool
+}
+
+impl SymbolDependencyEdge {
+  pub init(
+    fromSymbolId: StableId,
+    toSymbolId: StableId,
+    fromQuery: QueryKey,
+    toQuery: QueryKey,
+    kind: SymbolDependencyKind,
+    fingerprint: Fingerprint,
+    publicApiRelevant: bool
+  ) =
+    This { fromSymbolId, toSymbolId, fromQuery, toQuery, kind, fingerprint, publicApiRelevant }
+
+  pub toQueryEdge(reason: string) =
+    DependencyEdge(fromQuery, toQuery, fingerprint, reason)
+}
+
+impl view SymbolDependencyEdge {
+  pub apiRelevant => publicApiRelevant
+  pub privateOnly => publicApiRelevant == false
+  pub valid => fingerprint.nonzero
+  pub targetSpecific => fromQuery.targetSpecific || toQuery.targetSpecific
+}

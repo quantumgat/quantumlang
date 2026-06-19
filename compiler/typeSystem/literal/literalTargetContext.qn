@@ -1,0 +1,15 @@
+pub LiteralTargetContext {
+  targetType: string
+  contextClear: bool
+  quotedMapKeys: bool
+}
+
+impl LiteralTargetContext {
+  pub LiteralTargetContext(targetType: string, contextClear: bool, quotedMapKeys: bool) =
+    This { targetType, contextClear, quotedMapKeys }
+}
+
+impl view LiteralTargetContext {
+  pub hasTarget => targetType != ""
+  pub canInferMap => quotedMapKeys || targetType != ""
+}

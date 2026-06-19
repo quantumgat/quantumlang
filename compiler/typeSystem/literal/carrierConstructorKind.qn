@@ -1,0 +1,8 @@
+pub enum CarrierConstructorKind {
+  None
+  Some
+  Present
+  Ok
+  Err
+  Unknown
+}

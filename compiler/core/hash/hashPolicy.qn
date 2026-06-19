@@ -1,0 +1,61 @@
+pub HashPolicy {
+  algorithm: HashAlgorithm = HashAlgorithm.Blake3
+  domain: HashDomain = HashDomain.Value
+  width: HashWidth = HashWidth.Bits256
+  deterministic: bool = true
+  keyed: bool = false
+  hardwareAcceleration: bool = false
+  treeParallel: bool = false
+}
+
+impl HashPolicy {
+  pub forDomain(domain: HashDomain) =
+    This { domain }
+
+  pub content() =
+    This { domain: HashDomain.Content }
+
+  pub action() =
+    This { domain: HashDomain.Action }
+
+  pub security() =
+    This {
+      algorithm: HashAlgorithm.Blake3
+      domain: HashDomain.Security
+      keyed: true
+      treeParallel: false
+    }
+
+  pub fastTable() =
+    This {
+      algorithm: HashAlgorithm.Xxh3
+      width: HashWidth.Bits64
+      treeParallel: false
+    }
+
+  pub fastFingerprint() =
+    This {
+      algorithm: HashAlgorithm.Xxh3
+      width: HashWidth.Bits128
+      treeParallel: false
+    }
+}
+
+impl view HashPolicy {
+  pub algorithmWidthValid: bool => match algorithm {
+    HashAlgorithm.Blake3 => width == HashWidth.Bits256
+    HashAlgorithm.Xxh3 => {
+      width == HashWidth.Bits64 ||
+      width == HashWidth.Bits128
+    }
+    _ => false
+  }
+
+  pub valid: bool =>
+    algorithm.valid &&
+    domain.valid &&
+    width.valid &&
+    algorithmWidthValid &&
+    deterministic &&
+    (keyed == false || algorithm.keyed)
+}

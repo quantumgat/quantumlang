@@ -1,0 +1,3 @@
+pub BackendArtifact {
+  path: string
+}

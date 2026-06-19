@@ -1,0 +1,41 @@
+pub RegisterAllocation {
+  registers: i64
+  spills: i64
+  callerSavedTracked: bool
+  calleeSavedTracked: bool
+  diagnosticCode: string = ""
+}
+
+impl RegisterAllocation {
+  pub RegisterAllocation(registers: i64, spills: i64, callerSavedTracked: bool, calleeSavedTracked: bool) =
+    This { registers, spills, callerSavedTracked, calleeSavedTracked }
+
+  pub empty() =
+    This {
+      registers: 0
+      spills: 0
+      callerSavedTracked: false
+      calleeSavedTracked: false
+      diagnosticCode: "QNATIVE0301"
+    }
+
+  withSpills(spills: i64) =
+    this {
+      spills
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QNATIVE0301"
+    }
+}
+
+impl view RegisterAllocation {
+  pub valid => diagnosticCode == "" && registers > 0 && spills >= 0 && callerSavedTracked && calleeSavedTracked
+  pub spillFree => spills == 0
+  pub hasSpills => spills > 0
+  pub tracked => callerSavedTracked && calleeSavedTracked
+  pub lowerable => valid
+  pub estimatedCost => registers + spills
+  pub debugName => "native.regalloc.r{registers}.s{spills}"
+}

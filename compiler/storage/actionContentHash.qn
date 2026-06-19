@@ -1,0 +1,73 @@
+pub enum CacheHashDomain {
+  Action
+  Content
+}
+
+pub CacheHash256 {
+  domain: CacheHashDomain
+  digest: string
+  algorithm: string = "blake3-256"
+}
+
+impl CacheHash256 {
+  pub action(digest: string) =
+    This { domain: CacheHashDomain.Action, digest }
+
+  pub content(digest: string) =
+    This { domain: CacheHashDomain.Content, digest }
+}
+
+impl view CacheHash256 {
+  pub actionHash: bool => domain == CacheHashDomain.Action
+
+  pub contentHash: bool => domain == CacheHashDomain.Content
+
+  pub valid: bool =>
+    algorithm == "blake3-256" &&
+    digest.length() == 64
+}
+
+pub CacheActionIdentity {
+  queryKind: string
+  compilerIdentity: CacheHash256
+  targetIdentity: CacheHash256
+  inputIdentity: CacheHash256
+  policyIdentity: CacheHash256
+  schemaVersion: u64 = 1
+}
+
+impl view CacheActionIdentity {
+  pub domainsValid: bool =>
+    compilerIdentity.contentHash &&
+    targetIdentity.contentHash &&
+    inputIdentity.contentHash &&
+    policyIdentity.contentHash
+
+  pub valid: bool =>
+    queryKind != "" &&
+    schemaVersion > 0 &&
+    domainsValid &&
+    compilerIdentity.valid &&
+    targetIdentity.valid &&
+    inputIdentity.valid &&
+    policyIdentity.valid
+}
+
+pub CacheActionContentLink {
+  action: CacheHash256
+  content: CacheHash256
+  productKind: CacheProductKind
+  schemaVersion: u64 = 1
+}
+
+impl view CacheActionContentLink {
+  pub domainsSeparated: bool =>
+    action.actionHash &&
+    content.contentHash
+
+  pub valid: bool =>
+    schemaVersion > 0 &&
+    action.valid &&
+    content.valid &&
+    domainsSeparated
+}

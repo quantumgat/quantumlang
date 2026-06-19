@@ -1,0 +1,3 @@
+pub GenericParameter {
+  name: string
+}

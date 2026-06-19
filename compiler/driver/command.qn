@@ -1,0 +1,50 @@
+import driver::{CommandKind}
+
+pub Command {
+  name: string
+  kind: CommandKind
+  requiresPackage: bool = false
+  producesBinary: bool = false
+  incremental: bool = false
+}
+
+impl Command {
+  pub Command(
+    name: string,
+    kind: CommandKind,
+    requiresPackage: bool,
+    producesBinary: bool,
+    incremental: bool
+  ) =
+    This {
+      name,
+      kind,
+      requiresPackage,
+      producesBinary,
+      incremental,
+    }
+
+  pub help() = This("help", CommandKind.Help, false, false, false)
+
+  pub version() = This("version", CommandKind.Version, false, false, false)
+
+  pub check() = This("check", CommandKind.Check, true, false, true)
+
+  pub build() = This("build", CommandKind.Build, true, true, true)
+}
+
+impl view Command {
+  packageCommand => requiresPackage
+
+  binaryCommand => producesBinary
+
+  incrementalCommand => incremental
+
+  helpCommand => kind == CommandKind.Help
+
+  versionCommand => kind == CommandKind.Version
+
+  checkCommand => kind == CommandKind.Check
+
+  buildCommand => kind == CommandKind.Build
+}

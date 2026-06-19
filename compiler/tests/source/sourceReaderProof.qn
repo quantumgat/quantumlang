@@ -1,0 +1,49 @@
+import core::{FileId}
+import source::{*}
+pub SourceReaderProof {
+  requestCarriesTargetAndPath: bool
+  productCarriesFileAndText: bool
+  cacheKeyUsesTextFingerprint: bool
+  readerIsDeterministic: bool
+  valid: bool
+}
+
+pub sourceReaderProof() -> SourceReaderProof {
+  let reader = SourceReader("qtlang/compiler", "qtlang/compiler")
+  let request = SourceReadRequest("qtlang/compiler", "main.qn", "main.qn", 11, 22)
+  let requestCarriesTargetAndPath = request.target == "qtlang/compiler" &&
+    request.path == "main.qn" &&
+    request.packageRelativePath == "main.qn" &&
+    request.expectedTextHashHigh == 11 &&
+    request.expectedTextHashLow == 22
+
+  let product = reader.readProduct(request, FileId(1, 2, 7), "println(\"hi\")", 13, 11, 22, false)
+  let productText = product.text
+
+  let productCarriesFileAndText = product.file.id.valid &&
+    product.file.id.id.localHash == 7 &&
+    product.file.path == "main.qn" &&
+    productText.text == "println(\"hi\")" &&
+    productText.byteLength == 13 &&
+    product.file.textHashHigh == productText.fingerprintHigh &&
+    product.file.textHashLow == productText.fingerprintLow
+
+  let cacheKeyUsesTextFingerprint = product.cacheKeyHigh == productText.fingerprintHigh &&
+    product.cacheKeyLow == productText.fingerprintLow
+
+  let readerIsDeterministic = reader.deterministicCacheKeys &&
+    !product.fromCache
+
+  let valid = requestCarriesTargetAndPath &&
+    productCarriesFileAndText &&
+    cacheKeyUsesTextFingerprint &&
+    readerIsDeterministic
+
+  return SourceReaderProof {
+    requestCarriesTargetAndPath: requestCarriesTargetAndPath,
+    productCarriesFileAndText: productCarriesFileAndText,
+    cacheKeyUsesTextFingerprint: cacheKeyUsesTextFingerprint,
+    readerIsDeterministic: readerIsDeterministic,
+    valid: valid,
+  }
+}

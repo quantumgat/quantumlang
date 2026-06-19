@@ -1,0 +1,8 @@
+pub ByteValue {
+}
+
+impl ByteValue {
+  pub empty() -> bytes {
+    return ByteView(b"").toBytes()
+  }
+}

@@ -1,0 +1,58 @@
+import compiler::quantum::{*}
+pub QuantumIfFlowProof {
+  conditionMeasurementTracked: bool
+  branchResourcesBalanced: bool
+  branchCloneRejected: bool
+  branchMergeDeterministic: bool
+  diagnosticStable: bool
+  valid: bool
+}
+
+pub quantumIfFlowProof() -> QuantumIfFlowProof {
+  let qifFact = QuantumIf(2, true)
+  let ownership = QuantumOwnership(true, true, true)
+  let noClone = QuantumNoCloneRule.rejected()
+  let reset = QuantumReset(true, true)
+  let release = QuantumRelease(true, true)
+  let measurement = MeasurementEffect("z")
+  let thenBranch = QuantumIfBranchFact("then", ownership, noClone, reset, release, measurement)
+  let elseBranch = QuantumIfBranchFact("else", ownership, noClone, reset, release, measurement)
+  let merged = QuantumIfMergeFact(thenBranch, elseBranch)
+  let badBranch = QuantumIfBranchFact("bad", ownership, noClone, QuantumReset(true, false), release, measurement)
+  let badMerged = QuantumIfMergeFact(thenBranch, badBranch)
+
+  let conditionMeasurementTracked = qifFact.valid &&
+    qifFact.measurementCondition &&
+    measurement.valid &&
+    measurement.resultType == "qresult"
+
+  let branchResourcesBalanced = thenBranch.valid &&
+    elseBranch.valid &&
+    merged.resourcesBalanced
+
+  let branchCloneRejected = thenBranch.cloneRejected &&
+    elseBranch.cloneRejected &&
+    merged.noClonePreserved
+
+  let branchMergeDeterministic = merged.valid &&
+    merged.deterministic &&
+    merged.measurementEffectMerged
+
+  let diagnosticStable = !badMerged.valid &&
+    badMerged.diagnosticCode == "QTQUANTUM0201"
+
+  let valid = conditionMeasurementTracked &&
+    branchResourcesBalanced &&
+    branchCloneRejected &&
+    branchMergeDeterministic &&
+    diagnosticStable
+
+  return QuantumIfFlowProof {
+    conditionMeasurementTracked: conditionMeasurementTracked,
+    branchResourcesBalanced: branchResourcesBalanced,
+    branchCloneRejected: branchCloneRejected,
+    branchMergeDeterministic: branchMergeDeterministic,
+    diagnosticStable: diagnosticStable,
+    valid: valid,
+  }
+}

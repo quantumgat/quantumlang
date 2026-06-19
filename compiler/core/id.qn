@@ -1,0 +1,295 @@
+pub enum CompilerIdKind {
+  Package
+  Module
+  File
+  Node
+  Declaration
+  Symbol
+  Type
+  Diagnostic
+  QueryProduct
+  Scope
+  Body
+  Block
+  Value
+  ObjectUnit
+  LinkTarget
+  Name
+  Unknown
+}
+
+pub CompilerId {
+  kind: CompilerIdKind = Unknown
+  value: u64 = 0
+  packageHash: u64 = 0
+  moduleHash: u64 = 0
+  localHash: u64 = 0
+  disambiguator: u64 = 0
+}
+
+impl CompilerId {
+  pub CompilerId(kind: CompilerIdKind, value: u64) =
+    This { kind, value }
+
+  pub stable(
+    kind: CompilerIdKind,
+    packageHash: u64,
+    moduleHash: u64,
+    localHash: u64,
+    disambiguator: u64
+  ) =
+    This { kind, value: localHash, packageHash, moduleHash, localHash, disambiguator }
+
+  pub package(packageHash: u64) =
+    This.stable(CompilerIdKind.Package, packageHash, 0, 0, 0)
+
+  pub module(packageHash: u64, moduleHash: u64) =
+    This.stable(CompilerIdKind.Module, packageHash, moduleHash, 0, 0)
+
+  pub file(packageHash: u64, moduleHash: u64, fileHash: u64) =
+    This.stable(CompilerIdKind.File, packageHash, moduleHash, fileHash, 0)
+
+  pub node(packageHash: u64, moduleHash: u64, nodeHash: u64, disambiguator: u64) =
+    This.stable(CompilerIdKind.Node, packageHash, moduleHash, nodeHash, disambiguator)
+
+  pub declaration(packageHash: u64, moduleHash: u64, declarationHash: u64, disambiguator: u64) =
+    This.stable(CompilerIdKind.Declaration, packageHash, moduleHash, declarationHash, disambiguator)
+
+  pub symbol(packageHash: u64, moduleHash: u64, symbolHash: u64, disambiguator: u64) =
+    This.stable(CompilerIdKind.Symbol, packageHash, moduleHash, symbolHash, disambiguator)
+
+  pub typeId(packageHash: u64, moduleHash: u64, typeHash: u64, disambiguator: u64) =
+    This.stable(CompilerIdKind.Type, packageHash, moduleHash, typeHash, disambiguator)
+
+  pub row(kind: CompilerIdKind, value: u64) =
+    This { kind, value }
+}
+
+impl view CompilerId {
+  pub same(other: CompilerId) -> bool {
+    return kind == other.kind &&
+      value == other.value &&
+      packageHash == other.packageHash &&
+      moduleHash == other.moduleHash &&
+      localHash == other.localHash &&
+      disambiguator == other.disambiguator
+  }
+
+  pub known => kind != CompilerIdKind.Unknown
+
+  pub rowBacked => value != 0
+
+  pub packageScoped => packageHash != 0
+
+  pub moduleScoped => moduleHash != 0
+
+  pub localScoped => localHash != 0
+
+  pub disambiguated => disambiguator != 0
+
+  pub stable => packageScoped
+
+  pub present => rowBacked || packageScoped || moduleScoped || localScoped || disambiguated
+
+  pub valid => known && present
+
+  pub stableKey => "{packageHash}:{moduleHash}:{localHash}:{disambiguator}"
+}
+
+pub PackageId {
+  id: CompilerId = {}
+}
+
+pub ModuleId {
+  id: CompilerId = {}
+}
+
+pub FileId {
+  id: CompilerId = {}
+}
+
+pub NodeId {
+  id: CompilerId = {}
+}
+
+pub DeclarationId {
+  id: CompilerId = {}
+}
+
+pub SymbolId {
+  id: CompilerId = {}
+}
+
+pub TypeId {
+  id: CompilerId = {}
+}
+
+pub DiagnosticId {
+  id: CompilerId = {}
+}
+
+pub QueryProductId {
+  id: CompilerId = {}
+}
+
+pub ScopeId {
+  id: CompilerId = {}
+}
+
+pub BodyId {
+  id: CompilerId = {}
+}
+
+pub BlockId {
+  id: CompilerId = {}
+}
+
+pub ValueId {
+  id: CompilerId = {}
+}
+
+pub NameId {
+  id: CompilerId = {}
+}
+
+impl PackageId {
+  pub PackageId(packageHash: u64) =
+    This { id: CompilerId.package(packageHash) }
+}
+
+impl ModuleId {
+  pub ModuleId(packageHash: u64, moduleHash: u64) =
+    This { id: CompilerId.module(packageHash, moduleHash) }
+}
+
+impl FileId {
+  pub FileId(packageHash: u64, moduleHash: u64, fileHash: u64) =
+    This { id: CompilerId.file(packageHash, moduleHash, fileHash) }
+}
+
+impl NodeId {
+  pub NodeId(packageHash: u64, moduleHash: u64, nodeHash: u64, disambiguator: u64) =
+    This { id: CompilerId.node(packageHash, moduleHash, nodeHash, disambiguator) }
+}
+
+impl DeclarationId {
+  pub DeclarationId(packageHash: u64, moduleHash: u64, declarationHash: u64, disambiguator: u64) =
+    This { id: CompilerId.declaration(packageHash, moduleHash, declarationHash, disambiguator) }
+}
+
+impl SymbolId {
+  pub SymbolId(packageHash: u64, moduleHash: u64, symbolHash: u64, disambiguator: u64) =
+    This { id: CompilerId.symbol(packageHash, moduleHash, symbolHash, disambiguator) }
+}
+
+impl TypeId {
+  pub TypeId(packageHash: u64, moduleHash: u64, typeHash: u64, disambiguator: u64) =
+    This { id: CompilerId.typeId(packageHash, moduleHash, typeHash, disambiguator) }
+}
+
+impl DiagnosticId {
+  pub DiagnosticId(value: u64) =
+    This { id: CompilerId.row(CompilerIdKind.Diagnostic, value) }
+}
+
+impl QueryProductId {
+  pub QueryProductId(value: u64) =
+    This { id: CompilerId.row(CompilerIdKind.QueryProduct, value) }
+}
+
+impl ScopeId {
+  pub ScopeId(value: u64) =
+    This { id: CompilerId.row(CompilerIdKind.Scope, value) }
+
+  pub ScopeId(
+    packageHash: u64,
+    moduleHash: u64,
+    scopeHash: u64,
+    disambiguator: u64
+  ) =
+    This {
+      id: CompilerId.stable(
+        CompilerIdKind.Scope,
+        packageHash,
+        moduleHash,
+        scopeHash,
+        disambiguator
+      )
+    }
+}
+
+impl BodyId {
+  pub BodyId(packageHash: u64, moduleHash: u64, bodyHash: u64, disambiguator: u64) =
+    This { id: CompilerId.stable(CompilerIdKind.Body, packageHash, moduleHash, bodyHash, disambiguator) }
+}
+
+impl BlockId {
+  pub BlockId(value: u64) =
+    This { id: CompilerId.row(CompilerIdKind.Block, value) }
+}
+
+impl ValueId {
+  pub ValueId(value: u64) =
+    This { id: CompilerId.row(CompilerIdKind.Value, value) }
+}
+
+impl NameId {
+  pub NameId(value: u64) =
+    This { id: CompilerId.row(CompilerIdKind.Name, value) }
+}
+
+impl view PackageId {
+  pub valid => id.kind == CompilerIdKind.Package && id.valid
+}
+
+impl view ModuleId {
+  pub valid => id.kind == CompilerIdKind.Module && id.valid
+}
+
+impl view FileId {
+  pub valid => id.kind == CompilerIdKind.File && id.valid
+}
+
+impl view NodeId {
+  pub valid => id.kind == CompilerIdKind.Node && id.valid
+}
+
+impl view DeclarationId {
+  pub valid => id.kind == CompilerIdKind.Declaration && id.valid
+}
+
+impl view SymbolId {
+  pub valid => id.kind == CompilerIdKind.Symbol && id.valid
+}
+
+impl view TypeId {
+  pub valid => id.kind == CompilerIdKind.Type && id.valid
+}
+
+impl view DiagnosticId {
+  pub valid => id.kind == CompilerIdKind.Diagnostic && id.valid
+}
+
+impl view QueryProductId {
+  pub valid => id.kind == CompilerIdKind.QueryProduct && id.valid
+}
+
+impl view ScopeId {
+  pub valid => id.kind == CompilerIdKind.Scope && id.valid
+}
+
+impl view BodyId {
+  pub valid => id.kind == CompilerIdKind.Body && id.valid
+}
+
+impl view BlockId {
+  pub valid => id.kind == CompilerIdKind.Block && id.valid
+}
+
+impl view ValueId {
+  pub valid => id.kind == CompilerIdKind.Value && id.valid
+}
+
+impl view NameId {
+  pub valid => id.kind == CompilerIdKind.Name && id.valid
+}

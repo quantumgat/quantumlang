@@ -1,0 +1,20 @@
+pub TargetTriple {
+  text: string
+  arch: string
+  vendor: string
+  os: string
+  environment: string
+  valid: bool
+}
+
+impl TargetTriple {
+  pub TargetTriple(text: string, arch: string, vendor: string, os: string, environment: string) =
+    This {
+      text,
+      arch,
+      vendor,
+      os,
+      environment,
+      valid: text != "" && arch != "" && os != "",
+    }
+}

@@ -1,0 +1,478 @@
+import core::{DeclarationId, FileId, Vec}
+import declaration::{DeclarationKind, DeclarationRecord, DeclarationVisibility}
+import typeSystem::{TypeScopeTable, TypeSymbolKind, TypeSymbolTable}
+
+pub RealTypeEnvironmentProof {
+  concreteRowsOwned: bool
+  declarationKindsPreserved: bool
+  moduleLookupWorks: bool
+  declarationLookupWorks: bool
+  visibilityDerived: bool
+  stableIdsAssigned: bool
+  structuredScopesBuilt: bool
+  lexicalLookupWorks: bool
+  diagnosticsStructured: bool
+  memberIdentityIsModuleOwned: bool
+  genericMemberOwnersResolved: bool
+  crossModuleImplOwnerResolved: bool
+  repeatedImportsCoowned: bool
+  enumVariantMemberResolved: bool
+  enumRuntimeKindResolved: bool
+  globalTypeOwnerResolved: bool
+  moduleMemberCallResolved: bool
+  valid: bool
+}
+
+pub realTypeEnvironmentProof() -> RealTypeEnvironmentProof {
+  let genericFunction = DeclarationRecord(
+    3,
+    DeclarationKind.Function,
+    "app",
+    "convert",
+    FileId(1, 1, 1),
+    4,
+    5,
+    DeclarationVisibility.Private
+  )
+  genericFunction.genericParameterCount = 1
+  genericFunction.genericParameters = ["T"]
+  genericFunction.parameters = ["input"]
+
+  let records: Vec<DeclarationRecord> = [
+    DeclarationRecord(
+      1,
+      DeclarationKind.Module,
+      "app",
+      "app",
+      FileId(1, 1, 1),
+      0,
+      1,
+      DeclarationVisibility.Public
+    ),
+    DeclarationRecord(
+      2,
+      DeclarationKind.Type,
+      "app",
+      "User",
+      FileId(1, 1, 1),
+      2,
+      3,
+      DeclarationVisibility.Public
+    ),
+    genericFunction,
+    DeclarationRecord(
+      4,
+      DeclarationKind.Import,
+      "app",
+      "std",
+      FileId(1, 1, 1),
+      6,
+      7,
+      DeclarationVisibility.Private
+    ),
+  ]
+  let table = TypeSymbolTable.fromRecords(records, true)
+  let scopes = TypeScopeTable.fromSymbols(table)
+  let user = table.symbolForDeclaration(DeclarationId(1, 1, 2, 2))
+  let convert = table.symbolAt(2)
+  let functionScope = scopes.scopeForSymbol(convert.id)
+  let input = scopes.resolve(functionScope, "input")
+  let generic = scopes.resolve(functionScope, "T")
+
+  let concreteRowsOwned =
+    table.symbolCount == 4 &&
+    table.moduleSymbolCount == 1 &&
+    table.typeSymbolCount == 1 &&
+    table.functionSymbolCount == 1 &&
+    table.importSymbolCount == 1
+
+  let declarationKindsPreserved =
+    table.symbolAt(0).kind == TypeSymbolKind.Module &&
+    table.symbolAt(1).kind == TypeSymbolKind.Type &&
+    table.symbolAt(2).kind == TypeSymbolKind.Function &&
+    table.symbolAt(3).kind == TypeSymbolKind.Import
+
+  let moduleLookupWorks =
+    table.contains("app", "User") &&
+    table.contains("app", "convert") &&
+    table.contains("app", "missing") == false
+
+  let declarationLookupWorks =
+    user != None
+
+  let visibilityDerived =
+    table.publicSymbolCount == 2 &&
+    table.privateSymbolCount == 2
+
+  let stableIdsAssigned =
+    table.symbolAt(0).stableIdentity &&
+    table.symbolAt(1).stableIdentity &&
+    convert.stableIdentity &&
+    convert.id.id.stableKey != table.symbolAt(1).id.id.stableKey
+
+  let structuredScopesBuilt =
+    scopes.valid &&
+    scopes.count >= 5 &&
+    scopes.genericScopeCount == 1 &&
+    scopes.bindingCount >= table.symbolCount + 2
+
+  let lexicalLookupWorks =
+    input != None &&
+    generic != None
+
+  let duplicateRecords: Vec<DeclarationRecord> = [
+    records[0],
+    records[1],
+    records[1],
+    genericFunction,
+  ]
+  let duplicateTable = TypeSymbolTable.fromRecords(duplicateRecords, true)
+  let diagnosticsStructured =
+    duplicateTable.duplicateCount == 1 &&
+    duplicateTable.issueCount == 1 &&
+    duplicateTable.issueAt(0).valid
+
+  let appField = DeclarationRecord(
+    5,
+    DeclarationKind.Value,
+    "app",
+    "value",
+    FileId(1, 1, 1),
+    8,
+    9,
+    DeclarationVisibility.Public
+  )
+  appField.ownerTypeName = "Shared"
+  appField.memberKind = "property"
+  let libraryField = DeclarationRecord(
+    6,
+    DeclarationKind.Value,
+    "library",
+    "value",
+    FileId(1, 2, 1),
+    10,
+    11,
+    DeclarationVisibility.Public
+  )
+  libraryField.ownerTypeName = "Shared"
+  libraryField.memberKind = "property"
+  let moduleOwnedMembers = TypeSymbolTable.fromRecords(
+    [appField, libraryField],
+    true
+  )
+  let memberIdentityIsModuleOwned =
+    moduleOwnedMembers.duplicateCount == 0 &&
+    moduleOwnedMembers.symbolCount == 2 &&
+    moduleOwnedMembers.symbolValueForMember(
+      moduleOwnedMembers.symbolAt(0).moduleId,
+      "Shared",
+      "value"
+    ).moduleName == "app" &&
+    moduleOwnedMembers.symbolValueForMember(
+      moduleOwnedMembers.symbolAt(1).moduleId,
+      "Shared",
+      "value"
+    ).moduleName == "library"
+
+  let rangeFrom = DeclarationRecord(
+    7,
+    DeclarationKind.Type,
+    "ranges",
+    "RangeFrom",
+    FileId(1, 3, 1),
+    12,
+    13,
+    DeclarationVisibility.Public
+  )
+  let rangeTo = DeclarationRecord(
+    8,
+    DeclarationKind.Type,
+    "ranges",
+    "RangeTo",
+    FileId(1, 3, 1),
+    14,
+    15,
+    DeclarationVisibility.Public
+  )
+  let rangeFromProperty = DeclarationRecord(
+    9,
+    DeclarationKind.Value,
+    "ranges",
+    "boundedStart",
+    FileId(1, 3, 1),
+    16,
+    17,
+    DeclarationVisibility.Public
+  )
+  rangeFromProperty.ownerTypeName = "RangeFrom<T>"
+  rangeFromProperty.memberKind = "property"
+  let rangeToProperty = DeclarationRecord(
+    10,
+    DeclarationKind.Value,
+    "ranges",
+    "boundedStart",
+    FileId(1, 3, 1),
+    18,
+    19,
+    DeclarationVisibility.Public
+  )
+  rangeToProperty.ownerTypeName = "RangeTo<T>"
+  rangeToProperty.memberKind = "property"
+  let firstCoreImport = DeclarationRecord(
+    11,
+    DeclarationKind.Import,
+    "ranges",
+    "core",
+    FileId(1, 3, 1),
+    20,
+    21,
+    DeclarationVisibility.Private
+  )
+  let secondCoreImport = DeclarationRecord(
+    12,
+    DeclarationKind.Import,
+    "ranges",
+    "core",
+    FileId(1, 3, 1),
+    22,
+    23,
+    DeclarationVisibility.Private
+  )
+  let genericOwnerTable = TypeSymbolTable.fromRecords(
+    [
+      rangeFrom,
+      rangeTo,
+      rangeFromProperty,
+      rangeToProperty,
+      firstCoreImport,
+      secondCoreImport,
+    ],
+    true
+  )
+  let genericOwnerScopes = TypeScopeTable.fromSymbols(genericOwnerTable)
+  let rangeFromScope = genericOwnerScopes.scopeForSymbol(
+    genericOwnerTable.symbolAt(0).id
+  )
+  let rangeToScope = genericOwnerScopes.scopeForSymbol(
+    genericOwnerTable.symbolAt(1).id
+  )
+  let genericMemberOwnersResolved =
+    genericOwnerScopes.resolve(rangeFromScope, "boundedStart") != None &&
+    genericOwnerScopes.resolve(rangeToScope, "boundedStart") != None
+  let repeatedImportsCoowned =
+    genericOwnerScopes.issueCount == 0
+  let objectType = DeclarationRecord(
+    13,
+    DeclarationKind.Type,
+    "backend.native.object.objectUnitKey",
+    "NativeObjectUnitKey",
+    FileId(1, 4, 1),
+    24,
+    25,
+    DeclarationVisibility.Public
+  )
+  let stableHashInto = DeclarationRecord(
+    14,
+    DeclarationKind.Function,
+    "backend.native.object.stableObjectHash",
+    "stableHashInto",
+    FileId(1, 5, 1),
+    26,
+    27,
+    DeclarationVisibility.Private
+  )
+  stableHashInto.ownerTypeName = "NativeObjectUnitKey"
+  stableHashInto.memberKind = "method"
+  stableHashInto.parameters = ["out"]
+  stableHashInto.parameterRows = [
+    AstCallableParameter {
+      position: 0
+      name: "out"
+      typeName: "StableHashWriter"
+      span: SourceSpan(FileId(1, 5, 1), 26, 27)
+    },
+  ]
+  let crossModuleOwnerTable = TypeSymbolTable.fromRecords(
+    [objectType, stableHashInto],
+    true
+  )
+  let crossModuleOwnerScopes =
+    TypeScopeTable.fromSymbols(crossModuleOwnerTable)
+  let crossModuleImplOwnerResolved =
+    crossModuleOwnerScopes.enclosingTypeOwner(
+      crossModuleOwnerScopes.scopeForSymbol(
+        crossModuleOwnerTable.symbolAt(1).id
+      )
+    ).id.same(crossModuleOwnerTable.symbolAt(0).id.id)
+  let structuredParameterTypePreserved =
+    crossModuleOwnerScopes.resolve(
+      crossModuleOwnerScopes.scopeForSymbol(
+        crossModuleOwnerTable.symbolAt(1).id
+      ),
+      "out"
+    ) != None &&
+    crossModuleOwnerScopes.resolveValue(
+      crossModuleOwnerScopes.scopeForSymbol(
+        crossModuleOwnerTable.symbolAt(1).id
+      ),
+      "out"
+    ).typeName == "StableHashWriter"
+  let moduleMemberCallResolved =
+    crossModuleOwnerTable.symbolValueForModuleMemberCall(
+      crossModuleOwnerTable.symbolAt(1).moduleId,
+      "stableHashInto",
+      1,
+      0
+    ).ownerTypeName == "NativeObjectUnitKey"
+  let visibleName = DeclarationRecord(
+    15,
+    DeclarationKind.Type,
+    "core.hash.hashDomain",
+    "HashDomain",
+    FileId(1, 6, 1),
+    28,
+    29,
+    DeclarationVisibility.Public
+  )
+  let localName = DeclarationRecord(
+    16,
+    DeclarationKind.Type,
+    "backend.native.object.stableObjectHash",
+    "LocalObject",
+    FileId(1, 5, 1),
+    30,
+    31,
+    DeclarationVisibility.Private
+  )
+  let visibleNameTable = TypeSymbolTable.fromRecords(
+    [visibleName, localName],
+    true
+  )
+  let consumerModule = ModuleId(
+    localName.fileId.id.packageHash,
+    localName.fileId.id.moduleHash
+  )
+  let packageVisibleNameResolved =
+    visibleNameTable.symbolValueForName(
+      consumerModule,
+      "HashDomain"
+    ).name == "HashDomain"
+  let exactModuleNameResolved =
+    visibleNameTable.symbolValueForName(
+      consumerModule,
+      "LocalObject"
+    ).name == "LocalObject"
+  let conflictingVisibleName = DeclarationRecord(
+    17,
+    DeclarationKind.Type,
+    "other.hash.hashDomain",
+    "HashDomain",
+    FileId(1, 7, 1),
+    32,
+    33,
+    DeclarationVisibility.Public
+  )
+  let ambiguousVisibleNameTable = TypeSymbolTable.fromRecords(
+    [visibleName, localName, conflictingVisibleName],
+    true
+  )
+  let ambiguousPackageNameRejected =
+    !ambiguousVisibleNameTable.symbolValueForName(
+      consumerModule,
+      "HashDomain"
+    ).id.valid
+  let globalTypeOwnerResolved =
+    visibleNameTable.typeOwnerSymbolFor("HashDomain").name == "HashDomain" &&
+    !ambiguousVisibleNameTable.typeOwnerSymbolFor("HashDomain").id.valid
+
+  let hashDomainObject = DeclarationRecord(
+    18,
+    DeclarationKind.Function,
+    "core.hash.hashDomain",
+    "Object",
+    FileId(1, 6, 1),
+    34,
+    35,
+    DeclarationVisibility.Public
+  )
+  hashDomainObject.ownerTypeName = "HashDomain"
+  hashDomainObject.memberKind = "enum-variant"
+  hashDomainObject.returnTypeName = "HashDomain"
+  let enumVariantTable = TypeSymbolTable.fromRecords(
+    [visibleName, hashDomainObject],
+    true
+  )
+  let enumVariantMember =
+    enumVariantTable.symbolValueForMember("HashDomain", "Object")
+  let enumVariantMemberResolved =
+    enumVariantTable.valid &&
+    enumVariantMember.id.valid &&
+    enumVariantMember.kind == TypeSymbolKind.Value &&
+    enumVariantMember.ownerTypeName == "HashDomain" &&
+    enumVariantMember.typeName == "HashDomain" &&
+    enumVariantMember.memberKind == "enum-variant"
+  let runtimeEnum = DeclarationRecord(
+    19,
+    DeclarationKind.Unknown,
+    "core.hash.hashDomain",
+    "HashDomain",
+    FileId(1, 6, 1),
+    36,
+    37,
+    DeclarationVisibility.Public
+  )
+  runtimeEnum.returnTypeName = "enum"
+  let runtimeEnumTable = TypeSymbolTable.fromRecords([runtimeEnum], true)
+  let enumRuntimeKindResolved =
+    runtimeEnumTable.valid &&
+    runtimeEnumTable.symbolAt(0).kind == TypeSymbolKind.Enum &&
+    runtimeEnumTable.typeOwnerSymbolFor(
+      "HashDomain",
+      runtimeEnumTable.symbolAt(0).moduleId
+    ).name == "HashDomain"
+
+  let valid =
+    table.valid &&
+    concreteRowsOwned &&
+    declarationKindsPreserved &&
+    moduleLookupWorks &&
+    declarationLookupWorks &&
+    visibilityDerived &&
+    stableIdsAssigned &&
+    structuredScopesBuilt &&
+    lexicalLookupWorks &&
+    diagnosticsStructured &&
+    memberIdentityIsModuleOwned &&
+    genericMemberOwnersResolved &&
+    crossModuleImplOwnerResolved &&
+    structuredParameterTypePreserved &&
+    packageVisibleNameResolved &&
+    exactModuleNameResolved &&
+    ambiguousPackageNameRejected &&
+    enumVariantMemberResolved &&
+    enumRuntimeKindResolved &&
+    globalTypeOwnerResolved &&
+    moduleMemberCallResolved &&
+    repeatedImportsCoowned
+
+  return RealTypeEnvironmentProof {
+    concreteRowsOwned
+    declarationKindsPreserved
+    moduleLookupWorks
+    declarationLookupWorks
+    visibilityDerived
+    stableIdsAssigned
+    structuredScopesBuilt
+    lexicalLookupWorks
+    diagnosticsStructured
+    memberIdentityIsModuleOwned
+    genericMemberOwnersResolved
+    crossModuleImplOwnerResolved
+    repeatedImportsCoowned
+    enumVariantMemberResolved
+    enumRuntimeKindResolved
+    globalTypeOwnerResolved
+    moduleMemberCallResolved
+    valid
+  }
+}

@@ -1,0 +1,89 @@
+import query::{QueryKey, StableBodyId, StableFileId, StableGenericInstanceId, StableLinkTargetId, StableModuleId, StableObjectUnitId, StableSymbolId}
+
+pub QueryKeyModelProof {
+  completeCoverage: bool
+  kindSeparated: bool
+  componentSeparated: bool
+  frontendTargetIndependent: bool
+  backendTargetSpecific: bool
+  valid: bool
+}
+
+pub queryKeyModelProof() -> QueryKeyModelProof {
+  let file = StableFileId(11, 22, 33)
+  let module = StableModuleId(11, 22)
+  let symbol = StableSymbolId(11, 22, 44, 0)
+  let body = StableBodyId(11, 22, 55, 0)
+  let generic = StableGenericInstanceId(11, 22, 66, 0)
+  let objectUnit = StableObjectUnitId(11, 22, 77, 0)
+  let linkTarget = StableLinkTargetId(11, 88, 0)
+
+  let source = QueryKey.sourceFingerprint(file.id)
+  let tokens = QueryKey.tokens(file.id)
+  let ast = QueryKey.ast(file.id)
+  let exports = QueryKey.exportSurface(module.id)
+  let imports = QueryKey.importGraph(module.id)
+  let dependencies = QueryKey.symbolDependencySet(symbol.id)
+  let resolved = QueryKey.resolveSymbol(symbol.id)
+  let signature = QueryKey.typeSignature(symbol.id)
+  let typedBody = QueryKey.typeBody(body.id)
+  let hir = QueryKey.hirBody(body.id)
+  let mir = QueryKey.mirBody(body.id)
+  let optimized = QueryKey.optimizedBody(body.id, "x86_64-linux", "debug", "sse2")
+  let instance = QueryKey.genericInstance(generic.id)
+  let object = QueryKey.nativeObject(objectUnit.id, "x86_64-linux", "debug")
+  let quantum = QueryKey.quantumArtifact(objectUnit.id, "quantum-provider", "debug", "qpu-v1")
+  let linked = QueryKey.linkedTarget(linkTarget.id, "x86_64-linux", "debug")
+
+  let completeCoverage =
+    source.valid &&
+    tokens.valid &&
+    ast.valid &&
+    exports.valid &&
+    imports.valid &&
+    dependencies.valid &&
+    resolved.valid &&
+    signature.valid &&
+    typedBody.valid &&
+    hir.valid &&
+    mir.valid &&
+    optimized.valid &&
+    instance.valid &&
+    object.valid &&
+    quantum.valid &&
+    linked.valid
+  let kindSeparated = tokens.stableKey != ast.stableKey
+  let componentSeparated = source.epoch.stableKey != tokens.epoch.stableKey
+  let frontendTargetIndependent =
+    source.frontendKey &&
+    tokens.frontendKey &&
+    ast.frontendKey &&
+    exports.frontendKey &&
+    imports.frontendKey &&
+    resolved.frontendKey &&
+    signature.frontendKey &&
+    typedBody.frontendKey &&
+    hir.frontendKey &&
+    mir.frontendKey &&
+    instance.frontendKey
+  let backendTargetSpecific =
+    optimized.backendKey &&
+    object.backendKey &&
+    quantum.backendKey &&
+    linked.backendKey
+  let valid =
+    completeCoverage &&
+    kindSeparated &&
+    componentSeparated &&
+    frontendTargetIndependent &&
+    backendTargetSpecific
+
+  return QueryKeyModelProof {
+    completeCoverage
+    kindSeparated
+    componentSeparated
+    frontendTargetIndependent
+    backendTargetSpecific
+    valid
+  }
+}

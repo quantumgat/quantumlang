@@ -1,0 +1,32 @@
+pub QuantumLifetime {
+  released: bool
+  resetBeforeRelease: bool
+  escapesScope: bool
+  diagnosticCode: string
+  valid: bool
+}
+
+impl QuantumLifetime {
+  pub QuantumLifetime(released: bool, resetBeforeRelease: bool, escapesScope: bool) =
+    This {
+      released
+      resetBeforeRelease
+      escapesScope
+      diagnosticCode: ""
+      valid: !escapesScope
+    }
+
+  pub leak() =
+    This {
+      released: false
+      resetBeforeRelease: false
+      escapesScope: true
+      diagnosticCode: "QTQUANTUM0003"
+      valid: false
+    }
+}
+
+impl view QuantumLifetime {
+  pub contained => escapesScope == false
+  pub resetSafe => resetBeforeRelease
+}

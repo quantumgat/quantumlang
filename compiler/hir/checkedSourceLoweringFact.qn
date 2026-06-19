@@ -1,0 +1,51 @@
+import semantic::{CheckedFile, CheckedModule, SemanticModel}
+
+pub enum CheckedSourceLoweringStatus {
+  LoweringReady
+  FileMissing
+  SemanticNotReady
+  HirModuleInvalid
+  ItemFunctionMismatch
+  Nondeterministic
+}
+
+pub CheckedSourceLoweringFact {
+  file: CheckedFile
+  semanticModel: SemanticModel
+  hirModule: HirModule
+  loweredItemCount: i64
+  loweredFunctionCount: i64
+  deterministic: bool = true
+}
+
+impl CheckedSourceLoweringFact {
+  pub CheckedSourceLoweringFact(
+    file: CheckedFile,
+    module: CheckedModule,
+    semanticModel: SemanticModel,
+    itemCount: i64,
+    functionCount: i64
+  ) =
+    This {
+      file
+      semanticModel
+      hirModule: HirModule(module.name, itemCount, functionCount)
+      loweredItemCount: itemCount
+      loweredFunctionCount: functionCount
+    }
+}
+
+impl view CheckedSourceLoweringFact {
+  pub valid => status == CheckedSourceLoweringStatus.LoweringReady
+  pub status => match true {
+    deterministic == false => CheckedSourceLoweringStatus.Nondeterministic
+    file.exists == false => CheckedSourceLoweringStatus.FileMissing
+    semanticModel.readyForHir == false => CheckedSourceLoweringStatus.SemanticNotReady
+    hirModule.readyForMir == false => CheckedSourceLoweringStatus.HirModuleInvalid
+    loweredItemCount < loweredFunctionCount => CheckedSourceLoweringStatus.ItemFunctionMismatch
+    _ => CheckedSourceLoweringStatus.LoweringReady
+  }
+  pub cacheable => deterministic && valid
+  pub lowerable => valid
+  pub debugName => "hir.checkedSource.{hirModule.name}.{loweredItemCount}"
+}

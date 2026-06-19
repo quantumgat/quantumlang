@@ -1,0 +1,15 @@
+[package]
+name = "cross-module-capability-proof"
+version = "0.1.0"
+edition = "2026"
+
+[library]
+importRoot = "cross_module_capability"
+
+[targets.app]
+kind = "bin"
+main = "main.qn"
+backend = "native"
+
+[source]
+root = "."

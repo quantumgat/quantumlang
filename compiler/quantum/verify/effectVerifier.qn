@@ -1,0 +1,27 @@
+pub QuantumEffectVerifier {
+  checked: i64
+  accepted: bool
+  diagnosticCode: string
+}
+
+impl QuantumEffectVerifier {
+  pub QuantumEffectVerifier(purity: QuantumPurity, measurement: MeasurementEffect) {
+    let accepted = purity.valid && (!purity.pure || measurement.allowedInPureQfunc)
+    if accepted {
+      return This {
+        checked: 2
+        accepted: true
+        diagnosticCode: ""
+      }
+    }
+    This {
+      checked: 2
+      accepted: false
+      diagnosticCode: "QTQUANTUM0102"
+    }
+  }
+}
+
+impl view QuantumEffectVerifier {
+  pub rejected => accepted == false
+}

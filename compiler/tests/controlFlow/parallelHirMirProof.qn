@@ -1,0 +1,69 @@
+import controlFlow::{ParallelLoopContract, ParallelLoopKind, ParallelCaptureKind, ParallelReductionKind}
+import hir::{HirParallelRegion, HirParallelLoopKind, HirParallelCaptureKind, HirParallelReductionKind}
+import mir::{MirParallelRegion, MirCommunicationEdgeKind}
+
+pub ParallelHirMirProof {
+  contractValid: bool
+  hirValid: bool
+  mirValid: bool
+  communicationTyped: bool
+  schedulerTargetNeutral: bool
+  stableIncrementalProducts: bool
+  valid: bool
+}
+
+pub parallelHirMirProof() -> ParallelHirMirProof {
+  let contract = ParallelLoopContract
+    .shardFor(100, 101, 102, 103, 8)
+    .withCapture(ParallelCaptureKind.ShardLocal)
+    .withReduction(ParallelReductionKind.Ordered)
+
+  let hir = HirParallelRegion(
+    contract.regionId,
+    contract.bodyId,
+    contract.partitionId,
+    contract.joinId,
+    HirParallelLoopKind.ShardFor,
+    HirParallelCaptureKind.ShardLocal,
+    HirParallelReductionKind.Ordered,
+    contract.partitionCount,
+    contract.deterministic
+  )
+  let mir = MirParallelRegion.fromHir(hir)
+
+  let contractValid = contract.valid &&
+    contract.kind == ParallelLoopKind.ShardFor
+  let hirValid = hir.valid &&
+    hir.implicitJoin &&
+    hir.cancellable &&
+    hir.backpressured
+  let mirValid = mir.valid
+  let communicationTyped =
+    mir.inputEdge.kind == MirCommunicationEdgeKind.Channel &&
+    mir.outputEdge.kind == MirCommunicationEdgeKind.Stream &&
+    mir.reductionEdge.kind == MirCommunicationEdgeKind.Sink
+  let schedulerTargetNeutral =
+    mir.scheduler.targetNeutral &&
+    mir.scheduler.partitionCount == 8 &&
+    mir.scheduler.shardLocalMutation &&
+    mir.scheduler.orderedReduction
+  let stableIncrementalProducts =
+    hir.incrementalKey == "hir.parallel.100.101.102.103" &&
+    mir.incrementalKey == "mir.parallel.100.101.102.103"
+  let valid = contractValid &&
+    hirValid &&
+    mirValid &&
+    communicationTyped &&
+    schedulerTargetNeutral &&
+    stableIncrementalProducts
+
+  return ParallelHirMirProof {
+    contractValid
+    hirValid
+    mirValid
+    communicationTyped
+    schedulerTargetNeutral
+    stableIncrementalProducts
+    valid
+  }
+}

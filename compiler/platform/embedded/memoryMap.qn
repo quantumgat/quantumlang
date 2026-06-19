@@ -1,0 +1,22 @@
+pub MemoryMap {
+  regionCount: i64
+  flashBytes: i64
+  ramBytes: i64
+  valid: bool
+}
+
+impl MemoryMap {
+  pub MemoryMap(regionCount: i64, flashBytes: i64, ramBytes: i64) =
+    This {
+      regionCount
+      flashBytes
+      ramBytes
+      valid: regionCount > 0 && flashBytes > 0 && ramBytes > 0
+    }
+}
+
+impl view MemoryMap {
+  pub hasFlash => flashBytes > 0
+  pub hasRam => ramBytes > 0
+  pub linkable => valid && hasFlash && hasRam
+}

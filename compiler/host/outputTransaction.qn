@@ -1,0 +1,30 @@
+pub OutputTransaction {
+  outputPath: string
+  temporaryPath: string
+}
+
+impl OutputTransaction {
+  pub OutputTransaction(outputPath: string) =
+    This {
+      outputPath
+      temporaryPath: "{outputPath}.tmp"
+    }
+}
+
+context OutputTransaction {
+  pub prepare(io: CompilerIo, outputDirectory: string) -> bool =
+    io.createDirectories(outputDirectory) == 0
+
+  pub writeText(io: CompilerIo, text: string) -> bool =
+    io.atomicWriteText(temporaryPath, text) == 0
+
+  pub publish(io: CompilerIo) -> bool =
+    io.rename(temporaryPath, outputPath) == 0
+}
+
+impl view OutputTransaction {
+  pub valid: bool =>
+    outputPath != "" &&
+    temporaryPath != "" &&
+    outputPath != temporaryPath
+}

@@ -1,0 +1,32 @@
+pub QuantumSimulatorPlan {
+  engine: string
+  stateVector: bool
+  shotPlan: QuantumShotPlan
+  diagnosticCode: string = ""
+}
+
+impl QuantumSimulatorPlan {
+  pub QuantumSimulatorPlan(engine: string, stateVector: bool, shotPlan: QuantumShotPlan) =
+    This { engine, stateVector, shotPlan }
+
+  pub stateVector(engine: string, shots: i64) =
+    This {
+      engine
+      stateVector: true
+      shotPlan: QuantumShotPlan.deterministic(shots)
+    }
+
+  withShotPlan(shotPlan: QuantumShotPlan) =
+    this {
+      shotPlan
+    }
+}
+
+impl view QuantumSimulatorPlan {
+  pub valid => diagnosticCode == "" && engine != "" && shotPlan.valid
+  pub stateVectorEngine => stateVector
+  pub samplingEngine => stateVector == false
+  pub deterministicReady => shotPlan.deterministicReady
+  pub lowerable => valid
+  pub debugName => "quantum.simulator.{engine}.{shotPlan.shots}"
+}

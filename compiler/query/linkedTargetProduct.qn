@@ -1,0 +1,68 @@
+pub enum LinkedTargetStatus {
+  Missing
+  Linked
+  Restored
+  BlockedByObject
+  Failed
+}
+
+pub LinkedTargetProduct {
+  targetId: StableId
+  key: QueryKey
+  inputFingerprint: Fingerprint
+  outputFingerprint: Fingerprint
+  targetKey: string
+  profileKey: string
+  outputPath: string
+  status: LinkedTargetStatus
+  inputCount: usize
+  objectCount: usize
+  archiveCount: usize
+  byteSize: usize
+  diagnosticCount: usize = 0
+  schemaVersion: u64 = 1
+}
+
+impl LinkedTargetProduct {
+  pub init(
+    targetId: StableId,
+    inputFingerprint: Fingerprint,
+    outputFingerprint: Fingerprint,
+    targetKey: string,
+    profileKey: string,
+    outputPath: string,
+    status: LinkedTargetStatus,
+    inputCount: usize,
+    objectCount: usize,
+    archiveCount: usize,
+    byteSize: usize,
+    diagnosticCount: usize
+  ) =
+    This {
+      targetId
+      key: QueryKey.linkedTarget(targetId, targetKey, profileKey)
+      inputFingerprint
+      outputFingerprint
+      targetKey
+      profileKey
+      outputPath
+      status
+      inputCount
+      objectCount
+      archiveCount
+      byteSize
+      diagnosticCount
+    }
+
+  pub productFingerprint() =
+    ProductFingerprint(inputFingerprint, outputFingerprint)
+}
+
+impl view LinkedTargetProduct {
+  pub linked => status == LinkedTargetStatus.Linked
+  pub restored => status == LinkedTargetStatus.Restored
+  pub blocked => status == LinkedTargetStatus.BlockedByObject
+  pub failed => status == LinkedTargetStatus.Failed || diagnosticCount > 0
+  pub replayable => failed == false && blocked == false && outputPath != ""
+  pub materialized => linked || restored
+}

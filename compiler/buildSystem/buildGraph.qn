@@ -1,0 +1,3 @@
+pub BuildGraph {
+  nodeCount: i64
+}

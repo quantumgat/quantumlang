@@ -1,0 +1,7 @@
+module app.badFacade
+
+import http.core.privateModel.{PrivateRouteCarrier}
+
+export {
+  PrivateRouteCarrier
+}

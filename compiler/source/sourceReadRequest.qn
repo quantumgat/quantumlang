@@ -1,0 +1,30 @@
+pub SourceReadRequest {
+  target: string
+  path: string
+  packageRelativePath: string
+  expectedTextHashHigh: u64
+  expectedTextHashLow: u64
+}
+
+impl SourceReadRequest {
+  pub SourceReadRequest(
+    target: string,
+    path: string,
+    packageRelativePath: string,
+    expectedTextHashHigh: u64,
+    expectedTextHashLow: u64
+  ) =
+    This {
+      target,
+      path,
+      packageRelativePath,
+      expectedTextHashHigh,
+      expectedTextHashLow,
+    }
+}
+
+impl view SourceReadRequest {
+  pub valid => target != "" && path != "" && packageRelativePath != ""
+  pub expectsFingerprint => expectedTextHashHigh != 0 || expectedTextHashLow != 0
+  pub cacheIdentity => "{target}:{packageRelativePath}:{expectedTextHashHigh}:{expectedTextHashLow}"
+}

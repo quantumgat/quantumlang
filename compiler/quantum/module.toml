@@ -1,0 +1,9 @@
+[module]
+name = "quantum"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/quantum"
+role = "first-class-quantum-language-model"
+
+[dependencies]
+modules = ["syntax"]

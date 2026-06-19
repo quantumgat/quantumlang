@@ -1,0 +1,135 @@
+pub TextLineColumn {
+  line: i64 = 0
+  column: i64 = 0
+}
+
+impl TextLineColumn {
+  pub TextLineColumn(line: i64, column: i64) =
+    This { line, column }
+}
+
+impl view TextLineColumn {
+  pub valid: bool => line >= 0 && column >= 0
+  pub origin: bool => line == 0 && column == 0
+}
+
+pub LineMap {
+  text: string = ""
+  lineStarts: Vec<i64> = []
+}
+
+impl LineMap {
+  pub fromText(text: string) -> LineMap {
+    let map = This { text }
+    map.lineStarts.push(0)
+
+    let index: i64 = 0
+    let length = text.byteLength() as i64
+    while index < length {
+      let byte = text.uncheckedByteAt(index)
+      if byte == 10 {
+        map.lineStarts.push(index + 1)
+      }
+      index = index + 1
+    }
+    return map
+  }
+
+  pub byteLength() -> i64 {
+    return text.byteLength() as i64
+  }
+
+  pub lineCount() -> i64 {
+    return lineStarts.count
+  }
+
+  pub lineStart(line: i64) -> i64 {
+    if line < 0 || line >= lineStarts.count {
+      return -1
+    }
+    return lineStarts[line]
+  }
+
+  pub lineEnd(line: i64) -> i64 {
+    if line < 0 || line >= lineStarts.count {
+      return -1
+    }
+    if line + 1 < lineStarts.count {
+      let end = lineStarts[line + 1] - 1
+      if end >= lineStarts[line] &&
+         text.uncheckedByteAt(end) == 10 {
+        return end
+      }
+      return lineStarts[line + 1]
+    }
+    return text.byteLength() as i64
+  }
+
+  pub offsetToLine(offset: i64) -> i64 {
+    if offset <= 0 {
+      return 0
+    }
+    let length = text.byteLength() as i64
+    let target = offset
+    if target > length {
+      target = length
+    }
+
+    let low: i64 = 0
+    let high: i64 = lineStarts.count
+    while low + 1 < high {
+      let mid = (low + high) / 2
+      if lineStarts[mid] <= target {
+        low = mid
+      } else {
+        high = mid
+      }
+    }
+    return low
+  }
+
+  pub offsetToColumn(offset: i64) -> i64 {
+    let line = this.offsetToLine(offset)
+    let start = this.lineStart(line)
+    if start < 0 {
+      return -1
+    }
+    let target = offset
+    let length = text.byteLength() as i64
+    if target > length {
+      target = length
+    }
+    if target < start {
+      return 0
+    }
+    return target - start
+  }
+
+  pub lineColumn(offset: i64) -> TextLineColumn {
+    let line = this.offsetToLine(offset)
+    return TextLineColumn(line, this.offsetToColumn(offset))
+  }
+
+  pub lineSpan(line: i64) -> TextSpan {
+    let start = this.lineStart(line)
+    let end = this.lineEnd(line)
+    if start < 0 || end < 0 {
+      return TextSpan()
+    }
+    return TextSpan(start, end)
+  }
+
+  pub lineView(line: i64) -> TextView {
+    return this.lineSpan(line).toView(text)
+  }
+
+  pub spanText(span: TextSpan) -> TextView {
+    return span.toView(text)
+  }
+}
+
+impl view LineMap {
+  pub count: i64 => lineStarts.count
+  pub empty: bool => text.byteLength() == 0
+  pub valid: bool => lineStarts.valid && lineStarts.count > 0
+}

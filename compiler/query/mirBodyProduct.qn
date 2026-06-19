@@ -1,0 +1,54 @@
+pub enum MirBodyStatus {
+  NotLowered
+  Lowered
+  BlockedByHirBody
+  Failed
+}
+
+pub MirBodyProduct {
+  bodyId: StableId
+  key: QueryKey
+  hirFingerprint: Fingerprint
+  mirFingerprint: Fingerprint
+  status: MirBodyStatus
+  basicBlockCount: usize
+  instructionCount: usize
+  terminatorCount: usize
+  diagnosticCount: usize = 0
+  schemaVersion: u64 = 1
+}
+
+impl MirBodyProduct {
+  pub init(
+    bodyId: StableId,
+    hirFingerprint: Fingerprint,
+    mirFingerprint: Fingerprint,
+    status: MirBodyStatus,
+    basicBlockCount: usize,
+    instructionCount: usize,
+    terminatorCount: usize,
+    diagnosticCount: usize
+  ) =
+    This {
+      bodyId
+      key: QueryKey.mirBody(bodyId)
+      hirFingerprint
+      mirFingerprint
+      status
+      basicBlockCount
+      instructionCount
+      terminatorCount
+      diagnosticCount
+    }
+
+  pub productFingerprint() =
+    ProductFingerprint(hirFingerprint, mirFingerprint)
+}
+
+impl view MirBodyProduct {
+  pub lowered => status == MirBodyStatus.Lowered
+  pub blocked => status == MirBodyStatus.BlockedByHirBody
+  pub failed => status == MirBodyStatus.Failed || diagnosticCount > 0
+  pub replayable => failed == false && blocked == false
+  pub structurallyComplete => basicBlockCount > 0 && terminatorCount > 0
+}

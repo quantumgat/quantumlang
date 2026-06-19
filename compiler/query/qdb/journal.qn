@@ -1,0 +1,129 @@
+pub QdbJournal {
+  magic: string = "QDJ1"
+  schemaVersion: u64 = 1
+  entrySection: QdbSection = {}
+  entryCount: u64 = 0
+  revisionCount: u64 = 0
+  commitCount: u64 = 0
+  durableCommitCount: u64 = 0
+  publishedRevision: u64 = 0
+  durableRevision: u64 = 0
+  tailHash: Fingerprint = {}
+  storageExtension: string = ".qcm"
+  appendOnly: bool = true
+  atomicPublication: bool = true
+}
+
+impl QdbJournal {
+  pub QdbJournal(
+    revisionCount: u64,
+    commitCount: u64,
+    durableCommitCount: u64,
+    publishedRevision: u64,
+    durableRevision: u64,
+    tailHash: Fingerprint
+  ) -> This {
+    let headerBytes: u64 = 96
+    let sectionTableBytes: u64 = 48
+    let entryCount = revisionCount + commitCount
+    let entryOffset = alignQdbOffset(headerBytes + sectionTableBytes, 8)
+    let entrySection = QdbSection.fixed(
+      QdbSectionKind.JournalRows,
+      entryOffset,
+      entryCount,
+      96
+    )
+
+    return This {
+      entrySection
+      entryCount
+      revisionCount
+      commitCount
+      durableCommitCount
+      publishedRevision
+      durableRevision
+      tailHash
+    }
+  }
+
+  pub recordCompleted(row: QdbCommitRow) -> This =
+    match true {
+      row.valid == false => this
+      _ => this {
+        entryCount: entryCount + 1
+        commitCount: commitCount + 1
+        durableCommitCount: durableCommitCount + 1
+        durableRevision: row.revision
+        tailHash: row.commitHash
+        entrySection: QdbSection.fixed(
+          QdbSectionKind.JournalRows,
+          entrySection.offset,
+          entryCount + 1,
+          entrySection.rowStride
+        )
+      }
+    }
+
+  pub sealRevision(revision: QdbRevisionRow) -> This =
+    match true {
+      revision.valid == false || revision.sealed == false => this
+      _ => this {
+        entryCount: entryCount + 1
+        revisionCount: revisionCount + 1
+        tailHash: revision.journalHash
+        entrySection: QdbSection.fixed(
+          QdbSectionKind.JournalRows,
+          entrySection.offset,
+          entryCount + 1,
+          entrySection.rowStride
+        )
+      }
+    }
+
+  pub publish(revision: QdbRevisionRow) -> This =
+    match true {
+      revision.valid == false || revision.sealed == false => this
+      revision.revision > durableRevision => this
+      _ => this {
+        publishedRevision: revision.revision
+        durableRevision: revision.revision
+      }
+    }
+
+  pub recoveryPlan(incompleteTailCount: u64) -> QdbRecoveryPlan =
+    QdbRecoveryPlan.inspect(
+      publishedRevision,
+      durableRevision,
+      durableCommitCount,
+      incompleteTailCount,
+      tailHash.nonzero &&
+      entrySection.valid
+    )
+}
+
+impl view QdbJournal {
+  pub magicValid: bool => magic == "QDJ1"
+  pub schemaValid: bool => schemaVersion > 0
+  pub countsValid: bool =>
+    durableCommitCount <= commitCount &&
+    entryCount == revisionCount + commitCount &&
+    entrySection.rowCount == entryCount
+
+  pub revisionsOrdered: bool => durableRevision >= publishedRevision
+  pub globallyStored: bool => storageExtension == ".qcm"
+  pub crashSafe: bool => appendOnly && atomicPublication
+  pub hasDurableTail: bool => durableCommitCount > 0 && tailHash.nonzero
+
+  pub valid: bool =>
+    magicValid &&
+    schemaValid &&
+    entrySection.valid &&
+    countsValid &&
+    revisionsOrdered &&
+    globallyStored &&
+    crashSafe &&
+    (
+      commitCount == 0 ||
+      hasDurableTail
+    )
+}

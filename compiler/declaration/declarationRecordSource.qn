@@ -1,0 +1,80 @@
+pub enum DeclarationRecordSourceKind {
+  Unknown
+  ParserRows
+  RuntimeBridge
+}
+
+pub DeclarationRecordSource {
+  kind: DeclarationRecordSourceKind = DeclarationRecordSourceKind.Unknown
+  rows: DeclarationParserRows
+  samples: DeclarationParserRecordSamples
+  recordRows: DeclarationRecordRows
+  parserOwned: bool = false
+  runtimeBridge: bool = false
+  deterministic: bool = true
+}
+
+impl DeclarationRecordSource {
+  pub fromParserRows(rows: DeclarationParserRows) =
+    This.fromParserRowsAndSamples(rows, DeclarationParserRecordSamples.fromRows(rows))
+
+  pub fromParserRowsAndSamples(
+    rows: DeclarationParserRows,
+    samples: DeclarationParserRecordSamples
+  ) =
+    This {
+      kind: DeclarationRecordSourceKind.ParserRows
+      rows
+      samples
+      recordRows: DeclarationRecordRows.fromRows(rows)
+      parserOwned: true
+    }
+
+  pub fromRuntimeRows(rows: DeclarationParserRows) =
+    This {
+      kind: DeclarationRecordSourceKind.RuntimeBridge
+      rows
+      samples: DeclarationParserRecordSamples.fromRows(rows)
+      recordRows: DeclarationRecordRows.fromRows(rows, false)
+      runtimeBridge: true
+    }
+}
+
+impl view DeclarationRecordSource {
+  pub totalCount: i64 => rows.totalCount
+
+  pub publicCount: i64 => recordRows.publicCount
+
+  pub unresolvedCount: i64 => recordRows.unresolvedCount
+
+  pub realParserRows: bool =>
+    kind == DeclarationRecordSourceKind.ParserRows &&
+    parserOwned &&
+    runtimeBridge == false
+
+  pub bridgedRuntimeRows: bool =>
+    kind == DeclarationRecordSourceKind.RuntimeBridge &&
+    runtimeBridge &&
+    parserOwned == false
+
+  pub sourceClassified: bool => realParserRows || bridgedRuntimeRows
+
+  pub samplesReady: bool => samples.valid
+
+  pub rowsReady: bool => rows.valid
+
+  pub recordRowsReady: bool =>
+    recordRows.valid &&
+    recordRows.totalCount == totalCount &&
+    recordRows.parserProduced == parserOwned
+
+  pub ready: bool =>
+    sourceClassified &&
+    rowsReady &&
+    samplesReady &&
+    recordRowsReady
+
+  pub valid: bool =>
+    deterministic &&
+    ready
+}

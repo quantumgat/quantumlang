@@ -1,0 +1,24 @@
+pub DeviceProfile {
+  name: string
+  arch: string
+  memoryMap: MemoryMap
+  interruptVector: InterruptVector
+  valid: bool
+}
+
+impl DeviceProfile {
+  pub DeviceProfile(name: string, arch: string, memoryMap: MemoryMap, interruptVector: InterruptVector) =
+    This {
+      name
+      arch
+      memoryMap
+      interruptVector
+      valid: name != "" && arch != "" && memoryMap.valid && interruptVector.valid
+    }
+}
+
+impl view DeviceProfile {
+  pub archKnown => arch != ""
+  pub memoryReady => memoryMap.valid
+  pub bootReady => interruptVector.valid
+}

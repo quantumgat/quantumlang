@@ -1,0 +1,63 @@
+pub ProgressEvent {
+  command: string
+  target: string
+  phase: ProgressPhase = ProgressPhase.Starting
+  status: ProgressStatus = ProgressStatus.Pending
+  completed: i64 = 0
+  total: i64 = 0
+  jobsActive: i64 = 0
+  jobsRequested: i64 = 1
+  elapsedMillis: i64 = 0
+  diagnosticCount: i64 = 0
+  detail: string = ""
+}
+
+impl ProgressEvent {
+  pub started(command: string, target: string, jobs: i64) -> This =
+    This {
+      command
+      target
+      status: ProgressStatus.Running
+      jobsRequested: jobs
+    }
+
+  pub advanced(
+    phase: ProgressPhase,
+    completed: i64,
+    total: i64,
+    detail: string
+  ) -> This =
+    this {
+      phase
+      status: ProgressStatus.Running
+      completed
+      total
+      detail
+    }
+
+  pub finished(diagnostics: i64) -> This =
+    this {
+      phase: ProgressPhase.Finished
+      status: match diagnostics == 0 {
+        true => ProgressStatus.Completed
+        false => ProgressStatus.Failed
+      }
+      diagnosticCount: diagnostics
+    }
+
+  pub cancelled() -> This =
+    this {
+      status: ProgressStatus.Cancelled
+    }
+}
+
+impl view ProgressEvent {
+  pub percent: i64 => match total > 0 {
+    true => completed * 100 / total
+    false => 0
+  }
+
+  pub finished: bool => status.terminal
+
+  pub succeeded: bool => status == ProgressStatus.Completed
+}

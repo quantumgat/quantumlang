@@ -1,0 +1,53 @@
+import interface::{ApiSurface, QiDeclaration, QiFile, QiLayout, QiWriter}
+
+pub QiEmitProof {
+  apiSurfaceStable: bool
+  declarationPublic: bool
+  layoutClean: bool
+  qiFileNamed: bool
+  writerDeterministic: bool
+  valid: bool
+}
+
+pub qiEmitProof() -> QiEmitProof {
+  let surface = ApiSurface(4, 2, "qtlc", "api:aaa")
+  let declaration = QiDeclaration("qtlc::driver", "main", "function", "sig:main", true)
+  let layout = QiLayout("qtlc1", surface.importRoot, "interfaces")
+  let file = QiFile("qtlc1", surface.importRoot, "driver", "interfaces/qtlc/driver.qi", 2)
+  let writer = QiWriter(2, surface.importRoot, layout.interfaceRoot)
+
+  let apiSurfaceStable = surface.valid &&
+    surface.importRoot == "qtlc" &&
+    surface.stableHash == "api:aaa"
+
+  let declarationPublic = declaration.valid &&
+    declaration.public &&
+    declaration.modulePath == "qtlc::driver"
+
+  let layoutClean = layout.valid &&
+    layout.interfaceRoot == "interfaces" &&
+    layout.importRoot == surface.importRoot
+
+  let qiFileNamed = file.valid &&
+    file.outputPath == "interfaces/qtlc/driver.qi" &&
+    file.declarationCount == 2
+
+  let writerDeterministic = writer.valid &&
+    writer.deterministic &&
+    writer.emitted == file.declarationCount
+
+  let valid = apiSurfaceStable &&
+    declarationPublic &&
+    layoutClean &&
+    qiFileNamed &&
+    writerDeterministic
+
+  return QiEmitProof {
+    apiSurfaceStable: apiSurfaceStable,
+    declarationPublic: declarationPublic,
+    layoutClean: layoutClean,
+    qiFileNamed: qiFileNamed,
+    writerDeterministic: writerDeterministic,
+    valid: valid,
+  }
+}

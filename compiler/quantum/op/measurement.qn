@@ -1,0 +1,21 @@
+pub QuantumMeasurement {
+  axis: string
+  effect: MeasurementEffect
+  resultType: string
+  valid: bool
+}
+
+impl QuantumMeasurement {
+  pub QuantumMeasurement(axis: string) =
+    This {
+      axis
+      effect: MeasurementEffect(axis)
+      resultType: MeasurementEffect(axis).resultType
+      valid: MeasurementEffect(axis).valid
+    }
+}
+
+impl view QuantumMeasurement {
+  pub collapses => effect.collapsesState
+  pub producesResult => resultType == "qresult"
+}

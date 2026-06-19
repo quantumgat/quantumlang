@@ -1,0 +1,148 @@
+import syntax::{KeywordKind, LexProduct, TokenRole}
+
+pub inferredTypeForToken(input: LexProduct, index: i64) -> string {
+  let token = input.tokenAt(index)
+  if token.kind.role == TokenRole.IntegerLiteral {
+    let suffixType = numericSuffixType(token.text)
+    return match suffixType {
+      "" => "i32"
+      _ => suffixType
+    }
+  }
+  if token.kind.role == TokenRole.FloatLiteral {
+    let suffixType = numericSuffixType(token.text)
+    return match suffixType {
+      "" => "f64"
+      _ => suffixType
+    }
+  }
+  if token.kind.role == TokenRole.StringLiteral {
+    return "string"
+  }
+  if token.kind.role == TokenRole.BytesLiteral {
+    return "bytes"
+  }
+  if token.kind.role == TokenRole.ByteLiteral {
+    return "byte"
+  }
+  if token.kind.keyword == KeywordKind.True ||
+     token.kind.keyword == KeywordKind.False {
+    return "bool"
+  }
+  if token.kind.keyword == KeywordKind.None {
+    return "Option<T>"
+  }
+  if token.kind.keyword == KeywordKind.Let {
+    return localTypeNameAt(input, index)
+  }
+  if token.kind.role == TokenRole.PrimitiveType {
+    return token.text
+  }
+  if token.text == "atomic" {
+    return "atomic<T>"
+  }
+  if token.text == "Option" {
+    return "Option<T>"
+  }
+  if token.text == "Result" {
+    return "Result<T,E>"
+  }
+  let keywordCallable =
+    token.kind.keyword == KeywordKind.Module ||
+    token.kind.keyword == KeywordKind.Private ||
+    token.kind.keyword == KeywordKind.Loop ||
+    token.kind.keyword == KeywordKind.None ||
+    token.kind.keyword == KeywordKind.Parallel ||
+    token.kind.keyword == KeywordKind.View
+  let keywordPosition =
+    index > 0 &&
+    (input.tokenAt(index - 1).text == "." ||
+     input.tokenAt(index - 1).kind.keyword == KeywordKind.Pub)
+  if (token.kind.identifierToken || (keywordCallable && keywordPosition)) &&
+     nextIsCallOpen(input, index) {
+    return "callable-result"
+  }
+  if token.kind.role == TokenRole.Operator {
+    return "operator"
+  }
+  if token.kind.keyword == KeywordKind.Par ||
+     token.kind.keyword == KeywordKind.Shard ||
+     token.kind.keyword == KeywordKind.Parallel {
+    return "void"
+  }
+  return ""
+}
+
+pub nextStartsType(input: LexProduct, index: i64) -> bool {
+  if index + 1 >= input.tokenCount ||
+     !input.tokenAt(index + 1).kind.identifierToken {
+    return false
+  }
+  let nextKeyword = input.tokenAt(index + 1).kind.keyword
+  if nextKeyword == KeywordKind.Impl ||
+     nextKeyword == KeywordKind.Role ||
+     nextKeyword == KeywordKind.Context ||
+     nextKeyword == KeywordKind.Extract ||
+     nextKeyword == KeywordKind.Extend ||
+     nextKeyword == KeywordKind.View {
+    return false
+  }
+  let cursor = index + 2
+  if cursor >= input.tokenCount {
+    return false
+  }
+  if input.tokenAt(cursor).text == "{" {
+    return true
+  }
+  if input.tokenAt(cursor).text != "<" {
+    return false
+  }
+
+  let depth: i64 = 0
+  while cursor < input.tokenCount {
+    let token = input.tokenAt(cursor)
+    if token.text == "<" {
+      depth = depth + 1
+    } else if token.text == ">" {
+      depth = depth - 1
+      if depth == 0 {
+        return cursor + 1 < input.tokenCount &&
+          input.tokenAt(cursor + 1).text == "{"
+      }
+    } else if token.text == "{" ||
+              token.text == "}" ||
+              token.text == "=" {
+      return false
+    }
+    cursor = cursor + 1
+  }
+  return false
+}
+
+numericSuffixType(text: string) -> string {
+  return numericLiteralTypeForText(text)
+}
+
+localTypeNameAt(input: LexProduct, index: i64) -> string {
+  if index + 2 >= input.tokenCount ||
+     input.tokenAt(index + 2).text != ":" {
+    return ""
+  }
+  let cursor = index + 3
+  let result = ""
+  let genericDepth: i64 = 0
+  while cursor < input.tokenCount {
+    let token = input.tokenAt(cursor)
+    if genericDepth == 0 && token.text == "=" {
+      break
+    }
+    result = "{result}{token.text}"
+    if token.text == "<" {
+      genericDepth = genericDepth + 1
+    } else if token.text == ">" && genericDepth > 0 {
+      genericDepth = genericDepth - 1
+    }
+    cursor = cursor + 1
+  }
+  return result
+}

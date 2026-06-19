@@ -1,0 +1,57 @@
+import controlFlow::{LoopKind, NormalControlFlowKind}
+
+pub ControlFlowLoweringFact {
+  flowKind: NormalControlFlowKind
+  loopKind: LoopKind
+  hirProduct: string
+  mirProduct: string
+  parallelLowering: bool = false
+  valid: bool = false
+}
+
+impl ControlFlowLoweringFact {
+  pub normal(flowKind: NormalControlFlowKind) -> This {
+    if flowKind == NormalControlFlowKind.If || flowKind == NormalControlFlowKind.IfElse {
+      return This { flowKind, LoopKind.Loop, "hir.if", "mir.branch", valid: true }
+    }
+    if flowKind == NormalControlFlowKind.Match {
+      return This { flowKind, LoopKind.Loop, "hir.match", "mir.switch", valid: true }
+    }
+    if flowKind == NormalControlFlowKind.Return {
+      return This { flowKind, LoopKind.Loop, "hir.return", "mir.return", valid: true }
+    }
+    if flowKind == NormalControlFlowKind.Require {
+      return This { flowKind, LoopKind.Loop, "hir.require", "mir.guard", valid: true }
+    }
+    if flowKind == NormalControlFlowKind.Block {
+      return This { flowKind, LoopKind.Loop, "hir.block", "mir.block", valid: true }
+    }
+    if flowKind == NormalControlFlowKind.Expr {
+      return This { flowKind, LoopKind.Loop, "hir.expr", "mir.expr", valid: true }
+    }
+    This { flowKind, LoopKind.Loop, "", "" }
+  }
+
+  pub loop(loopKind: LoopKind) -> This {
+    if loopKind == LoopKind.Loop {
+      return This { NormalControlFlowKind.Block, loopKind, "hir.loop", "mir.loop", valid: true }
+    }
+    if loopKind == LoopKind.While {
+      return This { NormalControlFlowKind.Block, loopKind, "hir.while", "mir.while", valid: true }
+    }
+    if loopKind == LoopKind.WhileLet {
+      return This { NormalControlFlowKind.Block, loopKind, "hir.whileLet", "mir.whileLet", valid: true }
+    }
+    if loopKind == LoopKind.For {
+      return This { NormalControlFlowKind.Block, loopKind, "hir.forIn", "mir.forIn", valid: true }
+    }
+    if loopKind == LoopKind.RangeFor {
+      return This { NormalControlFlowKind.Block, loopKind, "hir.forRange", "mir.forRange", valid: true }
+    }
+    This { NormalControlFlowKind.Block, loopKind, "", "", parallelLowering: true }
+  }
+
+  isValid() = valid
+
+  usesParallelLowering() = parallelLowering
+}

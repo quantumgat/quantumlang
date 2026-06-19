@@ -1,0 +1,91 @@
+pub Arena<T> {
+  rows: Range<T> = {}
+  capacity: i64 = 0
+  owner: CompilerId = {}
+  generation: u64 = 0
+  sealed: bool = false
+}
+
+impl Arena<T> {
+  pub Arena(rows: Range<T>) -> This {
+    return This {
+      rows
+      capacity: rows.count
+    }
+  }
+
+  pub Arena(start: i64, count: i64) =
+    This {
+      rows: Range<T>(start, count)
+      capacity: count
+    }
+
+  pub Arena(count: i64) =
+    This {
+      rows: Range<T>(0, count)
+      capacity: count
+    }
+
+  pub fromRows(rows: Range<T>, capacity: i64, owner: CompilerId, generation: u64) -> This {
+    return This {
+      rows
+      capacity
+      owner
+      generation
+    }
+  }
+
+  pub owned(start: i64, count: i64, owner: CompilerId, generation: u64) =
+    This {
+      rows: Range<T>(start, count)
+      capacity: count
+      owner
+      generation
+    }
+
+  pub Arena(start: i64, count: i64, owner: CompilerId, generation: u64) =
+    This {
+      rows: Range<T>(start, count)
+      capacity: count
+      owner
+      generation
+    }
+
+  pub Arena(count: i64, owner: CompilerId, generation: u64) =
+    This {
+      rows: Range<T>(0, count)
+      capacity: count
+      owner
+      generation
+    }
+
+  pub asSlice() -> Slice<T> {
+    return Slice<T>.borrowed(rows, owner, generation)
+  }
+
+  pub seal() -> This {
+    return this {
+      sealed: true
+    }
+  }
+}
+
+impl view Arena<T> {
+  pub start => rows.start
+
+  pub count => rows.count
+
+  pub end => rows.end
+
+  pub empty => rows.empty
+
+  pub nonEmpty => rows.nonEmpty
+
+  pub hasCapacity => capacity >= rows.count
+
+  pub hasOwner => owner.valid
+
+  pub appendSafe => sealed == false && hasCapacity
+
+  pub valid => rows.valid && capacity >= 0 && hasCapacity
+}

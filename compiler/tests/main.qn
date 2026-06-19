@@ -1,0 +1,170 @@
+import backend::native::proof::nativeLinkProof::{nativeLinkProof}
+import backend::native::proof::nativeObjectProof::{nativeObjectProof}
+import backend::native::proof::nativePlanProof::{nativePlanProof}
+import backend::quantum::proof::quantumBackendProof::{quantumBackendProof}
+import controlFlow::controlFlowGraphProof::{controlFlowGraphProof}
+import controlFlow::controlFlowLoweringProof::{controlFlowLoweringProof}
+import controlFlow::loopControlFlowProof::{loopControlFlowProof}
+import controlFlow::normalControlFlowProof::{normalControlFlowProof}
+import controlFlow::parallelDeferredProof::{parallelDeferredProof}
+import controlFlow::parallelHirMirProof::{parallelHirMirProof}
+import core::coreLiteralPreludeProof::{coreLiteralPreludeProof}
+import core::byteFoundationProof::{byteFoundationProof}
+import core::communicationModelProof::{communicationModelProof}
+import core::hashDigestProof::{hashDigestProof}
+import core::hashKernelProof::{hashKernelProof}
+import core::stableCompilerHashProof::{stableCompilerHashProof}
+import core::textCapabilityProof::{textCapabilityProof}
+import diagnostics::diagnosticModelProof::{diagnosticModelProof}
+import diagnostics::diagnosticRegistryProof::{diagnosticRegistryProof}
+import hir::checkedSourceHirProof::{checkedSourceHirProof}
+import hir::hirShapeProof::{hirShapeProof}
+import interface::qcapEmitProof::{qcapEmitProof}
+import interface::qiEmitProof::{qiEmitProof}
+import interface::qidxEmitProof::{qidxEmitProof}
+import machine::targetMachineProof::{targetMachineProof}
+import mir::hirMirLoweringProof::{hirMirLoweringProof}
+import mir::irProductShapeProof::{irProductShapeProof}
+import mir::mirShapeProof::{mirShapeProof}
+import moduleSystem::moduleResolutionProof::{moduleResolutionProof}
+import optimize::debugOptimizeProof::{debugOptimizeProof}
+import platform::platformProof::{platformProof}
+import platform::compilerIoProof::{compilerIoProof}
+import incremental::incrementalQueryEngineProof::{incrementalQueryEngineProof}
+import buildSystem::globalCacheContractProof::{globalCacheContractProof}
+import buildSystem::cacheObjectFormatProof::{cacheObjectFormatProof}
+import buildSystem::actionContentHashProof::{actionContentHashProof}
+import buildSystem::cacheAtomicSafetyProof::{cacheAtomicSafetyProof}
+import buildSystem::globalBuildResultProof::{globalBuildResultProof}
+import query::stableSemanticIdProof::{stableSemanticIdProof}
+import query::queryKeyModelProof::{queryKeyModelProof}
+import query::qdbBinaryStorageProof::{qdbBinaryStorageProof}
+import query::qdbRevisionJournalProof::{qdbRevisionJournalProof}
+import query::productStoreProof::{productStoreProof}
+import quantum::circuit::quantumCircuitProof::{quantumCircuitProof}
+import quantum::controlFlow::quantumControlSyntaxProof::{quantumControlSyntaxProof}
+import quantum::controlFlow::quantumForFlowProof::{quantumForFlowProof}
+import quantum::controlFlow::quantumIfFlowProof::{quantumIfFlowProof}
+import quantum::controlFlow::quantumLoopProfileProof::{quantumLoopProfileProof}
+import quantum::effect::quantumEffectProof::{quantumEffectProof}
+import quantum::lower::quantumControlLoweringProof::{quantumControlLoweringProof}
+import quantum::lower::quantumLoweringProof::{quantumLoweringProof}
+import quantum::resource::quantumResourceProof::{quantumResourceProof}
+import quantum::types::quantumTypeMetadataProof::{quantumTypeMetadataProof}
+import quantum::verify::quantumVerifierProof::{quantumVerifierProof}
+import semantic::semanticModelProof::{semanticModelProof}
+import source::sourceModelProof::{sourceModelProof}
+import source::sourceReaderProof::{sourceReaderProof}
+import syntax::ast::astShapeProof::{astShapeProof}
+import syntax::lexer::lexerSubsetProof::{lexerSubsetProof}
+import syntax::parser::parserShapeProof::{parserShapeProof}
+import syntax::parser::recoveryProof::{parserRecoveryProof}
+import syntax::parser::sourceAnalysisProof::{sourceAnalysisProof}
+import syntax::realFrontendOwnershipProof::{realFrontendOwnershipProof}
+import syntax::token::preludeSymbolProof::{preludeSymbolProof}
+import syntax::token::tokenModelProof::{tokenModelProof}
+import syntax::token::tokenShapeProof::{tokenShapeProof}
+import typeSystem::catalog::core::coreTextMethodProof::{coreTextMethodProof}
+import typeSystem::checking::expressionTypingProof::{expressionTypingProof}
+import typeSystem::checking::functionTypingProof::{functionTypingProof}
+import typeSystem::checking::realTypeEnvironmentProof::{realTypeEnvironmentProof}
+import typeSystem::checking::realExpressionTypecheckProof::{realExpressionTypecheckProof}
+import typeSystem::checking::overloadGenericRowsProof::{overloadGenericRowsProof}
+import typeSystem::checking::overloadResolutionProof::{overloadResolutionProof}
+import typeSystem::literal::literalAstBridgeProof::{literalAstBridgeProof}
+import typeSystem::literal::literalDiagnosticProof::{literalDiagnosticProof}
+import typeSystem::literal::literalTargetProof::{literalTargetProof}
+import typeSystem::literal::literalTypingProof::{literalTypingProof}
+import typeSystem::proof::typeCatalogProof::{typeCatalogProof}
+
+fn main() -> i64 {
+  if nativeLinkProof().valid == false { return 1 }
+  if nativeObjectProof().valid == false { return 2 }
+  if nativePlanProof().valid == false { return 3 }
+  if quantumBackendProof().valid == false { return 4 }
+  if controlFlowGraphProof().valid == false { return 5 }
+  let controlFlowLowering = controlFlowLoweringProof()
+  if controlFlowLowering.ifHirProductOk == false { return 611 }
+  if controlFlowLowering.ifMirProductOk == false { return 612 }
+  if controlFlowLowering.returnMirProductOk == false { return 613 }
+  if controlFlowLowering.requireMirProductOk == false { return 614 }
+  if controlFlowLowering.normalFlowLowersToHirMir == false { return 61 }
+  if controlFlowLowering.loopFlowLowersToHirMir == false { return 62 }
+  if controlFlowLowering.parallelLoweringExcluded == false { return 63 }
+  if controlFlowLowering.hirMirProductsDeterministic == false { return 64 }
+  if controlFlowLowering.valid == false { return 6 }
+  if loopControlFlowProof().valid == false { return 7 }
+  if normalControlFlowProof().valid == false { return 8 }
+  if parallelDeferredProof().valid == false { return 9 }
+  if parallelHirMirProof().valid == false { return 91 }
+  if coreLiteralPreludeProof().valid == false { return 10 }
+  if byteFoundationProof().valid == false { return 102 }
+  if communicationModelProof() == false { return 103 }
+  if hashDigestProof().valid == false { return 104 }
+  if hashKernelProof().valid == false { return 105 }
+  if stableCompilerHashProof().valid == false { return 106 }
+  if textCapabilityProof().valid == false { return 108 }
+  if diagnosticModelProof().valid == false { return 101 }
+  if diagnosticRegistryProof().valid == false { return 107 }
+  if checkedSourceHirProof().valid == false { return 11 }
+  if hirShapeProof().valid == false { return 12 }
+  if qcapEmitProof().valid == false { return 13 }
+  if qiEmitProof().valid == false { return 14 }
+  if qidxEmitProof().valid == false { return 15 }
+  if targetMachineProof().valid == false { return 16 }
+  if hirMirLoweringProof().valid == false { return 17 }
+  if irProductShapeProof().valid == false { return 18 }
+  if mirShapeProof().valid == false { return 19 }
+  if moduleResolutionProof().valid == false { return 191 }
+  if debugOptimizeProof().valid == false { return 20 }
+  if platformProof().valid == false { return 21 }
+  if compilerIoProof().valid == false { return 211 }
+  if quantumCircuitProof().valid == false { return 22 }
+  if quantumControlSyntaxProof().valid == false { return 23 }
+  if quantumForFlowProof().valid == false { return 24 }
+  if quantumIfFlowProof().valid == false { return 25 }
+  if quantumLoopProfileProof().valid == false { return 26 }
+  if quantumEffectProof().valid == false { return 27 }
+  if quantumControlLoweringProof().valid == false { return 28 }
+  if quantumLoweringProof().valid == false { return 29 }
+  if quantumResourceProof().valid == false { return 30 }
+  if quantumTypeMetadataProof().valid == false { return 31 }
+  if quantumVerifierProof().valid == false { return 32 }
+  if semanticModelProof().valid == false { return 33 }
+  if sourceModelProof().valid == false { return 34 }
+  if sourceReaderProof().valid == false { return 35 }
+  if astShapeProof().valid == false { return 36 }
+  if lexerSubsetProof().valid == false { return 37 }
+  if parserShapeProof().valid == false { return 38 }
+  if parserRecoveryProof().valid == false { return 39 }
+  if sourceAnalysisProof().valid == false { return 392 }
+  if realFrontendOwnershipProof().valid == false { return 391 }
+  if preludeSymbolProof().valid == false { return 40 }
+  if tokenModelProof().valid == false { return 41 }
+  if tokenShapeProof().valid == false { return 42 }
+  if coreTextMethodProof().valid == false { return 43 }
+  if expressionTypingProof().valid == false { return 44 }
+  if functionTypingProof().valid == false { return 45 }
+  if realTypeEnvironmentProof().valid == false { return 451 }
+  if realExpressionTypecheckProof().valid == false { return 452 }
+  if overloadGenericRowsProof().valid == false { return 453 }
+  if overloadResolutionProof().valid == false { return 454 }
+  if literalAstBridgeProof().valid == false { return 46 }
+  if literalDiagnosticProof().valid == false { return 47 }
+  if literalTargetProof().valid == false { return 48 }
+  if literalTypingProof().valid == false { return 49 }
+  if typeCatalogProof().valid == false { return 50 }
+  if incrementalQueryEngineProof().valid == false { return 51 }
+  if globalCacheContractProof().valid == false { return 52 }
+  if cacheObjectFormatProof().valid == false { return 53 }
+  if actionContentHashProof().valid == false { return 54 }
+  if cacheAtomicSafetyProof().valid == false { return 55 }
+  if globalBuildResultProof().valid == false { return 56 }
+  if stableSemanticIdProof().valid == false { return 57 }
+  if queryKeyModelProof().valid == false { return 58 }
+  if qdbBinaryStorageProof().valid == false { return 59 }
+  if qdbRevisionJournalProof().valid == false { return 60 }
+  if productStoreProof().valid == false { return 61 }
+
+  return 0
+}

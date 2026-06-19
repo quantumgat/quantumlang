@@ -1,0 +1,38 @@
+module source
+
+mod {
+  sourceFile
+  sourceText
+  sourceReadRequest
+  sourceReadProduct
+  sourceReader
+  sourceFileTable
+  sourceMap
+  span
+  stableSourceHash
+  lineMap
+  sourcePositionRule
+  sourceFingerprintRule
+  fileSystem
+  packageSourceScan
+  runtimeSourceScan
+  hostSourceCheck as hostSource
+}
+
+export {
+  sourceFile.{SourceFile}
+  sourceText.{SourceText}
+  sourceReadRequest.{SourceReadRequest}
+  sourceReadProduct.{SourceReadProduct}
+  sourceReader.SourceReader
+  sourceFileTable.{SourceFileTable}
+  sourceMap.{SourceMap}
+  span.{SourceSpan}
+  lineMap.{LineMap, LineColumn}
+  sourcePositionRule.{SourcePositionRule}
+  sourceFingerprintRule.{SourceFingerprintRule}
+  fileSystem.{SourceFileSystem}
+  packageSourceScan.{PackageSourceScan, packageSourceScanHost}
+  runtimeSourceScan.{RuntimeSourceScan}
+  hostSource.{HostSourceCheck}
+}

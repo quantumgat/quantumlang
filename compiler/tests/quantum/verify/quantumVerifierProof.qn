@@ -1,0 +1,51 @@
+import compiler::quantum::{*}
+pub QuantumVerifierProof {
+  resourceVerifierRejectsLeaks: bool
+  effectVerifierRejectsPureMeasurement: bool
+  targetVerifierAcceptsSupportedTarget: bool
+  aggregateVerifierCombinesChecks: bool
+  valid: bool
+}
+
+pub quantumVerifierProof() -> QuantumVerifierProof {
+  let lifetimeBad = QuantumLifetime.leak()
+  let resetBad = QuantumReset(true, false)
+  let releaseBad = QuantumRelease(true, false)
+  let resourceBad = QuantumResourceVerifier(lifetimeBad, resetBad, releaseBad)
+  let pureBad = QuantumPurity(true, true, false)
+  let measure = MeasurementEffect("z")
+  let effectBad = QuantumEffectVerifier(pureBad, measure)
+  let topology = QuantumTopology("simulator", 4, 3, true)
+  let schedule = QuantumSchedule(8, true, true)
+  let gateSet = QuantumGateSet("simulator", 4, true)
+  let targetOk = QuantumTargetVerifier(topology, schedule, gateSet)
+  let aggregate = QuantumVerifier(resourceBad, effectBad, targetOk)
+
+  let resourceVerifierRejectsLeaks = !resourceBad.accepted &&
+    resourceBad.diagnosticCode == "QTQUANTUM0101"
+
+  let effectVerifierRejectsPureMeasurement = !effectBad.accepted &&
+    effectBad.diagnosticCode == "QTQUANTUM0102"
+
+  let targetVerifierAcceptsSupportedTarget = targetOk.accepted &&
+    targetOk.diagnosticCode == ""
+
+  let aggregateVerifierCombinesChecks = !aggregate.accepted &&
+    !aggregate.resourceAccepted &&
+    !aggregate.effectAccepted &&
+    aggregate.targetAccepted &&
+    aggregate.checked == 8
+
+  let valid = resourceVerifierRejectsLeaks &&
+    effectVerifierRejectsPureMeasurement &&
+    targetVerifierAcceptsSupportedTarget &&
+    aggregateVerifierCombinesChecks
+
+  return QuantumVerifierProof {
+    resourceVerifierRejectsLeaks: resourceVerifierRejectsLeaks,
+    effectVerifierRejectsPureMeasurement: effectVerifierRejectsPureMeasurement,
+    targetVerifierAcceptsSupportedTarget: targetVerifierAcceptsSupportedTarget,
+    aggregateVerifierCombinesChecks: aggregateVerifierCombinesChecks,
+    valid: valid,
+  }
+}

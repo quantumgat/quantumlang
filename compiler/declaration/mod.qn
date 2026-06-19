@@ -1,0 +1,38 @@
+module declaration
+
+mod {
+  declarationKind
+  declarationVisibility
+  declarationKey
+  declarationRecord
+  stableDeclarationHash
+  declarationRecordRange
+  declarationParserRows
+  declarationParserRecordSamples
+  declarationRecordRows
+  declarationRecordSource
+  declarationRecordBatch
+  declarationArena
+  declarationIndex
+  declarationSet
+  declarationTable
+  declarationRecordTable
+}
+
+export {
+  declarationKind.*
+  declarationVisibility.*
+  declarationKey.{DeclarationKey}
+  declarationRecord.{DeclarationRecord}
+  declarationRecordRange.{DeclarationRecordRange}
+  declarationParserRows.{DeclarationParserRows}
+  declarationParserRecordSamples.{DeclarationParserRecordSamples}
+  declarationRecordRows.{DeclarationRecordRows}
+  declarationRecordSource.{DeclarationRecordSource, DeclarationRecordSourceKind}
+  declarationRecordBatch.{DeclarationRecordBatch}
+  declarationArena.{DeclarationArena}
+  declarationIndex.{DeclarationIndex}
+  declarationSet.{DeclarationSet}
+  declarationTable.{DeclarationTable}
+  declarationRecordTable.{DeclarationRecordTable}
+}

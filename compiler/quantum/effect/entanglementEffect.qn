@@ -1,0 +1,20 @@
+pub EntanglementEffect {
+  mayEntangle: bool
+  requiresTwoOrMoreQubits: bool
+  targetGated: bool
+  valid: bool
+}
+
+impl EntanglementEffect {
+  pub EntanglementEffect(targetCount: i64) =
+    This {
+      mayEntangle: targetCount > 1
+      requiresTwoOrMoreQubits: true
+      targetGated: true
+      valid: targetCount > 1
+    }
+}
+
+impl view EntanglementEffect {
+  pub supported => valid && targetGated
+}

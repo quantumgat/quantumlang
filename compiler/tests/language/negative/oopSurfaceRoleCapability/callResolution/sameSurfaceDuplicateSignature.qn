@@ -1,0 +1,11 @@
+impl HttpCtx<...Caps> : pub MutableHttpBuilder<HttpCtx<...Caps>> {
+  withHeader(name: TextView, value: TextView) -> HttpCtx<...Caps> {
+    return this
+  }
+}
+
+impl HttpCtx<...Caps> : pub MutableHttpBuilder<HttpCtx<...Caps>> {
+  withHeader(name: TextView) -> HttpCtx<...Caps> {
+    return this
+  }
+}

@@ -1,0 +1,105 @@
+import driver::{CheckReport, Cli, CommandKind, Console, ExitCode, HostArgs, ProgressPhase, ProgressReporter}
+import buildSystem::{SelfHostBuildReport, SelfHostOutput}
+import frontend::{frontendProductForPackage}
+
+pub Session {
+  id: i64
+  cli: Cli
+  console: Console
+  progress: ProgressReporter
+  args: HostArgs
+}
+
+impl Session {
+  pub Session(args: HostArgs) =
+    This {
+      id: 1,
+      cli: Cli(),
+      console: Console(args.progressMode)
+      progress: ProgressReporter(args.progressMode)
+      args
+    }
+
+  pub readyExit() = ExitCode.ok()
+}
+
+impl view Session {
+  ready => id >= 0
+
+  commandName => args.command.name
+
+  packageTargetCommand => args.provided && args.target != ""
+
+  binaryCommand => args.command.kind == CommandKind.Build
+}
+
+context Session {
+  runCheck(target: string) -> i64 {
+    progress.start("check", target, args.jobs)
+    let frontend = frontendProductForPackage(target)
+    let report = frontend.toReport()
+    progress.finish(match report.exitCode {
+      0 => 0
+      _ => 1
+    })
+    console.printCheck(report)
+  }
+
+  runBuild(target: string) -> i64 {
+    progress.start("build", target, args.jobs)
+    let frontend = frontendProductForPackage(target)
+    let check = frontend.toReport()
+    if check.exitCode != 0 {
+      let blocked = SelfHostBuildReport.blocked(target, check.status.value, check.exitCode)
+      progress.finish(1)
+      return console.printBuild(target, blocked)
+    }
+    let report = SelfHostBuildReport.fromFrontend(
+      frontend,
+      check.status.value,
+      check.exitCode,
+      check.typedNodeCount,
+      check.typeFactCount
+    )
+    progress.advance(ProgressPhase.Planning, 1, 1, "qtlc2 self-host plan")
+    let output = SelfHostOutput(target)
+    if output.materialize(report) == false {
+      progress.finish(1)
+      return 1
+    }
+    progress.advance(ProgressPhase.Writing, 1, 1, report.outputPath)
+    progress.finish(match report.exitCode {
+      0 => 0
+      _ => 1
+    })
+    console.printBuild(target, report)
+  }
+
+  runVersion() -> i64 {
+    console.printVersion()
+  }
+
+  runHelp() -> i64 {
+    console.printHelp()
+  }
+
+  pub run() -> i64 {
+    if args.command.kind == CommandKind.Check {
+      return runCheck(args.target)
+    }
+    if args.command.kind == CommandKind.Build {
+      return runBuild(args.target)
+    }
+    if args.command.kind == CommandKind.Version {
+      return runVersion()
+    }
+    if args.command.kind == CommandKind.Help {
+      return runHelp()
+    }
+    readyExitCode()
+  }
+
+  pub readyExitCode() -> i64 {
+    readyExit().code
+  }
+}

@@ -1,0 +1,55 @@
+import syntax::{*}
+pub ParserRecoveryProof {
+  syncSetsStable: bool
+  expectedTokenDiagnosticReplayable: bool
+  missingTokenPlaceholderInserted: bool
+  diagnosticsDeterministic: bool
+  parserCanContinue: bool
+  valid: bool
+}
+
+pub parserRecoveryProof() -> ParserRecoveryProof {
+  let itemSync = RecoverySyncSet.fromName("item")
+  let stmtSync = RecoverySyncSet.fromName("stmt")
+  let diagnostic = ParserReplayDiagnostic.expectedToken(1001, 7, 12, 13, "}", "identifier", 1)
+  let missing = MissingTokenPlaceholder("}", 7, 12)
+  let recovery = ParseRecovery("}", 1)
+
+  let syncSetsStable = itemSync.closeBrace &&
+    itemSync.newline &&
+    stmtSync.semicolon &&
+    stmtSync.eof
+
+  let expectedTokenDiagnosticReplayable = diagnostic.code == "QTPARSE0001" &&
+    diagnostic.fileId == 7 &&
+    diagnostic.start == 12 &&
+    diagnostic.end == 13 &&
+    diagnostic.replayable
+
+  let missingTokenPlaceholderInserted = missing.expected == "}" &&
+    missing.fileId == 7 &&
+    missing.offset == 12 &&
+    missing.inserted
+
+  let diagnosticsDeterministic = diagnostic.deterministicOrder == 1 &&
+    diagnostic.id == 1001
+
+  let parserCanContinue = recovery.synchronized &&
+    recovery.canContinue &&
+    recovery.diagnostics == 1
+
+  let valid = syncSetsStable &&
+    expectedTokenDiagnosticReplayable &&
+    missingTokenPlaceholderInserted &&
+    diagnosticsDeterministic &&
+    parserCanContinue
+
+  return ParserRecoveryProof {
+    syncSetsStable: syncSetsStable,
+    expectedTokenDiagnosticReplayable: expectedTokenDiagnosticReplayable,
+    missingTokenPlaceholderInserted: missingTokenPlaceholderInserted,
+    diagnosticsDeterministic: diagnosticsDeterministic,
+    parserCanContinue: parserCanContinue,
+    valid: valid,
+  }
+}

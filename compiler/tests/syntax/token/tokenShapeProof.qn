@@ -1,0 +1,47 @@
+import syntax::{*}
+pub TokenShapeProof {
+  tokenCarriesKindAndSpan: bool
+  literalCarriesDefaultType: bool
+  triviaCarriesChannelAndSpan: bool
+  operatorKindUsesTokenFacts: bool
+  valid: bool
+}
+
+pub tokenShapeProof() -> TokenShapeProof {
+  let identifier = TokenKind.identifier()
+  let importKeyword = TokenKind.keyword(KeywordKind.Import, "import")
+  let pathOperator = TokenKind.operator("::")
+  let token = SyntaxToken(importKeyword, "import", 7, 0, 6)
+  let stringValue = Literal.string("\"hi\"")
+  let noneValue = Literal.none()
+  let lineComment = Trivia(TriviaKind.LineComment, "# comment", 7, 8, 17)
+
+  let tokenCarriesKindAndSpan = token.kind.keyword == KeywordKind.Import &&
+    token.fileId == 7 &&
+    token.start == 0 &&
+    token.end == 6
+
+  let literalCarriesDefaultType = stringValue.defaultType == "string" &&
+    noneValue.defaultType == "Option<T>"
+
+  let triviaCarriesChannelAndSpan = lineComment.kind == TriviaKind.LineComment &&
+    lineComment.preservesLineBreak &&
+    lineComment.fileId == 7
+
+  let operatorKindUsesTokenFacts = identifier.valid &&
+    pathOperator.valid &&
+    pathOperator.fixedText == "::"
+
+  let valid = tokenCarriesKindAndSpan &&
+    literalCarriesDefaultType &&
+    triviaCarriesChannelAndSpan &&
+    operatorKindUsesTokenFacts
+
+  return TokenShapeProof {
+    tokenCarriesKindAndSpan: tokenCarriesKindAndSpan,
+    literalCarriesDefaultType: literalCarriesDefaultType,
+    triviaCarriesChannelAndSpan: triviaCarriesChannelAndSpan,
+    operatorKindUsesTokenFacts: operatorKindUsesTokenFacts,
+    valid: valid,
+  }
+}

@@ -1,0 +1,559 @@
+import core::{ScopeId, TypeId, Vec}
+import diagnostics::{DiagnosticRegistry, DiagnosticSpec, TypeDiagnosticCode}
+import syntax::{AstCallArgument, AstCallableParameter, AstGenericParameter, AstNode}
+
+pub OverloadResolver {
+}
+
+impl OverloadResolver {
+  pub resolve(
+    node: AstNode,
+    set: CandidateSet,
+    index: CandidateIndex,
+    symbols: TypeSymbolTable,
+    scopes: TypeScopeTable,
+    scope: ScopeId
+  ) -> CallResolution {
+    let best = CallCandidate()
+    let viableCount: i64 = 0
+    let tied = false
+    let row: i64 = 0
+    while row < set.candidateValues.count {
+      let entry = index.entry(set.candidateValues[row])
+      let candidate = This.evaluate(
+        node,
+        entry,
+        index,
+        symbols,
+        scopes,
+        scope
+      )
+      if candidate.viable {
+        viableCount = viableCount + 1
+        if !best.viable || candidate.cost.compare(best.cost) < 0 {
+          best = candidate
+          tied = false
+        } else if candidate.cost.compare(best.cost) == 0 {
+          tied = true
+        }
+      }
+      row = row + 1
+    }
+
+    if best.viable && !tied {
+      return CallResolution {
+        selected: best.entry
+        bindings: best.bindings
+        substitutions: best.substitutions
+        resultTypeName: best.resultTypeName
+        symbolId: best.entry.symbol
+        typeId: best.entry.callableType
+        candidateCount: set.count
+        viableCount
+      }
+    }
+    if tied {
+      return CallResolution {
+        candidateCount: set.count
+        viableCount
+        ambiguous: true
+        diagnostic: DiagnosticRegistry.type(TypeDiagnosticCode.AmbiguousOverload)
+        diagnosticSubject: node.text
+      }
+    }
+    return CallResolution {
+      candidateCount: set.count
+      viableCount
+      diagnostic: match This.hasGenericCandidate(set, index) {
+        true => DiagnosticRegistry.type(TypeDiagnosticCode.GenericMismatch)
+        false => DiagnosticSpec()
+      }
+      diagnosticSubject: node.text
+    }
+  }
+
+  evaluate(
+    node: AstNode,
+    entry: CandidateEntry,
+    index: CandidateIndex,
+    symbols: TypeSymbolTable,
+    scopes: TypeScopeTable,
+    scope: ScopeId
+  ) -> CallCandidate {
+    if !entry.valid {
+      return CallCandidate { entry }
+    }
+    let currentScope = scopes.scopeValue(scope)
+    let ownerSymbolId = scopes.enclosingTypeOwner(scope)
+    let currentOwner = match symbols.symbolForId(ownerSymbolId) {
+      Some(symbol) => symbol.typeId
+      None => TypeId()
+    }
+    if !entry.access.visibleFrom(currentScope.moduleId, currentOwner) {
+      return CallCandidate {
+        entry
+        rejection: CandidateRejection {
+          kind: CandidateRejectionKind.Inaccessible
+          subject: entry.displayName
+        }
+      }
+    }
+    if entry.builtin {
+      return CallCandidate {
+        entry
+        resultTypeName: "operator-result"
+        cost: CandidateCost { sourceRank: This.sourceRank(entry.source) }
+      }
+    }
+    if entry.symbolRow < 0 {
+      return CallCandidate { entry }
+    }
+    let symbol = symbols.symbolAt(entry.symbolRow)
+    if entry.source == CandidateSource.StructuralConstructor {
+      return CallCandidate {
+        entry
+        resultTypeName: symbol.name
+        cost: CandidateCost { sourceRank: This.sourceRank(entry.source) }
+      }
+    }
+
+    let parameters = This.parameterRowsFor(symbol)
+    let genericParameters = This.genericRowsFor(symbol)
+    let substitutions: Vec<GenericSubstitution> = []
+    if entry.source == CandidateSource.BlanketExtension &&
+       symbol.ownerTypeName != "" &&
+       entry.key.ownerName != "" {
+      substitutions.push(GenericSubstitution {
+        parameterName: symbol.ownerTypeName
+        argumentType: entry.key.ownerName
+        source: GenericInferenceSource.Receiver
+      })
+    }
+    let genericResult = This.bindExplicitGenerics(
+      node,
+      genericParameters,
+      substitutions
+    )
+    if genericResult.rejected {
+      return CallCandidate { entry, rejection: genericResult }
+    }
+
+    let bindings: Vec<ArgumentBinding> = []
+    let used: Vec<bool> = []
+    let parameterRow: i64 = 0
+    while parameterRow < parameters.count {
+      used.push(false)
+      parameterRow = parameterRow + 1
+    }
+
+    let conversionCost: usize = 0
+    let variadicCost: usize = 0
+    let nextPositional: usize = 0
+    let argumentRow: i64 = 0
+    while argumentRow < node.callArguments.count {
+      let argument = node.callArguments[argumentRow]
+      let selected = This.parameterForArgument(
+        argument,
+        parameters,
+        used,
+        nextPositional
+      )
+      if selected < 0 {
+        return CallCandidate {
+          entry
+          rejection: CandidateRejection {
+            kind: match argument.named {
+              true => CandidateRejectionKind.UnknownNamedArgument
+              false => CandidateRejectionKind.TooManyArguments
+            }
+            subject: match argument.named {
+              true => argument.name
+              false => entry.displayName
+            }
+            position: argument.position as i64
+          }
+        }
+      }
+      let parameter = parameters[selected]
+      if used[selected] && !parameter.variadic {
+        return CallCandidate {
+          entry
+          rejection: CandidateRejection {
+            kind: CandidateRejectionKind.DuplicateArgument
+            subject: parameter.name
+            position: argument.position as i64
+          }
+        }
+      }
+
+      let inference = This.inferGeneric(
+        parameter.typeName,
+        argument.inferredTypeName,
+        genericParameters,
+        substitutions
+      )
+      if inference.rejected {
+        return CallCandidate { entry, rejection: inference }
+      }
+      let targetType = This.substituteType(parameter.typeName, substitutions)
+      let conversion = ConversionFact.between(
+        argument.inferredTypeName,
+        targetType
+      )
+      if !conversion.valid {
+        return CallCandidate {
+          entry
+          rejection: CandidateRejection {
+            kind: CandidateRejectionKind.TypeMismatch
+            subject: "{argument.inferredTypeName}->{targetType}"
+            position: argument.position as i64
+          }
+        }
+      }
+      bindings.push(ArgumentBinding {
+        argumentPosition: argument.position as i64
+        parameterPosition: selected as usize
+        parameterName: parameter.name
+        argumentType: argument.inferredTypeName
+        parameterType: targetType
+        conversion
+        variadic: parameter.variadic
+      })
+      used[selected] = true
+      conversionCost = conversionCost + conversion.cost
+      if parameter.variadic {
+        variadicCost = variadicCost + 1
+      } else if !argument.named {
+        nextPositional = selected as usize + 1
+      }
+      argumentRow = argumentRow + 1
+    }
+
+    let defaultCost: usize = 0
+    parameterRow = 0
+    while parameterRow < parameters.count {
+      let parameter = parameters[parameterRow]
+      if !used[parameterRow] && parameter.required {
+        return CallCandidate {
+          entry
+          rejection: CandidateRejection {
+            kind: CandidateRejectionKind.MissingRequiredArgument
+            subject: parameter.name
+            position: parameter.position as i64
+          }
+        }
+      }
+      if !used[parameterRow] && parameter.defaulted {
+        bindings.push(ArgumentBinding {
+          parameterPosition: parameter.position
+          parameterName: parameter.name
+          parameterType: This.substituteType(
+            parameter.typeName,
+            substitutions
+          )
+          defaulted: true
+        })
+        defaultCost = defaultCost + 1
+      }
+      parameterRow = parameterRow + 1
+    }
+
+    let genericDefaults = This.fillGenericDefaults(
+      genericParameters,
+      substitutions
+    )
+    if genericDefaults.rejected {
+      return CallCandidate { entry, rejection: genericDefaults }
+    }
+    let bounds = This.validateBounds(
+      genericParameters,
+      substitutions,
+      index
+    )
+    if bounds.rejected {
+      return CallCandidate { entry, rejection: bounds }
+    }
+
+    let resultType = This.substituteType(
+      symbol.returnTypeName,
+      substitutions
+    )
+    return CallCandidate {
+      entry
+      bindings
+      substitutions
+      resultTypeName: match resultType == "" {
+        true => "callable-result"
+        false => resultType
+      }
+      cost: CandidateCost {
+        sourceRank: This.sourceRank(entry.source)
+        conversionCost
+        defaultCost
+        genericCost: substitutions.count as usize
+        variadicCost
+      }
+    }
+  }
+
+  bindExplicitGenerics(
+    node: AstNode,
+    parameters: Vec<AstGenericParameter>,
+    substitutions: Vec<GenericSubstitution>
+  ) -> CandidateRejection {
+    if node.genericArguments.count > parameters.count {
+      return CandidateRejection {
+        kind: CandidateRejectionKind.GenericArity
+        subject: node.text
+      }
+    }
+    let row: i64 = 0
+    while row < node.genericArguments.count {
+      substitutions.push(GenericSubstitution {
+        parameterName: parameters[row].name
+        argumentType: node.genericArguments[row]
+        source: GenericInferenceSource.Explicit
+      })
+      row = row + 1
+    }
+    return CandidateRejection()
+  }
+
+  parameterRowsFor(symbol: TypeSymbol) -> Vec<AstCallableParameter> {
+    if symbol.parameterRows.nonEmpty {
+      return symbol.parameterRows
+    }
+    let rows: Vec<AstCallableParameter> = []
+    let row: i64 = 0
+    while row < symbol.parameters.count {
+      rows.push(AstCallableParameter {
+        position: row as usize
+        name: symbol.parameters[row]
+        typeName: ""
+        span: symbol.span
+      })
+      row = row + 1
+    }
+    return rows
+  }
+
+  genericRowsFor(symbol: TypeSymbol) -> Vec<AstGenericParameter> {
+    if symbol.genericParameterRows.nonEmpty {
+      return symbol.genericParameterRows
+    }
+    let rows: Vec<AstGenericParameter> = []
+    let row: i64 = 0
+    while row < symbol.genericParameters.count {
+      rows.push(AstGenericParameter {
+        position: row as usize
+        name: symbol.genericParameters[row]
+        span: symbol.span
+      })
+      row = row + 1
+    }
+    return rows
+  }
+
+  inferGeneric(
+    parameterType: string,
+    argumentType: string,
+    parameters: Vec<AstGenericParameter>,
+    substitutions: Vec<GenericSubstitution>
+  ) -> CandidateRejection {
+    if argumentType == "" {
+      return CandidateRejection()
+    }
+    let row: i64 = 0
+    while row < parameters.count {
+      let parameter = parameters[row]
+      let inferred = This.genericArgumentFor(
+        parameterType,
+        argumentType,
+        parameter.name
+      )
+      if inferred != "" {
+        let existing = This.substitutionFor(parameter.name, substitutions)
+        if existing != "" && existing != inferred {
+          return CandidateRejection {
+            kind: CandidateRejectionKind.GenericConflict
+            subject: parameter.name
+          }
+        }
+        if existing == "" {
+          substitutions.push(GenericSubstitution {
+            parameterName: parameter.name
+            argumentType: inferred
+            source: GenericInferenceSource.Argument
+          })
+        }
+      }
+      row = row + 1
+    }
+    return CandidateRejection()
+  }
+
+  fillGenericDefaults(
+    parameters: Vec<AstGenericParameter>,
+    substitutions: Vec<GenericSubstitution>
+  ) -> CandidateRejection {
+    let row: i64 = 0
+    while row < parameters.count {
+      let parameter = parameters[row]
+      if This.substitutionFor(parameter.name, substitutions) == "" {
+        if parameter.defaulted {
+          substitutions.push(GenericSubstitution {
+            parameterName: parameter.name
+            argumentType: parameter.defaultTypeName
+            source: GenericInferenceSource.Default
+          })
+        } else {
+          return CandidateRejection {
+            kind: CandidateRejectionKind.GenericArity
+            subject: parameter.name
+          }
+        }
+      }
+      row = row + 1
+    }
+    return CandidateRejection()
+  }
+
+  validateBounds(
+    parameters: Vec<AstGenericParameter>,
+    substitutions: Vec<GenericSubstitution>,
+    index: CandidateIndex
+  ) -> CandidateRejection {
+    let row: i64 = 0
+    while row < parameters.count {
+      let parameter = parameters[row]
+      let argument = This.substitutionFor(parameter.name, substitutions)
+      let boundRow: i64 = 0
+      while boundRow < parameter.bounds.count {
+        let bound = This.genericBase(parameter.bounds[boundRow])
+        if !index.conforms(argument, bound) && argument != bound {
+          return CandidateRejection {
+            kind: CandidateRejectionKind.GenericBound
+            subject: "{argument}:{bound}"
+          }
+        }
+        boundRow = boundRow + 1
+      }
+      row = row + 1
+    }
+    return CandidateRejection()
+  }
+
+  parameterForArgument(
+    argument: AstCallArgument,
+    parameters: Vec<AstCallableParameter>,
+    used: Vec<bool>,
+    nextPositional: usize
+  ) -> i64 {
+    if argument.named {
+      let row: i64 = 0
+      while row < parameters.count {
+        if parameters[row].name == argument.name {
+          return row
+        }
+        row = row + 1
+      }
+      return -1
+    }
+    let row = nextPositional as i64
+    while row < parameters.count {
+      if !used[row] || parameters[row].variadic {
+        return row
+      }
+      row = row + 1
+    }
+    return -1
+  }
+
+  substituteType(
+    typeName: string,
+    substitutions: Vec<GenericSubstitution>
+  ) -> string {
+    let result = typeName
+    let row: i64 = 0
+    while row < substitutions.count {
+      let substitution = substitutions[row]
+      result = result.replace(
+        substitution.parameterName,
+        substitution.argumentType
+      )
+      row = row + 1
+    }
+    return result
+  }
+
+  substitutionFor(
+    name: string,
+    substitutions: Vec<GenericSubstitution>
+  ) -> string {
+    let row: i64 = 0
+    while row < substitutions.count {
+      if substitutions[row].parameterName == name {
+        return substitutions[row].argumentType
+      }
+      row = row + 1
+    }
+    return ""
+  }
+
+  genericArgumentFor(
+    parameterType: string,
+    argumentType: string,
+    genericName: string
+  ) -> string {
+    if parameterType == genericName {
+      return argumentType
+    }
+    let marker = "<{genericName}>"
+    if parameterType.endsWith(marker) &&
+       This.genericBase(parameterType) == This.genericBase(argumentType) {
+      return This.singleGenericArgument(argumentType)
+    }
+    return ""
+  }
+
+  genericBase(typeName: string) -> string {
+    let open = typeName.find("<")
+    if open < 0 {
+      return typeName
+    }
+    return typeName.slice(0, open).toString()
+  }
+
+  singleGenericArgument(typeName: string) -> string {
+    let open = typeName.find("<")
+    let close = typeName.lastIndexOf(">")
+    if open < 0 || close <= open || typeName.contains(",") {
+      return ""
+    }
+    return typeName.slice(open + 1, close).toString()
+  }
+
+  sourceRank(source: CandidateSource) -> usize {
+    if source == CandidateSource.LexicalCallable { return 0 }
+    if source == CandidateSource.InherentMethod ||
+       source == CandidateSource.CustomConstructor { return 1 }
+    if source == CandidateSource.StructuralConstructor { return 2 }
+    if source == CandidateSource.RoleMethod { return 3 }
+    if source == CandidateSource.ConcreteExtension { return 4 }
+    if source == CandidateSource.BlanketExtension { return 5 }
+    if source == CandidateSource.FreeFunction ||
+       source == CandidateSource.CallableValue { return 6 }
+    return 7
+  }
+
+  hasGenericCandidate(set: CandidateSet, index: CandidateIndex) -> bool {
+    let row: i64 = 0
+    while row < set.candidateValues.count {
+      if index.entry(set.candidateValues[row]).generic {
+        return true
+      }
+      row = row + 1
+    }
+    return false
+  }
+}

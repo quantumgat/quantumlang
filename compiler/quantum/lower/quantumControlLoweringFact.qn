@@ -1,0 +1,60 @@
+pub QuantumControlLoweringFact {
+  qifLowered: bool
+  qforLowered: bool
+  qwhileLowered: bool
+  qloopLowered: bool
+  qmirProduct: Qmir
+  qtirProduct: Qtir
+  backendReady: bool
+  diagnosticCode: string
+  valid: bool
+}
+
+impl QuantumControlLoweringFact {
+  pub QuantumControlLoweringFact(
+    qifReady: bool,
+    qforReady: bool,
+    qwhileReady: bool,
+    qloopReady: bool,
+  ) {
+    let qifLowered = qifReady
+    let qforLowered = qforReady
+    let qwhileLowered = qwhileReady
+    let qloopLowered = qloopReady
+    let qmirProduct = Qmir(12, 4, 4, 2)
+    let qtirProduct = Qtir(12, "simulator", "bounded-qasm3", 16)
+    let backendReady = qmirProduct.deterministic && qtirProduct.deterministic
+    let valid = qifLowered && qforLowered && qwhileLowered && qloopLowered && backendReady
+
+    if valid {
+      return This {
+        qifLowered
+        qforLowered
+        qwhileLowered
+        qloopLowered
+        qmirProduct
+        qtirProduct
+        backendReady: true
+        diagnosticCode: ""
+        valid: true
+      }
+    }
+
+    This {
+      qifLowered
+      qforLowered
+      qwhileLowered
+      qloopLowered
+      qmirProduct
+      qtirProduct
+      backendReady
+      diagnosticCode: "QTQUANTUM0206"
+      valid: false
+    }
+  }
+}
+
+impl view QuantumControlLoweringFact {
+  pub allControlsLowered => qifLowered && qforLowered && qwhileLowered && qloopLowered
+  pub lowerable => valid && backendReady
+}

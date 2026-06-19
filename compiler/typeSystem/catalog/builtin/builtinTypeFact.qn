@@ -1,0 +1,12 @@
+pub BuiltinTypeFact {
+  name: string = ""
+  kind: BuiltinTypeKind = Unknown
+  canonical: bool = false
+  runtimeManaged: bool = false
+  targetGated: bool = false
+}
+
+impl view BuiltinTypeFact {
+  pub valid => kind != BuiltinTypeKind.Unknown
+  pub compileTimeOnly => valid && runtimeManaged == false
+}

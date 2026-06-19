@@ -1,0 +1,67 @@
+pub enum AtomicSharedOperation {
+  Load
+  Store
+  Swap
+  CompareExchange
+  Add
+  Sub
+  And
+  Or
+  Xor
+}
+
+pub enum AtomicMemoryOrder {
+  Relaxed
+  Acquire
+  Release
+  AcqRel
+  SeqCst
+}
+
+pub AtomicSharedState {
+  typeName: string
+  operation: AtomicSharedOperation
+  order: AtomicMemoryOrder = AtomicMemoryOrder.SeqCst
+  sharedMutation: bool = true
+  diagnosticCode: string = ""
+}
+
+impl AtomicSharedState {
+  pub scalar(typeName: string, operation: AtomicSharedOperation) =
+    This { typeName, operation }
+
+  pub ordered(
+    typeName: string,
+    operation: AtomicSharedOperation,
+    order: AtomicMemoryOrder
+  ) =
+    This {
+      typeName
+      operation
+      order
+      diagnosticCode: match true {
+        operation == AtomicSharedOperation.Load &&
+          order == AtomicMemoryOrder.Release => "QTCFLOW0008"
+        operation == AtomicSharedOperation.Load &&
+          order == AtomicMemoryOrder.AcqRel => "QTCFLOW0008"
+        operation == AtomicSharedOperation.Store &&
+          order == AtomicMemoryOrder.Acquire => "QTCFLOW0008"
+        operation == AtomicSharedOperation.Store &&
+          order == AtomicMemoryOrder.AcqRel => "QTCFLOW0008"
+        _ => ""
+      }
+    }
+}
+
+impl view AtomicSharedState {
+  pub typed: bool => typeName != ""
+
+  pub intentionalSharedMutation: bool => sharedMutation
+
+  pub defaultSafeOrder: bool => order == AtomicMemoryOrder.SeqCst
+
+  pub valid: bool =>
+    typed &&
+    intentionalSharedMutation &&
+    diagnosticCode == ""
+}

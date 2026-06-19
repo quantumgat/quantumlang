@@ -1,0 +1,58 @@
+pub enum MagicFastScenario {
+  NoChangeHot
+  NoChangeCold
+  OneBodyChangeHot
+  PublicApiChange
+  FullCold
+}
+
+pub MagicFastBudget {
+  scenario: MagicFastScenario
+  maxElapsedMicros: u64
+  maxChangedBodyCount: usize
+  maxSourceFilesRead: usize
+  requireLinkSkipped: bool
+  requireDependencySourceAvoided: bool
+  requireUnaffectedModulesReused: bool
+}
+
+impl MagicFastBudget {
+  pub MagicFastBudget(
+    scenario: MagicFastScenario,
+    maxElapsedMicros: u64,
+    maxChangedBodyCount: usize,
+    maxSourceFilesRead: usize,
+    requireLinkSkipped: bool,
+    requireDependencySourceAvoided: bool,
+    requireUnaffectedModulesReused: bool
+  ) =
+    This {
+      scenario
+      maxElapsedMicros
+      maxChangedBodyCount
+      maxSourceFilesRead
+      requireLinkSkipped
+      requireDependencySourceAvoided
+      requireUnaffectedModulesReused
+    }
+
+  pub noChangeHot() =
+    This(MagicFastScenario.NoChangeHot, 200000, 0, 0, true, true, true)
+
+  pub noChangeCold() =
+    This(MagicFastScenario.NoChangeCold, 1000000, 0, 0, false, true, true)
+
+  pub oneBodyChangeHot() =
+    This(MagicFastScenario.OneBodyChangeHot, 500000, 1, 0, false, true, true)
+
+  pub publicApiChange() =
+    This(MagicFastScenario.PublicApiChange, 0, 0, 0, false, true, true)
+}
+
+impl view MagicFastBudget {
+  pub boundedTime => maxElapsedMicros > 0
+  pub noSourceReadAllowed => maxSourceFilesRead == 0
+  pub bodyChangeBounded => maxChangedBodyCount <= 1
+  pub requiresFullHotReuse => requireDependencySourceAvoided && requireUnaffectedModulesReused
+  pub valid => scenario != MagicFastScenario.FullCold || requireLinkSkipped == false
+}

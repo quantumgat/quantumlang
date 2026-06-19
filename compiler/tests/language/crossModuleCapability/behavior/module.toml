@@ -1,0 +1,9 @@
+[module]
+name = "behavior"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/tests/language/crossModuleCapability/behavior"
+role = "cross-module-proof-behavior"
+
+[dependencies]
+modules = ["model"]

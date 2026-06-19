@@ -1,0 +1,47 @@
+import storage::{CacheActionContentLink, CacheActionIdentity, CacheHash256, CacheProductKind}
+
+pub ActionContentHashProof {
+  actionIdentityValid: bool
+  domainsSeparated: bool
+  mappingValid: bool
+  valid: bool
+}
+
+pub actionContentHashProof() -> ActionContentHashProof {
+  let compiler = CacheHash256.content("1111111111111111111111111111111111111111111111111111111111111111")
+  let target = CacheHash256.content("2222222222222222222222222222222222222222222222222222222222222222")
+  let inputs = CacheHash256.content("3333333333333333333333333333333333333333333333333333333333333333")
+  let policy = CacheHash256.content("4444444444444444444444444444444444444444444444444444444444444444")
+
+  let identity = CacheActionIdentity {
+    queryKind: "native-object"
+    compilerIdentity: compiler
+    targetIdentity: target
+    inputIdentity: inputs
+    policyIdentity: policy
+  }
+
+  let action = CacheHash256.action("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+  let content = CacheHash256.content("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+  let mapping = CacheActionContentLink {
+    action
+    content
+    productKind: CacheProductKind.NativeObject
+  }
+
+  let actionIdentityValid = identity.valid
+  let domainsSeparated =
+    action.actionHash &&
+    action.contentHash == false &&
+    content.contentHash &&
+    content.actionHash == false
+  let mappingValid = mapping.valid
+  let valid = actionIdentityValid && domainsSeparated && mappingValid
+
+  return ActionContentHashProof {
+    actionIdentityValid
+    domainsSeparated
+    mappingValid
+    valid
+  }
+}

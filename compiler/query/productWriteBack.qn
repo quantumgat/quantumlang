@@ -1,0 +1,47 @@
+import storage::{CacheActionContentLink, CacheAtomicWrite, CacheObjectContract, CacheSafetyContract}
+
+pub ProductWriteBack {
+  link: CacheActionContentLink
+  contract: CacheObjectContract
+  safety: CacheSafetyContract
+  write: CacheAtomicWrite
+  fingerprint: ProductFingerprint
+  revision: u64 = 0
+  published: bool = false
+}
+
+impl ProductWriteBack {
+  pub prepare(
+    link: CacheActionContentLink,
+    contract: CacheObjectContract,
+    safety: CacheSafetyContract,
+    fingerprint: ProductFingerprint,
+    revision: u64
+  ) =
+    This {
+      link
+      contract
+      safety
+      write: safety.write
+      fingerprint
+      revision
+    }
+
+  pub publish() -> This =
+    match true {
+      ready == false => this
+      _ => this { published: true }
+    }
+}
+
+impl view ProductWriteBack {
+  pub ready: bool =>
+    link.valid &&
+    contract.valid &&
+    safety.valid &&
+    write.publishable &&
+    fingerprint.cacheable &&
+    revision > 0
+
+  pub durable: bool => ready && published
+}

@@ -1,0 +1,37 @@
+pub QualifiedName {
+  packageName: NameId = NameId(0)
+  modulePath: Slice<NameId> = []
+  localName: NameId = NameId(0)
+  fullHash: u64 = 0
+}
+
+impl QualifiedName {
+  pub QualifiedName(packageName: NameId, modulePath: Slice<NameId>, localName: NameId) -> This {
+    return This {
+      packageName
+      modulePath
+      localName
+    }
+  }
+
+  pub interned(packageName: NameId, modulePath: Slice<NameId>, localName: NameId, fullHash: u64) -> This {
+    return This {
+      packageName
+      modulePath
+      localName
+      fullHash
+    }
+  }
+}
+
+impl view QualifiedName {
+  pub hasPackage => packageName.valid
+
+  pub hasLocalName => localName.valid
+
+  pub hasModulePath => modulePath.valid
+
+  pub interned => fullHash != 0
+
+  pub valid => hasPackage && hasLocalName && hasModulePath
+}

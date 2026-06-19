@@ -1,0 +1,88 @@
+pub enum DeliveryKind {
+  Immediate
+  Ordered
+  Queued
+  Parallel
+  Actor
+  Realtime
+}
+
+pub enum WaitKind {
+  Suspend
+  Block
+  None
+}
+
+pub enum OverflowKind {
+  Backpressure
+  DropNewest
+  DropOldest
+  Latest
+  Reject
+}
+
+pub enum OrderingKind {
+  Unordered
+  FIFO
+  PerProducer
+  Global
+}
+
+pub enum TransferKind {
+  Borrow
+  Move
+  Copy
+  Shared
+}
+
+pub CommunicationPolicy {
+  delivery: DeliveryKind = DeliveryKind.Immediate
+  wait: WaitKind = WaitKind.Suspend
+  overflow: OverflowKind = OverflowKind.Backpressure
+  ordering: OrderingKind = OrderingKind.FIFO
+  transfer: TransferKind = TransferKind.Move
+  capacity: i64 = 0
+  ordered: bool = true
+  cancellable: bool = true
+}
+
+impl CommunicationPolicy {
+  pub bounded(capacity: i64) =
+    This {
+      delivery: DeliveryKind.Queued
+      overflow: OverflowKind.Backpressure
+      capacity
+    }
+
+  pub parallel(capacity: i64) =
+    This {
+      delivery: DeliveryKind.Parallel
+      overflow: OverflowKind.Backpressure
+      ordering: OrderingKind.PerProducer
+      capacity
+    }
+
+  pub realtime(capacity: i64) =
+    This {
+      delivery: DeliveryKind.Realtime
+      wait: WaitKind.None
+      overflow: OverflowKind.Latest
+      capacity
+    }
+}
+
+impl view CommunicationPolicy {
+  pub bounded: bool => capacity > 0
+
+  pub blocking: bool => wait == WaitKind.Block
+
+  pub suspending: bool => wait == WaitKind.Suspend
+
+  pub lockFreeEligible: bool =>
+    wait != WaitKind.Block &&
+    delivery != DeliveryKind.Actor
+
+  pub valid: bool =>
+    capacity >= 0 &&
+    (ordered == false || ordering != OrderingKind.Unordered)
+}

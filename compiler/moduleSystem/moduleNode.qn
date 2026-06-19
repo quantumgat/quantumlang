@@ -1,0 +1,95 @@
+import core::{DeclarationId, ModuleId, Slice}
+import declaration::{DeclarationRecord, DeclarationSet}
+
+pub ModuleNode {
+  pub id: ModuleId = {}
+  name: string = ""
+  path: string = ""
+  declarations: Slice<DeclarationId> = []
+  exports: Slice<DeclarationId> = []
+  imports: Slice<ImportPath> = []
+  declarationValues: Vec<DeclarationRecord> = []
+  importValues: Vec<ImportPath> = []
+  boundary: bool = true
+  deterministic: bool = true
+}
+
+impl ModuleNode {
+  pub ModuleNode(id: ModuleId, name: string, path: string) =
+    This {
+      id
+      name
+      path
+    }
+
+  pub fromCounts(name: string, path: string, declarationCount: i64, exportCount: i64, importCount: i64) =
+    This {
+      id: ModuleId(1, 1)
+      name
+      path
+      declarations: Slice(declarationCount)
+      exports: Slice(exportCount)
+      imports: Slice(importCount)
+    }
+
+  pub fromDeclarations(
+    id: ModuleId,
+    name: string,
+    path: string,
+    declarations: DeclarationSet,
+    exports: DeclarationSet,
+    imports: DeclarationSet
+  ) =
+    This {
+      id
+      name
+      path
+      declarations: declarations.declarations
+      exports: exports.publicDeclarations
+      imports: Slice(imports.count)
+      boundary: declarations.present
+      deterministic: declarations.deterministic && exports.deterministic && imports.deterministic
+    }
+
+  pub fromRecord(id: ModuleId, record: DeclarationRecord) =
+    This {
+      id
+      name: record.name
+      path: record.modulePath
+      boundary: true
+      deterministic: record.deterministic
+    }
+
+  pub addDeclaration(record: DeclarationRecord) {
+    declarationValues.push(record)
+    declarations = Slice(declarationValues.count)
+  }
+
+  pub addImport(path: ImportPath) {
+    importValues.push(path)
+    imports = Slice(importValues.count)
+  }
+}
+
+impl view ModuleNode {
+  pub named: bool => name != ""
+
+  pub hasPath: bool => path != ""
+
+  pub declarationCount: i64 => declarationValues.count
+
+  pub exportCount: i64 => exports.count
+
+  pub importCount: i64 => importValues.count
+
+  pub valid: bool =>
+    deterministic &&
+    id.valid &&
+    named &&
+    hasPath &&
+    declarations.valid &&
+    exports.valid &&
+    imports.valid &&
+    declarationValues.valid &&
+    importValues.valid
+}

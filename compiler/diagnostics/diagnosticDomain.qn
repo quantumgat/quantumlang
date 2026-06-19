@@ -1,0 +1,11 @@
+pub enum DiagnosticDomain {
+  Unknown
+  Literal
+  Parser
+  Import
+  TypeSystem
+  ControlFlow
+  Hir
+  Mir
+  Quantum
+}

@@ -1,0 +1,61 @@
+module machine
+
+mod {
+  targetTriple
+  targetMachine
+  targetFeature
+  targetFeatureSet
+  dataLayout
+  callingConvention
+  targetAbiFact
+  registerClass
+  instructionSet
+  quantumTarget
+  quantumCapability
+  quantumTopology
+  arch.x86_64 as x86_64
+  arch.aarch64 as aarch64
+  arch.riscv32 as riscv32
+  arch.riscv64 as riscv64
+  arch.armv7m as armv7m
+  arch.armv8m as armv8m
+  abi.sysv as sysv
+  abi.win64 as win64
+  abi.darwin as darwin
+  abi.bareMetal as bareMetal
+  abi.embeddedEabi as embeddedEabi
+  object.elf as elf
+  object.coff as coff
+  object.macho as macho
+  object.qobj as qobj
+}
+
+export {
+  targetTriple.{TargetTriple, targetTriple}
+  targetMachine.{TargetMachine, targetMachine}
+  targetFeature.{TargetFeature, targetFeature}
+  targetFeatureSet.{TargetFeatureSet, targetFeatureSet}
+  dataLayout.{DataLayout, dataLayout}
+  callingConvention.{CallingConvention, callingConvention}
+  targetAbiFact.{TargetAbiFact, targetAbiFact}
+  registerClass.{RegisterClass}
+  instructionSet.{InstructionSet}
+  quantumTarget.{QuantumTarget}
+  quantumCapability.{QuantumCapability}
+  quantumTopology.{QuantumMachineTopology}
+  x86_64.{X86_64Arch}
+  aarch64.{Aarch64Arch}
+  riscv32.{Riscv32Arch}
+  riscv64.{Riscv64Arch}
+  armv7m.{Armv7mArch}
+  armv8m.{Armv8mArch}
+  sysv.{SysvAbi}
+  win64.{Win64Abi}
+  darwin.{DarwinAbi}
+  bareMetal.{BareMetalAbi}
+  embeddedEabi.{EmbeddedEabi}
+  elf.{ElfObject}
+  coff.{CoffObject}
+  macho.{MachoObject}
+  qobj.{QobjObject}
+}

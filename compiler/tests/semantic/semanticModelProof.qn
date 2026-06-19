@@ -1,0 +1,104 @@
+import semantic::{CheckedFile, CheckedModule, PublicApi, SemanticModel, SemanticStatus}
+
+pub SemanticModelProof {
+  fileAccepted: bool
+  moduleAccepted: bool
+  publicApiIndexed: bool
+  semanticModelReady: bool
+  defaultFieldsFilled: bool
+  valid: bool
+}
+
+impl SemanticModelProof {
+  pub SemanticModelProof(
+    fileAccepted: bool,
+    moduleAccepted: bool,
+    publicApiIndexed: bool,
+    semanticModelReady: bool,
+    defaultFieldsFilled: bool
+  ) =
+    This {
+      fileAccepted,
+      moduleAccepted,
+      publicApiIndexed,
+      semanticModelReady,
+      defaultFieldsFilled
+    }
+}
+
+impl view SemanticModelProof {
+  pub valid => fileAccepted &&
+    moduleAccepted &&
+    publicApiIndexed &&
+    semanticModelReady &&
+    defaultFieldsFilled
+}
+
+pub semanticModelProof() -> SemanticModelProof {
+  let file = CheckedFile {
+    path: "qtlang/compiler/semantic/semanticModel.qn"
+    fileId: 7
+    byteLength: 512
+    symbolCount: 4
+  }
+  let module = CheckedModule {
+    name: "semantic"
+    fileCount: 4
+    publicSymbolCount: 4
+    privateSymbolCount: 2
+  }
+  let publicApi = PublicApi {
+    symbolCount: 4
+    typeCount: 4
+    functionCount: 0
+    stableHashLow: 99
+  }
+  let model = SemanticModel {
+    moduleCount: 1
+    checkedFileCount: 4
+    checkedModuleCount: 1
+    publicSymbolCount: publicApi.symbolCount
+  }
+
+  let fileAccepted = file.exists &&
+    file.clean &&
+    file.hasSymbols &&
+    file.stableIdentity &&
+    file.cacheCandidate &&
+    file.status == SemanticStatus.Ready
+  let moduleAccepted = module.exists &&
+    module.clean &&
+    module.hasFiles &&
+    module.hasPublicApi &&
+    module.symbolCount == 6 &&
+    module.readyForLowering &&
+    module.status == SemanticStatus.Ready
+  let publicApiIndexed = publicApi.indexable &&
+    publicApi.hasTypes &&
+    publicApi.hasStableHash &&
+    publicApi.stable &&
+    publicApi.status == SemanticStatus.Ready
+  let semanticModelReady = model.readyForHir &&
+    model.hasFiles &&
+    model.hasPublicApi &&
+    model.status == SemanticStatus.Ready
+  let defaultFile = CheckedFile("qtlang/compiler/semantic/checkedFile.qn")
+  let defaultModule = CheckedModule("semantic")
+  let defaultApi = PublicApi(0)
+  let defaultModel = SemanticModel(1)
+  let defaultFieldsFilled = defaultFile.clean &&
+    defaultFile.fileId == 0 &&
+    defaultModule.symbolCount == 0 &&
+    defaultApi.empty &&
+    defaultApi.deterministic &&
+    defaultApi.status == SemanticStatus.Empty &&
+    defaultModel.readyForHir
+
+  SemanticModelProof(
+    fileAccepted,
+    moduleAccepted,
+    publicApiIndexed,
+    semanticModelReady,
+    defaultFieldsFilled
+  )
+}

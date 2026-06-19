@@ -1,0 +1,221 @@
+import core::{HashSeed, Hasher, ScopeId, Vec}
+
+pub TypeNameLookupIndex {
+  bucketCount: usize = 0
+  bucketHeads: Vec<Option<usize>> = []
+  hashes: Vec<u64> = []
+  qualifiers: Vec<string> = []
+  names: Vec<string> = []
+  rows: Vec<usize> = []
+  nextRows: Vec<Option<usize>> = []
+}
+
+impl TypeNameLookupIndex {
+  pub withCapacity(expectedCount: usize) -> This {
+    let index = This {
+      bucketCount: This.bucketCapacity(expectedCount)
+    }
+    let bucket: usize = 0
+    while bucket < index.bucketCount {
+      index.bucketHeads.push(None)
+      bucket = bucket + 1
+    }
+    return index
+  }
+
+  pub add(qualifier: string, name: string, row: usize) -> bool {
+    if bucketCount == 0 || name == "" {
+      return false
+    }
+    let hash = this.nameHash(name)
+    let bucket = hash as usize % bucketCount
+    let current = bucketHeads[bucket]
+    while let Some(entry) = current {
+      if hashes[entry] == hash &&
+         qualifiers[entry] == qualifier &&
+         names[entry] == name {
+        return false
+      }
+      current = nextRows[entry]
+    }
+
+    let entry = rows.count as usize
+    hashes.push(hash)
+    qualifiers.push(qualifier)
+    names.push(name)
+    rows.push(row)
+    nextRows.push(bucketHeads[bucket])
+    bucketHeads[bucket] = Some(entry)
+    return true
+  }
+
+  pub rowFor(name: string) -> Option<usize> {
+    return rowFor("", name)
+  }
+
+  pub rowFor(qualifier: string, name: string) -> Option<usize> {
+    if bucketCount == 0 || name == "" {
+      return None
+    }
+    let hash = this.nameHash(name)
+    let bucket = hash as usize % bucketCount
+    let current = bucketHeads[bucket]
+    while let Some(entry) = current {
+      if hashes[entry] == hash &&
+         qualifiers[entry] == qualifier &&
+         names[entry] == name {
+        return Some(rows[entry])
+      }
+      current = nextRows[entry]
+    }
+    return None
+  }
+
+  pub contains(qualifier: string, name: string) -> bool {
+    return rowFor(qualifier, name).present
+  }
+
+  pub nameHash(name: string) -> u64 {
+    let hasher = Hasher.fast64(HashSeed { value: 0x51544c4331 })
+    match hasher.write(name) {
+      Ok(value) => {}
+      Err(error) => return name.length() as u64 + 1
+    }
+    return match hasher.finish64() {
+      Ok(value) => value
+      Err(error) => name.length() as u64 + 1
+    }
+  }
+
+  bucketCapacity(expectedCount: usize) -> usize {
+    let capacity: usize = 16
+    let target = expectedCount * 2
+    while capacity < target {
+      capacity = capacity * 2
+    }
+    return capacity
+  }
+}
+
+impl view TypeNameLookupIndex {
+  pub count: usize => rows.count as usize
+
+  pub aligned: bool =>
+    hashes.count == count &&
+    qualifiers.count == count &&
+    names.count == count &&
+    nextRows.count == count
+
+  pub valid: bool =>
+    bucketCount > 0 &&
+    bucketHeads.count as usize == bucketCount &&
+    aligned
+}
+
+pub TypeScopeLookupIndex {
+  bucketCount: usize = 0
+  bucketHeads: Vec<Option<usize>> = []
+  hashes: Vec<u64> = []
+  scopes: Vec<ScopeId> = []
+  names: Vec<string> = []
+  rows: Vec<usize> = []
+  nextRows: Vec<Option<usize>> = []
+}
+
+impl TypeScopeLookupIndex {
+  pub withCapacity(expectedCount: usize) -> This {
+    let index = This {
+      bucketCount: This.bucketCapacity(expectedCount)
+    }
+    let bucket: usize = 0
+    while bucket < index.bucketCount {
+      index.bucketHeads.push(None)
+      bucket = bucket + 1
+    }
+    return index
+  }
+
+  pub add(scope: ScopeId, name: string, row: usize) -> bool {
+    if bucketCount == 0 || !scope.valid || name == "" {
+      return false
+    }
+    let hash = this.nameHash(name)
+    let bucket = hash as usize % bucketCount
+    let current = bucketHeads[bucket]
+    while let Some(entry) = current {
+      if hashes[entry] == hash &&
+         scopes[entry].id.same(scope.id) &&
+         names[entry] == name {
+        return false
+      }
+      current = nextRows[entry]
+    }
+
+    let entry = rows.count as usize
+    hashes.push(hash)
+    scopes.push(scope)
+    names.push(name)
+    rows.push(row)
+    nextRows.push(bucketHeads[bucket])
+    bucketHeads[bucket] = Some(entry)
+    return true
+  }
+
+  pub rowFor(scope: ScopeId, name: string) -> Option<usize> {
+    if bucketCount == 0 || !scope.valid || name == "" {
+      return None
+    }
+    let hash = this.nameHash(name)
+    let bucket = hash as usize % bucketCount
+    let current = bucketHeads[bucket]
+    while let Some(entry) = current {
+      if hashes[entry] == hash &&
+         scopes[entry].id.same(scope.id) &&
+         names[entry] == name {
+        return Some(rows[entry])
+      }
+      current = nextRows[entry]
+    }
+    return None
+  }
+
+  pub contains(scope: ScopeId, name: string) -> bool {
+    return rowFor(scope, name).present
+  }
+
+  pub nameHash(name: string) -> u64 {
+    let hasher = Hasher.fast64(HashSeed { value: 0x51544c4331 })
+    match hasher.write(name) {
+      Ok(value) => {}
+      Err(error) => return name.length() as u64 + 1
+    }
+    return match hasher.finish64() {
+      Ok(value) => value
+      Err(error) => name.length() as u64 + 1
+    }
+  }
+
+  bucketCapacity(expectedCount: usize) -> usize {
+    let capacity: usize = 16
+    let target = expectedCount * 2
+    while capacity < target {
+      capacity = capacity * 2
+    }
+    return capacity
+  }
+}
+
+impl view TypeScopeLookupIndex {
+  pub count: usize => rows.count as usize
+
+  pub aligned: bool =>
+    hashes.count == count &&
+    scopes.count == count &&
+    names.count == count &&
+    nextRows.count == count
+
+  pub valid: bool =>
+    bucketCount > 0 &&
+    bucketHeads.count as usize == bucketCount &&
+    aligned
+}

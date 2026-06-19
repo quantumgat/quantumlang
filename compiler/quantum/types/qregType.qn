@@ -1,0 +1,23 @@
+pub QregType {
+  sizeKnown: bool
+  elementType: string
+  noCloneElements: bool
+  iterableByQfor: bool
+  valid: bool
+}
+
+impl QregType {
+  pub QregType(sizeKnown: bool) =
+    This {
+      sizeKnown
+      elementType: "qubit"
+      noCloneElements: true
+      iterableByQfor: true
+      valid: true
+    }
+}
+
+impl view QregType {
+  pub qforIterable => iterableByQfor
+  pub ownsQubits => elementType == "qubit" && noCloneElements
+}

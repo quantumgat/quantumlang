@@ -1,0 +1,38 @@
+pub enum ExportedSymbolKind {
+  Module
+  Type
+  Function
+  Method
+  Field
+  Constant
+  Effect
+  QuantumResource
+}
+
+pub ExportedSymbol {
+  symbolId: StableId
+  ownerModuleId: StableId
+  name: string
+  qualifiedName: string
+  kind: ExportedSymbolKind
+  visibilityFingerprint: Fingerprint
+}
+
+impl ExportedSymbol {
+  pub init(
+    symbolId: StableId,
+    ownerModuleId: StableId,
+    name: string,
+    qualifiedName: string,
+    kind: ExportedSymbolKind,
+    visibilityFingerprint: Fingerprint
+  ) =
+    This { symbolId, ownerModuleId, name, qualifiedName, kind, visibilityFingerprint }
+}
+
+impl view ExportedSymbol {
+  pub publicName => qualifiedName
+  pub typeLike => kind == ExportedSymbolKind.Type || kind == ExportedSymbolKind.QuantumResource
+  pub callable => kind == ExportedSymbolKind.Function || kind == ExportedSymbolKind.Method
+  pub valid => name != "" && visibilityFingerprint.nonzero
+}

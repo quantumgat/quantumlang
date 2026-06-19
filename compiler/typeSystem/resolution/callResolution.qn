@@ -1,0 +1,29 @@
+import core::{SymbolId, TypeId, Vec}
+import diagnostics::{DiagnosticSpec}
+
+pub CallResolution {
+  selected: CandidateEntry = {}
+  bindings: Vec<ArgumentBinding> = []
+  substitutions: Vec<GenericSubstitution> = []
+  resultTypeName: string = ""
+  symbolId: SymbolId = {}
+  typeId: TypeId = {}
+  candidateCount: i64 = 0
+  viableCount: i64 = 0
+  diagnostic: DiagnosticSpec = {}
+  diagnosticSubject: string = ""
+  ambiguous: bool = false
+}
+
+impl view CallResolution {
+  pub resolved: bool =>
+    selected.valid &&
+    resultTypeName != "" &&
+    diagnostic.missing &&
+    ambiguous == false
+
+  pub valid: bool =>
+    candidateCount >= viableCount &&
+    candidateCount >= 0 &&
+    viableCount >= 0
+}

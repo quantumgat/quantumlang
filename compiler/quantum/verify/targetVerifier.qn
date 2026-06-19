@@ -1,0 +1,27 @@
+pub QuantumTargetVerifier {
+  checked: i64
+  accepted: bool
+  diagnosticCode: string
+}
+
+impl QuantumTargetVerifier {
+  pub QuantumTargetVerifier(topology: QuantumTopology, schedule: QuantumSchedule, gateSet: QuantumGateSet) {
+    let accepted = topology.valid && schedule.valid && gateSet.valid
+    if accepted {
+      return This {
+        checked: 3
+        accepted: true
+        diagnosticCode: ""
+      }
+    }
+    This {
+      checked: 3
+      accepted: false
+      diagnosticCode: "QTQUANTUM0103"
+    }
+  }
+}
+
+impl view QuantumTargetVerifier {
+  pub rejected => accepted == false
+}

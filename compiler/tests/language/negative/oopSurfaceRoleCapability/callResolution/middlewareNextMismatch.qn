@@ -1,0 +1,6 @@
+pub wrongNext(
+  ctx: HttpCtx<AuthUser>,
+  next: Next<HttpCtx<Session<UserSession>>>
+) -> Result<HttpCtx<AuthUser>, IntoHttpError> {
+  return ctx.extend.around(ctx, next)
+}

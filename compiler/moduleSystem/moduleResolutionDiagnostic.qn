@@ -1,0 +1,56 @@
+pub enum ModuleResolutionDiagnosticKind {
+  UnresolvedImport
+  DuplicateModule
+  DuplicateDeclaration
+  PrivateImport
+  ImportAliasConflict
+}
+
+pub ModuleResolutionDiagnostic {
+  kind: ModuleResolutionDiagnosticKind
+  code: string
+  modulePath: string
+  name: string
+  blocking: bool = true
+}
+
+impl ModuleResolutionDiagnostic {
+  pub unresolvedImport(modulePath: string, name: string) =
+    This {
+      kind: ModuleResolutionDiagnosticKind.UnresolvedImport
+      code: "QLRESOLVE0001"
+      modulePath
+      name
+    }
+
+  pub duplicateModule(modulePath: string) =
+    This {
+      kind: ModuleResolutionDiagnosticKind.DuplicateModule
+      code: "QLRESOLVE0003"
+      modulePath
+      name: modulePath
+    }
+
+  pub duplicateDeclaration(modulePath: string, name: string) =
+    This {
+      kind: ModuleResolutionDiagnosticKind.DuplicateDeclaration
+      code: "QLRESOLVE0004"
+      modulePath
+      name
+    }
+
+  pub aliasConflict(modulePath: string, name: string) =
+    This {
+      kind: ModuleResolutionDiagnosticKind.ImportAliasConflict
+      code: "QLRESOLVE0005"
+      modulePath
+      name
+    }
+}
+
+impl view ModuleResolutionDiagnostic {
+  pub valid: bool =>
+    code != "" &&
+    modulePath != "" &&
+    name != ""
+}

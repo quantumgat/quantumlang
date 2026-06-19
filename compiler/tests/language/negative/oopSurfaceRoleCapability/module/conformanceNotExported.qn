@@ -1,0 +1,7 @@
+module app.badConformance
+
+import http.hidden.{HiddenAuthenticatedCtx}
+
+pub useHiddenConformance(ctx: HiddenAuthenticatedCtx) -> i64 {
+  return ctx.extend.user()?.id
+}

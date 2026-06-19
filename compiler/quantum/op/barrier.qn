@@ -1,0 +1,18 @@
+pub QuantumBarrier {
+  targetCount: i64
+  schedulingFence: bool
+  valid: bool
+}
+
+impl QuantumBarrier {
+  pub QuantumBarrier(targetCount: i64) =
+    This {
+      targetCount
+      schedulingFence: true
+      valid: targetCount >= 0
+    }
+}
+
+impl view QuantumBarrier {
+  pub fencesSchedule => schedulingFence
+}

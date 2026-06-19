@@ -1,0 +1,51 @@
+module syntax
+
+mod {
+  token
+  lexer
+  ast
+  parser
+}
+
+export {
+  token.{SyntaxToken, TokenKind}
+  token.{KeywordKind, TokenRole}
+  token.{isPrimitiveTokenText, isNumericLiteralSuffix, numericLiteralSuffixType}
+  token.{numericLiteralTypeForText, numericLiteralTypeIsFloat}
+  token.{IdentifierText, isIdentifierStartByte, isIdentifierContinueByte, isTypeName, isValueName}
+  token.{isPrivateName, isPlaceholderName, isMagicName, genericBaseName}
+  token.{baseTypeName, receiverRootName, memberName}
+  token.OperatorTokenFact
+  token.{ImportFormKind, ImportTokenRule}
+  token.{PreludeSymbolKind, PreludeSymbolFact}
+  token.{Trivia, TriviaKind}
+  token.{Literal, LiteralTokenKind}
+
+  lexer.{Lexer, LexedTokenFact, SourceLexer, TokenStream, TriviaStream, LexProduct, PackageLexProduct}
+  lexer.{Scanner, ScannerCursor}
+  lexer.NumberLexer
+  lexer.StringLexer
+  lexer.{HostLexerCheck}
+
+  ast.{AstNodeKind, AstNodeId, AstNode}
+  ast.{AstCallArgument, AstCallableParameter, AstGenericParameter}
+  ast.{AstRoleVisibility, AstRoleConformance}
+  ast.{AstDeclarationKind, AstDeclarationVisibility, AstDeclaration}
+  ast.{AstItemKind, AstItem}
+  ast.{AstExprKind, AstExpr}
+  ast.{AstStmtKind, AstStmt}
+  ast.{AstPatternKind, AstPattern}
+  ast.{AstTypeRefKind, AstTypeRef}
+  ast.AstArena
+  ast.{AstProduct, PackageAstProduct}
+
+  parser.{Parser, ParseResult}
+  parser.ItemParser
+  parser.ExprParser
+  parser.StmtParser
+  parser.TypeParser
+  parser.{ParseRecovery, RecoverySyncSet, ParserReplayDiagnostic, MissingTokenPlaceholder}
+  parser.Precedence
+  parser.{HostParserCheck}
+  parser.SourceParser
+}

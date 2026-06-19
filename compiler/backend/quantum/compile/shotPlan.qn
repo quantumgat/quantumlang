@@ -1,0 +1,30 @@
+pub QuantumShotPlan {
+  shots: i64
+  seedStable: bool
+  diagnosticCode: string = ""
+}
+
+impl QuantumShotPlan {
+  pub QuantumShotPlan(shots: i64, seedStable: bool) =
+    This { shots, seedStable }
+
+  pub deterministic(shots: i64) =
+    This {
+      shots
+      seedStable: true
+    }
+
+  withShots(shots: i64) =
+    this {
+      shots
+    }
+}
+
+impl view QuantumShotPlan {
+  pub valid => diagnosticCode == "" && shots > 0 && seedStable
+  pub deterministicReady => seedStable
+  pub singleShot => shots == 1
+  pub statistical => shots > 1
+  pub lowerable => valid
+  pub debugName => "quantum.shots.{shots}.stable{seedStable}"
+}

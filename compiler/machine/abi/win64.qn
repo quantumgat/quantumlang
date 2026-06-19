@@ -1,0 +1,3 @@
+pub Win64Abi {
+  name: string
+}

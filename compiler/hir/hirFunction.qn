@@ -1,0 +1,66 @@
+pub HirFunction {
+  item: HirItem
+  parameterCount: i64
+  blockCount: i64
+  returnsValue: bool
+  effectCount: i64
+  diagnosticCode: string = ""
+}
+
+impl HirFunction {
+  pub HirFunction(item: HirItem, parameterCount: i64, blockCount: i64, returnsValue: bool, effectCount: i64) =
+    This { item, parameterCount, blockCount, returnsValue, effectCount }
+
+  pub empty(item: HirItem) =
+    This {
+      item
+      parameterCount: 0
+      blockCount: 1
+      returnsValue: false
+      effectCount: 0
+    }
+
+  pub invalid(item: HirItem) =
+    This {
+      item
+      parameterCount: 0
+      blockCount: 0
+      returnsValue: false
+      effectCount: 0
+      diagnosticCode: "QHIR0801"
+    }
+
+  addBlock() =
+    this {
+      blockCount: blockCount + 1
+    }
+
+  addEffect() =
+    this {
+      effectCount: effectCount + 1
+    }
+
+  withReturnValue(returnsValue: bool) =
+    this {
+      returnsValue
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QHIR0801"
+    }
+}
+
+impl view HirFunction {
+  pub valid => diagnosticCode == "" && validShape
+  pub validShape => item.valid && parameterCount >= 0 && blockCount > 0 && effectCount >= 0
+  pub pure => effectCount == 0
+  pub impure => pure == false
+  pub hasParameters => parameterCount > 0
+  pub hasBlocks => blockCount > 0
+  pub returnsVoid => returnsValue == false
+  pub entryCandidate => item.functionItem && blockCount > 0
+  pub lowerable => valid && item.functionItem
+  pub estimatedCost => blockCount + parameterCount + effectCount
+  pub debugName => "hir.function.{item.name}"
+}

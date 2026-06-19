@@ -1,0 +1,18 @@
+pub QuantumAstLowering {
+  lowered: i64
+  qtirProduct: Qtir
+  deterministic: bool
+}
+
+impl QuantumAstLowering {
+  pub QuantumAstLowering(lowered: i64, qtirProduct: Qtir) =
+    This {
+      lowered
+      qtirProduct
+      deterministic: qtirProduct.deterministic
+    }
+}
+
+impl view QuantumAstLowering {
+  pub valid => lowered >= 0 && deterministic
+}

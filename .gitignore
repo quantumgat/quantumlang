@@ -1,0 +1,63 @@
+# QuantumLang compiler local outputs
+
+# Compiler build outputs
+/build/
+/tests/**/build/
+/**/build/
+/target/
+/**/target/
+/out/
+/dist/
+/release/
+/debug/
+
+# qtlc package/build caches
+/.qtlc/
+/.qtlc-cache/
+/.cache/
+/qtlc_artifacts/
+/**/qtlc_artifacts/
+
+# Generated native/backend artifacts
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.s
+*.asm
+*.ll
+*.bc
+*.ir
+*.mir
+*.hir
+*.sourcemap.json
+
+# Generated package metadata
+quantum.lock
+*.qdb
+*.qcache
+*.qtlc-cache
+
+# Test/runtime output
+/coverage/
+/reports/
+/tmp/
+/temp/
+*.log
+*.trace
+*.prof
+*.gcda
+*.gcno
+
+# Editor and OS noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/

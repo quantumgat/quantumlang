@@ -1,0 +1,56 @@
+import core::{NodeId, TypeId}
+
+pub HirNode {
+  id: i64
+  kind: string
+  sourceNodeId: i64
+  typedNodeId: NodeId = {}
+  typeId: TypeId = {}
+  diagnosticCode: string = ""
+}
+
+impl HirNode {
+  pub HirNode(id: i64, kind: string, sourceNodeId: i64) =
+    This { id, kind, sourceNodeId }
+
+  pub synthetic(id: i64, kind: string) =
+    This {
+      id
+      kind
+      sourceNodeId: -1
+    }
+
+  pub invalid(id: i64, kind: string) =
+    This {
+      id
+      kind
+      sourceNodeId: -1
+      diagnosticCode: "QHIR0001"
+    }
+
+  withKind(kind: string) =
+    this {
+      kind
+    }
+
+  withSourceNode(sourceNodeId: i64) =
+    this {
+      sourceNodeId
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QHIR0001"
+    }
+}
+
+impl view HirNode {
+  pub valid => diagnosticCode == "" && validShape
+  pub validShape => id >= 0 && kind != ""
+  pub synthetic => sourceNodeId < 0
+  pub sourceBacked => sourceNodeId >= 0
+  pub typed => typedNodeId.valid && typeId.valid
+  pub lowerable => valid
+  pub label => "hir.node.{id}"
+  pub debugName => "hir.node.{id}.{kind}"
+}

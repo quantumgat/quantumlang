@@ -1,0 +1,120 @@
+pub TextView {
+  value: string = ""
+  start: i64 = 0
+  end: i64 = 0
+}
+
+impl TextView {
+  pub TextView(value: string) =
+    This { value, end: value.byteLength() as i64 }
+
+  pub TextView(value: string, start: i64, end: i64) =
+    This { value, start, end }
+
+  pub slice(start: i64, end: i64) -> TextView {
+    let nextStart = this.start + start
+    let nextEnd = this.start + end
+    if nextStart < this.start || nextStart > this.end {
+      return TextView(value, this.end, this.end)
+    }
+    if nextEnd < nextStart {
+      return TextView(value, nextStart, nextStart)
+    }
+    if nextEnd > this.end {
+      return TextView(value, nextStart, this.end)
+    }
+    return TextView(value, nextStart, nextEnd)
+  }
+
+  pub take(count: i64) -> TextView {
+    if count <= 0 {
+      return TextView(value, start, start)
+    }
+    if count >= byteLength {
+      return this
+    }
+    return TextView(value, start, start + count)
+  }
+
+  pub drop(count: i64) -> TextView {
+    if count <= 0 {
+      return this
+    }
+    if count >= byteLength {
+      return TextView(value, end, end)
+    }
+    return TextView(value, start + count, end)
+  }
+
+  pub uncheckedByteAt(index: i64) -> i64 {
+    return value.uncheckedByteAt(start + index)
+  }
+
+  pub checkedByteAt(index: i64) -> i64 {
+    if index < 0 || index >= byteLength {
+      return -1
+    }
+    return this.uncheckedByteAt(index)
+  }
+
+  pub asciiByteAt(index: i64) -> AsciiByte {
+    return AsciiByte(this.uncheckedByteAt(index))
+  }
+
+  pub toText() -> string {
+    if start == 0 && end == value.byteLength() as i64 {
+      return value
+    }
+    return value.slice(start, end).toString()
+  }
+
+  pub startsLower() -> bool {
+    return this.startsAsciiLower()
+  }
+
+  pub startsAsciiUpper() -> bool {
+    return byteLength > 0 &&
+      AsciiByte(this.uncheckedByteAt(0)).isUpper()
+  }
+
+  pub startsAsciiLower() -> bool {
+    return byteLength > 0 &&
+      this.asciiByteAt(0).isLower()
+  }
+
+  pub startsAsciiAlpha() -> bool {
+    return byteLength > 0 &&
+      AsciiByte(this.uncheckedByteAt(0)).isAlpha()
+  }
+
+  pub isLower() -> bool {
+    return this.isAsciiLower()
+  }
+
+  pub isAsciiLower() -> bool {
+    if byteLength == 0 {
+      return false
+    }
+    let index: i64 = 0
+    while index < byteLength {
+      if !this.isAsciiLowerAt(index) {
+        return false
+      }
+      index = index + 1
+    }
+    return true
+  }
+
+  pub isAsciiLowerAt(index: i64) -> bool {
+    return this.asciiByteAt(index).isLower()
+  }
+}
+
+impl view TextView {
+  pub byteLength => end - start
+  pub length => byteLength
+  pub empty => byteLength == 0
+  pub nonEmpty => byteLength > 0
+  pub fullView => start == 0 && end == value.byteLength() as i64
+  pub valid => start >= 0 && end >= start && end <= value.byteLength() as i64
+}

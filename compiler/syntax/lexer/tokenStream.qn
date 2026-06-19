@@ -1,0 +1,35 @@
+import core::{FileId}
+
+pub TokenStream {
+  fileId: FileId = {}
+  rows: Vec<SyntaxToken> = []
+  rowCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl TokenStream {
+  pub TokenStream(fileId: FileId) =
+    This { fileId }
+
+  pub add(token: SyntaxToken) {
+    rows.push(token)
+    rowCount = rowCount + 1
+  }
+}
+
+impl view TokenStream {
+  pub count: i64 => rowCount
+
+  pub empty: bool => count == 0
+
+  pub nonEmpty: bool => count > 0
+
+  pub tokenAt(index: i64) -> SyntaxToken {
+    rows[index]
+  }
+
+  pub valid: bool =>
+    fileId.valid &&
+    count >= 0 &&
+    deterministic
+}

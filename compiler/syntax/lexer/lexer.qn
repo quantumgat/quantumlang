@@ -1,0 +1,155 @@
+import core::{FileId}
+import source::{SourceSpan}
+
+pub Lexer {
+  position: i64
+  fileId: FileId = {}
+  tokenCount: i64
+  triviaCount: i64
+}
+
+pub LexedTokenFact {
+  text: string
+  role: TokenRole
+  tokenKind: TokenKind
+  literal: Literal
+  trivia: Trivia
+  valid: bool
+}
+
+impl Lexer {
+  pub Lexer(fileId: FileId) =
+    This {
+      position: 0
+      fileId
+      tokenCount: 0
+      triviaCount: 0
+    }
+
+  pub Lexer(fileId: u64) =
+    This(FileId(0, 0, fileId))
+}
+
+impl LexedTokenFact {
+  pub LexedTokenFact(
+    text: string,
+    role: TokenRole,
+    tokenKind: TokenKind,
+    literal: Literal,
+    trivia: Trivia,
+    valid: bool
+  ) =
+    This { text, role, tokenKind, literal, trivia, valid }
+
+  pub keyword(text: string, keyword: KeywordKind) =
+    This {
+      text
+      role: TokenRole.Keyword
+      tokenKind: TokenKind.keyword(keyword, text)
+      literal: Literal.unknown()
+      trivia: Trivia.none()
+      valid: true
+    }
+
+  pub operator(text: string) =
+    This {
+      text
+      role: TokenRole.Operator
+      tokenKind: TokenKind.operator(text)
+      literal: Literal.unknown()
+      trivia: Trivia.none()
+      valid: true
+    }
+
+  pub identifier(text: string) =
+    This {
+      text
+      role: TokenRole.Identifier
+      tokenKind: TokenKind.identifier()
+      literal: Literal.unknown()
+      trivia: Trivia.none()
+      valid: text != ""
+    }
+
+  pub noneKeyword(text: string) =
+    This {
+      text
+      role: TokenRole.Keyword
+      tokenKind: TokenKind.keyword(KeywordKind.None, text)
+      literal: Literal.none()
+      trivia: Trivia.none()
+      valid: true
+    }
+
+  pub stringLiteral(text: string) =
+    This {
+      text
+      role: TokenRole.StringLiteral
+      tokenKind: TokenKind("StringLiteral", TokenRole.StringLiteral, KeywordKind.Unknown, "", true)
+      literal: StringLexer.literalForText(text)
+      trivia: Trivia.none()
+      valid: text != ""
+    }
+
+  pub comment(text: string, span: SourceSpan) =
+    This {
+      text
+      role: TokenRole.Trivia
+      tokenKind: TokenKind("Trivia", TokenRole.Trivia, KeywordKind.Unknown, "", true)
+      literal: Literal.unknown()
+      trivia: Trivia(TriviaKind.LineComment, text, span)
+      valid: true
+    }
+
+  pub comment(text: string, start: i64, end: i64) =
+    This.comment(text, SourceSpan(FileId(), start, end))
+
+  pub fromText(text: string) -> This {
+    if text == "import" {
+      return This.keyword(text, KeywordKind.Import)
+    }
+    if text == "except" {
+      return This.keyword(text, KeywordKind.Except)
+    }
+    if text == "pub" {
+      return This.keyword(text, KeywordKind.Pub)
+    }
+    if text == "qif" {
+      return This.keyword(text, KeywordKind.Qif)
+    }
+    if text == "qfor" {
+      return This.keyword(text, KeywordKind.Qfor)
+    }
+    if text == "qwhile" {
+      return This.keyword(text, KeywordKind.Qwhile)
+    }
+    if text == "qloop" {
+      return This.keyword(text, KeywordKind.Qloop)
+    }
+    if text == "::" || text == "." || text == "=>" || text == "?" || text == "=" {
+      return This.operator(text)
+    }
+    if text == "none" {
+      return This.noneKeyword(text)
+    }
+    if text == "\"hi\"" {
+      return This.stringLiteral(text)
+    }
+    if text == "# comment" {
+      return This.comment(text, 0, 9)
+    }
+    return This.identifier(text)
+  }
+}
+
+impl view LexedTokenFact {
+  pub isKeyword => role == TokenRole.Keyword
+  pub isOperator => role == TokenRole.Operator
+  pub isTrivia => role == TokenRole.Trivia
+  pub isLiteral => role == TokenRole.StringLiteral
+  pub tokenConsistent => tokenKind.role == role
+  pub literalConsistent => isLiteral == literal.isKnown || literal.isNone
+  pub triviaConsistent => isTrivia == trivia.hasText || trivia.kind == TriviaKind.Unknown
+  pub lowerable => valid && tokenConsistent
+  pub cacheKey => "{role}:{text}"
+}

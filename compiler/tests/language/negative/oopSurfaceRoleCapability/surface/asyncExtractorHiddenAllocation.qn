@@ -1,0 +1,5 @@
+async extract HttpCtx<...Caps> : pub AsyncBodyExtractor<...Caps> {
+  bodyStream<T>() -> Result<BodyStream<T>, IntoHttpError> {
+    return heapAllocateStream<T>(request)
+  }
+}

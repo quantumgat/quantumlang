@@ -1,0 +1,280 @@
+import core::{Arena, Index, NodeId, Slice, TypeId, Vec}
+import frontend::{FrontendProduct}
+import host::{CompilerProgress}
+import syntax::{AstNodeKind, PackageAstProduct}
+import typeSystem::{CandidateIndex, Type}
+
+pub TypeRegistry {
+  operatorFactCount: i64 = 0
+  literalFactTotal: i64 = 0
+  carrierFactCount: i64 = 0
+  parallelFactCount: i64 = 0
+  atomicFactCount: i64 = 0
+  unresolvedTypeCount: i64 = 0
+  types: Arena<Type> = {}
+  contexts: Arena<TypeContext> = {}
+  typeValues: Vec<Type> = []
+  typedNodeValues: Vec<TypedNodeFact> = []
+  typedNodes: Slice<NodeId> = []
+  typedTypes: Slice<TypeId> = []
+  expressionTypes: Index<NodeId, TypeId> = {}
+  literalTypes: Index<NodeId, TypeId> = {}
+  deterministic: bool = true
+}
+
+impl TypeRegistry {
+  pub forFrontend(
+    frontend: FrontendProduct,
+    symbols: TypeSymbolTable,
+    scopes: TypeScopeTable,
+    candidates: CandidateIndex
+  ) -> This {
+    let registry = This {
+      contexts: Arena(scopes.count)
+      deterministic: frontend.valid && symbols.deterministic && scopes.deterministic
+    }
+    let progress = CompilerProgress()
+
+    let symbolRow: i64 = 0
+    while symbolRow < symbols.symbolCount {
+      let symbol = symbols.symbolAt(symbolRow)
+      registry.typeValues.push(
+        Type.forSymbol(symbol.typeId, symbol.id, symbol.typeName)
+      )
+      symbolRow = symbolRow + 1
+      if symbolRow % 256 == 0 || symbolRow == symbols.symbolCount {
+        progress.advance(
+          "Type records",
+          symbolRow,
+          symbols.symbolCount,
+          symbol.moduleName,
+          0,
+          frontend.lex.tokenCount,
+          symbols.symbolCount,
+          scopes.count
+        )
+      }
+    }
+
+    let astProduct: PackageAstProduct = frontend.parse.product
+    let nodeRow: i64 = 0
+    let currentModule = frontend.target
+    while nodeRow < astProduct.nodeCount {
+      let node = astProduct.nodeAt(nodeRow)
+      if node.kind == AstNodeKind.Module {
+        currentModule = node.text
+      }
+      let scope = scopes.scopeAtNode(nodeRow)
+      let previous = node
+      let next = node
+      if nodeRow > 0 {
+        let candidate = astProduct.nodeAt(nodeRow - 1)
+        if candidate.span.fileId.id.same(node.span.fileId.id) {
+          previous = candidate
+        }
+      }
+      if nodeRow + 1 < astProduct.nodeCount {
+        let candidate = astProduct.nodeAt(nodeRow + 1)
+        if candidate.span.fileId.id.same(node.span.fileId.id) {
+          next = candidate
+        }
+      }
+      previous = registry.previousOperandFor(
+        astProduct,
+        nodeRow,
+        node,
+        previous
+      )
+      next = registry.nextOperandFor(
+        astProduct,
+        nodeRow,
+        node,
+        next
+      )
+      registry.addTypedNode(
+        TypedNodeFact.forNode(
+          node,
+          previous,
+          next,
+          scope,
+          symbols,
+          scopes,
+          candidates
+        )
+      )
+      nodeRow = nodeRow + 1
+      if nodeRow % 256 == 0 || nodeRow == astProduct.nodeCount {
+        progress.advance(
+          "Typechecking",
+          nodeRow,
+          astProduct.nodeCount,
+          currentModule,
+          0,
+          frontend.lex.tokenCount,
+          symbols.symbolCount,
+          scopes.count
+        )
+      }
+    }
+
+    registry.types = Arena(registry.typeValues.count)
+    registry.typedNodes = Slice(registry.typedNodeValues.count)
+    registry.typedTypes = Slice(registry.typedNodeValues.count)
+    registry.expressionTypes = Index(registry.typedNodeValues.count)
+    registry.literalTypes = Index(registry.literalFactCount)
+    return registry
+  }
+
+  previousOperandFor(
+    astProduct: PackageAstProduct,
+    nodeRow: i64,
+    node: AstNode,
+    adjacent: AstNode
+  ) -> AstNode {
+    if node.semanticKind != "operator" ||
+       adjacent.text != ")" {
+      return adjacent
+    }
+
+    let cursor = nodeRow - 1
+    let depth: i64 = 0
+    while cursor > 0 {
+      let candidate = astProduct.nodeAt(cursor)
+      if candidate.span.fileId.id.same(node.span.fileId.id) {
+        if candidate.text == ")" {
+          depth = depth + 1
+        } else if candidate.text == "(" {
+          depth = depth - 1
+          if depth == 0 {
+            return astProduct.nodeAt(cursor - 1)
+          }
+        }
+      }
+      cursor = cursor - 1
+    }
+    return adjacent
+  }
+
+  nextOperandFor(
+    astProduct: PackageAstProduct,
+    nodeRow: i64,
+    node: AstNode,
+    adjacent: AstNode
+  ) -> AstNode {
+    if node.semanticKind != "operator" ||
+       adjacent.text != "(" {
+      return adjacent
+    }
+
+    let cursor = nodeRow + 2
+    while cursor < astProduct.nodeCount {
+      let candidate = astProduct.nodeAt(cursor)
+      if !candidate.span.fileId.id.same(node.span.fileId.id) {
+        return adjacent
+      }
+      if candidate.text == ")" {
+        return adjacent
+      }
+      if candidate.semanticKind != "syntax" &&
+         candidate.kind != AstNodeKind.Block &&
+         candidate.kind != AstNodeKind.Statement {
+        return candidate
+      }
+      cursor = cursor + 1
+    }
+    return adjacent
+  }
+
+  addTypedNode(fact: TypedNodeFact) {
+    typedNodeValues.push(fact)
+    if fact.kind == TypedNodeKind.Operator {
+      operatorFactCount = operatorFactCount + 1
+    }
+    if fact.kind == TypedNodeKind.Literal {
+      literalFactTotal = literalFactTotal + 1
+    }
+    if fact.carrier {
+      carrierFactCount = carrierFactCount + 1
+    }
+    if fact.parallel {
+      parallelFactCount = parallelFactCount + 1
+    }
+    if fact.atomic {
+      atomicFactCount = atomicFactCount + 1
+    }
+    if !fact.resolved {
+      unresolvedTypeCount = unresolvedTypeCount + 1
+    }
+  }
+
+  pub typedNodeAt(index: i64) -> TypedNodeFact {
+    return typedNodeValues[index]
+  }
+}
+
+impl view TypeRegistry {
+  pub literalFactCount: i64 => literalFactTotal
+
+  pub contextCount: i64 => contexts.count
+
+  pub expressionTypeCount: i64 => expressionTypes.count
+
+  pub literalTypeCount: i64 => literalTypes.count
+
+  pub typeFactCount: i64 =>
+    expressionTypeCount +
+    literalTypeCount +
+    operatorFactCount +
+    carrierFactCount +
+    parallelFactCount +
+    atomicFactCount
+
+  pub typedNodeCount: i64 => typedNodeValues.count
+
+  pub hasContexts: bool => contextCount > 0
+
+  pub hasExpressionTypes: bool => expressionTypeCount > 0
+
+  pub hasLiteralTypes: bool => literalTypeCount > 0
+
+  pub resolved: bool => unresolvedTypeCount == 0
+
+  pub typeRecordsOwned: bool =>
+    types.valid &&
+    contexts.valid &&
+    typeValues.valid &&
+    types.count == typeValues.count &&
+    contexts.count == contextCount
+
+  pub typedFactsOwned: bool =>
+    typedNodeValues.valid &&
+    typedNodes.valid &&
+    typedTypes.valid &&
+    expressionTypes.valid &&
+    literalTypes.valid &&
+    typedNodeValues.count == expressionTypeCount &&
+    typedNodes.count == expressionTypeCount &&
+    typedTypes.count == expressionTypeCount &&
+    expressionTypes.count == expressionTypeCount &&
+    literalTypes.count == literalFactCount
+
+  pub countsConsistent: bool =>
+    contextCount >= 0 &&
+    expressionTypeCount >= 0 &&
+    literalTypeCount >= 0 &&
+    operatorFactCount >= 0 &&
+    carrierFactCount >= 0 &&
+    parallelFactCount >= 0 &&
+    atomicFactCount >= 0 &&
+    unresolvedTypeCount >= 0
+
+  pub valid: bool =>
+    deterministic &&
+    countsConsistent &&
+    resolved &&
+    typeRecordsOwned &&
+    typedFactsOwned &&
+    hasContexts &&
+    hasExpressionTypes &&
+    hasLiteralTypes
+}

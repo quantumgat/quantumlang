@@ -1,0 +1,37 @@
+module text
+
+mod {
+  textNative
+  asciiClass
+  asciiCase
+  textSpan
+  textView
+  textCursor
+  lineMap
+  textSource
+  textBuilder
+  textCapability
+  textMethodGroup
+  textLiteralEscape
+  textFormatSpec
+  textFormatPlan
+  textContract
+}
+
+export {
+  textNative.*
+  asciiClass.*
+  asciiCase.*
+  textSpan.*
+  textView.*
+  textCursor.*
+  lineMap.*
+  textSource.*
+  textBuilder.*
+  textCapability.*
+  textMethodGroup.*
+  textLiteralEscape.*
+  textFormatSpec.*
+  textFormatPlan.*
+  textContract.*
+}

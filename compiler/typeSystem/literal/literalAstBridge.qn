@@ -1,0 +1,34 @@
+pub LiteralAstBridge {
+  syntaxKind: LiteralSyntaxKind
+  literalKind: TypeLiteralKind
+  targetResolution: LiteralTargetResolution
+  diagnostic: LiteralDiagnosticFact
+  valid: bool
+}
+
+impl LiteralAstBridge {
+  pub LiteralAstBridge(
+    syntaxKind: LiteralSyntaxKind,
+    literalKind: TypeLiteralKind,
+    targetResolution: LiteralTargetResolution,
+    diagnostic: LiteralDiagnosticFact,
+    valid: bool
+  ) =
+    This { syntaxKind, literalKind, targetResolution, diagnostic, valid }
+
+  pub fromSyntax(syntaxKind: LiteralSyntaxKind, context: LiteralTargetContext) -> This {
+    let syntax = LiteralSyntaxFact.fromSyntax(syntaxKind)
+    if !syntax.valid {
+      let invalid = context.resolve(TypeLiteralKind.Unknown)
+      return This(syntaxKind, TypeLiteralKind.Unknown, invalid, LiteralDiagnosticFact.unknown(), false)
+    }
+
+    let resolution = context.resolve(syntax.literalKind)
+    let diagnostic = literalTargetDiagnostic(resolution)
+    return This(syntaxKind, syntax.literalKind, resolution, diagnostic, resolution.valid)
+  }
+}
+
+impl view LiteralAstBridge {
+  pub ok => valid && diagnostic.blocking == false
+}

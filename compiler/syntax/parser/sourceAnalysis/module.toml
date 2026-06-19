@@ -1,0 +1,9 @@
+[module]
+name = "sourceAnalysis"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/syntax/parser/sourceAnalysis"
+role = "parser-source-analysis"
+
+[dependencies]
+modules = ["source", "syntax.ast", "syntax.lexer", "syntax.token"]

@@ -1,0 +1,9 @@
+[module]
+name = "checking"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/typeSystem/checking"
+role = "typechecking-pipeline"
+
+[dependencies]
+modules = ["core", "declaration", "diagnostics", "frontend", "host", "moduleSystem", "nameResolve", "source", "syntax", "typeSystem.checking.symbol"]

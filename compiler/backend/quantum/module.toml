@@ -1,0 +1,6 @@
+[module]
+name = "quantum"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/backend/quantum"
+role = "quantum-backend"

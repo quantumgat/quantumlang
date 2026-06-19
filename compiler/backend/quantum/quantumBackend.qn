@@ -1,0 +1,38 @@
+pub QuantumBackend {
+  enabled: bool
+  providerName: string
+  targetName: string
+  diagnosticCode: string = ""
+}
+
+impl QuantumBackend {
+  pub QuantumBackend(enabled: bool, providerName: string, targetName: string) =
+    This { enabled, providerName, targetName }
+
+  pub disabled(providerName: string, targetName: string) =
+    This {
+      enabled: false
+      providerName
+      targetName
+      diagnosticCode: "QQUANTUM0001"
+    }
+
+  withTarget(targetName: string) =
+    this {
+      targetName
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QQUANTUM0001"
+    }
+}
+
+impl view QuantumBackend {
+  pub valid => diagnosticCode == "" && enabled && providerName != "" && targetName != ""
+  pub ready => valid
+  pub providerReady => providerName != ""
+  pub targetReady => targetName != ""
+  pub lowerable => valid
+  pub debugName => "quantum.backend.{providerName}.{targetName}"
+}

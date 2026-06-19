@@ -1,0 +1,41 @@
+import mir::{MirBody, MirControlFlowGraph}
+
+pub NativeMirLowering {
+  lowered: i64
+  mirBody: MirBody
+  cfg: MirControlFlowGraph
+  targetName: string
+  diagnosticCode: string = ""
+}
+
+impl NativeMirLowering {
+  pub NativeMirLowering(lowered: i64, mirBody: MirBody, cfg: MirControlFlowGraph, targetName: string) =
+    This { lowered, mirBody, cfg, targetName }
+
+  pub invalid(mirBody: MirBody, cfg: MirControlFlowGraph, targetName: string) =
+    This {
+      lowered: 0
+      mirBody
+      cfg
+      targetName
+      diagnosticCode: "QNATIVE0101"
+    }
+
+  addLowered(count: i64) =
+    this {
+      lowered: lowered + count
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QNATIVE0101"
+    }
+}
+
+impl view NativeMirLowering {
+  pub deterministic => mirBody.lowerable && cfg.lowerable
+  pub valid => diagnosticCode == "" && lowered >= 0 && mirBody.lowerable && cfg.lowerable && targetName != ""
+  pub produced => lowered > 0
+  pub lowerable => valid
+  pub debugName => "native.lower.{targetName}.{lowered}"
+}

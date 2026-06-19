@@ -1,0 +1,57 @@
+pub ProductLookup {
+  key: QueryKey
+  path: string = ""
+  source: ProductLookupSource = ProductLookupSource.Missing
+  content: Fingerprint = {}
+  found: bool = false
+  validation: ProductValidation
+}
+
+impl ProductLookup {
+  pub hot(
+    key: QueryKey,
+    content: Fingerprint,
+    validation: ProductValidation
+  ) =
+    This {
+      key
+      source: ProductLookupSource.HotMemory
+      content
+      found: true
+      validation
+    }
+
+  pub global(
+    key: QueryKey,
+    path: string,
+    content: Fingerprint,
+    validation: ProductValidation
+  ) =
+    This {
+      key
+      path
+      source: ProductLookupSource.GlobalContentStore
+      content
+      found: true
+      validation
+    }
+
+  pub hit(key: QueryKey, path: string, validation: ProductValidation) =
+    This.global(key, path, validation.fingerprint.output, validation)
+
+  pub miss(key: QueryKey, path: string, fingerprint: ProductFingerprint) =
+    This {
+      key,
+      path,
+      source: ProductLookupSource.Missing
+      validation: ProductValidation.reject(ProductValidationState.Missing, fingerprint, "product-missing")
+    }
+}
+
+impl view ProductLookup {
+  pub usable => found && validation.state == ProductValidationState.Valid
+  pub hotMemory => source == ProductLookupSource.HotMemory
+  pub globalContent => source == ProductLookupSource.GlobalContentStore
+  pub cacheMiss => found == false
+  pub cacheReject => found && validation.rejected
+}

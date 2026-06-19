@@ -1,0 +1,90 @@
+import core::{FileId, HashDomain, Range, StableHashWriter}
+import declaration::{DeclarationKind, DeclarationRecord, DeclarationVisibility}
+
+pub StableCompilerHashProof {
+  deterministic: bool = false
+  fieldSensitive: bool = false
+  orderSensitive: bool = false
+  carrierFramed: bool = false
+}
+
+impl view StableCompilerHashProof {
+  pub valid: bool =>
+    deterministic &&
+    fieldSensitive &&
+    orderSensitive &&
+    carrierFramed
+}
+
+pub stableCompilerHashProof() -> StableCompilerHashProof {
+  let first = DeclarationRecord {
+    id: 1
+    kind: DeclarationKind.Function
+    modulePath: "proof"
+    name: "build"
+    genericParameters: ["T", "E"]
+    parameters: ["source", "target"]
+    fileId: FileId(1, 2, 3)
+    rows: Range<u8>(10, 20)
+    visibility: DeclarationVisibility.Public
+  }
+  let sameRecord = first {
+    id: 99
+    parserProduced: true
+  }
+  let changedRecord = first {
+    name: "check"
+  }
+  let reordered = first {
+    parameters: ["target", "source"]
+  }
+
+  let firstHash = first.stableHash()
+  let sameHash = sameRecord.stableHash()
+  let changedHash = changedRecord.stableHash()
+  let reorderedHash = reordered.stableHash()
+
+  let carrier = StableHashWriter(HashDomain.Semantic)
+  let carrierReady = match carrier.begin("proof.Carrier", 1) {
+    Ok(value) => match carrier.writeBool("present", true) {
+      Ok(value) => match carrier.writeString("value", "ok") {
+        Ok(value) => match carrier.end() {
+          Ok(value) => true
+          Err(error) => false
+        }
+        Err(error) => false
+      }
+      Err(error) => false
+    }
+    Err(error) => false
+  }
+  let carrierHash = carrier.finish()
+
+  return StableCompilerHashProof {
+    deterministic: match firstHash {
+      Ok(left) => match sameHash {
+        Ok(right) => left.same(right)
+        Err(error) => false
+      }
+      Err(error) => false
+    }
+    fieldSensitive: match firstHash {
+      Ok(left) => match changedHash {
+        Ok(right) => left.same(right) == false
+        Err(error) => false
+      }
+      Err(error) => false
+    }
+    orderSensitive: match firstHash {
+      Ok(left) => match reorderedHash {
+        Ok(right) => left.same(right) == false
+        Err(error) => false
+      }
+      Err(error) => false
+    }
+    carrierFramed: carrierReady && match carrierHash {
+      Ok(value) => value.valid
+      Err(error) => false
+    }
+  }
+}

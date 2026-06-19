@@ -1,0 +1,377 @@
+import declaration::{DeclarationRecordBatch, DeclarationRecordTable, DeclarationTable}
+import source::{PackageSourceScan, SourceMap}
+import frontend::{FrontendAstProduct, RealFrontend, RuntimeFrontendScan}
+import syntax::{PackageAstProduct, PackageLexProduct}
+
+pub FrontendSourceProduct {
+  package: PackageSourceScan
+  fileCount: i64 = 0
+  byteCount: i64 = 0
+  manifestFound: bool = false
+  sourceRootFound: bool = false
+  appMainFound: bool = false
+  moduleBoundaryCount: i64 = 0
+  sourceMap: SourceMap = SourceMap(0)
+  deterministic: bool = true
+}
+
+impl FrontendSourceProduct {
+  pub FrontendSourceProduct(package: PackageSourceScan) =
+    This {
+      fileCount: package.sourceFileCount
+      byteCount: package.sourceByteCount
+      manifestFound: package.manifestFound
+      sourceRootFound: package.sourceRootFound
+      appMainFound: package.appMainFound
+      moduleBoundaryCount: package.moduleBoundaryCount
+      sourceMap: SourceMap(package.sourceFiles)
+      package
+    }
+}
+
+impl view FrontendSourceProduct {
+  pub target: string => package.target
+
+  pub manifestPath: string => package.manifestPath
+
+  pub sourceRoot: string => package.sourceRoot
+
+  pub sourceOwned: bool =>
+    package.sourceRowsOwned &&
+    sourceMap.table.count == package.sourceFileCount &&
+    sourceMap.table.totalBytes == package.sourceByteCount
+
+  pub hasManifestPath => manifestPath != ""
+
+  pub hasSourceRoot => sourceRoot != ""
+
+  pub valid: bool =>
+    deterministic &&
+    package.hasFiles &&
+    package.hasBytes &&
+    sourceOwned &&
+    fileCount != 0 &&
+    byteCount != 0 &&
+    manifestFound &&
+    sourceRootFound &&
+    appMainFound &&
+    hasManifestPath &&
+    hasSourceRoot
+}
+
+pub FrontendLexProduct {
+  product: PackageLexProduct = {}
+}
+
+impl FrontendLexProduct {
+  pub fromProduct(product: PackageLexProduct) =
+    This { product }
+}
+
+impl view FrontendLexProduct {
+  pub tokenCount: i64 => product.tokenCount
+
+  pub triviaCount: i64 => product.triviaCount
+
+  pub diagnosticCount: i64 => product.diagnosticCount
+
+  pub imports: bool => product.imports
+
+  pub modulePaths: bool => product.modulePaths
+
+  pub tokenRowsOwned: bool => product.fileCount > 0
+
+  pub valid: bool =>
+    tokenCount != 0 &&
+    imports &&
+    modulePaths &&
+    tokenRowsOwned
+}
+
+pub FrontendParseProduct {
+  product: PackageAstProduct = {}
+}
+
+impl FrontendParseProduct {
+  pub fromProduct(product: PackageAstProduct) =
+    This { product }
+}
+
+impl view FrontendParseProduct {
+  pub functionCount: i64 => product.functionCount
+
+  pub astNodeCount: i64 => product.nodeCount
+
+  pub diagnosticCount: i64 => product.diagnosticCount
+
+  pub moduleRoot: bool => product.moduleRoot
+
+  pub imports: bool => product.imports
+
+  pub functionItems: bool => product.functionItems
+
+  pub returns: bool => product.returns
+
+  pub calls: bool => product.calls
+
+  pub astRowsOwned: bool => product.fileCount > 0
+
+  pub valid: bool =>
+    functionCount != 0 &&
+    astNodeCount != 0 &&
+    moduleRoot &&
+    imports &&
+    functionItems &&
+    astRowsOwned
+}
+
+pub FrontendDeclarationProduct {
+  table: DeclarationTable = {}
+  records: DeclarationRecordTable = {}
+  deterministic: bool = true
+}
+
+impl FrontendDeclarationProduct {
+  pub fromAst(product: PackageAstProduct) -> This {
+    let batch = DeclarationRecordBatch.fromAst(product)
+    let table = DeclarationTable.fromBatch(batch)
+    let records = DeclarationRecordTable.fromBatch(table, batch)
+    return This { table, records }
+  }
+
+  pub fromScan(moduleCount: i64, scan: RuntimeFrontendScan) -> This {
+    let parserBridge = DeclarationParserBridge.fromRuntimeScan(moduleCount, scan)
+
+    return This {
+      table: parserBridge.table
+      records: parserBridge.recordTable
+    }
+  }
+
+  pub FrontendDeclarationProduct(
+    moduleCount: i64,
+    typeCount: i64,
+    implCount: i64,
+    viewCount: i64,
+    roleCount: i64,
+    functionCount: i64,
+    importCount: i64,
+    contextCount: i64,
+    extractCount: i64,
+    extendCount: i64
+  ) -> This {
+    let table = DeclarationTable(
+      moduleCount,
+      typeCount,
+      implCount,
+      viewCount,
+      roleCount,
+      functionCount,
+      importCount,
+      contextCount,
+      extractCount,
+      extendCount
+    )
+    let parserBridge = DeclarationParserBridge.fromParserRows(table)
+
+    return This {
+      table
+      records: parserBridge.recordTable
+    }
+  }
+}
+
+impl view FrontendDeclarationProduct {
+  pub moduleCount: i64 => table.moduleCount
+
+  pub typeCount: i64 => table.typeCount
+
+  pub implCount: i64 => table.implCount
+
+  pub viewCount: i64 => table.viewCount
+
+  pub roleCount: i64 => table.roleCount
+
+  pub functionCount: i64 => table.functionCount
+
+  pub importCount: i64 => table.importCount
+
+  pub contextCount: i64 => table.contextCount
+
+  pub extractCount: i64 => table.extractCount
+
+  pub extendCount: i64 => table.extendCount
+
+  pub typeLikeCount: i64 => table.typeLikeCount
+
+  pub extensionCount: i64 => table.extensionCount
+
+  pub behavioralCount: i64 => table.behavioralCount
+
+  pub symbolCount: i64 => table.symbolCount
+
+  pub recordCount: i64 => records.totalRecordCount
+
+  pub hasModules: bool => table.hasModules
+
+  pub hasTypes: bool => table.hasTypes
+
+  pub hasFunctions: bool => table.hasFunctions
+
+  pub hasImports: bool => table.hasImports
+
+  pub tableReady: bool => table.valid
+
+  pub recordsReady: bool => records.valid
+
+  pub declarationOwned: bool =>
+    table.arenaReady &&
+    table.indexReady &&
+    records.arenaOwned &&
+    records.indexBacked
+
+  pub parserBacked: bool => records.parserBacked
+
+  pub realParserRows: bool => records.realParserRows
+
+  pub runtimeBridgeRows: bool => records.runtimeBridgeRows
+
+  pub parserSummaryBacked: bool => records.parserSummaryBacked
+
+  pub bootstrapBacked: bool => records.bootstrapBacked
+
+  pub countsConsistent: bool =>
+    table.countsConsistent &&
+    records.countsConsistent &&
+    recordCount == symbolCount
+
+  pub valid: bool =>
+    deterministic &&
+    tableReady &&
+    recordsReady &&
+    declarationOwned &&
+    countsConsistent &&
+    hasModules &&
+    hasTypes &&
+    hasFunctions &&
+    hasImports
+}
+
+pub FrontendModuleProduct {
+  boundaryCount: i64
+  manifestFound: bool
+  sourceRootFound: bool
+}
+
+impl FrontendModuleProduct {
+  pub FrontendModuleProduct(
+    boundaryCount: i64,
+    manifestFound: bool,
+    sourceRootFound: bool
+  ) =
+    This { boundaryCount, manifestFound, sourceRootFound }
+}
+
+impl view FrontendModuleProduct {
+  pub valid: bool =>
+    boundaryCount != 0 &&
+    manifestFound &&
+    sourceRootFound
+}
+
+pub FrontendProduct {
+  target: string
+  source: FrontendSourceProduct
+  lex: FrontendLexProduct
+  parse: FrontendParseProduct
+  declarations: FrontendDeclarationProduct
+  ast: FrontendAstProduct
+  modules: FrontendModuleProduct
+}
+
+impl FrontendProduct {
+  pub FrontendProduct(
+    target: string,
+    source: FrontendSourceProduct,
+    lex: FrontendLexProduct,
+    parse: FrontendParseProduct,
+    declarations: FrontendDeclarationProduct,
+    ast: FrontendAstProduct,
+    modules: FrontendModuleProduct
+  ) =
+    This { target, source, lex, parse, declarations, ast, modules }
+
+  pub forPackage(target: string) -> This {
+    let sourceScan = PackageSourceScan(target)
+    let frontend = RealFrontend(target)
+    let declarations = FrontendDeclarationProduct.fromAst(frontend.parsed)
+    let moduleBoundaryCount: i64 = declarations.moduleCount
+    let manifestFound: bool = sourceScan.manifestFound
+    let sourceRootFound: bool = sourceScan.sourceRootFound
+
+    This {
+      target
+      source: FrontendSourceProduct(sourceScan)
+      lex: FrontendLexProduct.fromProduct(frontend.lexed)
+      parse: FrontendParseProduct.fromProduct(frontend.parsed)
+      declarations
+      ast: FrontendAstProduct.fromProduct(frontend.parsed)
+      modules: FrontendModuleProduct(
+        moduleBoundaryCount,
+        manifestFound,
+        sourceRootFound
+      )
+    }
+  }
+}
+
+pub frontendProductForPackage(target: string) -> FrontendProduct {
+  return FrontendProduct.forPackage(target)
+}
+
+impl view FrontendProduct {
+  pub sourceValid: bool => source.valid
+
+  pub lexValid: bool => lex.valid
+
+  pub parseValid: bool => parse.valid && ast.valid
+
+  pub declarationsValid: bool => declarations.valid
+
+  pub modulesValid: bool => modules.valid
+
+  pub typecheckTypedNodeCount: i64 => ast.product.nodeCount
+
+  pub typecheckContextCount: i64 => declarations.moduleCount + declarations.behavioralCount
+
+  pub declarationRecordCount: i64 => declarations.recordCount
+
+  pub importEdgeCount: i64 => match true {
+    lex.imports => modules.boundaryCount
+    _ => 0
+  }
+
+  pub typecheckFactCount: i64 => (
+    ast.product.nodeCount +
+    ast.product.rootCount +
+    declarations.symbolCount +
+    declarations.behavioralCount
+  )
+
+  pub typecheckOperatorFactCount: i64 => match true {
+    parse.calls => declarations.behavioralCount
+    _ => 0
+  }
+
+  pub typecheckCarrierFactCount: i64 => match true {
+    parse.returns => declarations.behavioralCount
+    _ => 0
+  }
+
+  pub typecheckDiagnosticCount: i64 => match true {
+    sourceValid && lexValid && parseValid => 0
+    _ => 1
+  }
+
+  pub valid: bool => sourceValid && lexValid && parseValid && declarationsValid && modulesValid
+}

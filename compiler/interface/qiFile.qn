@@ -1,0 +1,23 @@
+pub QiFile {
+  packageName: string
+  importRoot: string
+  modulePath: string
+  outputPath: string
+  declarationCount: i64
+}
+
+impl QiFile {
+  pub QiFile(packageName: string, importRoot: string, modulePath: string, outputPath: string, declarationCount: i64) =
+    This { packageName, importRoot, modulePath, outputPath, declarationCount }
+}
+
+impl view QiFile {
+  pub empty => declarationCount == 0
+  pub hasDeclarations => declarationCount > 0
+  pub valid =>
+    packageName != "" &&
+    importRoot != "" &&
+    modulePath != "" &&
+    outputPath != "" &&
+    declarationCount >= 0
+}

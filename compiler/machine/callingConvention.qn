@@ -1,0 +1,18 @@
+pub CallingConvention {
+  name: string
+  abiName: string
+  registerArgs: bool
+  stackAligned: bool
+  valid: bool
+}
+
+impl CallingConvention {
+  pub CallingConvention(name: string, abiName: string, registerArgs: bool, stackAligned: bool) =
+    This {
+      name,
+      abiName,
+      registerArgs,
+      stackAligned,
+      valid: name != "" && abiName != "" && stackAligned,
+    }
+}

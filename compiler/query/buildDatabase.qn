@@ -1,0 +1,100 @@
+import storage::{CacheHash256}
+
+pub BuildDatabase {
+  revision: u64
+  store: ProductStore
+  dirty: DirtySet
+  report: CacheReport
+  snapshot: QdbSnapshot = {}
+  journal: QdbJournal = {}
+}
+
+impl BuildDatabase {
+  pub init(revision: u64, store: ProductStore, dirty: DirtySet) =
+    This { revision, store, dirty, report: CacheReport.empty(revision) }
+
+  pub clean(revision: u64, cacheRoot: string) =
+    This {
+      revision
+      store: ProductStore(cacheRoot)
+      dirty: DirtySet.clean(revision)
+      report: CacheReport.empty(revision)
+    }
+
+  pub withWorkers(requested: usize, usedPeak: usize) =
+    this { report: report.withWorkers(requested, usedPeak) }
+
+  pub withSnapshot(snapshot: QdbSnapshot) =
+    this { snapshot }
+
+  pub withJournal(journal: QdbJournal) -> This =
+    this { journal }
+
+  pub commitCompleted(row: QdbCommitRow) -> This =
+    this {
+      journal: journal.recordCompleted(row)
+      store: store.recordWrite()
+    }
+
+  pub lookupProduct(
+    key: QueryKey,
+    content: CacheHash256,
+    fingerprint: ProductFingerprint
+  ) -> ProductLookup =
+    store.lookup(key, content, fingerprint)
+
+  pub writeBackProduct(
+    product: StoredProduct,
+    hot: HotProduct,
+    plan: ProductWriteBack,
+    commitRow: QdbCommitRow
+  ) -> This {
+    if plan.durable == false ||
+       product.valid == false ||
+       commitRow.valid == false {
+      return this { store: store.writeBack(product, hot, plan) }
+    }
+
+    return this {
+      store: store.writeBack(product, hot, plan)
+      journal: journal.recordCompleted(commitRow)
+    }
+  }
+
+  pub recordHit() =
+    this {
+      store: store.recordLookup()
+      report: report.recordHit()
+    }
+
+  pub recordMiss() =
+    this {
+      store: store.recordLookup()
+      report: report.recordMiss()
+    }
+
+  pub recordReject() =
+    this {
+      store: store.recordLookup()
+      report: report.recordReject()
+    }
+
+  pub recordWrite() =
+    this { store: store.recordWrite() }
+
+  pub executeLookup(lookup: ProductLookup, result: QueryResult) =
+    match true {
+      lookup.found && lookup.usable && result.valid => recordHit()
+      lookup.found => recordReject()
+      _ => recordMiss()
+    }
+}
+
+impl view BuildDatabase {
+  pub cleanBuild => dirty.clean && report.queriesTotal == 0
+  pub cacheHealthy => report.anyRed == false || report.cacheEffective
+  pub parallelProof => report.parallelProof
+  pub writeBackEnabled => store.writeBackEnabled
+  pub binarySnapshotReady => snapshot.valid
+  pub revisionJournalReady => journal.valid
+}

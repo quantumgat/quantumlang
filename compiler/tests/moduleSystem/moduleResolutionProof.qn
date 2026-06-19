@@ -1,0 +1,157 @@
+import core::{FileId, Vec}
+import declaration::{DeclarationKind, DeclarationRecord, DeclarationVisibility}
+import moduleSystem::{ImportPath, ModuleEdgeKind, ModuleGraph, ModuleResolutionDiagnosticKind}
+import nameResolve::{Resolver}
+
+pub ModuleResolutionProof {
+  concreteNodes: bool
+  importEdgeResolved: bool
+  aliasResolved: bool
+  publicExportResolved: bool
+  privateExportHidden: bool
+  symbolsResolved: bool
+  unresolvedDiagnosed: bool
+  duplicateDiagnosed: bool
+  exportExceptSurfaceTracked: bool
+  valid: bool
+}
+
+pub moduleResolutionProof() -> ModuleResolutionProof {
+  let records: Vec<DeclarationRecord> = [
+    DeclarationRecord(
+      1,
+      DeclarationKind.Module,
+      "core/mod",
+      "core/mod",
+      FileId(),
+      0,
+      0,
+      DeclarationVisibility.Public
+    ),
+    DeclarationRecord(
+      2,
+      DeclarationKind.Module,
+      "app/main",
+      "app/main",
+      FileId(),
+      0,
+      0,
+      DeclarationVisibility.Public
+    ),
+    DeclarationRecord(
+      3,
+      DeclarationKind.Type,
+      "core/mod",
+      "User",
+      FileId(),
+      0,
+      0,
+      DeclarationVisibility.Public
+    ),
+    DeclarationRecord(
+      4,
+      DeclarationKind.Function,
+      "core/mod",
+      "internalBuild",
+      FileId(),
+      0,
+      0,
+      DeclarationVisibility.Private
+    ),
+    DeclarationRecord.fromImport(5, "app/main", "core", "foundation"),
+  ]
+
+  let graph = ModuleGraph.fromRecordValues(records)
+  let resolver = Resolver.fromRecordValues(records)
+  let coreModule = graph.moduleIdForPath("core/mod")
+  let appModule = graph.moduleIdForPath("app/main")
+  let imported = graph.resolveImport(
+    ImportPath.aliased("core", "core", "foundation")
+  )
+  let alias = graph.resolveAlias("foundation")
+  let exported = graph.resolveExport(coreModule, "User")
+  let privateExport = graph.resolveExport(coreModule, "internalBuild")
+
+  let concreteNodes =
+    graph.graphNodeCount == 2 &&
+    graph.moduleAt(0).path == "core/mod" &&
+    graph.moduleAt(1).path == "app/main"
+  let importEdgeResolved =
+    imported != None &&
+    appModule.valid &&
+    graph.graphEdgeCount == 1
+  let aliasResolved = alias != None
+  let publicExportResolved = exported != None
+  let privateExportHidden = privateExport == None
+  let symbolsResolved =
+    resolver.resolveName("User") != None &&
+    resolver.lookupReady
+
+  let badRecords: Vec<DeclarationRecord> = [
+    records[0],
+    records[1],
+    records[2],
+    DeclarationRecord(
+      6,
+      DeclarationKind.Type,
+      "core/mod",
+      "User",
+      FileId(),
+      0,
+      0,
+      DeclarationVisibility.Public
+    ),
+    DeclarationRecord.fromImport(7, "app/main", "missing"),
+  ]
+  let badGraph = ModuleGraph.fromRecordValues(badRecords)
+  let unresolvedDiagnosed =
+    badGraph.unresolvedImportCount == 1 &&
+    badGraph.diagnosticAt(1).kind ==
+      ModuleResolutionDiagnosticKind.UnresolvedImport
+  let duplicateDiagnosed =
+    badGraph.duplicateDeclarationCount == 1 &&
+    badGraph.diagnosticAt(0).kind ==
+      ModuleResolutionDiagnosticKind.DuplicateDeclaration
+
+  let exportRecord = DeclarationRecord.fromImport(8, "app/main", "core")
+  exportRecord.visibility = DeclarationVisibility.Exported
+  exportRecord.wildcardImport = true
+  exportRecord.excludedSymbols = ["internalBuild"]
+  exportRecord.excludedSymbolCount = 1
+  let exportRecords: Vec<DeclarationRecord> = [
+    records[0],
+    records[1],
+    records[2],
+    exportRecord,
+  ]
+  let exportGraph = ModuleGraph.fromRecordValues(exportRecords)
+  let exportExceptSurfaceTracked =
+    exportGraph.graphEdgeCount == 1 &&
+    exportGraph.edgeAt(0).kind == ModuleEdgeKind.Export &&
+    exportGraph.exports.hasWildcardRules &&
+    exportGraph.exports.hasExceptRules
+
+  let valid =
+    concreteNodes &&
+    importEdgeResolved &&
+    aliasResolved &&
+    publicExportResolved &&
+    privateExportHidden &&
+    symbolsResolved &&
+    unresolvedDiagnosed &&
+    duplicateDiagnosed &&
+    exportExceptSurfaceTracked
+
+  return ModuleResolutionProof {
+    concreteNodes
+    importEdgeResolved
+    aliasResolved
+    publicExportResolved
+    privateExportHidden
+    symbolsResolved
+    unresolvedDiagnosed
+    duplicateDiagnosed
+    exportExceptSurfaceTracked
+    valid
+  }
+}

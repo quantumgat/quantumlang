@@ -1,0 +1,33 @@
+import frontend::{FrontendProduct}
+import backend::{NativeObjectProduct, ObjectEmission}
+
+pub SelfHostNativeProductPlan {
+  targetTriple: string = "x86_64-unknown-linux-gnu"
+  profile: string = "debug"
+  unitCount: i64
+  reusedCount: i64
+  rebuiltCount: i64
+}
+
+impl SelfHostNativeProductPlan {
+  pub fromFrontend(frontend: FrontendProduct) -> SelfHostNativeProductPlan =
+    This {
+      unitCount: 1
+      reusedCount: 0
+      rebuiltCount: 1
+    }
+}
+
+impl view SelfHostNativeProductPlan {
+  pub objectProduct() =
+    NativeObjectProduct(unitCount, reusedCount, rebuiltCount, targetTriple, profile)
+
+  pub emission() =
+    ObjectEmission(unitCount, reusedCount, rebuiltCount)
+
+  pub valid => objectProduct().valid && emission().valid
+  pub deterministic => objectProduct().deterministic && emission().deterministic
+  pub linkReady => objectProduct().linkReady
+  pub fingerprint => "native-object-product-ready"
+  pub outputPath => "build/debug/qtlc2.objects"
+}

@@ -1,0 +1,20 @@
+pub DiagnosticMode {
+  color: bool
+}
+
+impl DiagnosticMode {
+  pub DiagnosticMode(color: bool) =
+    This {
+      color,
+    }
+
+  pub autoColor() = This(true)
+
+  pub plain() = This(false)
+}
+
+impl view DiagnosticMode {
+  colorEnabled => color
+
+  plainText => !color
+}

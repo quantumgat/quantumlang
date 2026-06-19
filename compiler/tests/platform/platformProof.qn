@@ -1,0 +1,61 @@
+import platform::{*}
+pub PlatformProof {
+  hostedOsFactsValid: bool
+  noOsFactValid: bool
+  embeddedMemoryValid: bool
+  embeddedStartupValid: bool
+  boardDeviceValid: bool
+  valid: bool
+}
+
+pub platformProof() -> PlatformProof {
+  let linux = LinuxPlatform()
+  let windows = WindowsPlatform()
+  let macos = MacosPlatform()
+  let noOs = NoOsPlatform()
+  let memory = MemoryMap(3, 1048576, 262144)
+  let vector = InterruptVector(64, true)
+  let startup = StartupPlan("_start", true, true, true)
+  let script = LinkerScript("memory.ld", true, true)
+  let device = DeviceProfile("qstm32h7", "armv7m", memory, vector)
+  let board = BoardProfile("qboard-h7", device.name, true)
+
+  let hostedOsFactsValid = linux.valid &&
+    windows.valid &&
+    macos.valid &&
+    linux.elf &&
+    windows.coff &&
+    macos.macho
+
+  let noOsFactValid = noOs.valid &&
+    noOs.name == "none" &&
+    noOs.bareMetal
+
+  let embeddedMemoryValid = memory.valid &&
+    vector.valid &&
+    vector.deterministic
+
+  let embeddedStartupValid = startup.valid &&
+    script.valid &&
+    script.linkable &&
+    startup.entry == "_start"
+
+  let boardDeviceValid = device.valid &&
+    board.valid &&
+    board.deviceName == device.name
+
+  let valid = hostedOsFactsValid &&
+    noOsFactValid &&
+    embeddedMemoryValid &&
+    embeddedStartupValid &&
+    boardDeviceValid
+
+  return PlatformProof {
+    hostedOsFactsValid: hostedOsFactsValid,
+    noOsFactValid: noOsFactValid,
+    embeddedMemoryValid: embeddedMemoryValid,
+    embeddedStartupValid: embeddedStartupValid,
+    boardDeviceValid: boardDeviceValid,
+    valid: valid,
+  }
+}

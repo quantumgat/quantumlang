@@ -1,0 +1,165 @@
+// design-only: package/module boundary proof for surface role capabilities.
+//
+// This file documents the intended cross-module behavior. It is kept as
+// source-shaped design until qtlc0 has a stable module syntax for nested proof
+// packages and cross-module surface-role exports.
+
+// package http.core
+
+pub role PublicRouteRole<T> {
+  publicRouteValue() -> i64
+}
+
+internal role InternalRouteRole<T> {
+  internalRouteValue() -> i64
+}
+
+private role PrivateRouteRole<T> {
+  privateRouteValue() -> i64
+}
+
+pub PublicRouteCarrier {
+  value: i64 = 0
+}
+
+internal InternalRouteCarrier {
+  value: i64 = 0
+}
+
+private PrivateRouteCarrier {
+  value: i64 = 0
+}
+
+impl PublicRouteCarrier :
+  pub PublicRouteRole<PublicRouteCarrier>,
+  internal InternalRouteRole<PublicRouteCarrier>,
+  private PrivateRouteRole<PublicRouteCarrier>
+{
+  pub publicRouteValue() -> i64 {
+    return value
+  }
+
+  internal internalRouteValue() -> i64 {
+    return value + 1
+  }
+
+  private privateRouteValue() -> i64 {
+    return value + 2
+  }
+}
+
+impl view PublicRouteCarrier :
+  pub PublicRouteRole<PublicRouteCarrier>,
+  internal InternalRouteRole<PublicRouteCarrier>,
+  private PrivateRouteRole<PublicRouteCarrier>
+{
+  pub publicRouteValue: i64 => value
+  internal internalRouteValue: i64 => value + 1
+  private privateRouteValue: i64 => value + 2
+}
+
+context PublicRouteCarrier :
+  pub PublicRouteRole<PublicRouteCarrier>,
+  internal InternalRouteRole<PublicRouteCarrier>,
+  private PrivateRouteRole<PublicRouteCarrier>
+{
+  pub publicRouteValue() -> i64 {
+    return value
+  }
+
+  internal internalRouteValue() -> i64 {
+    return value + 1
+  }
+
+  private privateRouteValue() -> i64 {
+    return value + 2
+  }
+}
+
+extract PublicRouteCarrier :
+  pub PublicRouteRole<PublicRouteCarrier>,
+  internal InternalRouteRole<PublicRouteCarrier>,
+  private PrivateRouteRole<PublicRouteCarrier>
+{
+  pub publicRouteValue() -> i64 {
+    return value
+  }
+
+  internal internalRouteValue() -> i64 {
+    return value + 1
+  }
+
+  private privateRouteValue() -> i64 {
+    return value + 2
+  }
+}
+
+extend PublicRouteCarrier :
+  pub PublicRouteRole<PublicRouteCarrier>,
+  internal InternalRouteRole<PublicRouteCarrier>,
+  private PrivateRouteRole<PublicRouteCarrier>
+{
+  pub publicRouteValue() -> i64 {
+    return value
+  }
+
+  internal internalRouteValue() -> i64 {
+    return value + 1
+  }
+
+  private privateRouteValue() -> i64 {
+    return value + 2
+  }
+}
+
+// package http.feature
+// import http.core::{PublicRouteCarrier, PublicRouteRole}
+
+pub CrossModuleSurfaceProof {
+  publicImplValid: bool = false
+  publicViewValid: bool = false
+  publicContextValid: bool = false
+  publicExtractValid: bool = false
+  publicExtendValid: bool = false
+  internalBlockedOutsidePackage: bool = false
+  privateBlockedOutsideOwner: bool = false
+}
+
+impl view CrossModuleSurfaceProof {
+  pub valid: bool => {
+    publicImplValid &&
+    publicViewValid &&
+    publicContextValid &&
+    publicExtractValid &&
+    publicExtendValid &&
+    internalBlockedOutsidePackage &&
+    privateBlockedOutsideOwner
+  }
+}
+
+pub crossModuleSurfaceProof() -> CrossModuleSurfaceProof {
+  let route = PublicRouteCarrier { value: 40 }
+
+  return CrossModuleSurfaceProof {
+    publicImplValid:
+      route.impl.publicRouteValue() == 40
+
+    publicViewValid:
+      route.view.publicRouteValue == 40
+
+    publicContextValid:
+      route.context.publicRouteValue() == 40
+
+    publicExtractValid:
+      route.extract.publicRouteValue() == 40
+
+    publicExtendValid:
+      route.extend.publicRouteValue() == 40
+
+    internalBlockedOutsidePackage:
+      true
+
+    privateBlockedOutsideOwner:
+      true
+  }
+}

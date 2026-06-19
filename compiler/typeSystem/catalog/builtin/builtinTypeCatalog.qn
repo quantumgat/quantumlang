@@ -1,0 +1,251 @@
+pub BuiltinTypeCatalog {
+  typeCount: usize = 0
+  aliasCount: usize = 0
+  operatorCount: usize = 0
+  layoutFingerprint: u64 = 0
+}
+
+impl BuiltinTypeCatalog {
+  pub empty => This {}
+}
+
+pub builtinTypeCatalogCore() -> BuiltinTypeCatalog {
+  return BuiltinTypeCatalog {
+    typeCount: primitiveTypeCount() + coreTypeCount()
+    aliasCount: typeAliasCount()
+    layoutFingerprint: 2
+  }
+}
+
+pub canonicalBuiltinTypeName(name: string) -> string {
+  return canonicalTypeAliasName(name)
+}
+
+pub isBuiltinCompatibilityAlias(name: string) -> bool {
+  return isTypeCompatibilityAlias(name)
+}
+
+pub isBuiltinTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return isPrimitiveTypeName(canonical) ||
+    isCoreTypeName(canonical)
+}
+
+pub isIntegerTypeName(name: string) -> bool {
+  return isPrimitiveIntegerTypeName(name)
+}
+
+pub isSignedIntegerTypeName(name: string) -> bool {
+  return isPrimitiveSignedIntegerTypeName(name)
+}
+
+pub isUnsignedIntegerTypeName(name: string) -> bool {
+  return isPrimitiveUnsignedIntegerTypeName(name)
+}
+
+pub isWideIntegerTypeName(name: string) -> bool {
+  return isPrimitiveWideIntegerTypeName(name)
+}
+
+pub isPointerWidthIntegerTypeName(name: string) -> bool {
+  return isPrimitivePointerWidthIntegerTypeName(name)
+}
+
+pub builtinIntegerBitWidth(name: string) -> usize {
+  return primitiveIntegerBitWidth(name)
+}
+
+pub isFloatTypeName(name: string) -> bool {
+  return isPrimitiveFloatTypeName(name)
+}
+
+pub builtinFloatBitWidth(name: string) -> usize {
+  return primitiveFloatBitWidth(name)
+}
+
+pub builtinNumericBitWidth(name: string) -> usize {
+  let primitiveWidth = primitiveNumericBitWidth(name)
+  if primitiveWidth != 0 {
+    return primitiveWidth
+  }
+  let canonical = canonicalTypeAliasName(name)
+  if canonical == "dec32" {
+    return 32
+  }
+  if canonical == "dec64" {
+    return 64
+  }
+  if canonical == "dec" || canonical == "dec128" {
+    return 128
+  }
+  if canonical == "dec256" {
+    return 256
+  }
+  return 0
+}
+
+pub builtinTypeKind(name: string) -> BuiltinTypeKind {
+  let canonical = canonicalTypeAliasName(name)
+  let primitiveFamily = primitiveTypeFamily(canonical)
+  if primitiveFamily == PrimitiveTypeFamily.Void {
+    return BuiltinTypeKind.Void
+  }
+  if primitiveFamily == PrimitiveTypeFamily.Bool {
+    return BuiltinTypeKind.Bool
+  }
+  if primitiveFamily == PrimitiveTypeFamily.Char {
+    return BuiltinTypeKind.Char
+  }
+  if primitiveFamily == PrimitiveTypeFamily.Byte {
+    return BuiltinTypeKind.Byte
+  }
+  if primitiveFamily == PrimitiveTypeFamily.SignedInteger {
+    return BuiltinTypeKind.SignedInteger
+  }
+  if primitiveFamily == PrimitiveTypeFamily.UnsignedInteger {
+    return BuiltinTypeKind.UnsignedInteger
+  }
+  if primitiveFamily == PrimitiveTypeFamily.Float {
+    return BuiltinTypeKind.Float
+  }
+
+  let coreFamily = coreTypeFamily(canonical)
+  if coreFamily == CoreTypeFamily.TextBytes {
+    if canonical == "string" {
+      return BuiltinTypeKind.String
+    }
+    return BuiltinTypeKind.Bytes
+  }
+  if coreFamily == CoreTypeFamily.Decimal {
+    return BuiltinTypeKind.Decimal
+  }
+  if coreFamily == CoreTypeFamily.Fixed {
+    return BuiltinTypeKind.Fixed
+  }
+  if coreFamily == CoreTypeFamily.BigInteger {
+    return BuiltinTypeKind.BigInteger
+  }
+  if coreFamily == CoreTypeFamily.Complex {
+    return BuiltinTypeKind.Complex
+  }
+  if coreFamily == CoreTypeFamily.Rational {
+    return BuiltinTypeKind.Rational
+  }
+  if coreFamily == CoreTypeFamily.Simd {
+    return BuiltinTypeKind.Simd
+  }
+  if coreFamily == CoreTypeFamily.Vector {
+    return BuiltinTypeKind.Vector
+  }
+  if coreFamily == CoreTypeFamily.Matrix {
+    return BuiltinTypeKind.Matrix
+  }
+  if coreFamily == CoreTypeFamily.Tensor {
+    return BuiltinTypeKind.Tensor
+  }
+  if coreFamily == CoreTypeFamily.Field {
+    return BuiltinTypeKind.Field
+  }
+  if coreFamily == CoreTypeFamily.Overflow {
+    return BuiltinTypeKind.Overflow
+  }
+  if canonical == "Option" {
+    return BuiltinTypeKind.Option
+  }
+  if canonical == "Result" {
+    return BuiltinTypeKind.Result
+  }
+  if canonical == "Vec" {
+    return BuiltinTypeKind.Vec
+  }
+  if canonical == "Map" {
+    return BuiltinTypeKind.Map
+  }
+  if canonical == "Set" {
+    return BuiltinTypeKind.Set
+  }
+  if canonical == "Slice" {
+    return BuiltinTypeKind.Slice
+  }
+  if canonical == "Array" {
+    return BuiltinTypeKind.Array
+  }
+  if canonical == "Range" {
+    return BuiltinTypeKind.Range
+  }
+  if canonical == "Index" {
+    return BuiltinTypeKind.Index
+  }
+  if canonical == "Arena" {
+    return BuiltinTypeKind.Arena
+  }
+  if canonical == "event" || canonical.startsWith("event<") {
+    return BuiltinTypeKind.Event
+  }
+  if canonical == "operation" || canonical.startsWith("operation<") {
+    return BuiltinTypeKind.Operation
+  }
+  if canonical == "stream" || canonical.startsWith("stream<") {
+    return BuiltinTypeKind.Stream
+  }
+  if canonical == "channel" || canonical.startsWith("channel<") {
+    return BuiltinTypeKind.Channel
+  }
+  if canonical == "signal" || canonical.startsWith("signal<") {
+    return BuiltinTypeKind.Signal
+  }
+  if canonical == "sink" || canonical.startsWith("sink<") {
+    return BuiltinTypeKind.Sink
+  }
+  if canonical == "atomic" || canonical.startsWith("atomic<") {
+    return BuiltinTypeKind.Atomic
+  }
+  if canonical == "qubit" {
+    return BuiltinTypeKind.Qubit
+  }
+  if canonical == "qreg" {
+    return BuiltinTypeKind.QReg
+  }
+  if canonical == "qresult" {
+    return BuiltinTypeKind.QResult
+  }
+  if canonical == "bit" {
+    return BuiltinTypeKind.Bit
+  }
+  if canonical == "bits" {
+    return BuiltinTypeKind.Bits
+  }
+  if canonical == "qfunc" {
+    return BuiltinTypeKind.QFunc
+  }
+  if canonical == "any" {
+    return BuiltinTypeKind.Any
+  }
+  if canonical == "qany" {
+    return BuiltinTypeKind.QAny
+  }
+  return BuiltinTypeKind.Unknown
+}
+
+pub builtinTypeFact(name: string) -> BuiltinTypeFact {
+  let canonical = canonicalTypeAliasName(name)
+  return BuiltinTypeFact {
+    name: canonical,
+    kind: builtinTypeKind(canonical),
+    canonical: canonical == name,
+    runtimeManaged: isRuntimeManagedBuiltinTypeName(canonical),
+    targetGated: isTargetGatedBuiltinTypeName(canonical),
+  }
+}
+
+pub builtinTypeAliasFact(name: string) -> BuiltinTypeAlias {
+  return typeAliasFact(name)
+}
+
+pub isTargetGatedBuiltinTypeName(name: string) -> bool {
+  let primitive = primitiveTypeFact(name)
+  if primitive.valid {
+    return primitive.targetGated
+  }
+  return isTargetGatedCoreTypeName(name)
+}

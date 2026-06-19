@@ -1,0 +1,528 @@
+import core::{ModuleId, PackageId, TypeId}
+import source::{SourceSpan}
+import syntax::{AstRoleVisibility}
+
+pub CandidateIndexBuilder {
+}
+
+impl CandidateIndexBuilder {
+  pub build(symbols: TypeSymbolTable, scopes: TypeScopeTable) -> CandidateIndex {
+    let index = CandidateIndex.withCapacity(
+      (symbols.symbolCount * 2 + 64) as usize
+    )
+    let roleTypes = TypeNameLookupIndex.withCapacity(
+      symbols.symbolCount as usize
+    )
+    let row: i64 = 0
+    while row < symbols.symbolCount {
+      let symbol = symbols.symbolAt(row)
+      if symbol.kind == TypeSymbolKind.Role {
+        roleTypes.add("", symbol.name, row as usize)
+      }
+      row = row + 1
+    }
+    let roleMethods = TypeNameLookupIndex.withCapacity(
+      symbols.symbolCount as usize
+    )
+    row = 0
+    while row < symbols.symbolCount {
+      let symbol = symbols.symbolAt(row)
+      if symbol.memberCallable &&
+         roleTypes.contains("", symbol.ownerTypeName) {
+        roleMethods.add(symbol.ownerTypeName, symbol.name, row as usize)
+      }
+      row = row + 1
+    }
+    let publicRoleVisibility = TypeNameLookupIndex.withCapacity(
+      symbols.symbolCount as usize
+    )
+    let internalRoleVisibility = TypeNameLookupIndex.withCapacity(
+      symbols.symbolCount as usize
+    )
+    let protectedRoleVisibility = TypeNameLookupIndex.withCapacity(
+      symbols.symbolCount as usize
+    )
+    This.buildRoleVisibilityIndexes(
+      symbols,
+      publicRoleVisibility,
+      internalRoleVisibility,
+      protectedRoleVisibility
+    )
+    This.indexRoleConformances(index, symbols)
+    row = 0
+    while row < symbols.symbolCount {
+      let symbol = symbols.symbolAt(row)
+      This.addSymbol(
+        index,
+        symbols,
+        publicRoleVisibility,
+        internalRoleVisibility,
+        protectedRoleVisibility,
+        symbol,
+        row
+      )
+      row = row + 1
+    }
+    This.addBlanketExtensionMethods(index, symbols)
+    This.addBuiltinOperators(index)
+    index.seal()
+    return index
+  }
+
+  indexRoleConformances(index: CandidateIndex, symbols: TypeSymbolTable) {
+    let row: i64 = 0
+    while row < symbols.symbolCount {
+      let symbol = symbols.symbolAt(row)
+      if symbol.kind == TypeSymbolKind.Extend {
+        let conformanceRow: i64 = 0
+        while conformanceRow < symbol.roleConformanceCount {
+          This.addConformance(
+            index,
+            symbol.name,
+            symbol.roleConformanceNameAt(conformanceRow)
+          )
+          conformanceRow = conformanceRow + 1
+        }
+      }
+      row = row + 1
+    }
+  }
+
+  addConformance(
+    index: CandidateIndex,
+    typeName: string,
+    roleName: string
+  ) {
+    if typeName == "" || roleName == "" {
+      return
+    }
+    let typeBase = This.genericBaseName(typeName)
+    let roleBase = This.genericBaseName(roleName)
+    index.addConformance(typeName, roleName)
+    if roleBase != roleName {
+      index.addConformance(typeName, roleBase)
+    }
+    if typeBase != typeName {
+      index.addConformance(typeBase, roleName)
+      if roleBase != roleName {
+        index.addConformance(typeBase, roleBase)
+      }
+    }
+  }
+
+  genericBaseName(typeName: string) -> string {
+    let open = typeName.find("<")
+    if open < 0 {
+      return typeName
+    }
+    return typeName.slice(0, open).toString()
+  }
+
+  addBlanketExtensionMethods(
+    index: CandidateIndex,
+    symbols: TypeSymbolTable
+  ) {
+    let extensionRow: i64 = 0
+    while extensionRow < symbols.symbolCount {
+      let extension = symbols.symbolAt(extensionRow)
+      if This.blanketExtensionOwner(extension) {
+        let receiverRow: i64 = 0
+        while receiverRow < symbols.symbolCount {
+          let receiver = symbols.symbolAt(receiverRow)
+          if This.concreteExtensionOwner(receiver) &&
+             This.extensionSatisfiesBlanketBounds(index, receiver, extension) {
+            This.addBlanketMethodsForReceiver(
+              index,
+              symbols,
+              extension,
+              receiver.name
+            )
+          }
+          receiverRow = receiverRow + 1
+        }
+      }
+      extensionRow = extensionRow + 1
+    }
+  }
+
+  blanketExtensionOwner(symbol: TypeSymbol) -> bool {
+    if symbol.kind != TypeSymbolKind.Extend || !symbol.generic {
+      return false
+    }
+    let row: i64 = 0
+    while row < symbol.genericParameterRows.count {
+      if symbol.genericParameterRows[row].name == symbol.name {
+        return symbol.genericParameterRows[row].bounds.nonEmpty
+      }
+      row = row + 1
+    }
+    return false
+  }
+
+  concreteExtensionOwner(symbol: TypeSymbol) -> bool {
+    if symbol.kind != TypeSymbolKind.Extend || !symbol.hasRoleConformances {
+      return false
+    }
+    let row: i64 = 0
+    while row < symbol.genericParameterRows.count {
+      if symbol.genericParameterRows[row].name == symbol.name {
+        return false
+      }
+      row = row + 1
+    }
+    return symbol.name != ""
+  }
+
+  extensionSatisfiesBlanketBounds(
+    index: CandidateIndex,
+    receiver: TypeSymbol,
+    extension: TypeSymbol
+  ) -> bool {
+    let parameterRow: i64 = 0
+    while parameterRow < extension.genericParameterRows.count {
+      let parameter = extension.genericParameterRows[parameterRow]
+      if parameter.name == extension.name {
+        let boundRow: i64 = 0
+        while boundRow < parameter.bounds.count {
+          let bound = This.genericBaseName(parameter.bounds[boundRow])
+          if bound == "" ||
+             (!index.conforms(receiver.name, bound) &&
+              receiver.name != bound) {
+            return false
+          }
+          boundRow = boundRow + 1
+        }
+        return parameter.bounds.nonEmpty
+      }
+      parameterRow = parameterRow + 1
+    }
+    return false
+  }
+
+  addBlanketMethodsForReceiver(
+    index: CandidateIndex,
+    symbols: TypeSymbolTable,
+    extension: TypeSymbol,
+    receiverTypeName: string
+  ) {
+    let methodRow: i64 = 0
+    while methodRow < symbols.symbolCount {
+      let method = symbols.symbolAt(methodRow)
+      if method.memberCallable &&
+         method.ownerTypeName == extension.name &&
+         method.moduleId.id.same(extension.moduleId.id) {
+        let ownerType = This.ownerTypeForReceiver(
+          symbols,
+          method,
+          receiverTypeName
+        )
+        let key = CandidateKey.member(
+          ownerType,
+          receiverTypeName,
+          method.nameId,
+          method.name
+        )
+        index.add(
+          key,
+          This.entry(
+            index,
+            method,
+            methodRow,
+            ownerType,
+            key,
+            CandidateSource.BlanketExtension,
+            CandidateAccess.forSymbol(method)
+          )
+        )
+      }
+      methodRow = methodRow + 1
+    }
+  }
+
+  ownerTypeForReceiver(
+    symbols: TypeSymbolTable,
+    method: TypeSymbol,
+    receiverTypeName: string
+  ) -> TypeId {
+    let owner = symbols.typeOwnerSymbolFor(receiverTypeName, method.moduleId)
+    if owner.id.valid {
+      return owner.typeId
+    }
+    owner = symbols.typeOwnerSymbolFor(receiverTypeName)
+    if owner.id.valid {
+      return owner.typeId
+    }
+    return TypeId()
+  }
+
+  ownerTypeFor(symbols: TypeSymbolTable, symbol: TypeSymbol) -> TypeId {
+    if symbol.ownerTypeName == "" {
+      return symbol.typeId
+    }
+    return match symbols.symbolForName(
+      symbol.moduleName,
+      symbol.ownerTypeName
+    ) {
+      Some(owner) => owner.typeId
+      None => symbols.symbolValueForName(symbol.ownerTypeName).typeId
+    }
+  }
+
+  addSymbol(
+    index: CandidateIndex,
+    symbols: TypeSymbolTable,
+    publicRoleVisibility: TypeNameLookupIndex,
+    internalRoleVisibility: TypeNameLookupIndex,
+    protectedRoleVisibility: TypeNameLookupIndex,
+    symbol: TypeSymbol,
+    symbolRow: i64
+  ) {
+    if symbol.kind == TypeSymbolKind.Type {
+      let key = CandidateKey.constructor(symbol.typeId, symbol.name)
+      index.add(
+        key,
+        This.entry(
+          index,
+          symbol,
+          symbolRow,
+          symbol.typeId,
+          key,
+          CandidateSource.StructuralConstructor,
+          CandidateAccess.forSymbol(symbol)
+        )
+      )
+      return
+    }
+
+    if symbol.memberCallable {
+      let ownerType = ownerTypeFor(symbols, symbol)
+      let roleVisibility = This.roleVisibilityFor(
+        publicRoleVisibility,
+        internalRoleVisibility,
+        protectedRoleVisibility,
+        symbol.ownerTypeName,
+        symbol.name
+      )
+      let source = match roleVisibility == AstRoleVisibility.Unknown {
+        true => CandidateSource.InherentMethod
+        false => CandidateSource.RoleMethod
+      }
+      let access = match roleVisibility == AstRoleVisibility.Unknown {
+        true => CandidateAccess.forSymbol(symbol)
+        false => CandidateAccess.forRole(symbol, ownerType, roleVisibility)
+      }
+      let key = CandidateKey.member(
+        ownerType,
+        symbol.ownerTypeName,
+        symbol.nameId,
+        symbol.name
+      )
+      index.add(
+        key,
+        This.entry(index, symbol, symbolRow, ownerType, key, source, access)
+      )
+      return
+    }
+
+    if symbol.kind == TypeSymbolKind.Function {
+      let key = CandidateKey.free(symbol.nameId, symbol.name)
+      index.add(
+        key,
+        This.entry(
+          index,
+          symbol,
+          symbolRow,
+          symbol.typeId,
+          key,
+          CandidateSource.FreeFunction,
+          CandidateAccess.forSymbol(symbol)
+        )
+      )
+      return
+    }
+
+    if symbol.kind == TypeSymbolKind.Value &&
+       symbol.typeName.startsWith("(") {
+      let key = CandidateKey.free(symbol.nameId, symbol.name)
+      index.add(
+        key,
+        This.entry(
+          index,
+          symbol,
+          symbolRow,
+          symbol.typeId,
+          key,
+          CandidateSource.CallableValue,
+          CandidateAccess.forSymbol(symbol)
+        )
+      )
+    }
+  }
+
+  entry(
+    index: CandidateIndex,
+    symbol: TypeSymbol,
+    symbolRow: i64,
+    ownerType: TypeId,
+    key: CandidateKey,
+    source: CandidateSource,
+    access: CandidateAccess
+  ) -> CandidateEntry {
+    let required: usize = 0
+    let defaulted: usize = 0
+    let variadic = false
+    let parameterRow: i64 = 0
+    while parameterRow < symbol.parameterRows.count {
+      let parameter = symbol.parameterRows[parameterRow]
+      if parameter.required {
+        required = required + 1
+      }
+      if parameter.defaulted {
+        defaulted = defaulted + 1
+      }
+      if parameter.variadic {
+        variadic = true
+      }
+      parameterRow = parameterRow + 1
+    }
+    let structuralConstructor =
+      source == CandidateSource.StructuralConstructor
+    let maximum = match variadic || structuralConstructor {
+      true => 0xffffffffffffffff as usize
+      false => symbol.callableParameterCount as usize
+    }
+    return CandidateEntry {
+      id: CandidateId(index.entryValues.count as u64 + 1)
+      symbol: symbol.id
+      callableType: symbol.typeId
+      ownerType
+      key
+      source
+      access
+      declarationSpan: symbol.span
+      displayName: symbol.name
+      symbolRow
+      genericParameterCount: symbol.genericParameterCount as usize
+      generic: symbol.generic
+      variadic
+      minimumArity: match structuralConstructor {
+        true => 0
+        false => required
+      }
+      maximumArity: maximum
+      defaultedParameterCount: defaulted
+    }
+  }
+
+  roleVisibilityFor(
+    publicRoleVisibility: TypeNameLookupIndex,
+    internalRoleVisibility: TypeNameLookupIndex,
+    protectedRoleVisibility: TypeNameLookupIndex,
+    ownerTypeName: string,
+    methodName: string
+  ) -> AstRoleVisibility {
+    if publicRoleVisibility.contains(ownerTypeName, methodName) {
+      return AstRoleVisibility.Public
+    }
+    if internalRoleVisibility.contains(ownerTypeName, methodName) {
+      return AstRoleVisibility.Internal
+    }
+    if protectedRoleVisibility.contains(ownerTypeName, methodName) {
+      return AstRoleVisibility.Protected
+    }
+    return AstRoleVisibility.Unknown
+  }
+
+  buildRoleVisibilityIndexes(
+    symbols: TypeSymbolTable,
+    publicRoleVisibility: TypeNameLookupIndex,
+    internalRoleVisibility: TypeNameLookupIndex,
+    protectedRoleVisibility: TypeNameLookupIndex
+  ) {
+    let row: i64 = 0
+    while row < symbols.symbolCount {
+      let symbol = symbols.symbolAt(row)
+      if symbol.kind == TypeSymbolKind.Extend {
+        let conformanceRow: i64 = 0
+        while conformanceRow < symbol.roleConformanceCount {
+          let methodRow: i64 = 0
+          while methodRow < symbols.symbolCount {
+            let method = symbols.symbolAt(methodRow)
+            if method.memberCallable &&
+               method.ownerTypeName == symbol.roleConformanceNameAt(conformanceRow) {
+              if symbol.roleConformanceVisibilityAt(conformanceRow) ==
+                 AstRoleVisibility.Public {
+                publicRoleVisibility.add(
+                  symbol.name,
+                  method.name,
+                  methodRow as usize
+                )
+              } else if symbol.roleConformanceVisibilityAt(conformanceRow) ==
+                        AstRoleVisibility.Internal {
+                internalRoleVisibility.add(
+                  symbol.name,
+                  method.name,
+                  methodRow as usize
+                )
+              } else if symbol.roleConformanceVisibilityAt(conformanceRow) ==
+                        AstRoleVisibility.Protected {
+                protectedRoleVisibility.add(
+                  symbol.name,
+                  method.name,
+                  methodRow as usize
+                )
+              }
+            }
+            methodRow = methodRow + 1
+          }
+          conformanceRow = conformanceRow + 1
+        }
+      }
+      row = row + 1
+    }
+  }
+
+  addBuiltinOperators(index: CandidateIndex) {
+    This.addBuiltinOperator(index, "+")
+    This.addBuiltinOperator(index, "-")
+    This.addBuiltinOperator(index, "*")
+    This.addBuiltinOperator(index, "/")
+    This.addBuiltinOperator(index, "%")
+    This.addBuiltinOperator(index, "**")
+    This.addBuiltinOperator(index, "==")
+    This.addBuiltinOperator(index, "!=")
+    This.addBuiltinOperator(index, "<")
+    This.addBuiltinOperator(index, "<=")
+    This.addBuiltinOperator(index, ">")
+    This.addBuiltinOperator(index, ">=")
+    This.addBuiltinOperator(index, "&&")
+    This.addBuiltinOperator(index, "||")
+    This.addBuiltinOperator(index, "&")
+    This.addBuiltinOperator(index, "|")
+    This.addBuiltinOperator(index, "^")
+    This.addBuiltinOperator(index, "<<")
+    This.addBuiltinOperator(index, ">>")
+  }
+
+  addBuiltinOperator(index: CandidateIndex, symbol: string) {
+    let key = CandidateKey.operator(symbol, "binary")
+    index.add(
+      key,
+      CandidateEntry {
+        id: CandidateId(index.entryValues.count as u64 + 1)
+        key
+        source: CandidateSource.BuiltinOperator
+        access: CandidateAccess {
+          kind: CandidateAccessKind.Public
+          packageId: PackageId(1)
+          moduleId: ModuleId(1, 1)
+        }
+        declarationSpan: SourceSpan()
+        displayName: symbol
+        minimumArity: 2
+        maximumArity: 2
+        builtin: true
+      }
+    )
+  }
+}

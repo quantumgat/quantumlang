@@ -1,0 +1,49 @@
+pub OperatorTokenFact {
+  text: string
+  modulePathOperator: bool
+  accessOperator: bool
+  optionMarker: bool
+  expressionBodyOperator: bool
+  assignmentOperator: bool
+  valid: bool
+}
+
+impl OperatorTokenFact {
+  pub OperatorTokenFact(
+    text: string,
+    modulePathOperator: bool,
+    accessOperator: bool,
+    optionMarker: bool,
+    expressionBodyOperator: bool,
+    assignmentOperator: bool,
+    valid: bool
+  ) =
+    This {
+      text
+      modulePathOperator
+      accessOperator
+      optionMarker
+      expressionBodyOperator
+      assignmentOperator
+      valid
+    }
+
+  pub fromText(text: string) -> This {
+    if text == "::" {
+      return This(text, true, false, false, false, false, true)
+    }
+    if text == "." {
+      return This(text, false, true, false, false, false, true)
+    }
+    if text == "?" {
+      return This(text, false, false, true, false, false, true)
+    }
+    if text == "=>" {
+      return This(text, false, false, false, true, false, true)
+    }
+    if text == "=" {
+      return This(text, false, false, false, false, true, true)
+    }
+    return This(text, false, false, false, false, false, false)
+  }
+}

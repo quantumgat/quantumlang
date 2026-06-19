@@ -1,0 +1,16 @@
+pub TargetFeature {
+  name: string
+  enabled: bool
+  required: bool
+  valid: bool
+}
+
+impl TargetFeature {
+  pub TargetFeature(name: string, enabled: bool, required: bool) =
+    This {
+      name,
+      enabled,
+      required,
+      valid: name != "",
+    }
+}

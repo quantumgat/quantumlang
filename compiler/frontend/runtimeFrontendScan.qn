@@ -1,0 +1,62 @@
+pub RuntimeFrontendScan {
+  target: string
+}
+
+impl RuntimeFrontendScan {
+  pub RuntimeFrontendScan(target: string) =
+    This { target }
+}
+
+impl view RuntimeFrontendScan {
+  pub tokenCount => lexTokenCount(target)
+  pub triviaCount => lexTriviaCount(target)
+  pub imports => lexImports(target)
+  pub modulePaths => lexModulePaths(target)
+  pub functionCount => parseFunctionCount(target)
+  pub typeDeclarationCount => parseTypeDeclarationCount(target)
+  pub implDeclarationCount => parseImplDeclarationCount(target)
+  pub viewDeclarationCount => parseViewDeclarationCount(target)
+  pub roleDeclarationCount => parseRoleDeclarationCount(target)
+  pub importDeclarationCount => parseImportDeclarationCount(target)
+  pub contextDeclarationCount => parseContextDeclarationCount(target)
+  pub extractDeclarationCount => parseExtractDeclarationCount(target)
+  pub extendDeclarationCount => parseExtendDeclarationCount(target)
+  pub astRootCount => parseAstRootCount(target)
+  pub astNodeCount => parseAstNodeCount(target)
+  pub moduleRoot => parseModuleRoot(target)
+  pub importItems => parseImports(target)
+  pub functionItems => parseFunctionItems(target)
+  pub returns => parseReturns(target)
+  pub calls => parseCalls(target)
+  pub primaryModulePath => parsePrimaryModulePath(target)
+  pub firstTypeDeclarationName => parseFirstTypeDeclarationName(target)
+  pub firstFunctionDeclarationName => parseFirstFunctionDeclarationName(target)
+  pub firstImportDeclarationName => parseFirstImportDeclarationName(target)
+  pub lexValid => tokenCount != 0 && imports && modulePaths
+  pub parseValid => functionCount != 0 && astRootCount != 0 && astNodeCount != 0 && moduleRoot && importItems && functionItems
+}
+
+lexTokenCount(target: string) -> i64
+lexTriviaCount(target: string) -> i64
+lexImports(target: string) -> bool
+lexModulePaths(target: string) -> bool
+parseFunctionCount(target: string) -> i64
+parseTypeDeclarationCount(target: string) -> i64
+parseImplDeclarationCount(target: string) -> i64
+parseViewDeclarationCount(target: string) -> i64
+parseRoleDeclarationCount(target: string) -> i64
+parseImportDeclarationCount(target: string) -> i64
+parseContextDeclarationCount(target: string) -> i64
+parseExtractDeclarationCount(target: string) -> i64
+parseExtendDeclarationCount(target: string) -> i64
+parseAstRootCount(target: string) -> i64
+parseAstNodeCount(target: string) -> i64
+parseModuleRoot(target: string) -> bool
+parseImports(target: string) -> bool
+parseFunctionItems(target: string) -> bool
+parseReturns(target: string) -> bool
+parseCalls(target: string) -> bool
+parsePrimaryModulePath(target: string) -> string
+parseFirstTypeDeclarationName(target: string) -> string
+parseFirstFunctionDeclarationName(target: string) -> string
+parseFirstImportDeclarationName(target: string) -> string

@@ -1,0 +1,29 @@
+import mir::{*}
+pub IrProductShapeProof {
+  hirShapeValid: bool
+  mirShapeValid: bool
+  controlFlowBridgeValid: bool
+  stableProductBoundary: bool
+  valid: bool
+}
+
+pub irProductShapeProof() -> IrProductShapeProof {
+  let hirProof = hirShapeProof()
+  let mirProof = mirShapeProof()
+  let body = MirBody("compileModule", 4, 8, 12)
+  let cfg = MirControlFlowGraph(5, body.blockCount)
+
+  let hirShapeValid = hirProof.valid && hirProof.controlFlowRepresented
+  let mirShapeValid = mirProof.valid && mirProof.terminatorModelsControl
+  let controlFlowBridgeValid = hirShapeValid && mirShapeValid && cfg.deterministic
+  let stableProductBoundary = body.valid && body.deterministic && cfg.blockCount == body.blockCount
+  let valid = hirShapeValid && mirShapeValid && controlFlowBridgeValid && stableProductBoundary
+
+  return IrProductShapeProof {
+    hirShapeValid: hirShapeValid,
+    mirShapeValid: mirShapeValid,
+    controlFlowBridgeValid: controlFlowBridgeValid,
+    stableProductBoundary: stableProductBoundary,
+    valid: valid,
+  }
+}

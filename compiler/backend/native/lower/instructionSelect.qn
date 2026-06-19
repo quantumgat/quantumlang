@@ -1,0 +1,38 @@
+pub InstructionSelection {
+  selected: i64
+  targetName: string
+  legalInstructions: bool
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl InstructionSelection {
+  pub InstructionSelection(selected: i64, targetName: string, legalInstructions: bool) =
+    This { selected, targetName, legalInstructions }
+
+  pub illegal(selected: i64, targetName: string) =
+    This {
+      selected
+      targetName
+      legalInstructions: false
+      diagnosticCode: "QNATIVE0201"
+    }
+
+  addSelected(count: i64) =
+    this {
+      selected: selected + count
+    }
+
+  markIllegal() =
+    this {
+      legalInstructions: false
+      diagnosticCode: "QNATIVE0201"
+    }
+}
+
+impl view InstructionSelection {
+  pub valid => diagnosticCode == "" && selected >= 0 && targetName != "" && legalInstructions
+  pub lowerable => valid && deterministic
+  pub produced => selected > 0
+  pub debugName => "native.isel.{targetName}.{selected}"
+}

@@ -1,0 +1,149 @@
+import frontend::{FrontendProduct}
+import nameResolve::{Resolver}
+import typeSystem::{CandidateIndex, CandidateIndexBuilder}
+
+pub TypeEnvironment {
+  target: string
+  modules: TypeModuleScopes
+  symbols: TypeSymbolTable
+  scopes: TypeScopeTable
+  candidates: CandidateIndex
+  registry: TypeRegistry
+  diagnostics: TypeDiagnosticSet
+  resolver: Resolver = {}
+  deterministic: bool = true
+}
+
+impl TypeEnvironment {
+  pub forFrontend(frontend: FrontendProduct) -> This {
+    let symbols = TypeSymbolTable.fromRecords(
+      frontend.declarations.records.recordValues,
+      frontend.valid
+    )
+    let scopes = TypeScopeTable.fromFrontend(frontend, symbols)
+    let candidates = CandidateIndexBuilder.build(symbols, scopes)
+    let registry = TypeRegistry.forFrontend(
+      frontend,
+      symbols,
+      scopes,
+      candidates
+    )
+    return This {
+      target: frontend.target
+      modules: TypeModuleScopes.forFrontend(frontend, symbols)
+      symbols
+      scopes
+      candidates
+      registry
+      resolver: Resolver.fromRecords(frontend.declarations.records)
+      diagnostics: TypeDiagnosticSet.fromEnvironment(
+        registry.typedNodeValues,
+        symbols,
+        scopes
+      )
+    }
+  }
+}
+
+impl view TypeEnvironment {
+  pub fileScopeCount: i64 => modules.fileScopeCount
+
+  pub moduleScopeCount: i64 => modules.moduleScopeCount
+
+  pub importEdgeCount: i64 => modules.importEdgeCount
+
+  pub typeSymbolCount: i64 => symbols.typeSymbolCount
+
+  pub functionSymbolCount: i64 => symbols.functionSymbolCount
+
+  pub valueSymbolCount: i64 => symbols.valueSymbolCount
+
+  pub expressionNodeCount: i64 => registry.expressionTypeCount
+
+  pub literalNodeCount: i64 => registry.literalTypeCount
+
+  pub operatorUseCount: i64 => registry.operatorFactCount
+
+  pub carrierUseCount: i64 => registry.carrierFactCount
+
+  pub parallelUseCount: i64 => registry.parallelFactCount
+
+  pub atomicUseCount: i64 => registry.atomicFactCount
+
+  pub diagnosticCount: i64 => diagnostics.errorCount
+
+  pub firstDiagnosticMessage: string => diagnostics.firstMessage
+
+  pub resolvedSymbolCount: i64 => resolver.symbolCount
+
+  pub unresolvedSymbolCount: i64 => resolver.unresolved
+
+  pub duplicateSymbolCount: i64 =>
+    symbols.duplicateCount + scopes.duplicateCount
+
+  pub unresolvedBindingCount: i64 =>
+    symbols.unresolvedCount + scopes.unresolvedCount
+
+  pub fileScopesReady: bool => modules.hasFiles
+
+  pub moduleScopesReady: bool => modules.hasModules
+
+  pub importsReady: bool => modules.importsResolved
+
+  pub typeSymbolsReady: bool => symbols.hasTypes
+
+  pub functionSymbolsReady: bool => symbols.hasFunctions
+
+  pub valuesReady: bool => symbols.hasValues
+
+  pub expressionFactsReady: bool => registry.hasExpressionTypes
+
+  pub literalFactsReady: bool => registry.hasLiteralTypes
+
+  pub clean: bool => diagnostics.clean
+
+  pub publicSymbolCount: i64 => symbols.publicSymbolCount
+
+  pub privateSymbolCount: i64 => symbols.privateSymbolCount
+
+  pub symbolCount: i64 => symbols.symbolCount
+
+  pub scopeCount: i64 => scopes.count
+
+  pub localBindingCount: i64 => scopes.localCount
+
+  pub genericScopeCount: i64 => scopes.genericScopeCount
+
+  pub typeContextCount: i64 => registry.contextCount
+
+  pub typeFactCount: i64 => registry.typeFactCount
+
+  pub typedNodeCount: i64 => registry.typedNodeCount
+
+  pub candidateCount: i64 => candidates.entryCount
+
+  pub candidateBucketCount: i64 => candidates.bucketCount
+
+  pub countsConsistent: bool =>
+    modules.countsConsistent &&
+    symbols.countsConsistent &&
+    registry.countsConsistent &&
+    diagnostics.countsConsistent
+
+  pub symbolEnvironmentReady: bool =>
+    modules.valid &&
+    symbols.valid &&
+    scopes.valid &&
+    candidates.valid &&
+    resolver.valid
+
+  pub factEnvironmentReady: bool =>
+    registry.valid
+
+  pub valid: bool =>
+    deterministic &&
+    clean &&
+    countsConsistent &&
+    symbolEnvironmentReady &&
+    factEnvironmentReady
+}

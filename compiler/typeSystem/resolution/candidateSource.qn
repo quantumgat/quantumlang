@@ -1,0 +1,31 @@
+pub enum CandidateSource {
+  LexicalCallable
+  FreeFunction
+  InherentMethod
+  ViewMethod
+  StructuralConstructor
+  CustomConstructor
+  RoleMethod
+  ConcreteExtension
+  BlanketExtension
+  CallableValue
+  BuiltinOperator
+  OperatorRole
+  Unknown
+}
+
+candidateSourceOrdinal(source: CandidateSource) -> i64 {
+  if source == CandidateSource.LexicalCallable { return 1 }
+  if source == CandidateSource.FreeFunction { return 2 }
+  if source == CandidateSource.InherentMethod { return 3 }
+  if source == CandidateSource.ViewMethod { return 4 }
+  if source == CandidateSource.StructuralConstructor { return 5 }
+  if source == CandidateSource.CustomConstructor { return 6 }
+  if source == CandidateSource.RoleMethod { return 7 }
+  if source == CandidateSource.ConcreteExtension { return 8 }
+  if source == CandidateSource.BlanketExtension { return 9 }
+  if source == CandidateSource.CallableValue { return 10 }
+  if source == CandidateSource.BuiltinOperator { return 11 }
+  if source == CandidateSource.OperatorRole { return 12 }
+  return 0
+}

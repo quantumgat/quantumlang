@@ -1,0 +1,214 @@
+import core::{FileId, Range}
+import source::{SourceSpan}
+import syntax::{AstCallableParameter, AstDeclaration, AstDeclarationKind, AstDeclarationVisibility, AstGenericParameter, AstRoleConformance}
+
+pub DeclarationRecord {
+  id: i64
+  kind: DeclarationKind
+  modulePath: string
+  name: string
+  importAlias: string = ""
+  selectedSymbol: string = ""
+  wildcardImport: bool = false
+  excludedSymbolCount: i64 = 0
+  excludedSymbols: Vec<string> = []
+  genericParameterCount: i64 = 0
+  genericParameters: Vec<string> = []
+  parameters: Vec<string> = []
+  genericParameterRows: Vec<AstGenericParameter> = []
+  parameterRows: Vec<AstCallableParameter> = []
+  roleConformances: Vec<AstRoleConformance> = []
+  returnTypeName: string = ""
+  ownerTypeName: string = ""
+  memberKind: string = ""
+  fileId: FileId
+  rows: Range<u8>
+  visibility: DeclarationVisibility
+  resolved: bool = true
+  parserProduced: bool = false
+  deterministic: bool = true
+}
+
+impl DeclarationRecord {
+  pub DeclarationRecord(
+    id: i64,
+    kind: DeclarationKind,
+    modulePath: string,
+    name: string,
+    fileId: FileId,
+    start: i64,
+    end: i64,
+    visibility: DeclarationVisibility
+  ) =
+    This {
+      id
+      kind
+      modulePath
+      name
+      fileId
+      rows: Range<u8>.fromBounds(start, end)
+      visibility
+    }
+
+  pub synthetic(kind: DeclarationKind, count: i64) =
+    This {
+      id: count
+      kind
+      modulePath: "<bootstrap>"
+      name: "<count-backed>"
+      fileId: FileId(0, 0, 0)
+      rows: Range<u8>()
+      visibility: DeclarationVisibility.Public
+      parserProduced: false
+    }
+
+  pub parser(
+    id: i64,
+    kind: DeclarationKind,
+    modulePath: string,
+    name: string,
+    fileId: FileId,
+    start: i64,
+    end: i64,
+    visibility: DeclarationVisibility
+  ) =
+    This {
+      id
+      kind
+      modulePath
+      name
+      fileId
+      rows: Range<u8>.fromBounds(start, end)
+      visibility
+      parserProduced: true
+    }
+
+  pub fromAst(id: i64, declaration: AstDeclaration) =
+    This {
+      id
+      kind: declarationKindForAst(declaration.kind)
+      modulePath: declaration.modulePath
+      name: declaration.name
+      importAlias: declaration.importAlias
+      selectedSymbol: declaration.selectedSymbol
+      wildcardImport: declaration.wildcardImport
+      excludedSymbolCount: declaration.excludedSymbolCount
+      excludedSymbols: declaration.excludedSymbols
+      genericParameterCount: declaration.genericParameterCount
+      genericParameters: declaration.genericParameters
+      parameters: declaration.parameters
+      genericParameterRows: declaration.genericParameterRows
+      parameterRows: declaration.parameterRows
+      roleConformances: declaration.roleConformances
+      returnTypeName: declaration.returnTypeName
+      ownerTypeName: declaration.ownerTypeName
+      memberKind: declaration.memberKind
+      fileId: declaration.span.fileId
+      rows: declaration.span.rows
+      visibility: declarationVisibilityForAst(declaration.visibility)
+      parserProduced: true
+    }
+
+  pub fromImport(
+    id: i64,
+    modulePath: string,
+    name: string
+  ) =
+    This.fromImport(id, modulePath, name, "")
+
+  pub fromImport(
+    id: i64,
+    modulePath: string,
+    name: string,
+    importAlias: string
+  ) =
+    This {
+      id
+      kind: DeclarationKind.Import
+      modulePath
+      name
+      importAlias
+      fileId: FileId()
+      rows: Range()
+      visibility: DeclarationVisibility.Private
+      parserProduced: true
+    }
+}
+
+impl view DeclarationRecord {
+  pub start => rows.start
+
+  pub end => rows.end
+
+  pub length => rows.count
+
+  pub span => SourceSpan(fileId, rows)
+
+  pub named => name != ""
+
+  pub hasModule => modulePath != ""
+
+  pub hasSpan => fileId.valid && rows.valid
+
+  pub publicVisible =>
+    visibility == DeclarationVisibility.Public ||
+    visibility == DeclarationVisibility.Exported
+
+  pub callableResult: string => {
+    if returnTypeName == "" {
+      "void"
+    } else {
+      returnTypeName
+    }
+  }
+
+  pub memberDeclaration: bool => ownerTypeName != ""
+
+  pub memberCallable: bool => memberKind == "method"
+
+  pub memberValue: bool =>
+    memberKind == "field" ||
+    memberKind == "property" ||
+    memberKind == "enum-variant"
+
+  pub structuredGenericParameters: bool =>
+    genericParameterRows.count == genericParameterCount
+
+  pub structuredParameters: bool =>
+    parameterRows.count == parameters.count
+
+  pub hasRoleConformances: bool => roleConformances.nonEmpty
+
+  pub syntheticRecord => parserProduced == false
+
+  pub parserRecord => parserProduced
+
+  pub valid =>
+    deterministic &&
+    resolved &&
+    named &&
+    hasModule &&
+    kind != DeclarationKind.Unknown &&
+    visibility != DeclarationVisibility.Unknown
+}
+
+declarationKindForAst(kind: AstDeclarationKind) -> DeclarationKind {
+  if kind == AstDeclarationKind.Module { return DeclarationKind.Module }
+  if kind == AstDeclarationKind.Type { return DeclarationKind.Type }
+  if kind == AstDeclarationKind.Impl { return DeclarationKind.Impl }
+  if kind == AstDeclarationKind.View { return DeclarationKind.View }
+  if kind == AstDeclarationKind.Role { return DeclarationKind.Role }
+  if kind == AstDeclarationKind.Function { return DeclarationKind.Function }
+  if kind == AstDeclarationKind.Import { return DeclarationKind.Import }
+  if kind == AstDeclarationKind.Context { return DeclarationKind.Context }
+  if kind == AstDeclarationKind.Extract { return DeclarationKind.Extract }
+  if kind == AstDeclarationKind.Extend { return DeclarationKind.Extend }
+  return DeclarationKind.Unknown
+}
+
+declarationVisibilityForAst(visibility: AstDeclarationVisibility) -> DeclarationVisibility {
+  if visibility == AstDeclarationVisibility.Public { return DeclarationVisibility.Public }
+  if visibility == AstDeclarationVisibility.Private { return DeclarationVisibility.Private }
+  if visibility == AstDeclarationVisibility.Exported { return DeclarationVisibility.Exported }
+  return DeclarationVisibility.Unknown
+}

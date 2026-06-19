@@ -1,0 +1,215 @@
+pub ByteBuffer {
+  value: bytes = ByteValue.empty()
+  length: usize = 0
+  capacity: usize = 0
+  order: ByteOrder = ByteOrder.LittleEndian
+}
+
+impl ByteBuffer {
+  pub withCapacity(capacity: usize) =
+    This { value: ByteValue.empty(), capacity }
+
+  pub withCapacity(capacity: usize, order: ByteOrder) =
+    This { value: ByteValue.empty(), capacity, order }
+
+  pub from(value: bytes) =
+    This {
+      value
+      length: value.length()
+      capacity: value.length()
+    }
+
+  pub from(value: bytes, order: ByteOrder) =
+    This {
+      value
+      length: value.length()
+      capacity: value.length()
+      order
+    }
+
+  pub reserve(extra: usize) -> Result<void, ByteError>
+
+  pub clear() {
+    length = 0
+  }
+
+  pub reset() {
+    clear()
+  }
+
+  pub truncate(nextLength: usize) -> Result<void, ByteError> {
+    if nextLength > length {
+      return Err(ByteError(
+        ByteErrorKind.OutOfBounds,
+        nextLength,
+        nextLength,
+        length
+      ))
+    }
+
+    length = nextLength
+    return Ok(0)
+  }
+
+  pub resize(nextLength: usize) -> Result<void, ByteError> {
+    if nextLength <= length {
+      length = nextLength
+      return Ok(0)
+    }
+
+    reserve(nextLength - length)?
+    while length < nextLength {
+      this.append(0)?
+    }
+    return Ok(0)
+  }
+
+  pub append(value: byte) -> Result<void, ByteError>
+
+  pub append(value: BytesView) -> Result<void, ByteError>
+
+  pub append(value: bytes) -> Result<void, ByteError>
+
+  pub append(value: ByteView) -> Result<void, ByteError>
+
+  pub append(value: string) -> Result<void, ByteError>
+
+  pub hash128(value: Hash128) -> Result<void, ByteError> =
+    this.append(value.value)
+
+  pub hash256(value: Hash256) -> Result<void, ByteError> =
+    this.append(value.value)
+
+  pub hash512(value: Hash512) -> Result<void, ByteError> =
+    this.append(value.value)
+
+  pub bool(value: bool) -> Result<void, ByteError>
+
+  pub u8(value: u8) -> Result<void, ByteError>
+
+  pub i8(value: i8) -> Result<void, ByteError>
+
+  pub u16le(value: u16) -> Result<void, ByteError>
+
+  pub u16be(value: u16) -> Result<void, ByteError>
+
+  pub i16le(value: i16) -> Result<void, ByteError>
+
+  pub i16be(value: i16) -> Result<void, ByteError>
+
+  pub u32le(value: u32) -> Result<void, ByteError>
+
+  pub u32be(value: u32) -> Result<void, ByteError>
+
+  pub i32le(value: i32) -> Result<void, ByteError>
+
+  pub i32be(value: i32) -> Result<void, ByteError>
+
+  pub u64le(value: u64) -> Result<void, ByteError>
+
+  pub u64be(value: u64) -> Result<void, ByteError>
+
+  pub i64le(value: i64) -> Result<void, ByteError>
+
+  pub i64be(value: i64) -> Result<void, ByteError>
+
+  pub u128le(value: u128) -> Result<void, ByteError>
+
+  pub u128be(value: u128) -> Result<void, ByteError>
+
+  pub i128le(value: i128) -> Result<void, ByteError>
+
+  pub i128be(value: i128) -> Result<void, ByteError>
+
+  pub u256le(value: u256) -> Result<void, ByteError>
+
+  pub u256be(value: u256) -> Result<void, ByteError>
+
+  pub i256le(value: i256) -> Result<void, ByteError>
+
+  pub i256be(value: i256) -> Result<void, ByteError>
+
+  pub f32le(value: f32) -> Result<void, ByteError>
+
+  pub f32be(value: f32) -> Result<void, ByteError>
+
+  pub f64le(value: f64) -> Result<void, ByteError>
+
+  pub f64be(value: f64) -> Result<void, ByteError>
+
+  pub varU64(value: u64) -> Result<void, ByteError>
+
+  pub varI64(value: i64) -> Result<void, ByteError>
+
+  pub varU128(value: u128) -> Result<void, ByteError>
+
+  pub varI128(value: i128) -> Result<void, ByteError>
+
+  pub zigzag32(value: i32) -> Result<void, ByteError>
+
+  pub zigzag64(value: i64) -> Result<void, ByteError>
+
+  pub bytes8(value: BytesView) -> Result<void, ByteError>
+
+  pub bytes16le(value: BytesView) -> Result<void, ByteError>
+
+  pub bytes16be(value: BytesView) -> Result<void, ByteError>
+
+  pub bytes32le(value: BytesView) -> Result<void, ByteError>
+
+  pub bytes32be(value: BytesView) -> Result<void, ByteError>
+
+  pub bytes64le(value: BytesView) -> Result<void, ByteError>
+
+  pub bytes64be(value: BytesView) -> Result<void, ByteError>
+
+  pub varBytes(value: BytesView) -> Result<void, ByteError>
+
+  pub str8(value: string) -> Result<void, ByteError>
+
+  pub str16le(value: string) -> Result<void, ByteError>
+
+  pub str16be(value: string) -> Result<void, ByteError>
+
+  pub str32le(value: string) -> Result<void, ByteError>
+
+  pub str32be(value: string) -> Result<void, ByteError>
+
+  pub str64le(value: string) -> Result<void, ByteError>
+
+  pub str64be(value: string) -> Result<void, ByteError>
+
+  pub varStr(value: string) -> Result<void, ByteError>
+
+  pub cstring(value: string) -> Result<void, ByteError>
+
+  pub stream64le() -> ByteStream =
+    ByteStream(this, ByteStreamMode.Length64LittleEndian)
+
+  pub stream64be() -> ByteStream =
+    ByteStream(this, ByteStreamMode.Length64BigEndian)
+
+  pub varStream() -> ByteStream =
+    ByteStream(this, ByteStreamMode.VariableLength)
+
+  pub chunkedStream() -> ByteStream =
+    ByteStream(this, ByteStreamMode.Chunked)
+
+  pub align(alignment: usize) -> Result<void, ByteError>
+
+  pub align(alignment: usize, fill: byte) -> Result<void, ByteError>
+
+  pub finish() -> bytes
+}
+
+impl view ByteBuffer {
+  pub view() -> ByteView {
+    return ByteView(value, 0, length)
+  }
+
+  pub empty: bool => length == 0
+  pub nonEmpty: bool => length > 0
+  pub free: usize => capacity - length
+  pub full: bool => length == capacity
+  pub valid: bool => length <= capacity
+}

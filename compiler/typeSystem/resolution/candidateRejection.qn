@@ -1,0 +1,24 @@
+pub enum CandidateRejectionKind {
+  None
+  Inaccessible
+  GenericArity
+  GenericConflict
+  GenericBound
+  UnknownNamedArgument
+  DuplicateArgument
+  MissingRequiredArgument
+  TooManyArguments
+  TypeMismatch
+}
+
+pub CandidateRejection {
+  kind: CandidateRejectionKind = CandidateRejectionKind.None
+  subject: string = ""
+  position: i64 = -1
+}
+
+impl view CandidateRejection {
+  pub rejected: bool => kind != CandidateRejectionKind.None
+
+  pub valid: bool => rejected == false || subject != ""
+}

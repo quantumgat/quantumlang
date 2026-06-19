@@ -1,0 +1,21 @@
+pub QresultType {
+  classicalCarrier: string
+  producedByMeasurement: bool
+  collapsesState: bool
+  valid: bool
+}
+
+impl QresultType {
+  pub QresultType() =
+    This {
+      classicalCarrier: "bool"
+      producedByMeasurement: true
+      collapsesState: true
+      valid: true
+    }
+}
+
+impl view QresultType {
+  pub classical => classicalCarrier != ""
+  pub measured => producedByMeasurement && collapsesState
+}

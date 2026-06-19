@@ -1,0 +1,16 @@
+import core::{Hash256, HashDomain, HashError, StableHash, StableHashWriter}
+
+impl SourceSpan {
+  pub stableHash() -> Result<Hash256, HashError> {
+    let out = StableHashWriter(HashDomain.Source)
+    this.stableHashInto(out)?
+    return out.finish()
+  }
+
+  stableHashInto(out: StableHashWriter) -> Result<void, HashError> {
+    out.begin("source.SourceSpan", 1)?
+    out.writeCompilerId("fileId", fileId.id)?
+    out.writeRange("rows", rows.start, rows.count)?
+    return out.end()
+  }
+}

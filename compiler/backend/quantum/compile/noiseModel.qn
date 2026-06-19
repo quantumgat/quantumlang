@@ -1,0 +1,32 @@
+pub QuantumNoiseModel {
+  enabled: bool
+  modelName: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl QuantumNoiseModel {
+  pub QuantumNoiseModel(enabled: bool, modelName: string) =
+    This { enabled, modelName }
+
+  pub disabled() =
+    This {
+      enabled: false
+      modelName: ""
+    }
+
+  pub depolarizing() =
+    This {
+      enabled: true
+      modelName: "depolarizing"
+    }
+}
+
+impl view QuantumNoiseModel {
+  pub valid => diagnosticCode == "" && (enabled == false || modelName != "")
+  pub active => enabled
+  pub disabledModel => enabled == false
+  pub targetRequired => enabled
+  pub lowerable => valid && deterministic
+  pub debugName => "quantum.noise.{modelName}.{enabled}"
+}

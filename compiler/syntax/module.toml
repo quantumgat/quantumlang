@@ -1,0 +1,9 @@
+[module]
+name = "syntax"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/syntax"
+role = "syntax-frontend"
+
+[dependencies]
+modules = ["core", "host", "source"]

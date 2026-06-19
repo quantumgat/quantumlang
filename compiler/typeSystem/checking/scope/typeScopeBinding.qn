@@ -1,0 +1,86 @@
+import core::{DeclarationId, NameId, ScopeId, SymbolId, TypeId}
+
+pub TypeLocalBinding {
+  name: string
+  scope: ScopeId
+  nodeId: i64
+  owner: SymbolId = {}
+  typeOwner: SymbolId = {}
+  symbol: TypeSymbol = {}
+  deterministic: bool = true
+}
+
+impl view TypeLocalBinding {
+  pub valid: bool =>
+    name != "" &&
+    scope.valid &&
+    nodeId > 0 &&
+    symbol.valid &&
+    deterministic
+}
+
+pub TypeScopeBinding {
+  name: string
+  nameId: NameId = {}
+  scope: ScopeId = {}
+  symbol: TypeSymbol = {}
+  declarationId: DeclarationId = {}
+  typeId: TypeId = {}
+  parameter: bool = false
+  genericParameter: bool = false
+  local: bool = false
+  deterministic: bool = true
+}
+
+impl TypeScopeBinding {
+  pub forSymbol(scope: ScopeId, symbol: TypeSymbol) =
+    This {
+      name: symbol.name
+      nameId: symbol.nameId
+      scope
+      symbol
+      declarationId: symbol.declarationId
+      typeId: symbol.typeId
+    }
+
+  pub parameter(scope: ScopeId, symbol: TypeSymbol) =
+    This {
+      name: symbol.name
+      nameId: symbol.nameId
+      scope
+      symbol
+      typeId: symbol.typeId
+      parameter: true
+      local: true
+    }
+
+  pub generic(scope: ScopeId, symbol: TypeSymbol) =
+    This {
+      name: symbol.name
+      nameId: symbol.nameId
+      scope
+      symbol
+      typeId: symbol.typeId
+      genericParameter: true
+    }
+
+  pub local(scope: ScopeId, symbol: TypeSymbol) =
+    This {
+      name: symbol.name
+      nameId: symbol.nameId
+      scope
+      symbol
+      typeId: symbol.typeId
+      local: true
+    }
+}
+
+impl view TypeScopeBinding {
+  pub valid: bool =>
+    deterministic &&
+    name != "" &&
+    nameId.valid &&
+    scope.valid &&
+    symbol.valid &&
+    typeId.valid
+}

@@ -1,0 +1,102 @@
+import core::{HashKey, HashSeed, Hasher}
+
+pub HashKernelProof {
+  contentValid: bool = false
+  actionSeparated: bool = false
+  keyedValid: bool = false
+  fast64Valid: bool = false
+  fast128Valid: bool = false
+  invalidKeyRejected: bool = false
+}
+
+impl view HashKernelProof {
+  pub valid: bool =>
+    contentValid &&
+    actionSeparated &&
+    keyedValid &&
+    fast64Valid &&
+    fast128Valid &&
+    invalidKeyRejected
+}
+
+pub hashKernelProof() -> HashKernelProof {
+  let content = Hasher.content()
+  match content.write("Quantum") {
+    Ok(value) => {}
+    Err(error) => return HashKernelProof()
+  }
+  match content.write("Lang") {
+    Ok(value) => {}
+    Err(error) => return HashKernelProof()
+  }
+
+  let action = Hasher.action()
+  match action.write("QuantumLang") {
+    Ok(value) => {}
+    Err(error) => return HashKernelProof()
+  }
+
+  let fast64 = Hasher.fast64(HashSeed { value: 42 })
+  match fast64.write("QuantumLang") {
+    Ok(value) => {}
+    Err(error) => return HashKernelProof()
+  }
+
+  let fast128 = Hasher.fast128(HashSeed { value: 42 })
+  match fast128.write("QuantumLang") {
+    Ok(value) => {}
+    Err(error) => return HashKernelProof()
+  }
+
+  let keyBytes: bytes = b"0123456789abcdef0123456789abcdef"
+  let keyResult = HashKey.fromBytes(keyBytes)
+  let invalidKeyResult = HashKey.fromBytes(b"short")
+
+  match keyResult {
+    Ok(key) => {
+      let security = Hasher.security(key)
+      match security.write("QuantumLang") {
+        Ok(value) => {}
+        Err(error) => return HashKernelProof()
+      }
+      let contentResult = content.finish256()
+      let actionResult = action.finish256()
+      let securityResult = security.finish256()
+      let fast64Result = fast64.finish64()
+      let fast128Result = fast128.finish128()
+      let actionSeparated = match contentResult {
+        Ok(contentHash) => match actionResult {
+          Ok(actionHash) => contentHash.same(actionHash) == false
+          Err(error) => false
+        }
+        Err(error) => false
+      }
+      let invalidKeyRejected = match invalidKeyResult {
+        Ok(value) => false
+        Err(error) => true
+      }
+
+      return HashKernelProof {
+        contentValid: match contentResult {
+          Ok(value) => value.valid
+          Err(error) => false
+        }
+        actionSeparated
+        keyedValid: match securityResult {
+          Ok(value) => value.valid
+          Err(error) => false
+        }
+        fast64Valid: match fast64Result {
+          Ok(value) => value != 0
+          Err(error) => false
+        }
+        fast128Valid: match fast128Result {
+          Ok(value) => value.valid
+          Err(error) => false
+        }
+        invalidKeyRejected
+      }
+    }
+    Err(error) => return HashKernelProof()
+  }
+}

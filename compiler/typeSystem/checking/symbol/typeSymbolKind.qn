@@ -1,0 +1,16 @@
+pub enum TypeSymbolKind {
+  Package
+  Module
+  Type
+  Enum
+  Impl
+  View
+  Role
+  Function
+  Context
+  Extract
+  Extend
+  Value
+  Import
+  Unknown
+}

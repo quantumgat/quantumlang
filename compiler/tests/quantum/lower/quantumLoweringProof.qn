@@ -1,0 +1,53 @@
+import compiler::quantum::{*}
+pub QuantumLoweringProof {
+  qmirCarriesSemanticCounts: bool
+  qtirCarriesTargetSchedule: bool
+  astLoweringDeterministic: bool
+  hirLoweringDeterministic: bool
+  mirLoweringBackendReady: bool
+  valid: bool
+}
+
+pub quantumLoweringProof() -> QuantumLoweringProof {
+  let qmirProduct = Qmir(6, 3, 2, 1)
+  let qtirProduct = Qtir(6, "simulator", "bounded-qloop", 8)
+  let astLowering = QuantumAstLowering(6, qtirProduct)
+  let hirLowering = QuantumHirLowering(6, qmirProduct)
+  let mirLowering = QuantumMirLowering(6, qmirProduct, qtirProduct)
+
+  let qmirCarriesSemanticCounts = qmirProduct.nodeCount == 6 &&
+    qmirProduct.operationCount == 3 &&
+    qmirProduct.resourceCount == 2 &&
+    qmirProduct.effectCount == 1 &&
+    qmirProduct.deterministic
+
+  let qtirCarriesTargetSchedule = qtirProduct.targetName == "simulator" &&
+    qtirProduct.profileName == "bounded-qloop" &&
+    qtirProduct.scheduleSteps == 8 &&
+    qtirProduct.deterministic
+
+  let astLoweringDeterministic = astLowering.lowered == 6 &&
+    astLowering.deterministic
+
+  let hirLoweringDeterministic = hirLowering.lowered == 6 &&
+    hirLowering.deterministic
+
+  let mirLoweringBackendReady = mirLowering.backendReady &&
+    mirLowering.qmirProduct.operationCount == 3 &&
+    mirLowering.qtirProduct.scheduleSteps == 8
+
+  let valid = qmirCarriesSemanticCounts &&
+    qtirCarriesTargetSchedule &&
+    astLoweringDeterministic &&
+    hirLoweringDeterministic &&
+    mirLoweringBackendReady
+
+  return QuantumLoweringProof {
+    qmirCarriesSemanticCounts: qmirCarriesSemanticCounts,
+    qtirCarriesTargetSchedule: qtirCarriesTargetSchedule,
+    astLoweringDeterministic: astLoweringDeterministic,
+    hirLoweringDeterministic: hirLoweringDeterministic,
+    mirLoweringBackendReady: mirLoweringBackendReady,
+    valid: valid,
+  }
+}

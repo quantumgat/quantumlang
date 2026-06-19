@@ -1,0 +1,18 @@
+pub ApiSurface {
+  symbolCount: i64
+  moduleCount: i64
+  importRoot: string
+  stableHash: string
+}
+
+impl ApiSurface {
+  pub ApiSurface(symbolCount: i64, moduleCount: i64, importRoot: string, stableHash: string) =
+    This { symbolCount, moduleCount, importRoot, stableHash }
+}
+
+impl view ApiSurface {
+  pub hasSymbols => symbolCount > 0
+  pub hasModules => moduleCount > 0
+  pub stable => stableHash != ""
+  pub valid => symbolCount >= 0 && moduleCount >= 0 && importRoot != "" && stable
+}

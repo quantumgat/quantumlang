@@ -1,0 +1,95 @@
+import core::{FileId}
+import host::{CompilerIo, CompilerProgress}
+import syntax::{PackageAstProduct, PackageLexProduct, SourceLexer, SourceParser}
+
+pub RealFrontend {
+  target: string
+  lexed: PackageLexProduct = {}
+  parsed: PackageAstProduct = {}
+  sourceCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl RealFrontend {
+  pub RealFrontend(target: string) -> This {
+    let io = CompilerIo(target)
+    let lexed = PackageLexProduct()
+    let parsed = PackageAstProduct()
+    let count = io.sourceCount()
+    let total = count * 3
+    let reportThreshold = (total + 99) / 100
+    let index: i64 = 0
+    let progress = CompilerProgress()
+
+    while index < count {
+      let path = io.sourcePathAt(index)
+      let text = io.readText(path)
+      let completedBase = index * 3
+      if completedBase + 1 >= reportThreshold {
+        progress.advance(
+          "Frontend",
+          completedBase + 1,
+          total,
+          path,
+          lexed.diagnosticCount + parsed.diagnosticCount,
+          lexed.tokenCount,
+          0,
+          0
+        )
+      }
+      let moduleHash = io.sourceModuleHashAt(index)
+      let fileId = FileId(1, moduleHash, io.sourceFingerprintAt(index))
+      let lexProduct = SourceLexer(fileId, text).lex()
+      if completedBase + 2 >= reportThreshold {
+        progress.advance(
+          "Frontend",
+          completedBase + 2,
+          total,
+          path,
+          lexed.diagnosticCount + lexProduct.diagnosticCount + parsed.diagnosticCount,
+          lexed.tokenCount + lexProduct.tokenCount,
+          0,
+          0
+        )
+      }
+      let astProduct = SourceParser(lexProduct, path).parse()
+
+      parsed.addFile(astProduct)
+      lexed.addFile(lexProduct)
+      if completedBase + 3 >= reportThreshold {
+        progress.advance(
+          "Frontend",
+          completedBase + 3,
+          total,
+          path,
+          lexed.diagnosticCount + parsed.diagnosticCount,
+          lexed.tokenCount,
+          0,
+          0
+        )
+      }
+      index = index + 1
+    }
+
+    return This {
+      target
+      lexed
+      parsed
+      sourceCount: count
+    }
+  }
+}
+
+impl view RealFrontend {
+  pub sourcesAligned: bool =>
+    sourceCount == lexed.fileCount &&
+    lexed.fileCount == parsed.fileCount
+
+  pub valid: bool =>
+    target != "" &&
+    sourceCount > 0 &&
+    sourcesAligned &&
+    lexed.valid &&
+    parsed.valid &&
+    deterministic
+}

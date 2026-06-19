@@ -1,0 +1,71 @@
+import interface::{QcapHandle, QcapLoadMode, QcapProduct, QcapSection, QcapWriter}
+
+pub QcapEmitProof {
+  productStable: bool
+  sectionsPresent: bool
+  writerDeterministic: bool
+  handleMemoryMapped: bool
+  countsMatchHandle: bool
+  valid: bool
+}
+
+pub qcapEmitProof() -> QcapEmitProof {
+  let product = QcapProduct("qtlc1", "capsules/qtlc.qcap", 11, 22, 3, 12, 18, 4, 5)
+  let apiSection = QcapSection("api", product.symbolCount, 0, 128)
+  let typeSection = QcapSection("types", product.typeFactCount, 128, 256)
+  let abiSection = QcapSection("abi", product.abiFactCount, 384, 96)
+  let writer = QcapWriter(1, product.capsulePath)
+  let handle = QcapHandle.init(
+    product.packageName,
+    product.capsulePath,
+    QcapLoadMode.MemoryMapped,
+    product.contentHashHigh,
+    product.contentHashLow,
+    product.moduleCount,
+    product.symbolCount,
+    product.typeFactCount,
+    product.genericFactCount,
+    product.abiFactCount,
+    true
+  )
+
+  let productStable = product.valid &&
+    product.deterministic &&
+    product.capsulePath == "capsules/qtlc.qcap"
+
+  let sectionsPresent = apiSection.valid &&
+    typeSection.valid &&
+    abiSection.valid &&
+    apiSection.name == "api" &&
+    typeSection.name == "types" &&
+    abiSection.name == "abi"
+
+  let writerDeterministic = writer.valid &&
+    writer.deterministic &&
+    writer.capsulePath == product.capsulePath
+
+  let handleMemoryMapped = handle.valid &&
+    handle.loadMode == QcapLoadMode.MemoryMapped &&
+    handle.capsulePath == product.capsulePath
+
+  let countsMatchHandle = handle.moduleCount == product.moduleCount &&
+    handle.symbolCount == product.symbolCount &&
+    handle.typeFactCount == product.typeFactCount &&
+    handle.genericFactCount == product.genericFactCount &&
+    handle.abiFactCount == product.abiFactCount
+
+  let valid = productStable &&
+    sectionsPresent &&
+    writerDeterministic &&
+    handleMemoryMapped &&
+    countsMatchHandle
+
+  return QcapEmitProof {
+    productStable: productStable,
+    sectionsPresent: sectionsPresent,
+    writerDeterministic: writerDeterministic,
+    handleMemoryMapped: handleMemoryMapped,
+    countsMatchHandle: countsMatchHandle,
+    valid: valid,
+  }
+}

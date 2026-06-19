@@ -1,0 +1,12 @@
+pub enum LoopSyntaxKind {
+  Loop
+  While
+  WhileLet
+  ForIn
+  ForRange
+  Break
+  Continue
+  LabeledBreak
+  LabeledContinue
+  Unknown
+}

@@ -1,0 +1,63 @@
+import diagnostics::{*}
+pub DiagnosticModelProof {
+  codeHasCategory: bool
+  labelCarriesSpan: bool
+  diagnosticHasPrimaryLabel: bool
+  bagOrderDeterministic: bool
+  reporterColorPolicy: bool
+  valid: bool
+}
+
+pub diagnosticModelProof() -> DiagnosticModelProof {
+  let code = DiagnosticCode("QTLIT0001", "literal", 1)
+  let label = DiagnosticLabel.primary(7, 2, 6, "none requires optional target")
+  let diagnostic = Diagnostic(code, label, "none requires T? target type", DiagnosticSeverity.Error)
+  let bag = DiagnosticBag(1, 1, 0)
+  let reporter = DiagnosticReporter(1, DiagnosticColor.autoColor(), true)
+  let policy = DiagnosticPolicy()
+
+  let codeHasCategory = diagnostic.code.literal &&
+    diagnostic.code.numeric == 1 &&
+    diagnostic.code.valid &&
+    diagnostic.code.display == "QTLIT0001"
+
+  let labelCarriesSpan = diagnostic.primaryLabel.spanKey == "7:2:6" &&
+    diagnostic.primaryLabel.spanLength == 4 &&
+    diagnostic.primaryLabel.primaryLabel &&
+    diagnostic.primaryLabel.valid
+
+  let diagnosticHasPrimaryLabel = diagnostic.message == "none requires T? target type" &&
+    diagnostic.error &&
+    diagnostic.blocking &&
+    diagnostic.renderable
+
+  let bagOrderDeterministic = bag.deterministicOrder &&
+    bag.errorCount == 1 &&
+    bag.warningCount == 0 &&
+    bag.failed &&
+    bag.valid
+
+  let reporterColorPolicy = reporter.color.enabled &&
+    reporter.color.autoDetect &&
+    reporter.color.machineReadableDisabled &&
+    reporter.failOnError &&
+    reporter.valid &&
+    policy.machineReadableNoColor
+
+  let valid = codeHasCategory &&
+    labelCarriesSpan &&
+    diagnosticHasPrimaryLabel &&
+    bagOrderDeterministic &&
+    reporterColorPolicy &&
+    diagnostic.valid &&
+    policy.usable
+
+  return DiagnosticModelProof {
+    codeHasCategory: codeHasCategory,
+    labelCarriesSpan: labelCarriesSpan,
+    diagnosticHasPrimaryLabel: diagnosticHasPrimaryLabel,
+    bagOrderDeterministic: bagOrderDeterministic,
+    reporterColorPolicy: reporterColorPolicy,
+    valid: valid,
+  }
+}

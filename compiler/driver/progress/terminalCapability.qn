@@ -1,0 +1,29 @@
+terminalProgressIsTty() -> bool
+terminalProgressSupportsColor() -> bool
+terminalProgressWidth() -> i64
+terminalProgressNoColor() -> bool
+
+pub TerminalCapability {
+  tty: bool = false
+  color: bool = false
+  width: i64 = 80
+  unicode: bool = true
+}
+
+extract TerminalCapability {
+  pub detect() =
+    This {
+      tty: terminalProgressIsTty()
+      color: terminalProgressSupportsColor() && !terminalProgressNoColor()
+      width: terminalProgressWidth()
+      unicode: true
+    }
+}
+
+impl view TerminalCapability {
+  pub animated: bool => tty
+
+  pub supportsColor: bool => color
+
+  pub valid: bool => width >= 0
+}

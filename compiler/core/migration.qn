@@ -1,0 +1,45 @@
+pub CoreMigrationStep {
+  order: i64
+  name: string
+  targetKind: CoreKind = Unknown
+  complete: bool = false
+}
+
+impl CoreMigrationStep {
+  pub CoreMigrationStep(order: i64, name: string, targetKind: CoreKind) =
+    This {
+      order
+      name
+      targetKind
+    }
+}
+
+impl view CoreMigrationStep {
+  pub pending => complete == false
+
+  pub ordered => order > 0
+
+  pub valid => ordered && name != "" && targetKind != CoreKind.Unknown
+}
+
+pub CoreMigrationPlan {
+  stepCount: i64
+  currentStep: CoreMigrationStep
+  deterministic: bool = true
+}
+
+impl CoreMigrationPlan {
+  pub CoreMigrationPlan(stepCount: i64, currentStep: CoreMigrationStep) =
+    This {
+      stepCount
+      currentStep
+    }
+}
+
+impl view CoreMigrationPlan {
+  pub started => stepCount > 0
+
+  pub currentValid => currentStep.valid
+
+  pub valid => deterministic && started && currentValid
+}

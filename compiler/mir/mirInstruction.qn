@@ -1,0 +1,26 @@
+pub MirInstruction {
+  id: i64
+  op: string
+  resultValueId: i64
+  sideEffect: bool
+  diagnosticCode: string = ""
+}
+
+impl MirInstruction {
+  pub MirInstruction(id: i64, op: string, resultValueId: i64, sideEffect: bool) =
+    This {
+      id
+      op
+      resultValueId
+      sideEffect
+    }
+}
+
+impl view MirInstruction {
+  pub valid => diagnosticCode == "" && validShape
+  pub hasSideEffect => sideEffect
+  pub pure => sideEffect == false
+  pub validShape => id >= 0 && op != "" && resultValueId >= 0
+  pub hasResult => resultValueId >= 0
+  pub lowerable => valid
+}

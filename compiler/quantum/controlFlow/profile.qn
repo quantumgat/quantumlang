@@ -1,0 +1,28 @@
+pub QuantumControlFlowProfile {
+  name: string
+  bounded: bool
+  measurementAllowed: bool
+  targetSupported: bool
+  valid: bool
+}
+
+impl QuantumControlFlowProfile {
+  pub QuantumControlFlowProfile(
+    name: string,
+    bounded: bool,
+    measurementAllowed: bool,
+    targetSupported: bool
+  ) =
+    This {
+      name
+      bounded
+      measurementAllowed
+      targetSupported
+      valid: name != "" && targetSupported
+    }
+}
+
+impl view QuantumControlFlowProfile {
+  pub supported => targetSupported
+  pub boundedProfile => bounded
+}

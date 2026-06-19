@@ -1,0 +1,29 @@
+pub QuantumRelease {
+  emitsRuntimeRelease: bool
+  resetVerified: bool
+  diagnosticCode: string
+  valid: bool
+}
+
+impl QuantumRelease {
+  pub QuantumRelease(emitsRuntimeRelease: bool, resetVerified: bool) =
+    if emitsRuntimeRelease && !resetVerified {
+      This {
+        emitsRuntimeRelease
+        resetVerified
+        diagnosticCode: "QTQUANTUM0005"
+        valid: false
+      }
+    } else {
+      This {
+        emitsRuntimeRelease
+        resetVerified
+        diagnosticCode: ""
+        valid: true
+      }
+    }
+}
+
+impl view QuantumRelease {
+  pub safe => valid && resetVerified
+}

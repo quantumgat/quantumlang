@@ -1,0 +1,134 @@
+import core::{DiagnosticId, NodeId, ScopeId, SymbolId, TypeId, Vec}
+import diagnostics::{DiagnosticCode}
+import source::{SourceSpan}
+
+pub enum TypeDiagnosticSeverity {
+  Warning
+  Error
+}
+
+pub TypeDiagnostic {
+  id: DiagnosticId = {}
+  nodeId: NodeId = {}
+  symbolId: SymbolId = {}
+  scopeId: ScopeId = {}
+  typeId: TypeId = {}
+  code: DiagnosticCode = {}
+  message: string = ""
+  span: SourceSpan = {}
+  severity: TypeDiagnosticSeverity = TypeDiagnosticSeverity.Error
+}
+
+impl view TypeDiagnostic {
+  pub error: bool => severity == TypeDiagnosticSeverity.Error
+
+  pub valid: bool =>
+    id.valid &&
+    (nodeId.valid || symbolId.valid || scopeId.valid) &&
+    code.valid &&
+    message != "" &&
+    span.valid
+}
+
+pub TypeDiagnosticSet {
+  count: i64
+  errorCount: i64
+  warningCount: i64 = 0
+  values: Vec<TypeDiagnostic> = []
+  deterministicOrder: bool = true
+}
+
+impl TypeDiagnosticSet {
+  pub clean() =
+    This { count: 0, errorCount: 0 }
+
+  pub fromTypedNodes(nodes: Vec<TypedNodeFact>) -> This {
+    let set = This.clean()
+    let row: i64 = 0
+    while row < nodes.count {
+      let node = nodes[row]
+      if !node.valid {
+        set.values.push(TypeDiagnostic {
+          id: DiagnosticId(set.values.count + 1)
+          nodeId: node.nodeId
+          typeId: node.typeId
+          code: node.diagnostic.code
+          message: match node.diagnosticMessage == "" {
+            true => "unable to resolve a concrete type for AST node"
+            false => node.diagnosticMessage
+          }
+          span: node.span
+          severity: TypeDiagnosticSeverity.Error
+        })
+      }
+      row = row + 1
+    }
+    set.count = set.values.count
+    set.errorCount = set.values.count
+    return set
+  }
+
+  pub fromEnvironment(
+    nodes: Vec<TypedNodeFact>,
+    symbols: TypeSymbolTable,
+    scopes: TypeScopeTable
+  ) -> This {
+    let set = This.fromTypedNodes(nodes)
+
+    let symbolRow: i64 = 0
+    while symbolRow < symbols.issueCount {
+      let issue = symbols.issueAt(symbolRow)
+      set.values.push(TypeDiagnostic {
+        id: DiagnosticId(set.values.count + 1)
+        symbolId: issue.symbolId
+        code: issue.diagnostic.code
+        message: issue.message
+        span: issue.span
+        severity: TypeDiagnosticSeverity.Error
+      })
+      symbolRow = symbolRow + 1
+    }
+
+    let scopeRow: i64 = 0
+    while scopeRow < scopes.issueCount {
+      let issue = scopes.issueAt(scopeRow)
+      set.values.push(TypeDiagnostic {
+        id: DiagnosticId(set.values.count + 1)
+        scopeId: issue.scope
+        code: issue.diagnostic.code
+        message: issue.message
+        span: issue.span
+        severity: TypeDiagnosticSeverity.Error
+      })
+      scopeRow = scopeRow + 1
+    }
+
+    set.count = set.values.count
+    set.errorCount = set.values.count
+    return set
+  }
+}
+
+impl view TypeDiagnosticSet {
+  pub clean => errorCount == 0
+
+  pub failed => errorCount > 0
+
+  pub hasWarnings => warningCount > 0
+
+  pub hasDiagnostics => count > 0
+
+  pub firstMessage: string => match values.count > 0 {
+    true => values[0].message
+    false => ""
+  }
+
+  pub countsConsistent =>
+    count >= errorCount + warningCount &&
+    values.count == count &&
+    count >= 0 &&
+    errorCount >= 0 &&
+    warningCount >= 0
+
+  pub valid => deterministicOrder && countsConsistent
+}

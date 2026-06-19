@@ -1,0 +1,146 @@
+pub PackageSourceScan {
+  target: string
+  manifestPath: string
+  sourceRoot: string
+  sourceFileCount: i64
+  sourceByteCount: i64
+  moduleBoundaryCount: i64
+  manifestFound: bool
+  sourceRootFound: bool
+  appMainFound: bool
+  sourceFiles: SourceFileTable = {}
+}
+
+impl PackageSourceScan {
+  pub PackageSourceScan(
+    target: string,
+    manifestPath: string,
+    sourceRoot: string,
+    sourceFileCount: i64,
+    sourceByteCount: i64,
+    moduleBoundaryCount: i64,
+    manifestFound: bool,
+    sourceRootFound: bool,
+    appMainFound: bool
+  ) =
+    This {
+      target,
+      manifestPath,
+      sourceRoot,
+      sourceFileCount,
+      sourceByteCount,
+      moduleBoundaryCount,
+      manifestFound,
+      sourceRootFound,
+      appMainFound,
+    }
+
+  pub host(target: string) =
+    This(
+      target,
+      hostPackageManifestPath(target),
+      hostPackageSourceRootPath(target),
+      hostPackageFiles(target),
+      hostPackageBytes(target),
+      hostPackageBoundaries(target),
+      hostPackageManifest(target),
+      hostPackageSourceRoot(target),
+      hostPackageAppMain(target)
+    )
+
+  pub PackageSourceScan(target: string) -> This {
+    let sourceFiles = SourceFileTable(target)
+    let runtime = RuntimeSourceScan(target)
+
+    This {
+      target
+      manifestPath: "{target}/quantum.toml"
+      sourceRoot: target
+      sourceFiles
+      sourceFileCount: runtime.fileCount
+      sourceByteCount: runtime.byteCount
+      moduleBoundaryCount: runtime.moduleBoundaryCount
+      manifestFound: runtime.manifestFound
+      sourceRootFound: runtime.sourceRootFound
+      appMainFound: runtime.appMainFound
+    }
+  }
+}
+
+impl view PackageSourceScan {
+  pub hasFiles => sourceFileCount >= 0
+
+  pub hasBytes => sourceByteCount >= 0
+
+  pub sourceRowsOwned: bool =>
+    sourceFiles.valid &&
+    sourceFiles.count == sourceFileCount &&
+    sourceFiles.totalBytes == sourceByteCount
+
+  pub valid: bool => hasFiles && hasBytes && sourceRowsOwned && manifestFound && sourceRootFound && appMainFound
+
+  pub moduleBoundariesFound => moduleBoundaryCount != 0
+}
+
+extract PackageSourceScan {
+  pub fromHost(target: string) =
+    This(
+      target,
+      hostPackageManifestPath(target),
+      hostPackageSourceRootPath(target),
+      hostPackageFiles(target),
+      hostPackageBytes(target),
+      hostPackageBoundaries(target),
+      hostPackageManifest(target),
+      hostPackageSourceRoot(target),
+      hostPackageAppMain(target)
+    )
+
+  pub fromRuntime(target: string) =
+    PackageSourceScan(target)
+}
+
+pub packageSourceScanHost(target: string) -> PackageSourceScan =
+  PackageSourceScan(
+    target,
+    hostPackageManifestPath(target),
+    hostPackageSourceRootPath(target),
+    hostPackageFiles(target),
+    hostPackageBytes(target),
+    hostPackageBoundaries(target),
+    hostPackageManifest(target),
+    hostPackageSourceRoot(target),
+    hostPackageAppMain(target)
+  )
+
+pub hostPackageManifestPath(target: string) -> string {
+  return ""
+}
+
+pub hostPackageSourceRootPath(target: string) -> string {
+  return ""
+}
+
+pub hostPackageFiles(target: string) -> i64 {
+  return 0
+}
+
+pub hostPackageBytes(target: string) -> i64 {
+  return 0
+}
+
+pub hostPackageBoundaries(target: string) -> i64 {
+  return 0
+}
+
+pub hostPackageManifest(target: string) -> bool {
+  return false
+}
+
+pub hostPackageSourceRoot(target: string) -> bool {
+  return false
+}
+
+pub hostPackageAppMain(target: string) -> bool {
+  return false
+}

@@ -1,0 +1,68 @@
+import query::{SemanticIdContract, StableBodyId, StableFileId, StableGenericInstanceId, StableId, StableItemId, StableLinkTargetId, StableModuleId, StableNodeId, StableObjectUnitId, StablePackageId, StableSymbolId, StableTypeId}
+
+pub StableSemanticIdProof {
+  completeKinds: bool
+  insertionStable: bool
+  kindSeparated: bool
+  frontendTargetIndependent: bool
+  disambiguationLocal: bool
+  valid: bool
+}
+
+pub stableSemanticIdProof() -> StableSemanticIdProof {
+  let package = StablePackageId(101)
+  let module = StableModuleId(101, 202)
+  let file = StableFileId(101, 202, 303)
+  let item = StableItemId(101, 202, 404, 0)
+  let sameItem = StableItemId(101, 202, 404, 0)
+  let overload = StableItemId(101, 202, 404, 1)
+  let body = StableBodyId(101, 202, 505, 0)
+  let node = StableNodeId(101, 202, 606, 0)
+  let symbol = StableSymbolId(101, 202, 707, 0)
+  let typeId = StableTypeId(101, 202, 808, 0)
+  let generic = StableGenericInstanceId(101, 202, 909, 0)
+  let objectUnit = StableObjectUnitId(101, 202, 1001, 0)
+  let linkTarget = StableLinkTargetId(101, 1101, 0)
+  let contract = SemanticIdContract()
+
+  let completeKinds =
+    package.valid &&
+    module.valid &&
+    file.valid &&
+    item.valid &&
+    body.valid &&
+    node.valid &&
+    symbol.valid &&
+    typeId.valid &&
+    generic.valid &&
+    objectUnit.valid &&
+    linkTarget.valid
+  let insertionStable = item.id.stableKey == sameItem.id.stableKey
+  let kindSeparated = item.id.stableKey != body.id.stableKey
+  let frontendTargetIndependent =
+    item.id.frontendIdentity &&
+    item.id.backendIdentity == false &&
+    contract.targetExcludedFromFrontend &&
+    contract.profileExcludedFromFrontend
+  let disambiguationLocal =
+    item.id.packageHash == overload.id.packageHash &&
+    item.id.moduleHash == overload.id.moduleHash &&
+    item.id.localHash == overload.id.localHash &&
+    item.id.disambiguator != overload.id.disambiguator
+  let valid =
+    contract.valid &&
+    completeKinds &&
+    insertionStable &&
+    kindSeparated &&
+    frontendTargetIndependent &&
+    disambiguationLocal
+
+  return StableSemanticIdProof {
+    completeKinds
+    insertionStable
+    kindSeparated
+    frontendTargetIndependent
+    disambiguationLocal
+    valid
+  }
+}

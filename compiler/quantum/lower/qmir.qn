@@ -1,0 +1,23 @@
+pub Qmir {
+  nodeCount: i64
+  operationCount: i64
+  resourceCount: i64
+  effectCount: i64
+  deterministic: bool
+}
+
+impl Qmir {
+  pub Qmir(nodeCount: i64, operationCount: i64, resourceCount: i64, effectCount: i64) =
+    This {
+      nodeCount
+      operationCount
+      resourceCount
+      effectCount
+      deterministic: true
+    }
+}
+
+impl view Qmir {
+  pub hasOperations => operationCount > 0
+  pub resourceTracked => resourceCount >= 0
+}

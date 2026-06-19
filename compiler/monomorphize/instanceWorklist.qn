@@ -1,0 +1,28 @@
+import core::{Vec}
+
+pub InstanceWorklist {
+  pending: Vec<InstanceKey> = []
+  completed: Vec<InstanceKey> = []
+  deterministic: bool = true
+}
+
+impl InstanceWorklist {
+  pub InstanceWorklist(pending: Vec<InstanceKey>) =
+    This { pending }
+
+  pub markCompleted(key: InstanceKey) -> This {
+    let next = this
+    next.completed.push(key)
+    return next
+  }
+}
+
+impl view InstanceWorklist {
+  pub pendingCount: i64 => pending.count
+  pub completedCount: i64 => completed.count
+
+  pub valid: bool =>
+    pending.valid &&
+    completed.valid &&
+    deterministic
+}

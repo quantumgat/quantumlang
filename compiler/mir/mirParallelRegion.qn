@@ -1,0 +1,135 @@
+import hir::{HirParallelRegion, HirParallelLoopKind, HirParallelCaptureKind, HirParallelReductionKind}
+
+pub enum MirParallelRegionKind {
+  Partition
+  Body
+  Join
+}
+
+pub enum MirCommunicationEdgeKind {
+  Channel
+  Stream
+  Sink
+}
+
+pub MirCommunicationEdge {
+  edgeId: i64
+  sourceRegionId: i64
+  targetRegionId: i64
+  kind: MirCommunicationEdgeKind
+  backpressured: bool = true
+  cancellable: bool = true
+}
+
+impl view MirCommunicationEdge {
+  pub stable: bool =>
+    edgeId >= 0 &&
+    sourceRegionId >= 0 &&
+    targetRegionId >= 0
+
+  pub valid: bool => stable && backpressured && cancellable
+}
+
+pub SchedulerRequirement {
+  partitionCount: i64
+  deterministic: bool
+  implicitJoin: bool
+  cancellable: bool
+  backpressured: bool
+  shardLocalMutation: bool
+  orderedReduction: bool
+}
+
+impl view SchedulerRequirement {
+  pub targetNeutral: bool => true
+
+  pub valid: bool =>
+    partitionCount >= 0 &&
+    implicitJoin &&
+    cancellable &&
+    backpressured
+}
+
+pub MirParallelRegion {
+  regionId: i64
+  bodyId: i64
+  partitionId: i64
+  joinId: i64
+  partitionRegion: MirParallelRegionKind
+  bodyRegion: MirParallelRegionKind
+  joinRegion: MirParallelRegionKind
+  inputEdge: MirCommunicationEdge
+  outputEdge: MirCommunicationEdge
+  reductionEdge: MirCommunicationEdge
+  scheduler: SchedulerRequirement
+  diagnosticCode: string = ""
+}
+
+impl MirParallelRegion {
+  pub fromHir(hir: HirParallelRegion) -> This {
+    let partitionCount = match hir.kind {
+      HirParallelLoopKind.ParFor => 0
+      HirParallelLoopKind.ShardFor => hir.partitionCount
+    }
+
+    return This {
+      regionId: hir.regionId
+      bodyId: hir.bodyId
+      partitionId: hir.partitionId
+      joinId: hir.joinId
+      partitionRegion: MirParallelRegionKind.Partition
+      bodyRegion: MirParallelRegionKind.Body
+      joinRegion: MirParallelRegionKind.Join
+      inputEdge: MirCommunicationEdge {
+        edgeId: hir.partitionId
+        sourceRegionId: hir.partitionId
+        targetRegionId: hir.bodyId
+        kind: MirCommunicationEdgeKind.Channel
+      }
+      outputEdge: MirCommunicationEdge {
+        edgeId: hir.bodyId
+        sourceRegionId: hir.bodyId
+        targetRegionId: hir.joinId
+        kind: MirCommunicationEdgeKind.Stream
+      }
+      reductionEdge: MirCommunicationEdge {
+        edgeId: hir.joinId
+        sourceRegionId: hir.bodyId
+        targetRegionId: hir.joinId
+        kind: MirCommunicationEdgeKind.Sink
+      }
+      scheduler: SchedulerRequirement {
+        partitionCount
+        deterministic: hir.deterministic
+        implicitJoin: hir.implicitJoin
+        cancellable: hir.cancellable
+        backpressured: hir.backpressured
+        shardLocalMutation: hir.captureKind == HirParallelCaptureKind.ShardLocal
+        orderedReduction: hir.reductionKind == HirParallelReductionKind.Ordered
+      }
+    }
+  }
+}
+
+impl view MirParallelRegion {
+  pub communicationValid: bool =>
+    inputEdge.valid &&
+    outputEdge.valid &&
+    reductionEdge.valid
+
+  pub stableIds: bool =>
+    regionId >= 0 &&
+    bodyId >= 0 &&
+    partitionId >= 0 &&
+    joinId >= 0
+
+  pub incrementalKey: string =>
+    "mir.parallel.{regionId}.{bodyId}.{partitionId}.{joinId}"
+
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    stableIds &&
+    communicationValid &&
+    scheduler.valid &&
+    scheduler.targetNeutral
+}

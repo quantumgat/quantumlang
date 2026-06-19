@@ -1,0 +1,28 @@
+pub enum HashWidth {
+  Unknown
+  Bits32
+  Bits64
+  Bits128
+  Bits160
+  Bits224
+  Bits256
+  Bits384
+  Bits512
+}
+
+impl view HashWidth {
+  pub bitCount: usize => match true {
+    this == HashWidth.Bits32 => 32
+    this == HashWidth.Bits64 => 64
+    this == HashWidth.Bits128 => 128
+    this == HashWidth.Bits160 => 160
+    this == HashWidth.Bits224 => 224
+    this == HashWidth.Bits256 => 256
+    this == HashWidth.Bits384 => 384
+    this == HashWidth.Bits512 => 512
+    _ => 0
+  }
+
+  pub byteCount: usize => bitCount / 8
+  pub valid: bool => bitCount > 0
+}

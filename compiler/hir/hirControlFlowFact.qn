@@ -1,0 +1,57 @@
+pub HirControlFlowFact {
+  functionId: i64
+  hasIf: bool
+  hasLoop: bool
+  hasReturn: bool
+  hasRequire: bool
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl HirControlFlowFact {
+  pub HirControlFlowFact(functionId: i64, hasIf: bool, hasLoop: bool, hasReturn: bool, hasRequire: bool) =
+    This { functionId, hasIf, hasLoop, hasReturn, hasRequire }
+
+  pub linear(functionId: i64) =
+    This {
+      functionId
+      hasIf: false
+      hasLoop: false
+      hasReturn: false
+      hasRequire: false
+    }
+
+  pub structured(functionId: i64, hasIf: bool, hasLoop: bool) =
+    This {
+      functionId
+      hasIf
+      hasLoop
+      hasReturn: false
+      hasRequire: false
+    }
+
+  withReturn() =
+    this {
+      hasReturn: true
+    }
+
+  withRequire() =
+    this {
+      hasRequire: true
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QHIR0701"
+    }
+}
+
+impl view HirControlFlowFact {
+  pub valid => diagnosticCode == "" && functionId >= 0
+  pub structured => hasIf || hasLoop
+  pub linearFlow => structured == false
+  pub exits => hasReturn || hasRequire
+  pub needsExitAnalysis => exits == false
+  pub lowerable => valid && deterministic
+  pub debugName => "hir.controlFlow.{functionId}"
+}

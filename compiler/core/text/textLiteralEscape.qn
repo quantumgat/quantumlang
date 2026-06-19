@@ -1,0 +1,54 @@
+pub enum TextLiteralEscapeKind {
+  Backslash
+  DoubleQuote
+  SingleQuote
+  Newline
+  CarriageReturn
+  Tab
+  Null
+  Backspace
+  FormFeed
+  VerticalTab
+  Byte
+  UnicodeFixed
+  UnicodeScalar
+  OpenBrace
+  CloseBrace
+  Unknown
+}
+
+pub TextLiteralEscape {
+  spelling: string
+  kind: TextLiteralEscapeKind = TextLiteralEscapeKind.Unknown
+  textAllowed: bool = false
+  bytesAllowed: bool = false
+  fixedWidth: bool = true
+}
+
+impl TextLiteralEscape {
+  pub fromSpelling(spelling: string) -> This {
+    if spelling == "\\\\" { return This { spelling, kind: TextLiteralEscapeKind.Backslash, textAllowed: true, bytesAllowed: true } }
+    if spelling == "\\\"" { return This { spelling, kind: TextLiteralEscapeKind.DoubleQuote, textAllowed: true, bytesAllowed: true } }
+    if spelling == "\\'" { return This { spelling, kind: TextLiteralEscapeKind.SingleQuote, textAllowed: true, bytesAllowed: true } }
+    if spelling == "\\n" { return This { spelling, kind: TextLiteralEscapeKind.Newline, textAllowed: true, bytesAllowed: true } }
+    if spelling == "\\r" { return This { spelling, kind: TextLiteralEscapeKind.CarriageReturn, textAllowed: true, bytesAllowed: true } }
+    if spelling == "\\t" { return This { spelling, kind: TextLiteralEscapeKind.Tab, textAllowed: true, bytesAllowed: true } }
+    if spelling == "\\0" { return This { spelling, kind: TextLiteralEscapeKind.Null, textAllowed: true, bytesAllowed: true } }
+    if spelling == "\\b" { return This { spelling, kind: TextLiteralEscapeKind.Backspace, textAllowed: true, bytesAllowed: true } }
+    if spelling == "\\f" { return This { spelling, kind: TextLiteralEscapeKind.FormFeed, textAllowed: true, bytesAllowed: true } }
+    if spelling == "\\v" { return This { spelling, kind: TextLiteralEscapeKind.VerticalTab, textAllowed: true, bytesAllowed: true } }
+    if spelling == "\\xNN" { return This { spelling, kind: TextLiteralEscapeKind.Byte, textAllowed: true, bytesAllowed: true } }
+    if spelling == "\\uNNNN" { return This { spelling, kind: TextLiteralEscapeKind.UnicodeFixed, textAllowed: true } }
+    if spelling == "\\u{{...}}" { return This { spelling, kind: TextLiteralEscapeKind.UnicodeScalar, textAllowed: true, fixedWidth: false } }
+    if spelling == "{{" { return This { spelling, kind: TextLiteralEscapeKind.OpenBrace, textAllowed: true, bytesAllowed: true } }
+    if spelling == "}}" { return This { spelling, kind: TextLiteralEscapeKind.CloseBrace, textAllowed: true, bytesAllowed: true } }
+    return This { spelling }
+  }
+}
+
+impl view TextLiteralEscape {
+  pub valid: bool => kind != TextLiteralEscapeKind.Unknown
+  pub interpolationEscape: bool =>
+    kind == TextLiteralEscapeKind.OpenBrace ||
+    kind == TextLiteralEscapeKind.CloseBrace
+}

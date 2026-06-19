@@ -1,0 +1,39 @@
+pub event<T> {
+  policy: CommunicationPolicy = {}
+  state: CommunicationState = CommunicationState.Open
+  listenerCount: i64 = 0
+  emittedCount: i64 = 0
+}
+
+impl event<T> {
+  pub subscribe(listener: (T) -> void) -> Result<CommunicationToken, CommunicationError>
+
+  pub unsubscribe(token: CommunicationToken) -> Result<void, CommunicationError>
+
+  pub emit(value: T) -> Result<void, CommunicationError>
+
+  pub close() -> Result<void, CommunicationError>
+
+  pub cancel() -> Result<void, CommunicationError>
+}
+
+impl view event<T> {
+  pub empty: bool => listenerCount == 0
+
+  pub broadcast: bool => true
+
+  pub returnsValue: bool => false
+
+  pub open: bool => state == CommunicationState.Open
+
+  pub terminal: bool =>
+    state == CommunicationState.Closed ||
+    state == CommunicationState.Cancelled ||
+    state == CommunicationState.Failed
+
+  pub valid: bool =>
+    policy.valid &&
+    listenerCount >= 0 &&
+    emittedCount >= 0 &&
+    (open || terminal)
+}

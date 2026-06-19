@@ -1,0 +1,38 @@
+pub typeAliasCount() -> usize {
+  return 4
+}
+
+pub canonicalTypeAliasName(name: string) -> string {
+  if name == "int" {
+    return "i64"
+  }
+  if name == "uint" {
+    return "u64"
+  }
+  if name == "matrix<2,2,f64>" {
+    return "matrix<2,f64>"
+  }
+  if name == "matrix<3,3,f64>" {
+    return "matrix<3,f64>"
+  }
+  return name
+}
+
+pub isTypeCompatibilityAlias(name: string) -> bool {
+  return name == "int" || name == "uint"
+}
+
+pub typeAliasFact(name: string) -> BuiltinTypeAlias {
+  if isTypeCompatibilityAlias(name) {
+    return BuiltinTypeAlias {
+      alias: name,
+      canonical: canonicalTypeAliasName(name),
+      legacy: true,
+    }
+  }
+  return BuiltinTypeAlias {
+    alias: "",
+    canonical: "",
+    legacy: false,
+  }
+}

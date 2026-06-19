@@ -1,0 +1,3 @@
+pub BuildPlan {
+  targetCount: i64
+}

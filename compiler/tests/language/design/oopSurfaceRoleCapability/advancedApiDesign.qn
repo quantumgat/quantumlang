@@ -1,0 +1,221 @@
+// design-only: advanced high-level API proof surface.
+//
+// This file intentionally uses target QuantumLang features that qtlc0 does not
+// fully compile yet. It is the specification for future proof fixtures, not a
+// build input today.
+
+pub role AsyncBodyExtractor<...Caps> {
+  bodyStream<T>() -> Result<BodyStream<T>, IntoHttpError>
+  chunk<T>() -> Result<BodyChunk<T>, IntoHttpError>
+  upload<T>() -> Result<Uploaded<T>, IntoHttpError>
+}
+
+pub role MutableHttpBuilder<T> {
+  withHeader(name: TextView, value: TextView) -> T
+  setTrace(trace: TraceId) -> T
+  consumeBody() -> Result<T, IntoHttpError>
+}
+
+pub role HttpMiddleware<T> {
+  before(ctx: T) -> Result<T, IntoHttpError>
+  after(ctx: T) -> Result<T, IntoHttpError>
+  around(ctx: T, next: Next<T>) -> Result<T, IntoHttpError>
+  onError(error: IntoHttpError) -> IntoHttpError
+}
+
+pub role HttpAssociatedSpec<T> {
+  type Body
+  type Error
+  const requiresAuth: bool
+
+  bodySpec() -> BodySpec<Body>
+}
+
+pub role HttpPackQueries<...Caps> {
+  packUnique() -> bool
+  capIndex<T>() -> i64
+  allHttpCapabilities() -> bool
+}
+
+pub role OverloadNamedExtractor<...Caps> {
+  query<T>(name: TextView = TextView("")) -> Result<T, IntoHttpError>
+  body<T>(limit: i64) -> Result<T, IntoHttpError>
+}
+
+pub HighLevelApiCapabilityProof {
+  moduleBoundaryDesignValid: bool = false
+  surfaceQualifiedSyntaxValid: bool = false
+  asyncExtractionDesignValid: bool = false
+  builderMutationDesignValid: bool = false
+  middlewarePipelineDesignValid: bool = false
+  roleObjectConversionDesignValid: bool = false
+  associatedRequirementDesignValid: bool = false
+  packQueryDesignValid: bool = false
+  overloadDefaultNamedArgDesignValid: bool = false
+}
+
+impl view HighLevelApiCapabilityProof {
+  pub valid: bool => {
+    moduleBoundaryDesignValid &&
+    surfaceQualifiedSyntaxValid &&
+    asyncExtractionDesignValid &&
+    builderMutationDesignValid &&
+    middlewarePipelineDesignValid &&
+    roleObjectConversionDesignValid &&
+    associatedRequirementDesignValid &&
+    packQueryDesignValid &&
+    overloadDefaultNamedArgDesignValid
+  }
+}
+
+impl HttpCtx<...Caps> :
+  pub MutableHttpBuilder<HttpCtx<...Caps>>
+{
+  pub withHeader(name: TextView, value: TextView) -> HttpCtx<...Caps> {
+    return HttpCtx<...Caps> {
+      request: this.request
+      slots: this.slots
+      trace: this.trace
+      headers: this.headers.add(Header(name, value))
+      bodyConsumed: this.bodyConsumed
+    }
+  }
+
+  pub setTrace(trace: TraceId) -> HttpCtx<...Caps> {
+    return HttpCtx<...Caps> {
+      request: this.request
+      slots: this.slots
+      trace
+      headers: this.headers
+      bodyConsumed: this.bodyConsumed
+    }
+  }
+
+  pub consumeBody() -> Result<HttpCtx<...Caps>, IntoHttpError> {
+    if this.bodyConsumed {
+      return Err(IntoHttpError.badRequest(TextView("body already consumed")))
+    }
+
+    return Ok(HttpCtx<...Caps> {
+      request: this.request
+      slots: this.slots
+      trace: this.trace
+      headers: this.headers
+      bodyConsumed: true
+    })
+  }
+}
+
+extend HttpCtx<...Caps> :
+  pub HttpMiddleware<HttpCtx<...Caps>>,
+  pub HttpAssociatedSpec<HttpCtx<...Caps>>,
+  pub HttpPackQueries<...Caps>
+{
+  type Body = CreateUserBody
+  type Error = IntoHttpError
+  const requiresAuth: bool = true
+
+  pub before(ctx: HttpCtx<...Caps>) -> Result<HttpCtx<...Caps>, IntoHttpError> {
+    if !ctx.request.valid {
+      return Err(IntoHttpError.badRequest(TextView("invalid request")))
+    }
+
+    return Ok(ctx)
+  }
+
+  pub after(ctx: HttpCtx<...Caps>) -> Result<HttpCtx<...Caps>, IntoHttpError> {
+    return Ok(ctx.withHeader(TextView("x-finished"), TextView("1")))
+  }
+
+  pub around(
+    ctx: HttpCtx<...Caps>,
+    next: Next<HttpCtx<...Caps>>
+  ) -> Result<HttpCtx<...Caps>, IntoHttpError> {
+    return before(ctx).andThen(ready => next.run(ready)).andThen(done => after(done))
+  }
+
+  pub onError(error: IntoHttpError) -> IntoHttpError {
+    return error
+  }
+
+  pub bodySpec() -> BodySpec<CreateUserBody> {
+    return BodySpec<CreateUserBody> {
+      limitBytes: 65536
+      streaming: true
+    }
+  }
+
+  pub packUnique() -> bool {
+    return Caps.unique
+  }
+
+  pub capIndex<T>() -> i64 {
+    return Caps.indexOf<T>()
+  }
+
+  pub allHttpCapabilities() -> bool {
+    return Caps.all<HttpCapability>()
+  }
+}
+
+pub highLevelApiCapabilityProof(
+  ctx: HttpCtx<AuthUser, Session<UserSession>, CsrfToken, JsonBody<CreateUserBody>>
+) -> Result<HighLevelApiCapabilityProof, IntoHttpError> {
+  let boundary = crossModuleSurfaceProof()
+  let traced = ctx.setTrace(TraceId { value: 99 })
+  let headed = traced.withHeader(TextView("x-trace"), TextView("99"))
+  let consumed = headed.consumeBody()?
+
+  let defaultQuery = consumed.query<CreateUserBody>()?
+  let namedQuery = consumed.query<CreateUserBody>(name: TextView("payload"))?
+  let limitedBody = consumed.body<CreateUserBody>(limit: 65536)?
+
+  let stream = consumed.bodyStream<CreateUserBody>()?
+  let chunk = consumed.chunk<CreateUserBody>()?
+  let upload = consumed.upload<CreateUserBody>()?
+
+  let authRole: Authenticated<HttpCtx<AuthUser, Session<UserSession>, CsrfToken, JsonBody<CreateUserBody>>> =
+    consumed
+  let piped = consumed.extend.around(consumed, Next<HttpCtx<AuthUser, Session<UserSession>, CsrfToken, JsonBody<CreateUserBody>>> {
+    value: consumed
+  })?
+
+  return Ok(HighLevelApiCapabilityProof {
+    moduleBoundaryDesignValid:
+      boundary.valid
+
+    surfaceQualifiedSyntaxValid:
+      consumed.impl.requestId().value == consumed.context.requestId().value &&
+      consumed.extract.requestId().value == consumed.impl.requestId().value &&
+      consumed.extend.packUnique()
+
+    asyncExtractionDesignValid:
+      stream.backpressureWindow > 0 &&
+      chunk.final &&
+      upload.byteCount >= 0
+
+    builderMutationDesignValid:
+      consumed.traceId.value == 99 &&
+      consumed.headerCount == 1 &&
+      consumed.consumed
+
+    middlewarePipelineDesignValid:
+      piped.headerCount >= consumed.headerCount
+
+    roleObjectConversionDesignValid:
+      authRole.user()?.id == consumed.extend.user()?.id
+
+    associatedRequirementDesignValid:
+      consumed.extend.requiresAuth &&
+      consumed.extend.bodySpec().limitBytes == 65536
+
+    packQueryDesignValid:
+      consumed.extend.packUnique() &&
+      consumed.extend.capIndex<AuthUser>() >= 0 &&
+      consumed.extend.allHttpCapabilities()
+
+    overloadDefaultNamedArgDesignValid:
+      defaultQuery.name == namedQuery.name &&
+      limitedBody.name == defaultQuery.name
+  })
+}

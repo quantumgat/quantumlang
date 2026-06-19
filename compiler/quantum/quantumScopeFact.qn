@@ -1,0 +1,50 @@
+pub QuantumScopeFact {
+  kind: QuantumScopeKind
+  name: string
+  qtlc1Required: bool
+  normalControlFlow: bool
+  diagnosticCode: string
+  valid: bool
+}
+
+impl QuantumScopeFact {
+  pub QuantumScopeFact(kind: QuantumScopeKind, name: string) {
+    if kind == QuantumScopeKind.CoreType {
+      return This.value(kind, name, true, false, "", name != "")
+    }
+    if kind == QuantumScopeKind.Resource {
+      return This.value(kind, name, true, false, "", name != "")
+    }
+    if kind == QuantumScopeKind.Effect {
+      return This.value(kind, name, true, false, "", name != "")
+    }
+    if kind == QuantumScopeKind.ControlFlow {
+      return This.value(kind, name, true, false, "", name != "")
+    }
+    if kind == QuantumScopeKind.Verification {
+      return This.value(kind, name, true, false, "", name != "")
+    }
+    if kind == QuantumScopeKind.Lowering {
+      return This.value(kind, name, true, false, "", name != "")
+    }
+    if kind == QuantumScopeKind.Operation || kind == QuantumScopeKind.Circuit {
+      return This.value(kind, name, true, false, "", name != "")
+    }
+    This.value(kind, name, false, false, "QTQUANTUM9999", false)
+  }
+
+  pub value(
+    kind: QuantumScopeKind,
+    name: string,
+    qtlc1Required: bool,
+    normalControlFlow: bool,
+    diagnosticCode: string,
+    valid: bool
+  ) =
+    This { kind, name, qtlc1Required, normalControlFlow, diagnosticCode, valid }
+}
+
+impl view QuantumScopeFact {
+  pub quantumOnly => normalControlFlow == false
+  pub diagnosticClean => diagnosticCode == ""
+}

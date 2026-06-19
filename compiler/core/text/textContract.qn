@@ -1,0 +1,45 @@
+pub TextContract {
+  ordinaryLiteral: bool = true
+  bytesLiteral: bool = true
+  interpolatedLiteral: bool = true
+  escapedBraces: bool = true
+  rawLiteral: bool = true
+  multilineLiteral: bool = true
+  fullEscapes: bool = true
+  staticFormatPlan: bool = true
+  importFreeCoreMethods: bool = true
+  zeroCopyViews: bool = true
+  compileTimeFolding: bool = true
+  nativeBackendOnly: bool = true
+  reflection: bool = false
+  dynamicDispatch: bool = false
+}
+
+impl view TextContract {
+  pub literalsReady: bool =>
+    ordinaryLiteral &&
+    bytesLiteral &&
+    interpolatedLiteral &&
+    escapedBraces &&
+    rawLiteral &&
+    multilineLiteral &&
+    fullEscapes
+
+  pub remainingLiteralWork: bool =>
+    rawLiteral == false ||
+    multilineLiteral == false ||
+    fullEscapes == false
+
+  pub hotPath: bool =>
+    zeroCopyViews &&
+    compileTimeFolding &&
+    nativeBackendOnly &&
+    reflection == false &&
+    dynamicDispatch == false
+
+  pub valid: bool =>
+    literalsReady &&
+    staticFormatPlan &&
+    importFreeCoreMethods &&
+    hotPath
+}

@@ -1,0 +1,35 @@
+import core::{ModuleId}
+
+pub enum ModuleEdgeKind {
+  Import
+  Export
+  Dependency
+  Visibility
+  Unknown
+}
+
+pub ModuleEdge {
+  from: ModuleId = {}
+  to: ModuleId = {}
+  kind: ModuleEdgeKind = ModuleEdgeKind.Unknown
+  resolved: bool = true
+  deterministic: bool = true
+}
+
+impl ModuleEdge {
+  pub ModuleEdge(from: ModuleId, to: ModuleId, kind: ModuleEdgeKind) =
+    This { from, to, kind }
+}
+
+impl view ModuleEdge {
+  pub source: ModuleId => from
+
+  pub target: ModuleId => to
+
+  pub valid: bool =>
+    deterministic &&
+    resolved &&
+    from.valid &&
+    to.valid &&
+    kind != ModuleEdgeKind.Unknown
+}

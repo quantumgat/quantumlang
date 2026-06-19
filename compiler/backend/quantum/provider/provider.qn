@@ -1,0 +1,34 @@
+pub QuantumProvider {
+  name: string
+  remote: bool
+  simulator: bool
+  diagnosticCode: string = ""
+}
+
+impl QuantumProvider {
+  pub QuantumProvider(name: string, remote: bool, simulator: bool) =
+    This { name, remote, simulator }
+
+  pub localSimulator(name: string) =
+    This {
+      name
+      remote: false
+      simulator: true
+    }
+
+  pub remoteHardware(name: string) =
+    This {
+      name
+      remote: true
+      simulator: false
+    }
+}
+
+impl view QuantumProvider {
+  pub valid => diagnosticCode == "" && name != ""
+  pub local => remote == false
+  pub hardware => simulator == false
+  pub requiresNetwork => remote
+  pub lowerable => valid
+  pub debugName => "quantum.provider.{name}"
+}

@@ -1,0 +1,46 @@
+pub TokenKind {
+  name: string
+  role: TokenRole
+  keyword: KeywordKind
+  fixedText: string
+  valid: bool
+}
+
+impl TokenKind {
+  pub TokenKind(name: string, role: TokenRole, keyword: KeywordKind, fixedText: string, valid: bool) =
+    This { name, role, keyword, fixedText, valid }
+
+  pub identifier() =
+    This("Identifier", TokenRole.Identifier, KeywordKind.Unknown, "", true)
+
+  pub keyword(keyword: KeywordKind, text: string) =
+    This("Keyword", TokenRole.Keyword, keyword, text, true)
+
+  pub operator(text: string) =
+    This("Operator", TokenRole.Operator, KeywordKind.Unknown, text, OperatorTokenFact.fromText(text).valid)
+
+  pub delimiter(text: string) =
+    This("Delimiter", TokenRole.Delimiter, KeywordKind.Unknown, text, text != "")
+
+  pub integerLiteral() =
+    This("IntegerLiteral", TokenRole.IntegerLiteral, KeywordKind.Unknown, "", true)
+
+  pub floatLiteral() =
+    This("FloatLiteral", TokenRole.FloatLiteral, KeywordKind.Unknown, "", true)
+
+  pub stringLiteral() =
+    This("StringLiteral", TokenRole.StringLiteral, KeywordKind.Unknown, "", true)
+
+  pub primitiveType(text: string) =
+    This("PrimitiveType", TokenRole.PrimitiveType, KeywordKind.Unknown, text, text != "")
+}
+
+impl view TokenKind {
+  pub known => valid
+  pub keywordToken => role == TokenRole.Keyword
+  pub operatorToken => role == TokenRole.Operator
+  pub identifierToken => role == TokenRole.Identifier
+  pub literalToken => role == TokenRole.StringLiteral
+  pub fixed => fixedText != ""
+  pub importKeyword => keyword == KeywordKind.Import
+}

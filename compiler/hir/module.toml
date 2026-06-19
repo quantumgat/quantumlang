@@ -1,0 +1,9 @@
+[module]
+name = "hir"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/hir"
+role = "high-level-ir"
+
+[dependencies]
+modules = ["controlFlow", "core", "semantic", "typeSystem"]

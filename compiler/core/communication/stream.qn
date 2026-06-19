@@ -1,0 +1,45 @@
+pub stream<T> {
+  policy: CommunicationPolicy = {}
+  state: CommunicationState = CommunicationState.Open
+  valueCount: i64 = 0
+  completed: bool = false
+  failed: bool = false
+  cancelled: bool = false
+}
+
+impl stream<T> {
+  pub push(value: T) -> Result<void, CommunicationError>
+
+  pub next() -> Result<T, CommunicationError>
+
+  pub tryNext() -> Result<Option<T>, CommunicationError>
+
+  pub complete() -> Result<void, CommunicationError>
+
+  pub fail(error: CommunicationError) -> Result<void, CommunicationError>
+
+  pub cancel() -> Result<void, CommunicationError>
+}
+
+impl view stream<T> {
+  pub active: bool =>
+    state == CommunicationState.Open &&
+    completed == false &&
+    failed == false &&
+    cancelled == false
+
+  pub terminal: bool => completed || failed || cancelled
+
+  pub backpressured: bool =>
+    active &&
+    policy.capacity > 0 &&
+    valueCount >= policy.capacity
+
+  pub valid: bool =>
+    policy.valid &&
+    valueCount >= 0 &&
+    (completed && failed) == false &&
+    (completed && cancelled) == false &&
+    (failed && cancelled) == false &&
+    (active || terminal)
+}

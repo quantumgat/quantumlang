@@ -1,0 +1,63 @@
+pub enum QdbRecoveryAction {
+  UsePublished
+  ReplayDurable
+  TruncateIncompleteTail
+  RejectJournal
+}
+
+pub QdbRecoveryPlan {
+  action: QdbRecoveryAction = QdbRecoveryAction.RejectJournal
+  publishedRevision: u64 = 0
+  durableRevision: u64 = 0
+  replayCommitCount: u64 = 0
+  truncateCommitCount: u64 = 0
+  integrityValid: bool = false
+}
+
+impl QdbRecoveryPlan {
+  pub inspect(
+    publishedRevision: u64,
+    durableRevision: u64,
+    replayCommitCount: u64,
+    truncateCommitCount: u64,
+    integrityValid: bool
+  ) -> This {
+    let action = match true {
+      integrityValid == false => QdbRecoveryAction.RejectJournal
+      truncateCommitCount > 0 => QdbRecoveryAction.TruncateIncompleteTail
+      durableRevision > publishedRevision => QdbRecoveryAction.ReplayDurable
+      _ => QdbRecoveryAction.UsePublished
+    }
+
+    return This {
+      action
+      publishedRevision
+      durableRevision
+      replayCommitCount
+      truncateCommitCount
+      integrityValid
+    }
+  }
+}
+
+impl view QdbRecoveryPlan {
+  pub rejects: bool => action == QdbRecoveryAction.RejectJournal
+  pub replays: bool => action == QdbRecoveryAction.ReplayDurable
+  pub truncates: bool => action == QdbRecoveryAction.TruncateIncompleteTail
+  pub preservesPublished: bool =>
+    action == QdbRecoveryAction.UsePublished ||
+    action == QdbRecoveryAction.TruncateIncompleteTail
+
+  pub valid: bool =>
+    integrityValid &&
+    rejects == false &&
+    durableRevision >= publishedRevision &&
+    (
+      replays == false ||
+      replayCommitCount > 0
+    ) &&
+    (
+      truncates == false ||
+      truncateCommitCount > 0
+    )
+}

@@ -1,0 +1,22 @@
+pub enum TypeLiteralKind {
+  Bool
+  Integer
+  Float
+  String
+  Bytes
+  Byte
+  None
+  Record
+  Vec
+  FixedArray
+  Map
+  Set
+  Tuple
+  Range
+  HalfOpenRange
+  RangeFrom
+  RangeTo
+  RangeToInclusive
+  RangeFull
+  Unknown
+}

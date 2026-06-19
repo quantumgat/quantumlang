@@ -1,0 +1,23 @@
+module communication
+
+mod {
+  communicationPolicy
+  communicationState
+  event
+  operation
+  stream
+  channel
+  signal
+  sink
+}
+
+export {
+  communicationPolicy.{DeliveryKind, WaitKind, OverflowKind, OrderingKind, TransferKind, CommunicationPolicy}
+  communicationState.{CommunicationState, CommunicationErrorKind, CommunicationError, CommunicationToken}
+  event.{event}
+  operation.{operation}
+  stream.{stream}
+  channel.{channel}
+  signal.{signal}
+  sink.{sink}
+}

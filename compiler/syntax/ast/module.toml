@@ -1,0 +1,9 @@
+[module]
+name = "ast"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/syntax/ast"
+role = "syntax-ast-model"
+
+[dependencies]
+modules = ["core", "source"]

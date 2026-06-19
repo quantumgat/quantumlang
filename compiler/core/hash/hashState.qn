@@ -1,0 +1,38 @@
+pub HashState {
+  policy: HashPolicy = {}
+  bytesProcessed: usize = 0
+  chunkCount: usize = 0
+  finalized: bool = false
+  digest: HashValue = {}
+}
+
+impl HashState {
+  pub begin(policy: HashPolicy) =
+    This { policy }
+
+  pub recordChunk(byteLength: usize) -> This {
+    if finalized {
+      return this
+    }
+    return this {
+      bytesProcessed: bytesProcessed + byteLength
+      chunkCount: chunkCount + 1
+    }
+  }
+
+  pub finish(digest: HashValue) -> Result<This, HashError> {
+    if finalized {
+      return Err(HashError { kind: HashErrorKind.AlreadyFinalized })
+    }
+    if digest.valid == false {
+      return Err(HashError { kind: HashErrorKind.InvalidDigestLength })
+    }
+    return Ok(this { digest, finalized: true })
+  }
+}
+
+impl view HashState {
+  pub active: bool => policy.valid && finalized == false
+  pub complete: bool => finalized && digest.valid
+  pub empty: bool => bytesProcessed == 0
+}

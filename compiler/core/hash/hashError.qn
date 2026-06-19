@@ -1,0 +1,23 @@
+pub enum HashErrorKind {
+  Unknown
+  InvalidAlgorithm
+  InvalidDomain
+  InvalidWidth
+  InvalidDigestLength
+  AlreadyFinalized
+  KeyRequired
+  KeyNotAllowed
+  InvalidKeyLength
+  EncodingFailed
+  NativeCapabilityMissing
+}
+
+pub HashError {
+  kind: HashErrorKind = HashErrorKind.Unknown
+  expected: usize = 0
+  actual: usize = 0
+}
+
+impl view HashError {
+  pub valid: bool => kind != HashErrorKind.Unknown
+}

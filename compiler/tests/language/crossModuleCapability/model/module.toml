@@ -1,0 +1,6 @@
+[module]
+name = "model"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/tests/language/crossModuleCapability/model"
+role = "cross-module-proof-model"

@@ -1,0 +1,23 @@
+pub QuantumTopology {
+  edgeCount: i64
+  qubitCount: i64
+  connected: bool
+  targetName: string
+  valid: bool
+}
+
+impl QuantumTopology {
+  pub QuantumTopology(targetName: string, qubitCount: i64, edgeCount: i64, connected: bool) =
+    This {
+      edgeCount
+      qubitCount
+      connected
+      targetName
+      valid: targetName != "" && qubitCount >= 0 && edgeCount >= 0
+    }
+}
+
+impl view QuantumTopology {
+  pub targetKnown => targetName != ""
+  pub routable => valid && connected
+}

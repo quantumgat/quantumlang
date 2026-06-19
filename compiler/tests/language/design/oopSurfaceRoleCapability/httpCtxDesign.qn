@@ -1,0 +1,255 @@
+// design-only: target QuantumLang syntax for future qtlc0/qtlc1 proof.
+//
+// This file intentionally uses future syntax:
+// - variadic generic packs: <...Caps>
+// - spread type usage: HttpCtx<T, ...Caps>
+// - role lists on impl, impl view, context, extract, and extend
+// - per-role visibility on every surface
+
+pub CapabilityStorage<...Caps> {
+  generation: i64 = 0
+}
+
+pub CapSlots<...Caps> {
+  storage: CapabilityStorage<...Caps> = {}
+}
+
+impl CapSlots<...Caps> {
+  pub require<T>() -> Result<T, IntoHttpError> {
+    return Ok(T())
+  }
+
+  pub path<T>(request: HttpRequest, name: TextView) -> Result<T, IntoHttpError> {
+    return Ok(T())
+  }
+
+  pub query<T>(request: HttpRequest) -> Result<T, IntoHttpError> {
+    return Ok(T())
+  }
+
+  pub query<T>(request: HttpRequest, name: TextView) -> Result<T, IntoHttpError> {
+    return Ok(T())
+  }
+
+  pub body<T>(request: HttpRequest) -> Result<T, IntoHttpError> {
+    return Ok(T())
+  }
+
+  pub body<T>(request: HttpRequest, limitBytes: i64) -> Result<T, IntoHttpError> {
+    return Ok(T())
+  }
+
+  pub bodyStream<T>(request: HttpRequest) -> Result<BodyStream<T>, IntoHttpError> {
+    return Ok(BodyStream<T> {
+      first: BodyChunk<T> { value: T(), index: 0, final: true }
+      backpressureWindow: 1
+    })
+  }
+
+  pub chunk<T>(request: HttpRequest) -> Result<BodyChunk<T>, IntoHttpError> {
+    return Ok(BodyChunk<T> { value: T(), index: 0, final: true })
+  }
+
+  pub upload<T>(request: HttpRequest) -> Result<Uploaded<T>, IntoHttpError> {
+    return Ok(Uploaded<T> { value: T(), byteCount: 0 })
+  }
+
+  pub session<T>() -> Result<Session<T>, IntoHttpError> {
+    return Ok(Session<T> { value: T(), id: SessionId { value: 7 } })
+  }
+
+  pub valid: bool => storage.generation >= 0
+}
+
+pub HttpCtx<...Caps> {
+  request: HttpRequest
+  slots: CapSlots<...Caps>
+  trace: TraceId
+  headers: HeaderBag = {}
+  bodyConsumed: bool = false
+}
+
+impl HttpCtx<...Caps> :
+  pub HttpLifecycle<HttpCtx<...Caps>>,
+  internal RequestContext<HttpCtx<...Caps>>,
+  internal HealthSignal<HttpCtx<...Caps>>,
+  private Omg<HttpCtx<...Caps>>
+{
+  pub HttpCtx(request: HttpRequest, slots: CapSlots<...Caps>) =
+    This {
+      request
+      slots
+      trace: TraceId.new()
+      headers: HeaderBag {}
+      bodyConsumed: false
+    }
+
+  pub withTrace(trace: TraceId) -> HttpCtx<...Caps> {
+    return HttpCtx<...Caps> {
+      request: this.request
+      slots: this.slots
+      trace
+      headers: this.headers
+      bodyConsumed: this.bodyConsumed
+    }
+  }
+
+  pub freeze() -> Frozen<HttpCtx<...Caps>> {
+    return Frozen<HttpCtx<...Caps>>(this)
+  }
+
+  internal requestId() -> RequestId {
+    return this.request.id
+  }
+
+  internal clientIp() -> string {
+    return this.request.clientIp
+  }
+
+  internal healthy() -> bool {
+    return this.request.valid && this.slots.valid
+  }
+
+  private omgValue() -> i64 {
+    return this.trace.value + 10
+  }
+}
+
+impl view HttpCtx<...Caps> :
+  pub HttpReadableView<HttpCtx<...Caps>>,
+  internal HttpDebugView<HttpCtx<...Caps>>,
+  private OmgView<HttpCtx<...Caps>>
+{
+  pub path: string => request.path
+  pub method: HttpMethod => request.method
+  pub traceId: TraceId => trace
+  pub capCount: i64 => Caps.count
+  pub empty: bool => Caps.count == 0
+  pub headerCount: i64 => headers.count
+  pub consumed: bool => bodyConsumed
+
+  internal debugSummary: string =>
+    "{method}:{path}:caps={capCount}:trace={traceId}"
+
+  private omgViewValue: string =>
+    "{path}:{traceId}"
+}
+
+context HttpCtx<...Caps> :
+  pub CapabilityContext<...Caps>,
+  internal RequestContext<HttpCtx<...Caps>>,
+  internal HealthSignal<HttpCtx<...Caps>>,
+  private OmgContext<...Caps>
+{
+  pub has<T>() -> bool {
+    return Caps.has<T>()
+  }
+
+  pub require<T>() -> Result<T, IntoHttpError> {
+    return slots.require<T>()
+  }
+
+  internal requestId() -> RequestId {
+    return request.id
+  }
+
+  internal clientIp() -> string {
+    return request.clientIp
+  }
+
+  internal healthy() -> bool {
+    return request.valid && slots.valid
+  }
+
+  private omgContextValue<T>() -> Result<T, IntoHttpError> {
+    return require<T>()
+  }
+}
+
+extract HttpCtx<...Caps> :
+  pub BodyExtractor<...Caps>,
+  pub SessionExtractor<...Caps>,
+  pub AsyncBodyExtractor<...Caps>,
+  pub OverloadNamedExtractor<...Caps>,
+  internal RequestContext<HttpCtx<...Caps>>,
+  private OmgExtract<...Caps>
+{
+  pub path<T>(name: TextView) -> Result<T, IntoHttpError> {
+    return slots.path<T>(request, name)
+  }
+
+  pub query<T>(name: TextView = TextView("")) -> Result<T, IntoHttpError> {
+    if name.length == 0 {
+      return slots.query<T>(request)
+    }
+
+    return slots.query<T>(request, name)
+  }
+
+  pub body<T>() -> Result<T, IntoHttpError> {
+    return slots.body<T>(request)
+  }
+
+  pub body<T>(limit: i64) -> Result<T, IntoHttpError> {
+    return slots.body<T>(request, limit)
+  }
+
+  pub bodyStream<T>() -> Result<BodyStream<T>, IntoHttpError> {
+    return slots.bodyStream<T>(request)
+  }
+
+  pub chunk<T>() -> Result<BodyChunk<T>, IntoHttpError> {
+    return slots.chunk<T>(request)
+  }
+
+  pub upload<T>() -> Result<Uploaded<T>, IntoHttpError> {
+    return slots.upload<T>(request)
+  }
+
+  pub valid<T>() -> Result<Valid<T>, IntoHttpError> {
+    return body<T>().map(v => Valid<T>(v, "default"))
+  }
+
+  pub session<T>() -> Result<Session<T>, IntoHttpError> {
+    return slots.session<T>()
+  }
+
+  pub sessionData<T>() -> Result<T, IntoHttpError> {
+    return session<T>().map(s => s.value)
+  }
+
+  internal requestId() -> RequestId {
+    return request.id
+  }
+
+  internal clientIp() -> string {
+    return request.clientIp
+  }
+
+  private omgExtractValue<T>() -> Result<T, IntoHttpError> {
+    return body<T>()
+  }
+}
+
+extend HttpCtx<...Caps> :
+  pub Authenticated<HttpCtx<...Caps>>,
+  private AuditRole<HttpCtx<...Caps>>,
+  internal HealthSignal<HttpCtx<...Caps>>,
+  private OmgExtend<HttpCtx<...Caps>>
+{
+  pub user() -> Result<AuthUser, IntoHttpError> {
+    return require<AuthUser>()
+  }
+
+  internal healthy() -> bool {
+    return request.valid && slots.valid
+  }
+
+  private auditEvent(action: TextView) -> AuditEvent {
+    return AuditEvent(trace, action, TextView(request.path))
+  }
+
+  private omgExtendedValue() -> i64 {
+    return trace.value + 100
+  }
+}

@@ -1,0 +1,89 @@
+pub enum HirParallelLoopKind {
+  ParFor
+  ShardFor
+}
+
+pub enum HirParallelCaptureKind {
+  Read
+  Move
+  ShardLocal
+}
+
+pub enum HirParallelReductionKind {
+  None
+  Ordered
+  Associative
+}
+
+pub HirParallelRegion {
+  regionId: i64
+  bodyId: i64
+  partitionId: i64
+  joinId: i64
+  kind: HirParallelLoopKind
+  captureKind: HirParallelCaptureKind
+  reductionKind: HirParallelReductionKind
+  partitionCount: i64
+  deterministic: bool
+  implicitJoin: bool
+  cancellable: bool
+  backpressured: bool
+  diagnosticCode: string = ""
+}
+
+impl HirParallelRegion {
+  pub HirParallelRegion(
+    regionId: i64,
+    bodyId: i64,
+    partitionId: i64,
+    joinId: i64,
+    kind: HirParallelLoopKind,
+    captureKind: HirParallelCaptureKind,
+    reductionKind: HirParallelReductionKind,
+    partitionCount: i64,
+    deterministic: bool
+  ) =
+    This {
+      regionId
+      bodyId
+      partitionId
+      joinId
+      kind
+      captureKind
+      reductionKind
+      partitionCount
+      deterministic
+      implicitJoin: true
+      cancellable: true
+      backpressured: true
+    }
+}
+
+impl view HirParallelRegion {
+  pub stableIds: bool =>
+    regionId >= 0 &&
+    bodyId >= 0 &&
+    partitionId >= 0 &&
+    joinId >= 0
+
+  pub partitionValid: bool =>
+    kind == HirParallelLoopKind.ParFor ||
+    partitionCount > 0
+
+  pub reductionValid: bool =>
+    reductionKind == HirParallelReductionKind.None ||
+    reductionKind == HirParallelReductionKind.Ordered ||
+    deterministic == false
+
+  pub incrementalKey: string =>
+    "hir.parallel.{regionId}.{bodyId}.{partitionId}.{joinId}"
+
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    stableIds &&
+    partitionValid &&
+    reductionValid &&
+    implicitJoin &&
+    cancellable &&
+    backpressured
+}

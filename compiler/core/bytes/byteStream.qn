@@ -1,0 +1,93 @@
+pub enum ByteStreamMode {
+  Length64LittleEndian
+  Length64BigEndian
+  VariableLength
+  Chunked
+}
+
+pub ByteStream {
+  payload: ByteBuffer = {}
+  mode: ByteStreamMode = ByteStreamMode.VariableLength
+  chunkCount: usize = 0
+  finished: bool = false
+}
+
+impl ByteStream {
+  pub ByteStream(payload: ByteBuffer, mode: ByteStreamMode) =
+    This { payload, mode }
+
+  pub write(value: BytesView) -> Result<void, ByteError> {
+    if finished {
+      return Err(ByteError(ByteErrorKind.InvalidEncoding))
+    }
+
+    if chunked {
+      return writeChunk(value)
+    }
+
+    this.payload.reserve(value.length())?
+    chunkCount = chunkCount + 1
+    return this.payload.append(value)
+  }
+
+  pub write(value: string) -> Result<void, ByteError> {
+    if finished {
+      return Err(ByteError(ByteErrorKind.InvalidEncoding))
+    }
+
+    if chunked {
+      this.payload.reserve(value.length() + 4)?
+      chunkCount = chunkCount + 1
+      return this.payload.str32be(value)
+    }
+
+    this.payload.reserve(value.length())?
+    chunkCount = chunkCount + 1
+    return this.payload.append(value)
+  }
+
+  pub writeChunk(value: BytesView) -> Result<void, ByteError> {
+    if finished || chunked == false {
+      return Err(ByteError(ByteErrorKind.InvalidEncoding))
+    }
+
+    this.payload.reserve(value.length() + 4)?
+    chunkCount = chunkCount + 1
+    return this.payload.bytes32be(value)
+  }
+
+  pub finish() -> Result<bytes, ByteError> {
+    if finished {
+      return Err(ByteError(ByteErrorKind.InvalidEncoding))
+    }
+
+    finished = true
+
+    if mode == ByteStreamMode.Chunked {
+      this.payload.reserve(4)?
+      this.payload.u32be(0)?
+      return Ok(this.payload.finish())
+    }
+
+    let data = this.payload.finish()
+    let out = ByteBuffer.withCapacity(data.length() + 10)
+
+    let prefix: Result<void, ByteError> = match true {
+      mode == ByteStreamMode.Length64LittleEndian => out.u64le(data.length())
+      mode == ByteStreamMode.Length64BigEndian => out.u64be(data.length())
+      _ => out.varU64(data.length())
+    }
+
+    prefix?
+    out.append(data)?
+    return Ok(out.finish())
+  }
+}
+
+impl view ByteStream {
+  pub length: usize => payload.length
+  pub empty: bool => length == 0
+  pub chunked: bool => mode == ByteStreamMode.Chunked
+  pub open: bool => finished == false
+  pub valid: bool => payload.valid && (chunked || chunkCount <= length)
+}

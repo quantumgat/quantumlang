@@ -1,0 +1,188 @@
+// design-only: target QuantumLang syntax for future runtime proof.
+
+pub OopSurfaceRoleCapabilityProof {
+  implRoleValid: bool = false
+  implViewRoleValid: bool = false
+  contextRoleValid: bool = false
+  extractRoleValid: bool = false
+  extendRoleValid: bool = false
+  multiRoleVisibilityValid: bool = false
+  genericRoleValid: bool = false
+  variadicPackValid: bool = false
+  spreadValid: bool = false
+  sameRoleMultiSurfaceValid: bool = false
+  explicitSurfaceQualificationValid: bool = false
+  directNativeDispatchValid: bool = false
+  noDuplicateSymbolValid: bool = false
+  moduleBoundaryValid: bool = false
+  moduleImportExportValid: bool = false
+  negativeFixtureCatalogValid: bool = false
+  highLevelApiValid: bool = false
+  asyncExtractionValid: bool = false
+  builderMutationValid: bool = false
+  middlewarePipelineValid: bool = false
+  roleObjectConversionValid: bool = false
+  associatedRequirementValid: bool = false
+  packQueryValid: bool = false
+  overloadDefaultNamedArgValid: bool = false
+}
+
+impl view OopSurfaceRoleCapabilityProof {
+  pub valid: bool => {
+    implRoleValid &&
+    implViewRoleValid &&
+    contextRoleValid &&
+    extractRoleValid &&
+    extendRoleValid &&
+    multiRoleVisibilityValid &&
+    genericRoleValid &&
+    variadicPackValid &&
+    spreadValid &&
+    sameRoleMultiSurfaceValid &&
+    explicitSurfaceQualificationValid &&
+    directNativeDispatchValid &&
+    noDuplicateSymbolValid &&
+    moduleBoundaryValid &&
+    moduleImportExportValid &&
+    negativeFixtureCatalogValid &&
+    highLevelApiValid &&
+    asyncExtractionValid &&
+    builderMutationValid &&
+    middlewarePipelineValid &&
+    roleObjectConversionValid &&
+    associatedRequirementValid &&
+    packQueryValid &&
+    overloadDefaultNamedArgValid
+  }
+}
+
+pub createUser(
+  ctx: HttpCtx<AuthUser, Session<UserSession>, CsrfToken, JsonBody<CreateUserBody>>
+) -> Result<UserDto, IntoHttpError> {
+  let user = ctx.user()?
+  let body = ctx.valid<CreateUserBody>()?
+  let session = ctx.sessionData<UserSession>()?
+
+  return Ok(UserDto(user.id, body.value.name, session.tenantId))
+}
+
+pub oopSurfaceRoleCapabilityProof()
+  -> Result<OopSurfaceRoleCapabilityProof, IntoHttpError> {
+  let request = HttpRequest {
+    id: RequestId { value: 1 }
+    path: "/users"
+    method: HttpMethod { value: "POST" }
+    clientIp: "127.0.0.1"
+    valid: true
+  }
+
+  let slots =
+    CapSlots<AuthUser, Session<UserSession>, CsrfToken, JsonBody<CreateUserBody>> {
+      storage: CapabilityStorage<AuthUser, Session<UserSession>, CsrfToken, JsonBody<CreateUserBody>> {
+        generation: 1
+      }
+    }
+
+  let ctx =
+    HttpCtx<AuthUser, Session<UserSession>, CsrfToken, JsonBody<CreateUserBody>>(
+      request,
+      slots
+    )
+
+  let traced = ctx.withTrace(TraceId { value: 9 })
+  let frozen = traced.freeze()
+  let user = traced.user()?
+  let body = traced.valid<CreateUserBody>()?
+  let session = traced.sessionData<UserSession>()?
+  let routed = secureRoute<CsrfToken, JsonBody<CreateUserBody>>(traced)?
+  let boundary = crossModuleSurfaceProof()
+  let imported = crossModuleImportExportProof(traced)?
+  let negative = negativeProofCatalog()
+  let advanced = highLevelApiCapabilityProof(traced)?
+  let native = plannedNativeSurfaceArtifact()
+
+  return Ok(OopSurfaceRoleCapabilityProof {
+    implRoleValid:
+      frozen.value.trace.value == 9
+
+    implViewRoleValid:
+      traced.path == "/users" &&
+      traced.method.value == "POST" &&
+      traced.traceId.value == 9 &&
+      traced.capCount == 4
+
+    contextRoleValid:
+      traced.has<AuthUser>() &&
+      traced.require<AuthUser>()?.id == user.id
+
+    extractRoleValid:
+      body.source == "default" &&
+      session.tenantId == routed.session.tenantId
+
+    extendRoleValid:
+      traced.user()?.id == user.id
+
+    multiRoleVisibilityValid:
+      traced.impl.requestId().value == 1 &&
+      traced.context.requestId().value == 1 &&
+      traced.extract.requestId().value == 1
+
+    genericRoleValid:
+      traced.capCount == 4 &&
+      traced.empty == false
+
+    variadicPackValid:
+      traced.capCount == 4
+
+    spreadValid:
+      routed.ctx.capCount == 4
+
+    sameRoleMultiSurfaceValid:
+      traced.impl.healthy() &&
+      traced.context.healthy()
+
+    explicitSurfaceQualificationValid:
+      traced.impl.requestId().value == traced.context.requestId().value &&
+      traced.context.requestId().value == traced.extract.requestId().value
+
+    directNativeDispatchValid:
+      native.directDispatchValid
+
+    noDuplicateSymbolValid:
+      native.noDuplicateSymbolValid
+
+    moduleBoundaryValid:
+      boundary.valid
+
+    moduleImportExportValid:
+      imported.valid
+
+    negativeFixtureCatalogValid:
+      negative.complete
+
+    highLevelApiValid:
+      advanced.valid
+
+    asyncExtractionValid:
+      advanced.asyncExtractionDesignValid
+
+    builderMutationValid:
+      advanced.builderMutationDesignValid
+
+    middlewarePipelineValid:
+      advanced.middlewarePipelineDesignValid
+
+    roleObjectConversionValid:
+      advanced.roleObjectConversionDesignValid &&
+      native.roleObjectConversionValid
+
+    associatedRequirementValid:
+      advanced.associatedRequirementDesignValid
+
+    packQueryValid:
+      advanced.packQueryDesignValid
+
+    overloadDefaultNamedArgValid:
+      advanced.overloadDefaultNamedArgDesignValid
+  })
+}

@@ -1,0 +1,21 @@
+import core::{Vec}
+
+pub CallCandidate {
+  entry: CandidateEntry = {}
+  bindings: Vec<ArgumentBinding> = []
+  substitutions: Vec<GenericSubstitution> = []
+  resultTypeName: string = ""
+  cost: CandidateCost = {}
+  rejection: CandidateRejection = {}
+}
+
+impl view CallCandidate {
+  pub viable: bool => entry.valid && rejection.rejected == false
+
+  pub valid: bool =>
+    entry.valid &&
+    bindings.valid &&
+    substitutions.valid &&
+    resultTypeName != "" &&
+    rejection.valid
+}

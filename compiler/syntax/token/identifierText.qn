@@ -1,0 +1,108 @@
+import core::{AsciiByte, AsciiText}
+
+pub IdentifierText {
+  value: string
+}
+
+impl IdentifierText {
+  pub IdentifierText(value: string) =
+    This { value }
+
+  pub isTypeName() -> bool {
+    return AsciiText(value).startsUpper()
+  }
+
+  pub isValueName() -> bool {
+    return AsciiText(value).startsLower() || this.isPrivateName()
+  }
+
+  pub isPrivateName() -> bool {
+    return value.length() > 1 && value.slice(0, 1).toString() == "_"
+  }
+
+  pub isPlaceholderName() -> bool {
+    return value == "_"
+  }
+
+  pub isMagicName() -> bool {
+    return value.length() > 1 && value.slice(0, 2).toString() == "__"
+  }
+
+  pub genericBaseName() -> string {
+    let open = value.find("<")
+    if open < 0 {
+      return value
+    }
+    return value.slice(0, open).toString()
+  }
+
+  pub baseTypeName() -> string {
+    return this.genericBaseName()
+  }
+
+  pub receiverRootName() -> string {
+    let dot = value.find(".")
+    if dot < 0 {
+      return value
+    }
+    return value.slice(0, dot).toString()
+  }
+
+  pub memberName() -> string {
+    let dot = value.lastIndexOf(".")
+    if dot >= 0 && dot + 1 < value.length() {
+      return value.slice(dot + 1, value.length()).toString()
+    }
+    return value
+  }
+}
+
+pub extend string {
+  pub asIdentifierText() -> IdentifierText {
+    return IdentifierText(this)
+  }
+}
+
+pub isIdentifierStartByte(value: i64) -> bool {
+  return AsciiByte(value).isIdentifierStart()
+}
+
+pub isIdentifierContinueByte(value: i64) -> bool {
+  return AsciiByte(value).isIdentifierContinue()
+}
+
+pub isTypeName(name: string) -> bool {
+  return IdentifierText(name).isTypeName()
+}
+
+pub isValueName(name: string) -> bool {
+  return IdentifierText(name).isValueName()
+}
+
+pub isPrivateName(name: string) -> bool {
+  return IdentifierText(name).isPrivateName()
+}
+
+pub isPlaceholderName(name: string) -> bool {
+  return IdentifierText(name).isPlaceholderName()
+}
+
+pub isMagicName(name: string) -> bool {
+  return IdentifierText(name).isMagicName()
+}
+
+pub genericBaseName(name: string) -> string {
+  return IdentifierText(name).genericBaseName()
+}
+
+pub baseTypeName(name: string) -> string {
+  return IdentifierText(name).baseTypeName()
+}
+
+pub receiverRootName(name: string) -> string {
+  return IdentifierText(name).receiverRootName()
+}
+
+pub memberName(name: string) -> string {
+  return IdentifierText(name).memberName()
+}

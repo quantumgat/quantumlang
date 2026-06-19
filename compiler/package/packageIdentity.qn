@@ -1,0 +1,25 @@
+import core::{PackageId}
+
+pub PackageIdentity {
+  id: PackageId
+  name: string
+  version: string
+  sourceHash: u64
+  deterministic: bool = true
+}
+
+impl PackageIdentity {
+  pub PackageIdentity(name: string, version: string, packageHash: u64, sourceHash: u64) =
+    This { id: PackageId(packageHash), name, version, sourceHash }
+}
+
+impl view PackageIdentity {
+  pub stableKey: string => "{name}:{version}:{id.id.packageHash}:{sourceHash}"
+
+  pub valid: bool =>
+    id.id.valid &&
+    name != "" &&
+    version != "" &&
+    sourceHash != 0 &&
+    deterministic
+}

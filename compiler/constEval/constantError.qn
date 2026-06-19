@@ -1,0 +1,20 @@
+pub enum ConstantErrorKind {
+  Overflow
+  DivisionByZero
+  InvalidOperation
+  UnsupportedExpression
+}
+
+pub ConstantError {
+  kind: ConstantErrorKind
+  message: string
+  nodeId: i64
+  deterministic: bool = true
+}
+
+impl view ConstantError {
+  pub valid: bool =>
+    message != "" &&
+    nodeId > 0 &&
+    deterministic
+}

@@ -1,0 +1,39 @@
+pub LinkProduct {
+  outputPath: string
+  executableHash: string
+  reused: bool
+  missReason: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl LinkProduct {
+  pub LinkProduct(outputPath: string, executableHash: string, reused: bool, missReason: string) =
+    This { outputPath, executableHash, reused, missReason }
+
+  pub reused(outputPath: string, executableHash: string) =
+    This {
+      outputPath
+      executableHash
+      reused: true
+      missReason: ""
+    }
+
+  pub linked(outputPath: string, executableHash: string, missReason: string) =
+    This {
+      outputPath
+      executableHash
+      reused: false
+      missReason
+    }
+}
+
+impl view LinkProduct {
+  pub missValid => reused || missReason != ""
+  pub valid => diagnosticCode == "" && outputPath != "" && executableHash != "" && missValid
+  pub cacheHit => reused && valid
+  pub linkedFresh => reused == false && valid
+  pub runnable => valid && executableHash != ""
+  pub lowerable => valid
+  pub debugName => "native.link.product.{outputPath}.{executableHash}"
+}

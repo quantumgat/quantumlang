@@ -1,0 +1,38 @@
+import core::{FileId}
+import source::{SourceSpan}
+
+pub StmtParser {
+  cursor: i64
+  fileId: FileId = {}
+}
+
+impl StmtParser {
+  pub StmtParser(fileId: FileId) =
+    This {
+      cursor: 0
+      fileId
+    }
+
+  pub StmtParser(fileId: u64) =
+    This(FileId(0, 0, fileId))
+
+  pub parseLet() -> AstStmt {
+    let node = AstNode(20, AstNodeKind.Statement, SourceSpan(fileId, cursor, cursor + 1), 2)
+    return AstStmt(20, AstStmtKind.Let, node)
+  }
+
+  pub parseReturn() -> AstStmt {
+    let node = AstNode(21, AstNodeKind.Statement, SourceSpan(fileId, cursor, cursor + 1), 1)
+    return AstStmt(21, AstStmtKind.Return, node)
+  }
+
+  pub parseBlock() -> AstStmt {
+    let node = AstNode(22, AstNodeKind.Block, SourceSpan(fileId, cursor, cursor + 1), 0)
+    return AstStmt(22, AstStmtKind.Block, node)
+  }
+
+  pub parseQuantum(kind: AstStmtKind) -> AstStmt {
+    let node = AstNode(23, AstNodeKind.Statement, SourceSpan(fileId, cursor, cursor + 1), 2)
+    return AstStmt(23, kind, node)
+  }
+}

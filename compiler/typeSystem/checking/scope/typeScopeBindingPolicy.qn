@@ -1,0 +1,83 @@
+import diagnostics::{DiagnosticRegistry, TypeDiagnosticCode}
+
+impl TypeScopeBinding {
+  pub duplicateIssue() -> TypeScopeIssue {
+    return TypeScopeIssue {
+      diagnostic: DiagnosticRegistry.type(TypeDiagnosticCode.DuplicateBinding)
+      subject: name
+      name
+      scope
+      span: symbol.span
+      duplicate: true
+    }
+  }
+
+  pub duplicateIssueAgainst(existing: TypeScopeBinding) -> TypeScopeIssue {
+    return TypeScopeIssue {
+      diagnostic: DiagnosticRegistry.type(TypeDiagnosticCode.DuplicateBinding)
+      subject: "{name} scope={scope.id.localHash}:{scope.id.disambiguator} existing={existing.symbol.name}@{existing.symbol.id.id.localHash}:{existing.symbol.id.id.disambiguator}:{existing.symbol.span.start} incoming={symbol.name}@{symbol.id.id.localHash}:{symbol.id.id.disambiguator}:{symbol.span.start}"
+      name
+      scope
+      span: symbol.span
+      duplicate: true
+    }
+  }
+
+  pub canShareNameWith(
+    incoming: TypeScopeBinding,
+    scopeKind: TypeScopeKind
+  ) -> bool {
+    if genericParameter &&
+       incoming.genericParameter &&
+       symbol.id.id.same(incoming.symbol.id.id) {
+      return true
+    }
+    if symbol.kind == TypeSymbolKind.Import &&
+       incoming.symbol.kind == TypeSymbolKind.Import {
+      return true
+    }
+    if symbol.behavioral && incoming.symbol.behavioral {
+      return true
+    }
+    if typeConstructorCanShareNameWith(incoming) {
+      return true
+    }
+    if scopeKind != TypeScopeKind.Type {
+      return false
+    }
+    let existingValue = parameter || symbol.memberValue
+    let incomingValue = incoming.parameter || incoming.symbol.memberValue
+    return (existingValue && incoming.symbol.behavioral) ||
+      (incomingValue && symbol.behavioral)
+  }
+
+  typeConstructorCanShareNameWith(incoming: TypeScopeBinding) -> bool {
+    return typeOwnsConstructorBinding(symbol, incoming.symbol) ||
+      typeOwnsConstructorBinding(incoming.symbol, symbol)
+  }
+
+  typeOwnsConstructorBinding(
+    owner: TypeSymbol,
+    constructor: TypeSymbol
+  ) -> bool {
+    if !typeOwnerSymbolKind(owner.kind) {
+      return false
+    }
+    if constructor.name != owner.name {
+      return false
+    }
+    if constructor.moduleId.id.packageHash != owner.moduleId.id.packageHash ||
+       constructor.moduleId.id.moduleHash != owner.moduleId.id.moduleHash {
+      return false
+    }
+    return constructor.ownerTypeName == owner.name ||
+      constructor.returnTypeName == owner.name ||
+      constructor.returnTypeName == "This"
+  }
+
+  typeOwnerSymbolKind(kind: TypeSymbolKind) -> bool {
+    return kind == TypeSymbolKind.Type ||
+      kind == TypeSymbolKind.Enum ||
+      kind == TypeSymbolKind.Role
+  }
+}

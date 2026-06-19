@@ -1,0 +1,28 @@
+pub ReachabilityFact {
+  nodeId: i64
+  reachable: bool
+  reason: string
+  diagnosticCode: string
+}
+
+impl ReachabilityFact {
+  pub reachable(nodeId: i64, reason: string) =
+    This {
+      nodeId
+      reachable: true
+      reason
+      diagnosticCode: ""
+    }
+
+  pub unreachable(nodeId: i64, reason: string) =
+    This {
+      nodeId
+      reachable: false
+      reason
+      diagnosticCode: "QTCFLOW0003"
+    }
+
+  isReachable() = reachable
+
+  reportsDiagnostic() = diagnosticCode != ""
+}

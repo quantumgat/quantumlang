@@ -1,0 +1,55 @@
+import core::{Hash128, Hash256, Hash512}
+
+pub HashDigestProof {
+  hash128: Hash128
+  hash256: Hash256
+  hash512: Hash512
+  invalidLengthRejected: bool = false
+}
+
+impl view HashDigestProof {
+  pub widthsValid: bool =>
+    hash128.length == 16 &&
+    hash128.bitLength == 128 &&
+    hash256.length == 32 &&
+    hash256.bitLength == 256 &&
+    hash512.length == 64 &&
+    hash512.bitLength == 512
+
+  pub storageValid: bool =>
+    hash128.valid &&
+    hash256.valid &&
+    hash512.valid &&
+    hash128.asView().length == 16 &&
+    hash256.asView().length == 32 &&
+    hash512.asView().length == 64
+
+  pub equalityValid: bool =>
+    hash128.same(Hash128(hash128.toBytes())) &&
+    hash256.same(Hash256(hash256.toBytes())) &&
+    hash512.same(Hash512(hash512.toBytes()))
+
+  pub valid: bool =>
+    widthsValid &&
+    storageValid &&
+    equalityValid &&
+    invalidLengthRejected
+}
+
+pub hashDigestProof() -> HashDigestProof {
+  let value128: bytes = b"0123456789abcdef"
+  let value256: bytes = b"0123456789abcdef0123456789abcdef"
+  let value512: bytes = b"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  let invalid: bytes = b"short"
+  let invalidLengthRejected = match Hash256.fromBytes(invalid) {
+    Ok(value) => false
+    Err(error) => error.actual == 5 && error.expected == 32
+  }
+
+  return HashDigestProof {
+    hash128: Hash128(value128)
+    hash256: Hash256(value256)
+    hash512: Hash512(value512)
+    invalidLengthRejected
+  }
+}

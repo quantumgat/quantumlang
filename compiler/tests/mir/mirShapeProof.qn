@@ -1,0 +1,39 @@
+import mir::{*}
+pub MirShapeProof {
+  bodyStable: bool
+  blockTerminated: bool
+  valueTyped: bool
+  instructionStable: bool
+  terminatorModelsControl: bool
+  cfgDeterministic: bool
+  valid: bool
+}
+
+pub mirShapeProof() -> MirShapeProof {
+  let body = MirBody("compileModule", 4, 8, 12)
+  let block = MirBlock(1, 3, "branch")
+  let value = MirValue(1, "Result<CompilerOutput,Diagnostic>", true)
+  let instruction = MirInstruction(1, "call", value.id, true)
+  let branch = MirTerminator("branch", 2, false)
+  let resultReturn = MirTerminator("return", 0, true)
+  let requireFail = MirTerminator("requireFail", 0, true)
+  let cfg = MirControlFlowGraph(5, body.blockCount)
+
+  let bodyStable = body.valid && body.deterministic && body.functionName == "compileModule"
+  let blockTerminated = block.valid && block.terminatorKind == branch.kind
+  let valueTyped = value.valid && value.local
+  let instructionStable = instruction.valid && instruction.resultValueId == value.id && instruction.sideEffect
+  let terminatorModelsControl = branch.valid && resultReturn.valid && requireFail.valid && resultReturn.returns && requireFail.returns
+  let cfgDeterministic = cfg.deterministic && cfg.blockCount == body.blockCount
+  let valid = bodyStable && blockTerminated && valueTyped && instructionStable && terminatorModelsControl && cfgDeterministic
+
+  return MirShapeProof {
+    bodyStable: bodyStable,
+    blockTerminated: blockTerminated,
+    valueTyped: valueTyped,
+    instructionStable: instructionStable,
+    terminatorModelsControl: terminatorModelsControl,
+    cfgDeterministic: cfgDeterministic,
+    valid: valid,
+  }
+}

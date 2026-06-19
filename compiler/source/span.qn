@@ -1,0 +1,41 @@
+import core::{FileId, Range}
+
+pub SourceSpan {
+  fileId: FileId = {}
+  rows: Range<u8> = {}
+}
+
+impl SourceSpan {
+  pub SourceSpan(fileId: FileId, rows: Range<u8>) =
+    This {
+      fileId,
+      rows,
+    }
+
+  pub SourceSpan(fileId: FileId, start: i64, end: i64) =
+    This {
+      fileId,
+      rows: Range<u8>.fromBounds(start, end),
+    }
+
+  pub shift(delta: i64) =
+    this {
+      rows: Range<u8>(rows.start + delta, rows.count),
+    }
+}
+
+impl view SourceSpan {
+  pub fileKey => fileId.id.value
+
+  pub start => rows.start
+
+  pub end => rows.end
+
+  pub length => rows.count
+
+  pub empty => rows.empty
+
+  pub valid => fileId.valid && rows.valid
+
+  pub byteRange => "{start}:{end}"
+}

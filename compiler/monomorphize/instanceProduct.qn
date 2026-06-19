@@ -1,0 +1,22 @@
+pub InstanceProduct {
+  key: InstanceKey
+  substitution: Substitution
+  owner: InstanceOwner
+  fingerprint: StableInstanceHash
+  bodyCount: i64
+  diagnosticCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl view InstanceProduct {
+  pub clean: bool => diagnosticCount == 0
+
+  pub valid: bool =>
+    key.valid &&
+    substitution.valid &&
+    owner.valid &&
+    fingerprint.valid &&
+    bodyCount > 0 &&
+    clean &&
+    deterministic
+}

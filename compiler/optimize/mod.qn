@@ -1,0 +1,21 @@
+module optimize
+
+mod {
+  pass
+  passManager
+  constFold
+  inline
+  deadCode
+  escape
+  debugPassPlan
+}
+
+export {
+  pass.OptimizePass
+  passManager.PassManager
+  constFold.ConstFoldPass
+  inline.InlinePass
+  deadCode.DeadCodePass
+  escape.EscapeAnalysis
+  debugPassPlan.DebugPassPlan
+}

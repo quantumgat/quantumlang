@@ -1,0 +1,104 @@
+import core::{AsciiByte, FileId, TextBuilder, TextSource, TextSpan, TextView}
+
+pub TextCapabilityProof {
+  asciiByteValid: bool
+  textViewValid: bool
+  textSpanValid: bool
+  lineMapValid: bool
+  sourceTextValid: bool
+  genericReadableValid: bool
+  genericScannableValid: bool
+  diagnosticSafeValid: bool
+  writableValid: bool
+}
+
+impl view TextCapabilityProof {
+  pub valid =>
+    asciiByteValid &&
+    textViewValid &&
+    textSpanValid &&
+    lineMapValid &&
+    sourceTextValid &&
+    genericReadableValid &&
+    genericScannableValid &&
+    diagnosticSafeValid &&
+    writableValid
+}
+
+pub textCapabilityProof() -> TextCapabilityProof {
+  let sample: string = "Quantum"
+  let lower: string = "quantum"
+  let upper: string = "ABC"
+  let digit = AsciiByte(57)
+  let view = TextView(sample)
+  let sliced = view.slice(1, 4)
+  let span = TextSpan(1, 4)
+  let source = TextSource(FileId(1, 2, 7), "alpha\nBeta\n")
+  let lines = source.lineMap()
+  let writable = match sample.toText() {
+    Ok(value) => value == sample
+    Err(error) => false
+  }
+
+  TextCapabilityProof {
+    asciiByteValid: digit.isDigit() &&
+      digit.digitValue() == 9 &&
+      AsciiByte(81).isIdentifierStart()
+    textViewValid: view.valid &&
+      view.byteLength == sample.length() &&
+      view.length == view.byteLength &&
+      view.startsAsciiUpper() &&
+      view.uncheckedByteAt(0) == 81 &&
+      sliced.valid &&
+      sliced.byteLength == 3 &&
+      sliced.length == 3 &&
+      sliced.uncheckedByteAt(0) == 117 &&
+      sliced.asciiByteAt(1).isLower() &&
+      sliced.isAsciiLowerAt(1) &&
+      sliced.isLower() &&
+      sliced.isAsciiLower() &&
+      !sliced.startsAsciiUpper()
+    textSpanValid: span.valid &&
+      span.length == 3 &&
+      span.contains(2) &&
+      !span.contains(4) &&
+      span.toView(sample).toText() == "uan" &&
+      span.merge(TextSpan(4, 7)).length == 6
+    lineMapValid: lines.valid &&
+      lines.count == 3 &&
+      lines.lineStart(0) == 0 &&
+      lines.lineEnd(0) == 5 &&
+      lines.lineStart(1) == 6 &&
+      lines.offsetToLine(7) == 1 &&
+      lines.offsetToColumn(7) == 1 &&
+      lines.lineView(1).toText() == "Beta"
+    sourceTextValid: source.valid &&
+      source.byteLength() == 11 &&
+      source.lineCount == 3 &&
+      source.uncheckedByteAt(0) == 97 &&
+      source.checkedByteAt(100) == -1 &&
+      source.asciiByteAt(0).isLower() &&
+      source.isAsciiLowerAt(0) &&
+      source.startsLower() &&
+      source.startsAsciiLower() &&
+      source.spanText(source.span(6, 10)).toText() == "Beta"
+    genericReadableValid: sample.textByteLength() == sample.length() &&
+      sample.uncheckedByteAt(0) == 81 &&
+      sample.checkedByteAt(-1) == -1 &&
+      sample.checkedByteAt(0) == 81 &&
+      lower.asciiByteAt(0).isLower() &&
+      lower.isAsciiLowerAt(0) &&
+      sample.startsUpper() &&
+      sample.startsAsciiUpper() &&
+      lower.startsAsciiLower() &&
+      sample.startsAsciiAlpha() &&
+      upper.isUpper() &&
+      upper.isAsciiUpper() &&
+      lower.isLower() &&
+      lower.isAsciiLower() &&
+      !sample.isAsciiUpper()
+    genericScannableValid: sample.cursor().valid
+    diagnosticSafeValid: sample.diagnosticSafeText() == sample
+    writableValid: writable
+  }
+}

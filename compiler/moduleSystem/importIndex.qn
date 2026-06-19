@@ -1,0 +1,154 @@
+import core::{Index, ModuleId, Slice}
+import declaration::{DeclarationSet}
+
+pub ImportIndex {
+  index: Index<ImportPath, ModuleId> = {}
+  paths: Slice<ImportPath> = []
+  modules: Slice<ModuleId> = []
+  unresolved: Slice<ImportPath> = []
+  pathValues: Vec<ImportPath> = []
+  moduleValues: Vec<ModuleId> = []
+  unresolvedValues: Vec<ImportPath> = []
+  aliasValues: Vec<string> = []
+  samplePath: ImportPath = {}
+  sampleModule: ModuleId = {}
+  deterministic: bool = true
+}
+
+impl ImportIndex {
+  pub ImportIndex(importCount: i64, unresolvedCount: i64) =
+    This {
+      index: Index(importCount)
+      paths: Slice(importCount)
+      modules: Slice(importCount)
+      unresolved: Slice(unresolvedCount)
+    }
+
+  pub fromDeclarations(imports: DeclarationSet) =
+    This {
+      index: Index(imports.count)
+      paths: Slice(imports.count)
+      modules: Slice(imports.count)
+      unresolved: Slice(imports.unresolvedCount)
+      deterministic: imports.deterministic
+    }
+
+  pub withSample(path: ImportPath, module: ModuleId) =
+    this {
+      samplePath: path
+      sampleModule: module
+    }
+
+  pub add(path: ImportPath, module: ModuleId) {
+    pathValues.push(path)
+    moduleValues.push(module)
+    aliasValues.push(path.alias)
+    paths = Slice(pathValues.count)
+    modules = Slice(moduleValues.count)
+    index = Index(pathValues.count)
+  }
+
+  pub addUnresolved(path: ImportPath) {
+    unresolvedValues.push(path)
+    unresolved = Slice(unresolvedValues.count)
+  }
+
+  pub lookup(path: ImportPath) -> Option<ModuleId> {
+    if !lookupReady || !path.valid {
+      return None
+    }
+
+    let row: i64 = 0
+    while row < pathValues.count {
+      let candidate = pathValues[row]
+      if candidate.text == path.text && candidate.root == path.root {
+        return Some(moduleValues[row])
+      }
+      row = row + 1
+    }
+
+    if path.text == samplePath.text && path.root == samplePath.root {
+      return Some(sampleModule)
+    }
+
+    return None
+  }
+
+  pub lookupAlias(alias: string) -> Option<ModuleId> {
+    if alias == "" {
+      return None
+    }
+
+    let row: i64 = 0
+    while row < aliasValues.count {
+      if aliasValues[row] == alias {
+        return Some(moduleValues[row])
+      }
+      row = row + 1
+    }
+    return None
+  }
+
+  pub aliasExists(alias: string) -> bool {
+    if alias == "" {
+      return false
+    }
+    let row: i64 = 0
+    while row < aliasValues.count {
+      if aliasValues[row] == alias {
+        return true
+      }
+      row = row + 1
+    }
+    return false
+  }
+}
+
+impl view ImportIndex {
+  pub count: i64 => pathValues.count
+
+  pub unresolvedCount: i64 => unresolvedValues.count
+
+  pub aliasCount: i64 => aliasValues.count
+
+  pub resolved: bool => unresolvedCount == 0
+
+  pub aligned: bool =>
+    paths.count == modules.count &&
+    paths.count == count &&
+    moduleValues.count == count &&
+    aliasValues.count == count &&
+    index.count == count
+
+  pub sampleReady: bool =>
+    count == 0 ||
+    (samplePath.valid && sampleModule.valid)
+
+  pub rowBacked: bool =>
+    index.valid &&
+    paths.valid &&
+    modules.valid &&
+    aligned &&
+    count > 0
+
+  pub indexLookupReady: bool =>
+    valid &&
+    rowBacked &&
+    resolved
+
+  pub sampleLookupReady: bool =>
+    valid &&
+    sampleReady
+
+  pub lookupReady: bool =>
+    indexLookupReady ||
+    sampleLookupReady
+
+  pub valid: bool =>
+    deterministic &&
+    index.valid &&
+    paths.valid &&
+    modules.valid &&
+    unresolved.valid &&
+    aligned
+}

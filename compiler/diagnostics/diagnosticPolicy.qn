@@ -1,0 +1,20 @@
+pub DiagnosticPolicy {
+  codeRequired: bool = true
+  primaryLabelRequired: bool = true
+  deterministicOrderRequired: bool = true
+  colorAutoByDefault: bool = true
+  machineReadableNoColor: bool = true
+  valid: bool = true
+}
+
+impl view DiagnosticPolicy {
+  pub strict => codeRequired &&
+    primaryLabelRequired &&
+    deterministicOrderRequired
+
+  pub terminalSafe => colorAutoByDefault && machineReadableNoColor
+
+  pub renderableDiagnostics => strict && terminalSafe
+
+  pub usable => valid && renderableDiagnostics
+}

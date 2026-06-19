@@ -1,0 +1,73 @@
+pub Precedence {
+  level: i64
+  name: string
+  leftAssociative: bool
+}
+
+impl Precedence {
+  pub Precedence(name: string, level: i64, leftAssociative: bool) =
+    This { level, name, leftAssociative }
+
+  pub forOperator(symbol: string) -> This {
+    if symbol == "." {
+      return This("access", 90, true)
+    }
+    if symbol == "(" || symbol == "[" {
+      return This("postfix", 90, true)
+    }
+    if symbol == "as" {
+      return This("cast", 80, true)
+    }
+    if symbol == "*" || symbol == "/" || symbol == "%" {
+      return This("multiplicative", 70, true)
+    }
+    if symbol == "+" || symbol == "-" {
+      return This("additive", 60, true)
+    }
+    if symbol == "<<" || symbol == ">>" {
+      return This("shift", 55, true)
+    }
+    if symbol == "<" || symbol == "<=" || symbol == ">" || symbol == ">=" {
+      return This("ordering", 50, true)
+    }
+    if symbol == "==" || symbol == "!=" {
+      return This("equality", 40, true)
+    }
+    if symbol == "&" {
+      return This("bitAnd", 37, true)
+    }
+    if symbol == "^" {
+      return This("bitXor", 36, true)
+    }
+    if symbol == "|" {
+      return This("bitOr", 35, true)
+    }
+    if symbol == "&&" {
+      return This("logicalAnd", 30, true)
+    }
+    if symbol == "||" {
+      return This("logicalOr", 20, true)
+    }
+    if symbol == "?" {
+      return This("propagate", 15, true)
+    }
+    if symbol == "=" || symbol == "+=" || symbol == "-=" || symbol == "*=" || symbol == "/=" {
+      return This("assignment", 10, false)
+    }
+    if symbol == "%=" || symbol == "&=" || symbol == "|=" || symbol == "^=" {
+      return This("assignment", 10, false)
+    }
+    if symbol == "<<=" || symbol == ">>=" {
+      return This("assignment", 10, false)
+    }
+    return This("unknown", 0, true)
+  }
+}
+
+impl view Precedence {
+  pub binds => level > 0
+  pub assignment => name == "assignment"
+  pub postfix => name == "postfix" || name == "access"
+  pub leftBinding => binds && leftAssociative
+  pub rightBinding => binds && leftAssociative == false
+}

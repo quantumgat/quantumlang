@@ -1,0 +1,201 @@
+import core::{Arena, FileId, Index, ModuleId, Slice, Vec}
+import declaration::{DeclarationKey}
+import frontend::{FrontendProduct}
+import moduleSystem::{ModuleGraph}
+import syntax::{PackageAstProduct}
+
+pub TypeModuleScopeInputs {
+  frontendReady: bool
+  symbolOrderStable: bool
+  declarationsUnique: bool
+}
+
+impl TypeModuleScopeInputs {
+  pub from(
+    frontend: FrontendProduct,
+    symbols: TypeSymbolTable,
+    graph: ModuleGraph
+  ) =
+    This {
+      frontendReady: frontend.valid
+      symbolOrderStable: symbols.deterministic
+      declarationsUnique: graph.declarationsUnique
+    }
+}
+
+impl view TypeModuleScopeInputs {
+  pub deterministic: bool =>
+    frontendReady &&
+    symbolOrderStable &&
+    declarationsUnique
+}
+
+pub TypeModuleScopes {
+  packageName: string
+  unresolvedImportCount: i64 = 0
+  cycleCount: i64 = 0
+  files: Slice<FileId> = []
+  modules: Arena<ModuleId> = {}
+  moduleIds: Slice<ModuleId> = []
+  importSources: Slice<ModuleId> = []
+  importTargets: Slice<ModuleId> = []
+  fileValues: Vec<FileId> = []
+  moduleValues: Vec<ModuleId> = []
+  importSourceValues: Vec<ModuleId> = []
+  importTargetValues: Vec<ModuleId> = []
+  moduleIndex: Index<DeclarationKey, ModuleId> = {}
+  inputs: TypeModuleScopeInputs = {}
+  deterministic: bool = true
+}
+
+impl TypeModuleScopes {
+  pub forFrontend(
+    frontend: FrontendProduct,
+    symbols: TypeSymbolTable
+  ) -> This {
+    let graph = ModuleGraph.fromRecordValues(
+      frontend.declarations.records.recordValues,
+      frontend.valid
+    )
+    let inputs = TypeModuleScopeInputs.from(frontend, symbols, graph)
+    let scopes = This {
+      packageName: frontend.target
+      unresolvedImportCount: graph.unresolvedCount
+      cycleCount: graph.cycles
+      inputs
+      deterministic: inputs.deterministic
+    }
+
+    let astProduct: PackageAstProduct = frontend.parse.product
+    let fileRow: i64 = 0
+    while fileRow < astProduct.fileCount {
+      let fileId = astProduct.fileIdAt(fileRow)
+      if !scopes.fileExists(fileId) {
+        scopes.fileValues.push(fileId)
+      }
+      let sourceModule = ModuleId(
+        fileId.id.packageHash,
+        fileId.id.moduleHash
+      )
+      if !scopes.moduleExists(sourceModule) {
+        scopes.moduleValues.push(sourceModule)
+      }
+      fileRow = fileRow + 1
+    }
+
+    let moduleRow: i64 = 0
+    while moduleRow < graph.graphNodeCount {
+      let graphModule = graph.moduleAt(moduleRow).id
+      if !scopes.moduleExists(graphModule) {
+        scopes.moduleValues.push(graphModule)
+      }
+      moduleRow = moduleRow + 1
+    }
+
+    let edgeRow: i64 = 0
+    while edgeRow < graph.graphEdgeCount {
+      let edge = graph.edgeAt(edgeRow)
+      scopes.importSourceValues.push(edge.source)
+      scopes.importTargetValues.push(edge.target)
+      edgeRow = edgeRow + 1
+    }
+
+    scopes.files = Slice(scopes.fileValues.count)
+    scopes.modules = Arena(scopes.moduleValues.count)
+    scopes.moduleIds = Slice(scopes.moduleValues.count)
+    scopes.importSources = Slice(scopes.importSourceValues.count)
+    scopes.importTargets = Slice(scopes.importTargetValues.count)
+    scopes.moduleIndex = Index(scopes.moduleValues.count)
+    return scopes
+  }
+
+  fileExists(fileId: FileId) -> bool {
+    let row: i64 = 0
+    while row < fileValues.count {
+      if fileValues[row].id.same(fileId.id) {
+        return true
+      }
+      row = row + 1
+    }
+    return false
+  }
+
+  moduleExists(moduleId: ModuleId) -> bool {
+    let row: i64 = 0
+    while row < moduleValues.count {
+      if moduleValues[row].id.same(moduleId.id) {
+        return true
+      }
+      row = row + 1
+    }
+    return false
+  }
+
+  pub moduleAt(index: i64) -> ModuleId {
+    return moduleValues[index]
+  }
+}
+
+impl view TypeModuleScopes {
+  pub fileScopeCount: i64 => fileValues.count
+
+  pub moduleScopeCount: i64 => moduleValues.count
+
+  pub importEdgeCount: i64 => importSourceValues.count
+
+  pub hasPackage: bool => packageName != ""
+
+  pub hasFiles: bool => fileScopeCount > 0
+
+  pub hasModules: bool => moduleScopeCount > 0
+
+  pub importsResolved: bool => unresolvedImportCount == 0
+
+  pub cycleFree: bool => cycleCount == 0
+
+  pub scopesOwned: bool => {
+          files.valid &&
+          modules.valid &&
+          moduleIds.valid &&
+          moduleIndex.valid &&
+          fileValues.valid &&
+          moduleValues.valid &&
+          files.count == fileScopeCount &&
+          modules.count == moduleScopeCount &&
+          moduleIds.count == moduleScopeCount &&
+          moduleIndex.count == moduleScopeCount
+  }
+
+
+  pub importEdgesOwned: bool => {
+              importSources.valid &&
+              importTargets.valid &&
+              importSourceValues.valid &&
+              importTargetValues.valid &&
+              importSources.count == importEdgeCount &&
+              importTargets.count == importEdgeCount &&
+              importTargetValues.count == importEdgeCount
+  }
+
+
+  pub countsConsistent: bool => {
+        fileScopeCount >= 0 &&
+        moduleScopeCount >= 0 &&
+        importEdgeCount >= 0 &&
+        unresolvedImportCount >= 0 &&
+        cycleCount >= 0
+  }
+
+
+  pub valid: bool => {
+      deterministic &&
+      hasPackage &&
+      hasFiles &&
+      hasModules &&
+      scopesOwned &&
+      importEdgesOwned &&
+      countsConsistent &&
+      importsResolved &&
+      cycleFree
+  }
+}

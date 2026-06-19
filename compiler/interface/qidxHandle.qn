@@ -1,0 +1,53 @@
+pub enum QidxLoadMode {
+  MemoryMapped
+  Buffered
+  Rejected
+}
+
+pub QidxHandle {
+  indexPath: string
+  loadMode: QidxLoadMode
+  contentHashHigh: u64
+  contentHashLow: u64
+  packageCount: usize
+  moduleIndexCount: usize
+  symbolIndexCount: usize
+  capsuleOffsetCount: usize
+  loaded: bool
+}
+
+impl QidxHandle {
+  pub QidxHandle(
+    indexPath: string,
+    loadMode: QidxLoadMode,
+    contentHashHigh: u64,
+    contentHashLow: u64,
+    packageCount: usize,
+    moduleIndexCount: usize,
+    symbolIndexCount: usize,
+    capsuleOffsetCount: usize,
+    loaded: bool
+  ) =
+    This {
+      indexPath
+      loadMode
+      contentHashHigh
+      contentHashLow
+      packageCount
+      moduleIndexCount
+      symbolIndexCount
+      capsuleOffsetCount
+      loaded
+    }
+}
+
+impl view QidxHandle {
+  pub rejected => loadMode == QidxLoadMode.Rejected
+  pub memoryMapped => loadMode == QidxLoadMode.MemoryMapped
+  pub buffered => loadMode == QidxLoadMode.Buffered
+  pub hashed => contentHashHigh != 0 || contentHashLow != 0
+  pub hasPackages => packageCount > 0
+  pub hasModules => moduleIndexCount > 0
+  pub hasSymbols => symbolIndexCount > 0
+  pub valid => loaded && rejected == false && indexPath != "" && hashed && hasPackages && hasModules && hasSymbols
+}

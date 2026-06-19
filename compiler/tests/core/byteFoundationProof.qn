@@ -1,0 +1,66 @@
+import core::{ByteBuffer, ByteContract, ByteCursor, ByteOrder, ByteView}
+
+pub ByteProofObject {
+  id: u64
+  active: bool
+}
+
+pub ByteFoundationProof {
+  literal: bytes
+  listLiteral: bytes
+  emptyLiteral: bytes
+  buffer: ByteBuffer
+  cursor: ByteCursor
+  view: ByteView
+  listView: ByteView
+  emptyView: ByteView
+  contract: ByteContract
+}
+
+impl view ByteFoundationProof {
+  pub literalsValid: bool =>
+    view.length == 4 &&
+    listView.length == 4 &&
+    emptyView.length == 0
+
+  pub bufferValid: bool =>
+    buffer.valid &&
+    buffer.empty &&
+    buffer.capacity == 64 &&
+    buffer.order == ByteOrder.LittleEndian
+
+  pub cursorValid: bool =>
+    cursor.valid &&
+    cursor.position == 0 &&
+    cursor.remaining == 4
+
+  pub valid: bool =>
+    literalsValid &&
+    bufferValid &&
+    cursorValid &&
+    view.valid &&
+    contract.valid
+}
+
+pub byteFoundationProof() -> ByteFoundationProof {
+  let literal: bytes = b"QCAP"
+  let listLiteral: bytes = [0x51, 0x43, 0x41, 0x50]
+  let emptyLiteral: bytes = []
+  let view = ByteView(literal)
+  let listView = ByteView(listLiteral)
+  let emptyView = ByteView(emptyLiteral)
+  let cursor = ByteCursor(view, ByteOrder.BigEndian)
+  let buffer = ByteBuffer.withCapacity(64)
+
+  ByteFoundationProof {
+    literal
+    listLiteral
+    emptyLiteral
+    buffer
+    cursor
+    view
+    listView
+    emptyView
+    contract: ByteContract()
+  }
+}

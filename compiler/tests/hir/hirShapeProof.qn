@@ -1,0 +1,35 @@
+import hir::{*}
+pub HirShapeProof {
+  itemStable: bool
+  functionStable: bool
+  blockStable: bool
+  exprTyped: bool
+  controlFlowRepresented: bool
+  valid: bool
+}
+
+pub hirShapeProof() -> HirShapeProof {
+  let item = HirItem(1, "compileModule", "function", 100, true)
+  let function = HirFunction(item, 2, 3, true, 1)
+  let block = HirBlock(1, 4, 2, true)
+  let expression = HirExpr(1, "call", "Result<CompilerOutput,Diagnostic>", false)
+  let typeRef = HirTypeRef(1, "Result<CompilerOutput,Diagnostic>", true)
+  let functionItem = function.item
+  let flow = HirControlFlowFact(functionItem.id, true, true, true, true)
+
+  let itemStable = item.valid && item.exported && item.sourceNodeId == 100
+  let functionStable = function.valid && function.blockCount == 3 && function.effectCount == 1
+  let blockStable = block.valid && block.terminates
+  let exprTyped = expression.valid && typeRef.valid && expression.typeName == typeRef.typeName
+  let controlFlowRepresented = flow.valid && flow.hasIf && flow.hasLoop && flow.hasReturn && flow.hasRequire
+  let valid = itemStable && functionStable && blockStable && exprTyped && controlFlowRepresented
+
+  return HirShapeProof {
+    itemStable: itemStable,
+    functionStable: functionStable,
+    blockStable: blockStable,
+    exprTyped: exprTyped,
+    controlFlowRepresented: controlFlowRepresented,
+    valid: valid,
+  }
+}

@@ -1,0 +1,41 @@
+module controlFlow
+
+mod {
+  controlFlowRegion
+  reachability
+  loopFact
+  loopTarget
+  loopResult
+  definiteReturn
+  parallelRegion
+  parallelLoopContract
+  parallelWorkerContract
+  atomicSharedState
+  normalControlFlowKind
+  normalControlFlowFact
+  controlFlowAstBridge
+  requireFact
+  loopAstBridge
+  loopSyntaxKind
+  loopSyntaxFact
+}
+
+export {
+  controlFlowRegion.{ControlFlowRegionKind, ControlFlowRegion}
+  reachability.ReachabilityFact
+  loopFact.{LoopKind, LoopFact}
+  loopTarget.{LoopTransferKind, LoopTarget}
+  loopResult.LoopResultFact
+  definiteReturn.DefiniteReturnFact
+  parallelRegion.ParallelRegionFact
+  parallelLoopContract.*
+  parallelWorkerContract.ParallelWorkerContract
+  atomicSharedState.*
+  normalControlFlowKind.NormalControlFlowKind
+  normalControlFlowFact.NormalControlFlowFact
+  controlFlowAstBridge.ControlFlowAstBridge
+  requireFact.RequireFact
+  loopAstBridge.LoopAstBridge
+  loopSyntaxKind.LoopSyntaxKind
+  loopSyntaxFact.LoopSyntaxFact
+}

@@ -1,0 +1,6 @@
+[module]
+name = "text"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/core/text"
+role = "text-and-ascii-capabilities"

@@ -1,0 +1,50 @@
+pub QdbSection {
+  kind: QdbSectionKind = QdbSectionKind.Unknown
+  offset: u64 = 0
+  byteLength: u64 = 0
+  rowCount: u64 = 0
+  rowStride: u64 = 0
+  alignment: u64 = 8
+}
+
+impl QdbSection {
+  pub fixed(
+    kind: QdbSectionKind,
+    offset: u64,
+    rowCount: u64,
+    rowStride: u64
+  ) =
+    This {
+      kind
+      offset
+      byteLength: rowCount * rowStride
+      rowCount
+      rowStride
+    }
+
+  pub bytes(
+    kind: QdbSectionKind,
+    offset: u64,
+    byteLength: u64
+  ) =
+    This {
+      kind
+      offset
+      byteLength
+      rowCount: byteLength
+      rowStride: 1
+      alignment: 1
+    }
+}
+
+impl view QdbSection {
+  pub known: bool => kind != QdbSectionKind.Unknown
+  pub empty: bool => byteLength == 0
+  pub fixedRows: bool => rowStride > 0 && byteLength == rowCount * rowStride
+  pub aligned: bool => alignment > 0 && offset % alignment == 0
+  pub endOffset: u64 => offset + byteLength
+  pub valid: bool =>
+    known &&
+    fixedRows &&
+    aligned
+}

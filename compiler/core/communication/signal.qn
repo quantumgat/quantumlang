@@ -1,0 +1,30 @@
+pub signal<T> {
+  state: CommunicationState = CommunicationState.Open
+  version: u64 = 0
+  observerCount: i64 = 0
+  changed: bool = false
+}
+
+impl signal<T> {
+  pub read() -> Result<T, CommunicationError>
+
+  pub set(value: T) -> Result<void, CommunicationError>
+
+  pub observe(listener: (T) -> void) -> Result<CommunicationToken, CommunicationError>
+
+  pub unobserve(token: CommunicationToken) -> Result<void, CommunicationError>
+
+  pub close() -> Result<void, CommunicationError>
+}
+
+impl view signal<T> {
+  pub observable: bool => true
+
+  pub hasObservers: bool => observerCount > 0
+
+  pub open: bool => state == CommunicationState.Open
+
+  pub valid: bool =>
+    observerCount >= 0 &&
+    (open || state == CommunicationState.Closed)
+}

@@ -1,0 +1,43 @@
+pub Index<K, V> {
+  keys: Range<K> = {}
+  values: Range<V> = {}
+  owner: CompilerId = {}
+  generation: u64 = 0
+  deterministic: bool = true
+}
+
+impl Index<K, V> {
+  pub Index(keys: Range<K>, values: Range<V>) =
+    This { keys, values }
+
+  pub Index(count: i64) =
+    This {
+      keys: Range<K>(0, count)
+      values: Range<V>(0, count)
+    }
+
+  pub Index(keys: Range<K>, values: Range<V>, owner: CompilerId, generation: u64) =
+    This {
+      keys
+      values
+      owner
+      generation
+    }
+
+  pub fromRows(keys: Range<K>, values: Range<V>, owner: CompilerId, generation: u64) =
+    This(keys, values, owner, generation)
+}
+
+impl view Index<K, V> {
+  pub count: i64 => keys.count
+
+  pub empty => keys.empty && values.empty
+
+  pub nonEmpty => count > 0
+
+  pub aligned: bool => keys.count == values.count
+
+  pub hasOwner => owner.valid
+
+  pub valid: bool => keys.valid && values.valid && aligned && deterministic
+}

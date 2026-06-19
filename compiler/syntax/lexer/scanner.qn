@@ -1,0 +1,54 @@
+import core::{FileId}
+
+pub Scanner {
+  offset: i64
+  fileId: FileId = {}
+  sourceLength: i64
+}
+
+pub ScannerCursor {
+  fileId: FileId = {}
+  offset: i64
+  atEnd: bool
+}
+
+impl Scanner {
+  pub Scanner(fileId: FileId, sourceLength: i64) =
+    This {
+      offset: 0
+      fileId
+      sourceLength
+    }
+
+  pub Scanner(fileId: u64, sourceLength: i64) =
+    This(FileId(0, 0, fileId), sourceLength)
+
+  pub cursor() -> ScannerCursor =
+    ScannerCursor(fileId, offset, offset >= sourceLength)
+
+  pub advance(bytes: i64) =
+    this { offset: offset + bytes }
+}
+
+impl ScannerCursor {
+  pub ScannerCursor(fileId: FileId, offset: i64, atEnd: bool) =
+    This { fileId, offset, atEnd }
+
+  pub ScannerCursor(fileId: u64, offset: i64, atEnd: bool) =
+    This(FileId(0, 0, fileId), offset, atEnd)
+}
+
+impl view Scanner {
+  pub atEnd => offset >= sourceLength
+  pub remaining => sourceLength - offset
+  pub valid => fileId.valid && offset >= 0 && sourceLength >= 0 && offset <= sourceLength
+  pub atStart => offset == 0
+  pub canAdvance => atEnd == false
+  pub fileKey => fileId.id.value
+}
+
+impl view ScannerCursor {
+  pub active => !atEnd
+  pub valid => fileId.valid && offset >= 0
+  pub fileKey => fileId.id.value
+}

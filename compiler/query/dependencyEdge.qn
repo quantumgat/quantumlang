@@ -1,0 +1,16 @@
+pub DependencyEdge {
+  from: QueryKey
+  to: QueryKey
+  fingerprint: Fingerprint
+  reason: string
+}
+
+impl DependencyEdge {
+  pub init(from: QueryKey, to: QueryKey, fingerprint: Fingerprint, reason: string) =
+    This { from, to, fingerprint, reason }
+}
+
+impl view DependencyEdge {
+  pub valid => reason != "" && fingerprint.nonzero
+  pub targetSpecific => from.targetSpecific || to.targetSpecific
+}

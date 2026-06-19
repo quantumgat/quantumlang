@@ -1,0 +1,21 @@
+pub QuantumFor {
+  staticTripCount: i64
+  iteratesQreg: bool
+  noClonePreserved: bool
+  valid: bool
+}
+
+impl QuantumFor {
+  pub QuantumFor(staticTripCount: i64, iteratesQreg: bool) =
+    This {
+      staticTripCount
+      iteratesQreg
+      noClonePreserved: iteratesQreg
+      valid: staticTripCount >= 0 && iteratesQreg
+    }
+}
+
+impl view QuantumFor {
+  pub bounded => staticTripCount >= 0
+  pub qregSafe => iteratesQreg && noClonePreserved
+}

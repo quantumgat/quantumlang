@@ -1,0 +1,28 @@
+pub LoopAstBridge {
+  stmtKind: AstStmtKind
+  loopKind: LoopKind
+  valid: bool = false
+}
+
+impl LoopAstBridge {
+  pub LoopAstBridge(stmtKind: AstStmtKind) -> This {
+    if stmtKind == AstStmtKind.Loop {
+      return This { stmtKind, loopKind: LoopKind.Loop, valid: true }
+    }
+    if stmtKind == AstStmtKind.While {
+      return This { stmtKind, loopKind: LoopKind.While, valid: true }
+    }
+    if stmtKind == AstStmtKind.WhileLet {
+      return This { stmtKind, loopKind: LoopKind.WhileLet, valid: true }
+    }
+    if stmtKind == AstStmtKind.For {
+      return This { stmtKind, loopKind: LoopKind.For, valid: true }
+    }
+    if stmtKind == AstStmtKind.ForRange {
+      return This { stmtKind, loopKind: LoopKind.RangeFor, valid: true }
+    }
+    This { stmtKind, loopKind: LoopKind.Loop, valid: stmtKind == AstStmtKind.Block }
+  }
+
+  isValid() = valid
+}

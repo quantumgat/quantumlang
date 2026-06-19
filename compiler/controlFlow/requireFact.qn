@@ -1,0 +1,32 @@
+pub RequireFact {
+  nodeId: i64
+  conditionRequired: bool
+  failurePathTerminates: bool
+  diagnosticCode: string
+  valid: bool
+}
+
+impl RequireFact {
+  pub RequireFact(nodeId: i64, hasCondition: bool) -> This {
+    if hasCondition {
+      return This {
+        nodeId
+        conditionRequired: true
+        failurePathTerminates: true
+        diagnosticCode: ""
+        valid: true
+      }
+    }
+    This {
+      nodeId
+      conditionRequired: true
+      failurePathTerminates: false
+      diagnosticCode: "QTCFLOW0001"
+      valid: false
+    }
+  }
+
+  isValid() = valid
+
+  reportsDiagnostic() = diagnosticCode != ""
+}

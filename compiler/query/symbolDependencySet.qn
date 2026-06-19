@@ -1,0 +1,37 @@
+pub SymbolDependencySet {
+  ownerId: StableId
+  key: QueryKey
+  inputFingerprint: Fingerprint
+  dependencyFingerprint: Fingerprint
+  edgeCount: usize
+  publicEdgeCount: usize = 0
+  schemaVersion: u64 = 1
+}
+
+impl SymbolDependencySet {
+  pub init(
+    ownerId: StableId,
+    inputFingerprint: Fingerprint,
+    dependencyFingerprint: Fingerprint,
+    edgeCount: usize,
+    publicEdgeCount: usize
+  ) =
+    This {
+      ownerId
+      key: QueryKey.symbolDependencySet(ownerId)
+      inputFingerprint
+      dependencyFingerprint
+      edgeCount
+      publicEdgeCount
+    }
+
+  pub productFingerprint() =
+    ProductFingerprint(inputFingerprint, dependencyFingerprint)
+}
+
+impl view SymbolDependencySet {
+  pub empty => edgeCount == 0
+  pub publicApiRelevant => publicEdgeCount > 0
+  pub privateOnly => edgeCount > 0 && publicEdgeCount == 0
+  pub replayable => dependencyFingerprint.nonzero
+}

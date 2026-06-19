@@ -1,0 +1,3 @@
+pub InstructionSet {
+  name: string
+}

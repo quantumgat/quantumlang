@@ -1,0 +1,14 @@
+pub enum TypeDiagnosticCode {
+  Unknown
+  InvalidBinaryOperator
+  InvalidUnaryOperator
+  InvalidAssignment
+  UnresolvedNodeType
+  UnresolvedMemberCall
+  UnresolvedMember
+  UnresolvedDeclaration
+  DuplicateDeclaration
+  DuplicateBinding
+  AmbiguousOverload
+  GenericMismatch
+}

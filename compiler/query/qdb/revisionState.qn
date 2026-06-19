@@ -1,0 +1,7 @@
+pub enum QdbRevisionState {
+  Open
+  Sealed
+  Published
+  Recovered
+  Rejected
+}

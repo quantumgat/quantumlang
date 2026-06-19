@@ -1,0 +1,11 @@
+pub enum QuantumScopeKind {
+  CoreType
+  Resource
+  Effect
+  Operation
+  Circuit
+  ControlFlow
+  Verification
+  Lowering
+  Unknown
+}

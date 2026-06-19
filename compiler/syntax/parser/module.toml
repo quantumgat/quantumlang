@@ -1,0 +1,9 @@
+[module]
+name = "parser"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/syntax/parser"
+role = "syntax-parser"
+
+[dependencies]
+modules = ["core", "source", "syntax.ast", "syntax.token"]

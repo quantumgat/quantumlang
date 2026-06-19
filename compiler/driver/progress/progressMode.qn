@@ -1,0 +1,9 @@
+pub ProgressMode {
+  quiet: bool = false
+  verbose: bool = false
+  color: ColorMode = ColorMode.Auto
+}
+
+impl view ProgressMode {
+  pub normal: bool => !quiet && !verbose
+}

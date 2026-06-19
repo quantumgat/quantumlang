@@ -1,0 +1,329 @@
+import core::{FileId}
+import syntax::{SourceLexer, SourceParser, TokenRole}
+
+pub SourceAnalysisProof {
+  primitiveNamesClassified: bool
+  integerSuffixesInferred: bool
+  floatSuffixesInferred: bool
+  decimalSuffixesInferred: bool
+  unsuffixedDefaultsCanonical: bool
+  modulePathsStayStructural: bool
+  memberAccessOwnedByName: bool
+  enumVariantsOwnedByType: bool
+  expressionBodyThisReturnInferred: bool
+  viewMatchResultInferred: bool
+  keywordLeadingGenericBoundsParsed: bool
+  roleMethodsIndexed: bool
+  pubExtendMemberVisibilityInherited: bool
+  signatureReturnStopsAtOwnerClose: bool
+  exportExceptParsed: bool
+  emptyExportExceptParsed: bool
+  valid: bool
+}
+
+pub sourceAnalysisProof() -> SourceAnalysisProof {
+  let primitiveSource =
+    "void bool char byte " +
+    "i8 i16 i32 i64 i128 i256 isize " +
+    "u8 u16 u32 u64 u128 u256 usize " +
+    "f16 f32 f64 f128 int uint"
+  let primitiveLexed = SourceLexer(FileId(1, 21, 1), primitiveSource).lex()
+  let primitiveNamesClassified = primitiveLexed.tokenCount == 24
+  let primitiveIndex: i64 = 0
+  while primitiveIndex < primitiveLexed.tokenCount {
+    if primitiveLexed.tokenAt(primitiveIndex).kind.role != TokenRole.PrimitiveType {
+      primitiveNamesClassified = false
+    }
+    primitiveIndex = primitiveIndex + 1
+  }
+
+  let source =
+    "main() { probe(" +
+    "1i8, 1i16, 1i32, 1i64, 1i128, 1i256, 1isize, " +
+    "1u8, 1u16, 1u32, 1u64, 1u128, 1u256, 1usize, " +
+    "1f16, 1f32, 1f64, 1f128, " +
+    "1dec64, 1dec128, 1dec256, 1dec, 1d, 1, 1.5" +
+    ") }"
+  let parsed = SourceParser(
+    SourceLexer(FileId(1, 21, 2), source).lex(),
+    "proof::sourceAnalysis"
+  ).parse()
+  let call = parsed.nodeAt(0)
+  let nodeIndex: i64 = 0
+  while nodeIndex < parsed.nodeCount {
+    let candidate = parsed.nodeAt(nodeIndex)
+    if candidate.text == "probe" && candidate.callArguments.count == 25 {
+      call = candidate
+    }
+    nodeIndex = nodeIndex + 1
+  }
+
+  let integerSuffixesInferred =
+    call.callArguments.count == 25 &&
+    call.callArguments[0].inferredTypeName == "i8" &&
+    call.callArguments[1].inferredTypeName == "i16" &&
+    call.callArguments[2].inferredTypeName == "i32" &&
+    call.callArguments[3].inferredTypeName == "i64" &&
+    call.callArguments[4].inferredTypeName == "i128" &&
+    call.callArguments[5].inferredTypeName == "i256" &&
+    call.callArguments[6].inferredTypeName == "isize" &&
+    call.callArguments[7].inferredTypeName == "u8" &&
+    call.callArguments[8].inferredTypeName == "u16" &&
+    call.callArguments[9].inferredTypeName == "u32" &&
+    call.callArguments[10].inferredTypeName == "u64" &&
+    call.callArguments[11].inferredTypeName == "u128" &&
+    call.callArguments[12].inferredTypeName == "u256" &&
+    call.callArguments[13].inferredTypeName == "usize"
+
+  let floatSuffixesInferred =
+    call.callArguments.count == 25 &&
+    call.callArguments[14].inferredTypeName == "f16" &&
+    call.callArguments[15].inferredTypeName == "f32" &&
+    call.callArguments[16].inferredTypeName == "f64" &&
+    call.callArguments[17].inferredTypeName == "f128"
+
+  let decimalSuffixesInferred =
+    call.callArguments.count == 25 &&
+    call.callArguments[18].inferredTypeName == "dec64" &&
+    call.callArguments[19].inferredTypeName == "dec128" &&
+    call.callArguments[20].inferredTypeName == "dec256" &&
+    call.callArguments[21].inferredTypeName == "dec" &&
+    call.callArguments[22].inferredTypeName == "dec"
+
+  let unsuffixedDefaultsCanonical =
+    call.callArguments.count == 25 &&
+    call.callArguments[23].inferredTypeName == "i32" &&
+    call.callArguments[24].inferredTypeName == "f64"
+
+  let moduleSource =
+    "module native\n" +
+    "mod { lower.lowerMir as lowerMir }\n" +
+    "export { lowerMir.NativeMirLowering }\n" +
+    "probe() { return value.member }\n"
+  let moduleParsed = SourceParser(
+    SourceLexer(FileId(1, 21, 3), moduleSource).lex(),
+    "proof::moduleSurface"
+  ).parse()
+  let modulePathsStayStructural = true
+  let memberAccessOwnedByName = false
+  let pathDotCount: i64 = 0
+  let moduleNodeIndex: i64 = 0
+  while moduleNodeIndex < moduleParsed.nodeCount {
+    let node = moduleParsed.nodeAt(moduleNodeIndex)
+    if node.text == "." {
+      modulePathsStayStructural =
+        modulePathsStayStructural &&
+        node.kind == AstNodeKind.Token &&
+        node.semanticKind == "syntax"
+      pathDotCount = pathDotCount + 1
+    }
+    if node.text == "member" {
+      memberAccessOwnedByName =
+        node.semanticKind == "name" &&
+        node.receiverPath.count == 1 &&
+        node.receiverPath[0] == "value"
+    }
+    moduleNodeIndex = moduleNodeIndex + 1
+  }
+  modulePathsStayStructural =
+    modulePathsStayStructural &&
+    pathDotCount == 3
+  let enumParsed = SourceParser(
+    SourceLexer(
+      FileId(1, 21, 4),
+      "pub enum Mode { Fast Slow }"
+    ).lex(),
+    "proof::enumVariants"
+  ).parse()
+  let enumVariantsOwnedByType = false
+  let enumDeclarationIndex: i64 = 0
+  while enumDeclarationIndex < enumParsed.declarationCount {
+    let declaration = enumParsed.declarationAt(enumDeclarationIndex)
+    if declaration.name == "Fast" || declaration.name == "Slow" {
+      enumVariantsOwnedByType =
+        declaration.ownerTypeName == "Mode" &&
+        declaration.returnTypeName == "Mode" &&
+        declaration.memberKind == "enum-variant"
+    }
+    enumDeclarationIndex = enumDeclarationIndex + 1
+  }
+  let expressionBodyParsed = SourceParser(
+    SourceLexer(
+      FileId(1, 21, 5),
+      "pub Pipeline {}\n" +
+      "impl Pipeline {\n" +
+      "  pub blocked(target: string) = This {}\n" +
+      "}\n" +
+      "impl view Pipeline {\n" +
+      "  pub statusText => match true {\n" +
+      "    true => \"ready\"\n" +
+      "    _ => \"blocked\"\n" +
+      "  }\n" +
+      "}\n"
+    ).lex(),
+    "proof::expressionBodyResults"
+  ).parse()
+  let expressionBodyThisReturnInferred = false
+  let viewMatchResultInferred = false
+  let expressionDeclarationIndex: i64 = 0
+  while expressionDeclarationIndex < expressionBodyParsed.declarationCount {
+    let declaration =
+      expressionBodyParsed.declarationAt(expressionDeclarationIndex)
+    if declaration.name == "blocked" {
+      expressionBodyThisReturnInferred =
+        declaration.ownerTypeName == "Pipeline" &&
+        declaration.memberKind == "method" &&
+        declaration.returnTypeName == "Pipeline"
+    }
+    if declaration.name == "statusText" {
+      viewMatchResultInferred =
+        declaration.ownerTypeName == "Pipeline" &&
+        declaration.memberKind == "property" &&
+        declaration.returnTypeName == "string"
+    }
+    expressionDeclarationIndex = expressionDeclarationIndex + 1
+  }
+  let genericHeaderParsed = SourceParser(
+    SourceLexer(
+      FileId(1, 21, 6),
+      "pub role ByteCodec<T> {\n" +
+      "  byteSize() -> usize\n" +
+      "  encode(out: ByteBuffer) -> Result<void, ByteError>\n" +
+      "}\n" +
+      "pub extend<T: ByteCodec<T>> T {\n" +
+      "  toBytes() = this.byteSize()\n" +
+      "}\n"
+    ).lex(),
+    "proof::keywordLeadingGenericHeader"
+  ).parse()
+  let keywordLeadingGenericBoundsParsed = false
+  let roleMethodsIndexed = false
+  let pubExtendMemberVisibilityInherited = false
+  let signatureReturnStopsAtOwnerClose = false
+  let genericDeclarationIndex: i64 = 0
+  while genericDeclarationIndex < genericHeaderParsed.declarationCount {
+    let declaration =
+      genericHeaderParsed.declarationAt(genericDeclarationIndex)
+    if declaration.name == "T" &&
+       declaration.genericParameterCount == 1 &&
+       declaration.genericParameterRows.count == 1 {
+      keywordLeadingGenericBoundsParsed =
+        declaration.genericParameterRows[0].name == "T" &&
+        declaration.genericParameterRows[0].bounds.count == 1 &&
+        declaration.genericParameterRows[0].bounds[0] == "ByteCodec<T>"
+    }
+    if declaration.name == "encode" {
+      roleMethodsIndexed =
+        declaration.ownerTypeName == "ByteCodec" &&
+        declaration.memberKind == "method" &&
+        declaration.parameters.count == 1 &&
+        declaration.parameters[0] == "out" &&
+        declaration.returnTypeName == "Result<void,ByteError>"
+    }
+    if declaration.name == "byteSize" {
+      signatureReturnStopsAtOwnerClose =
+        declaration.ownerTypeName == "ByteCodec" &&
+        declaration.memberKind == "method" &&
+        declaration.returnTypeName == "usize"
+    }
+    if declaration.name == "toBytes" {
+      pubExtendMemberVisibilityInherited =
+        declaration.ownerTypeName == "T" &&
+        declaration.memberKind == "method" &&
+        declaration.visibility == AstDeclarationVisibility.Public
+    }
+    genericDeclarationIndex = genericDeclarationIndex + 1
+  }
+  let exportParsed = SourceParser(
+    SourceLexer(
+      FileId(1, 21, 7),
+      "module facade\n" +
+      "export {\n" +
+      "  compilerType.* except { TypeId, TypeContext },\n" +
+      "  typeId.* except {},\n" +
+      "  parser.{Parser as ParserFacade, ParseResult},\n" +
+      "  nativeBackend.NativeBackend\n" +
+      "}\n"
+    ).lex(),
+    "proof::exportExcept"
+  ).parse()
+  let exportExceptParsed = false
+  let emptyExportExceptParsed = false
+  let selectedExportParsed = false
+  let dottedExportParsed = false
+  let exportDeclarationIndex: i64 = 0
+  while exportDeclarationIndex < exportParsed.declarationCount {
+    let declaration =
+      exportParsed.declarationAt(exportDeclarationIndex)
+    if declaration.name == "compilerType" {
+      exportExceptParsed =
+        declaration.visibility == AstDeclarationVisibility.Exported &&
+        declaration.wildcardImport &&
+        declaration.excludedSymbolCount == 2 &&
+        declaration.excludedSymbols.count == 2 &&
+        declaration.excludedSymbols[0] == "TypeId" &&
+        declaration.excludedSymbols[1] == "TypeContext"
+    }
+    if declaration.name == "typeId" {
+      emptyExportExceptParsed =
+        declaration.visibility == AstDeclarationVisibility.Exported &&
+        declaration.wildcardImport &&
+        declaration.excludedSymbolCount == 0 &&
+        declaration.excludedSymbols.count == 0
+    }
+    if declaration.name == "parser" &&
+       declaration.selectedSymbol == "Parser" {
+      selectedExportParsed =
+        declaration.visibility == AstDeclarationVisibility.Exported &&
+        declaration.importAlias == "ParserFacade"
+    }
+    if declaration.name == "nativeBackend" {
+      dottedExportParsed =
+        declaration.visibility == AstDeclarationVisibility.Exported &&
+        declaration.selectedSymbol == "NativeBackend"
+    }
+    exportDeclarationIndex = exportDeclarationIndex + 1
+  }
+  exportExceptParsed =
+    exportExceptParsed &&
+    selectedExportParsed &&
+    dottedExportParsed
+
+  let valid =
+    primitiveNamesClassified &&
+    integerSuffixesInferred &&
+    floatSuffixesInferred &&
+    decimalSuffixesInferred &&
+    unsuffixedDefaultsCanonical &&
+    modulePathsStayStructural &&
+    memberAccessOwnedByName &&
+    enumVariantsOwnedByType &&
+    expressionBodyThisReturnInferred &&
+    viewMatchResultInferred &&
+    keywordLeadingGenericBoundsParsed &&
+    roleMethodsIndexed &&
+    pubExtendMemberVisibilityInherited &&
+    signatureReturnStopsAtOwnerClose &&
+    exportExceptParsed &&
+    emptyExportExceptParsed
+
+  return SourceAnalysisProof {
+    primitiveNamesClassified
+    integerSuffixesInferred
+    floatSuffixesInferred
+    decimalSuffixesInferred
+    unsuffixedDefaultsCanonical
+    modulePathsStayStructural
+    memberAccessOwnedByName
+    enumVariantsOwnedByType
+    expressionBodyThisReturnInferred
+    viewMatchResultInferred
+    keywordLeadingGenericBoundsParsed
+    roleMethodsIndexed
+    pubExtendMemberVisibilityInherited
+    signatureReturnStopsAtOwnerClose
+    exportExceptParsed
+    emptyExportExceptParsed
+    valid
+  }
+}

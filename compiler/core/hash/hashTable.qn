@@ -1,0 +1,30 @@
+pub HashTable<K, V> {
+  policy: HashPolicy = HashPolicy.fastTable()
+  entries: Map<K, V> = {}
+  hashes: Vec<HashValue> = []
+  bucketCount: i64 = 0
+  generation: u64 = 0
+}
+
+impl HashTable<K, V> {
+  pub withCapacity(bucketCount: i64) =
+    This { bucketCount }
+
+  pub withEntries(entries: Map<K, V>, hashes: Vec<HashValue>) =
+    This {
+      entries
+      hashes
+      bucketCount: entries.count
+    }
+}
+
+impl view HashTable<K, V> {
+  pub count: i64 => entries.count
+  pub empty: bool => count == 0
+  pub indexed: bool => hashes.count == count
+  pub valid: bool =>
+    policy.valid &&
+    entries.valid &&
+    indexed &&
+    bucketCount >= count
+}

@@ -1,0 +1,9 @@
+[module]
+name = "semantic"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/semantic"
+role = "semantic-model"
+
+[dependencies]
+modules = ["constEval", "controlFlow", "core", "declaration", "diagnostics", "moduleSystem", "nameResolve", "package", "source", "typeSystem"]

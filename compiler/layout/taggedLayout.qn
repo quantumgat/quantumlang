@@ -1,0 +1,26 @@
+pub enum TaggedLayoutKind {
+  ExplicitTag
+  NullNiche
+  IntegerNiche
+}
+
+pub TaggedLayout {
+  kind: TaggedLayoutKind
+  payload: TypeLayout
+  tagSize: u64
+  size: u64
+  alignment: u64
+  nicheCount: u64 = 0
+}
+
+impl view TaggedLayout {
+  pub nicheOptimized: bool =>
+    kind == TaggedLayoutKind.NullNiche ||
+    kind == TaggedLayoutKind.IntegerNiche
+
+  pub valid: bool =>
+    payload.valid &&
+    alignment > 0 &&
+    size >= payload.size &&
+    (nicheOptimized || tagSize > 0)
+}

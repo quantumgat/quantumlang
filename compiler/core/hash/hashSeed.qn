@@ -1,0 +1,7 @@
+pub HashSeed {
+  value: u64 = 0
+}
+
+impl view HashSeed {
+  pub zero: bool => value == 0
+}

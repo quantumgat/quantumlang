@@ -1,0 +1,200 @@
+pub Host {
+  target: string
+}
+
+impl Host {
+  pub Host(target: string) =
+    This {
+      target,
+    }
+}
+
+impl view Host {
+  package: HostPackage => HostPackage.fromHost(target)
+
+  source: HostSource => HostSource.fromHost(target)
+
+  lexer: HostLexer => HostLexer.fromHost(target)
+
+  parser: HostParser => HostParser.fromHost(target)
+}
+
+pub HostPackage {
+  target: string
+}
+
+extract HostPackage {
+  pub HostPackage(target: string) =
+    This {
+      target,
+    }
+
+  pub fromHost(target: string) =
+    This {
+      target,
+    }
+}
+
+impl view HostPackage {
+  files: i64 => hostPackageFiles()
+
+  boundaries: i64 => hostPackageBoundaries()
+
+  manifest: bool => hostPackageManifest()
+
+  sourceRoot: bool => hostPackageSourceRoot()
+
+  appMain: bool => hostPackageAppMain()
+
+  hostPackageFiles() -> i64 {
+    return 0
+  }
+
+  hostPackageBoundaries() -> i64 {
+    return 0
+  }
+
+  hostPackageManifest() -> bool {
+    return false
+  }
+
+  hostPackageSourceRoot() -> bool {
+    return false
+  }
+
+  hostPackageAppMain() -> bool {
+    return false
+  }
+}
+
+pub HostSource {
+  target: string
+}
+
+extract HostSource {
+  pub HostSource(target: string) =
+    This {
+      target,
+    }
+
+  pub fromHost(target: string) =
+    This {
+      target,
+    }
+}
+
+impl view HostSource {
+  bytes: i64 => hostSourceBytes()
+
+  main: bool => hostSourceMain()
+
+  quantumStyleImports: bool => hostSourceQuantumImports()
+
+  hostSourceBytes() -> i64 {
+    return 0
+  }
+
+  hostSourceMain() -> bool {
+    return false
+  }
+
+  hostSourceQuantumImports() -> bool {
+    return false
+  }
+}
+
+pub HostLexer {
+  target: string
+}
+
+extract HostLexer {
+  pub HostLexer(target: string) =
+    This {
+      target,
+    }
+
+  pub fromHost(target: string) =
+    This {
+      target,
+    }
+}
+
+impl view HostLexer {
+  tokens: i64 => hostLexerTokens()
+
+  imports: bool => hostLexerImports()
+
+  modulePaths: bool => hostLexerModulePaths()
+
+  printCalls: bool => hostLexerPrintCalls()
+
+  hostLexerTokens() -> i64 {
+    return 0
+  }
+
+  hostLexerImports() -> bool {
+    return false
+  }
+
+  hostLexerModulePaths() -> bool {
+    return false
+  }
+
+  hostLexerPrintCalls() -> bool {
+    return false
+  }
+}
+
+pub HostParser {
+  target: string
+}
+
+extract HostParser {
+  pub HostParser(target: string) =
+    This {
+      target,
+    }
+
+  pub fromHost(target: string) =
+    This {
+      target,
+    }
+}
+
+impl view HostParser {
+  functions: i64 => hostParserFunctions()
+
+  moduleRoot: bool => hostParserModuleRoot()
+
+  imports: bool => hostParserImports()
+
+  functionItems: bool => hostParserFunctionItems()
+
+  returns: bool => hostParserReturns()
+
+  calls: bool => hostParserCalls()
+
+  hostParserFunctions() -> i64 {
+    return 0
+  }
+
+  hostParserModuleRoot() -> bool {
+    return false
+  }
+
+  hostParserImports() -> bool {
+    return false
+  }
+
+  hostParserFunctionItems() -> bool {
+    return false
+  }
+
+  hostParserReturns() -> bool {
+    return false
+  }
+
+  hostParserCalls() -> bool {
+    return false
+  }
+}

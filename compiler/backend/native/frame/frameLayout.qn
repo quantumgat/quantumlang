@@ -1,0 +1,46 @@
+pub FrameLayout {
+  stackBytes: i64
+  stackAlignBytes: i64
+  returnAddressSaved: bool
+  calleeSavedSlots: i64
+  diagnosticCode: string = ""
+}
+
+impl FrameLayout {
+  pub FrameLayout(stackBytes: i64, stackAlignBytes: i64, returnAddressSaved: bool, calleeSavedSlots: i64) =
+    This { stackBytes, stackAlignBytes, returnAddressSaved, calleeSavedSlots }
+
+  pub empty(stackAlignBytes: i64) =
+    This {
+      stackBytes: 0
+      stackAlignBytes
+      returnAddressSaved: true
+      calleeSavedSlots: 0
+    }
+
+  withStackBytes(stackBytes: i64) =
+    this {
+      stackBytes
+    }
+
+  addCalleeSavedSlot() =
+    this {
+      calleeSavedSlots: calleeSavedSlots + 1
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QNATIVE0401"
+    }
+}
+
+impl view FrameLayout {
+  pub valid => diagnosticCode == "" && stackBytes >= 0 && stackAlignBytes > 0 && returnAddressSaved && calleeSavedSlots >= 0
+  pub aligned => stackAlignBytes > 0
+  pub leafFrame => calleeSavedSlots == 0
+  pub hasCalleeSaved => calleeSavedSlots > 0
+  pub lowerable => valid
+  pub frameCost => stackBytes + calleeSavedSlots
+  pub debugName => "native.frame.stack{stackBytes}.align{stackAlignBytes}"
+}
+

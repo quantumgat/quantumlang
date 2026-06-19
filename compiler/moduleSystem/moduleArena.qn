@@ -1,0 +1,69 @@
+import core::{Arena, ModuleId, Slice}
+
+pub ModuleArena {
+  modules: Arena<ModuleNode> = {}
+  moduleValues: Vec<ModuleNode> = []
+  ids: Slice<ModuleId> = []
+  idValues: Vec<ModuleId> = []
+  roots: Slice<ModuleId> = []
+  publicModules: Slice<ModuleId> = []
+  deterministic: bool = true
+}
+
+impl ModuleArena {
+  pub ModuleArena(moduleCount: i64) =
+    This {
+      modules: Arena(moduleCount)
+      ids: Slice(moduleCount)
+      roots: Slice(1)
+      publicModules: Slice(moduleCount)
+    }
+
+  pub add(node: ModuleNode) {
+    moduleValues.push(node)
+    idValues.push(node.id)
+    modules = Arena(moduleValues.count)
+    ids = Slice(idValues.count)
+    publicModules = Slice(moduleValues.count)
+    if roots.count == 0 {
+      roots = Slice(1)
+    }
+  }
+
+  pub moduleAt(index: i64) -> ModuleNode {
+    return moduleValues[index]
+  }
+
+  pub idAt(index: i64) -> ModuleId {
+    return idValues[index]
+  }
+}
+
+impl view ModuleArena {
+  pub count: i64 => moduleValues.count
+
+  pub rootCount: i64 => roots.count
+
+  pub publicCount: i64 => publicModules.count
+
+  pub nonEmpty: bool => count > 0
+
+  pub idsAligned: bool =>
+    ids.count == count &&
+    idValues.count == count &&
+    modules.count == count
+
+  pub publicWithinArena: bool => publicCount >= 0 && publicCount <= count
+
+  pub rootsWithinArena: bool => rootCount >= 0 && rootCount <= count
+
+  pub valid: bool =>
+    deterministic &&
+    modules.valid &&
+    ids.valid &&
+    roots.valid &&
+    publicModules.valid &&
+    idsAligned &&
+    publicWithinArena &&
+    rootsWithinArena
+}

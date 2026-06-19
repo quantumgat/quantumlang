@@ -1,0 +1,5 @@
+pub wrongAssociatedAccess(
+  ctx: HttpCtx<AuthUser, Session<UserSession>, CsrfToken, JsonBody<CreateUserBody>>
+) -> bool {
+  return ctx.context.requiresAuth
+}

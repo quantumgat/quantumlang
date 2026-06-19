@@ -1,0 +1,24 @@
+pub ConstantVerification {
+  valueCount: i64
+  errorCount: i64
+  fingerprintValid: bool
+  deterministic: bool
+}
+
+impl ConstantVerification {
+  pub verify(product: ConstantProduct) =
+    This {
+      valueCount: product.valueCount
+      errorCount: product.errorCount
+      fingerprintValid: product.fingerprint.valid
+      deterministic: product.deterministic
+    }
+}
+
+impl view ConstantVerification {
+  pub valid: bool =>
+    valueCount > 0 &&
+    errorCount == 0 &&
+    fingerprintValid &&
+    deterministic
+}

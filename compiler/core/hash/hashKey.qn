@@ -1,0 +1,25 @@
+pub HashKey {
+  value: bytes = ByteValue.empty()
+}
+
+impl HashKey {
+  pub fromBytes(value: bytes) -> Result<This, HashError> {
+    if value.length() != 32 {
+      return Err(HashError {
+        kind: HashErrorKind.InvalidKeyLength
+        expected: 32
+        actual: value.length()
+      })
+    }
+    return Ok(This { value })
+  }
+}
+
+impl view HashKey {
+  pub toBytes() -> bytes {
+    return value
+  }
+
+  pub length: usize => value.length()
+  pub valid: bool => length == 32
+}

@@ -1,0 +1,50 @@
+pub QuantumLoopProfileFact {
+  profileName: string
+  boundedRequired: bool
+  measurementAllowed: bool
+  targetSupported: bool
+  qwhileAllowed: bool
+  qloopAllowed: bool
+  diagnosticCode: string
+  valid: bool
+}
+
+impl QuantumLoopProfileFact {
+  pub QuantumLoopProfileFact(
+    profileName: string,
+    boundedRequired: bool,
+    measurementAllowed: bool,
+    targetSupported: bool,
+  ) {
+    let valid = profileName != "" && boundedRequired && targetSupported
+
+    if valid {
+      return This {
+        profileName
+        boundedRequired
+        measurementAllowed
+        targetSupported
+        qwhileAllowed: true
+        qloopAllowed: true
+        diagnosticCode: ""
+        valid: true
+      }
+    }
+
+    This {
+      profileName
+      boundedRequired
+      measurementAllowed
+      targetSupported
+      qwhileAllowed: false
+      qloopAllowed: false
+      diagnosticCode: "QTQUANTUM0204"
+      valid: false
+    }
+  }
+}
+
+impl view QuantumLoopProfileFact {
+  pub supported => targetSupported
+  pub bounded => boundedRequired
+}

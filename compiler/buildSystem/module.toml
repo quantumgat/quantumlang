@@ -1,0 +1,9 @@
+[module]
+name = "buildSystem"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/buildSystem"
+role = "build-system"
+
+[dependencies]
+modules = ["backend", "frontend", "hir", "host", "typeSystem"]

@@ -1,0 +1,161 @@
+pub enum RangeError {
+  NegativeStart
+  NegativeCount
+  EndBeforeStart
+  EndOverflow
+  LengthOverflow
+}
+
+pub Range<T> {
+  start: i64 = 0
+  count: i64 = 0
+}
+
+impl Range<T> {
+  pub Range(start: i64, count: i64) =
+    This { start, count }
+
+  pub all(count: i64) =
+    This(0, count)
+
+  pub single(index: i64) =
+    This(index, 1)
+
+  pub fromBounds(start: i64, end: i64) =
+    This(start, end - start)
+
+  pub inclusive(start: i64, end: i64) =
+    This(start, end - start + 1)
+
+  pub checked(start: i64, count: i64) -> Result<This, RangeError> {
+    if start < 0 {
+      return Err(RangeError.NegativeStart)
+    }
+
+    if count < 0 {
+      return Err(RangeError.NegativeCount)
+    }
+
+    return Ok(This(start, count))
+  }
+
+  pub checkedBounds(start: i64, end: i64) -> Result<This, RangeError> {
+    if end < start {
+      return Err(RangeError.EndBeforeStart)
+    }
+
+    return This.checked(start, end - start)
+  }
+
+  pub contains(index: i64) -> bool {
+    return valid && index >= start && index < end
+  }
+
+  pub containsRange(other: Range<T>) -> bool {
+    return valid &&
+           other.valid &&
+           other.start >= start &&
+           other.end <= end
+  }
+
+  pub overlaps(other: Range<T>) -> bool {
+    return valid &&
+           other.valid &&
+           start < other.end &&
+           other.start < end
+  }
+
+  pub before(other: Range<T>) -> bool {
+    return valid && other.valid && end <= other.start
+  }
+
+  pub after(other: Range<T>) -> bool {
+    return valid && other.valid && start >= other.end
+  }
+
+  shift(delta: i64) =
+    This(start + delta, count)
+
+  grow(extra: i64) =
+    This(start, count + extra)
+
+  growTo(newCount: i64) =
+    This(start, newCount)
+
+  take(n: i64) -> This {
+    if n <= 0 {
+      return This()
+    }
+
+    if n >= count {
+      return this
+    }
+
+    return This(start, n)
+  }
+
+  drop(n: i64) -> This {
+    if n <= 0 {
+      return this
+    }
+
+    if n >= count {
+      return This()
+    }
+
+    return This(start + n, count - n)
+  }
+
+  intersection(other: Range<T>) -> This {
+    if !overlaps(other) {
+      return This()
+    }
+
+    let lo: i64 =
+      if start >= other.start {
+        start
+      } else {
+        other.start
+      }
+
+    let hi: i64 =
+      if end <= other.end {
+        end
+      } else {
+        other.end
+      }
+
+    return This(lo, hi - lo)
+  }
+
+}
+
+impl view Range<T> {
+  pub end => start + count
+
+  pub empty => count == 0
+
+  pub nonEmpty => count > 0
+
+  pub hasValidStart => start >= 0
+
+  pub hasValidCount => count >= 0
+
+  pub hasValidEnd => start >= 0 && count >= 0
+
+  pub valid => hasValidStart && hasValidCount && hasValidEnd
+
+  pub boundedStart: bool => true
+
+  pub boundedEnd: bool => true
+
+  pub isFinite: bool => true
+
+  pub isOpenEnded: bool => false
+
+  pub isFull: bool => false
+
+  pub endInclusive: bool => false
+
+  pub endExclusive: bool => true
+}

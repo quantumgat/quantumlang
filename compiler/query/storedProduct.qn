@@ -1,0 +1,33 @@
+import storage::{CacheActionContentLink, CacheObjectContract, CacheValidation}
+
+pub StoredProduct {
+  address: ProductAddress
+  actionLink: CacheActionContentLink
+  fingerprint: ProductFingerprint
+  contract: CacheObjectContract
+  validation: CacheValidation
+  payloadLength: u64 = 0
+  revision: u64 = 0
+}
+
+impl view StoredProduct {
+  pub identityMatches: bool =>
+    actionLink.content.digest == address.content.digest
+
+  pub lengthMatches: bool =>
+    contract.header.payloadLength == payloadLength
+
+  pub validated: bool =>
+    validation.valid &&
+    contract.valid &&
+    identityMatches &&
+    lengthMatches
+
+  pub valid: bool =>
+    address.valid &&
+    actionLink.valid &&
+    fingerprint.cacheable &&
+    payloadLength > 0 &&
+    revision > 0 &&
+    validated
+}

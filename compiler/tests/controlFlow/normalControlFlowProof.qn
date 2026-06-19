@@ -1,0 +1,54 @@
+import controlFlow::{*}
+import syntax::{AstStmtKind}
+
+pub NormalControlFlowProof {
+  branchCreatesRegion: bool
+  matchCreatesRegion: bool
+  returnTerminatesPath: bool
+  requireNeedsCondition: bool
+  astBridgeMapsStatements: bool
+  valid: bool
+}
+
+pub normalControlFlowProof() -> NormalControlFlowProof {
+  let ifFact = NormalControlFlowFact(1, NormalControlFlowKind.If)
+  let matchFact = NormalControlFlowFact(2, NormalControlFlowKind.Match)
+  let returnFact = NormalControlFlowFact(3, NormalControlFlowKind.Return)
+  let requireOk = RequireFact(4, true)
+  let requireBad = RequireFact(5, false)
+  let ifBridge = ControlFlowAstBridge(AstStmtKind.If)
+  let returnBridge = ControlFlowAstBridge(AstStmtKind.Return)
+  let letBridge = ControlFlowAstBridge(AstStmtKind.Let)
+
+  let branchCreatesRegion = ifFact.createsRegion &&
+    ifFact.requiresCondition
+
+  let matchCreatesRegion = matchFact.createsRegion &&
+    matchFact.requiresCondition
+
+  let returnTerminatesPath = returnFact.terminatesPath &&
+    !returnFact.createsRegion
+
+  let requireNeedsCondition = requireOk.valid &&
+    requireOk.failurePathTerminates &&
+    requireBad.diagnosticCode == "QTCFLOW0001"
+
+  let astBridgeMapsStatements = ifBridge.flowKind == NormalControlFlowKind.If &&
+    returnBridge.flowKind == NormalControlFlowKind.Return &&
+    letBridge.flowKind == NormalControlFlowKind.Expr
+
+  let valid = branchCreatesRegion &&
+    matchCreatesRegion &&
+    returnTerminatesPath &&
+    requireNeedsCondition &&
+    astBridgeMapsStatements
+
+  return NormalControlFlowProof {
+    branchCreatesRegion: branchCreatesRegion,
+    matchCreatesRegion: matchCreatesRegion,
+    returnTerminatesPath: returnTerminatesPath,
+    requireNeedsCondition: requireNeedsCondition,
+    astBridgeMapsStatements: astBridgeMapsStatements,
+    valid: valid,
+  }
+}

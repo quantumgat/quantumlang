@@ -1,0 +1,41 @@
+pub PreludeSymbolFact {
+  name: string
+  kind: PreludeSymbolKind
+  importRequired: bool
+  advancedIo: bool
+  valid: bool
+}
+
+impl PreludeSymbolFact {
+  pub PreludeSymbolFact(name: string, kind: PreludeSymbolKind, importRequired: bool, advancedIo: bool, valid: bool) =
+    This { name, kind, importRequired, advancedIo, valid }
+
+  pub fromName(name: string) -> This {
+    if name == "print" {
+      return This(name, PreludeSymbolKind.Print, false, false, true)
+    }
+    if name == "println" {
+      return This(name, PreludeSymbolKind.Println, false, false, true)
+    }
+    if name == "eprint" {
+      return This(name, PreludeSymbolKind.Eprint, false, false, true)
+    }
+    if name == "eprintln" {
+      return This(name, PreludeSymbolKind.Eprintln, false, false, true)
+    }
+    if name == "debug" {
+      return This(name, PreludeSymbolKind.Debug, false, false, true)
+    }
+    return This(name, PreludeSymbolKind.Unknown, true, true, false)
+  }
+
+  pub advancedIoRequiresImport(name: string) -> bool {
+    if name == "readLine" || name == "writeFile" {
+      return true
+    }
+    if name == "stdout" || name == "stderr" {
+      return true
+    }
+    return false
+  }
+}

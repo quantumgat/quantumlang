@@ -1,0 +1,33 @@
+pub QuantumTranspilePlan {
+  passCount: i64
+  sourceFormat: string
+  targetFormat: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl QuantumTranspilePlan {
+  pub QuantumTranspilePlan(passCount: i64, sourceFormat: string, targetFormat: string) =
+    This { passCount, sourceFormat, targetFormat }
+
+  pub identity(format: string) =
+    This {
+      passCount: 0
+      sourceFormat: format
+      targetFormat: format
+    }
+
+  addPass() =
+    this {
+      passCount: passCount + 1
+    }
+}
+
+impl view QuantumTranspilePlan {
+  pub valid => diagnosticCode == "" && passCount >= 0 && sourceFormat != "" && targetFormat != ""
+  pub required => sourceFormat != targetFormat || passCount > 0
+  pub identityPlan => required == false
+  pub cacheKey => "{sourceFormat}:{targetFormat}:{passCount}"
+  pub lowerable => valid && deterministic
+  pub debugName => "quantum.transpile.{sourceFormat}.{targetFormat}.{passCount}"
+}

@@ -1,0 +1,6 @@
+[module]
+name = "optimize"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/optimize"
+role = "optimizer"

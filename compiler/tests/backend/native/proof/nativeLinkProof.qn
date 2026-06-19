@@ -1,0 +1,63 @@
+import backend::native::{*}
+pub NativeLinkProof {
+  unchangedInputSetReusesLink: bool
+  changedObjectSetRelinks: bool
+  artifactLayoutClean: bool
+  linkPlanStable: bool
+  productDeterministic: bool
+  valid: bool
+}
+
+pub nativeLinkProof() -> NativeLinkProof {
+  let inputs = LinkInputSet(3, "objects:aaa", "runtime:111", "script:default", "target:debug", "link:aaa")
+  let sameInputs = LinkInputSet(3, "objects:aaa", "runtime:111", "script:default", "target:debug", "link:aaa")
+  let changedInputs = LinkInputSet(3, "objects:bbb", "runtime:111", "script:default", "target:debug", "link:bbb")
+  let layout = NativeArtifactLayout("qtlc1", "debug")
+  let reusedPlan = LinkPlan(inputs.objectUnitCount, inputs.inputSetHash, "x86_64-unknown-linux-gnu", "debug", "build/debug/qtlc1", false)
+  let relinkPlan = LinkPlan(changedInputs.objectUnitCount, changedInputs.inputSetHash, "x86_64-unknown-linux-gnu", "debug", "build/debug/qtlc1", true)
+  let reusedProduct = LinkProduct(reusedPlan.outputPath, "exe:aaa", true, "")
+  let relinkedProduct = LinkProduct(relinkPlan.outputPath, "exe:bbb", false, "object-set-changed")
+
+  let unchangedInputSetReusesLink = inputs.valid &&
+    sameInputs.valid &&
+    inputs.inputSetHash == sameInputs.inputSetHash &&
+    reusedPlan.valid &&
+    !reusedPlan.relinkRequired &&
+    reusedProduct.reused
+
+  let changedObjectSetRelinks = changedInputs.valid &&
+    inputs.inputSetHash != changedInputs.inputSetHash &&
+    relinkPlan.valid &&
+    relinkPlan.relinkRequired &&
+    !relinkedProduct.reused &&
+    relinkedProduct.missReason == "object-set-changed"
+
+  let artifactLayoutClean = layout.valid &&
+    layout.debugDir == "build/debug" &&
+    layout.releaseDir == "build/release" &&
+    layout.cachePrivate
+
+  let linkPlanStable = reusedPlan.inputCount == inputs.objectUnitCount &&
+    relinkPlan.inputCount == changedInputs.objectUnitCount &&
+    reusedPlan.outputPath == relinkPlan.outputPath
+
+  let productDeterministic = reusedProduct.valid &&
+    relinkedProduct.valid &&
+    reusedProduct.deterministic &&
+    relinkedProduct.deterministic
+
+  let valid = unchangedInputSetReusesLink &&
+    changedObjectSetRelinks &&
+    artifactLayoutClean &&
+    linkPlanStable &&
+    productDeterministic
+
+  return NativeLinkProof {
+    unchangedInputSetReusesLink: unchangedInputSetReusesLink,
+    changedObjectSetRelinks: changedObjectSetRelinks,
+    artifactLayoutClean: artifactLayoutClean,
+    linkPlanStable: linkPlanStable,
+    productDeterministic: productDeterministic,
+    valid: valid,
+  }
+}

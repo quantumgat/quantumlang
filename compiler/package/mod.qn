@@ -1,0 +1,15 @@
+module package
+
+mod {
+  packageIdentity
+  packageTarget
+  packageGraph
+  manifestProduct
+}
+
+export {
+  packageIdentity.PackageIdentity
+  packageTarget.{PackageTargetKind, PackageTarget}
+  packageGraph.{PackageDependency, PackageGraph}
+  manifestProduct.ManifestProduct
+}

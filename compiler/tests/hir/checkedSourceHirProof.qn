@@ -1,0 +1,61 @@
+import hir::{*}
+import semantic::{CheckedFile, CheckedModule, SemanticModel}
+
+pub CheckedSourceHirProof {
+  checkedFileAccepted: bool
+  checkedModuleAccepted: bool
+  semanticModelAttached: bool
+  hirModuleProduced: bool
+  stableProductNamed: bool
+  controlFlowPreserved: bool
+  valid: bool
+}
+
+pub checkedSourceHirProof() -> CheckedSourceHirProof {
+  let file = CheckedFile {
+    path: "qtlang/compiler/driver/main.qn",
+  }
+  let module = CheckedModule {
+    name: "driver",
+  }
+  let semanticModel = SemanticModel {
+    moduleCount: 1,
+  }
+  let lowering = CheckedSourceLoweringFact(file, module, semanticModel, 6, 2)
+  let item = HirItem(1, "main", "function", 10, true)
+  let function = HirFunction(item, 1, 2, false, 0)
+  let functionItem = function.item
+  let flow = HirControlFlowFact(functionItem.id, true, true, true, true)
+  let loweredModule = lowering.hirModule
+
+  let checkedFileAccepted = file.path != "" && lowering.valid
+  let checkedModuleAccepted = loweredModule.name == "driver"
+  let semanticModelAttached = semanticModel.moduleCount == lowering.semanticModel.moduleCount
+  let hirModuleProduced = loweredModule.valid &&
+    loweredModule.itemCount == 6 &&
+    loweredModule.functionCount == 2
+  let stableProductNamed = loweredModule.name == "driver" &&
+    lowering.deterministic
+  let controlFlowPreserved = function.valid &&
+    flow.valid &&
+    flow.hasIf &&
+    flow.hasLoop &&
+    flow.hasReturn &&
+    flow.hasRequire
+  let valid = checkedFileAccepted &&
+    checkedModuleAccepted &&
+    semanticModelAttached &&
+    hirModuleProduced &&
+    stableProductNamed &&
+    controlFlowPreserved
+
+  return CheckedSourceHirProof {
+    checkedFileAccepted: checkedFileAccepted,
+    checkedModuleAccepted: checkedModuleAccepted,
+    semanticModelAttached: semanticModelAttached,
+    hirModuleProduced: hirModuleProduced,
+    stableProductNamed: stableProductNamed,
+    controlFlowPreserved: controlFlowPreserved,
+    valid: valid,
+  }
+}

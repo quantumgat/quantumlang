@@ -1,0 +1,84 @@
+import diagnostics::{DiagnosticRegistry, FunctionDiagnosticCode, LiteralDiagnosticCode, TypeDiagnosticCode}
+
+pub DiagnosticRegistryProof {
+  stableTypeCodes: bool
+  stableLiteralCodes: bool
+  uniqueTypeCodes: bool
+  uniqueLiteralCodes: bool
+  structuredMetadata: bool
+  formatting: bool
+  valid: bool
+}
+
+pub diagnosticRegistryProof() -> DiagnosticRegistryProof {
+  let binary = DiagnosticRegistry.type(TypeDiagnosticCode.InvalidBinaryOperator)
+  let unary = DiagnosticRegistry.type(TypeDiagnosticCode.InvalidUnaryOperator)
+  let assignment = DiagnosticRegistry.type(TypeDiagnosticCode.InvalidAssignment)
+  let memberCall = DiagnosticRegistry.type(TypeDiagnosticCode.UnresolvedMemberCall)
+  let member = DiagnosticRegistry.type(TypeDiagnosticCode.UnresolvedMember)
+  let duplicate = DiagnosticRegistry.type(TypeDiagnosticCode.DuplicateDeclaration)
+  let ambiguous = DiagnosticRegistry.type(TypeDiagnosticCode.AmbiguousOverload)
+  let generic = DiagnosticRegistry.type(TypeDiagnosticCode.GenericMismatch)
+  let missingReturn = DiagnosticRegistry.function(FunctionDiagnosticCode.MissingReturn)
+
+  let none = DiagnosticRegistry.literal(LiteralDiagnosticCode.NoneWithoutOptionTarget)
+  let array = DiagnosticRegistry.literal(LiteralDiagnosticCode.UnclearEmptyArray)
+  let map = DiagnosticRegistry.literal(LiteralDiagnosticCode.UnclearMapLiteral)
+  let target = DiagnosticRegistry.literal(LiteralDiagnosticCode.InvalidLiteralTarget)
+
+  let stableTypeCodes =
+    binary.code.display == "QTTYPE0001" &&
+    unary.code.display == "QTTYPE0002" &&
+    assignment.code.display == "QTTYPE0003" &&
+    memberCall.code.display == "QTTYPE0104" &&
+    member.code.display == "QTTYPE0105" &&
+    duplicate.code.display == "QTTYPE0202" &&
+    ambiguous.code.display == "QTTYPE0401" &&
+    generic.code.display == "QTTYPE0402"
+    && missingReturn.code.display == "QTFN0002"
+
+  let stableLiteralCodes =
+    none.code.display == "QTLIT0001" &&
+    array.code.display == "QTLIT0002" &&
+    map.code.display == "QTLIT0003" &&
+    target.code.display == "QTLIT0008"
+
+  let uniqueTypeCodes =
+    binary.code.display != unary.code.display &&
+    unary.code.display != assignment.code.display &&
+    memberCall.code.display != member.code.display &&
+    ambiguous.code.display != generic.code.display
+
+  let uniqueLiteralCodes =
+    none.code.display != array.code.display &&
+    array.code.display != map.code.display &&
+    map.code.display != target.code.display
+
+  let structuredMetadata =
+    binary.valid &&
+    binary.blocking &&
+    binary.help != "" &&
+    binary.documentation == "diagnostics/type/1" &&
+    none.valid &&
+    none.documentation == "diagnostics/literal/1"
+
+  let formatting =
+    binary.format("+") == "binary operator '+' has no compatible operand type" &&
+    member.format("user.name") == "unresolved member 'user.name'" &&
+    none.format("") == "none literal requires Option<T> target type"
+
+  return DiagnosticRegistryProof {
+    stableTypeCodes
+    stableLiteralCodes
+    uniqueTypeCodes
+    uniqueLiteralCodes
+    structuredMetadata
+    formatting
+    valid: stableTypeCodes &&
+      stableLiteralCodes &&
+      uniqueTypeCodes &&
+      uniqueLiteralCodes &&
+      structuredMetadata &&
+      formatting
+  }
+}

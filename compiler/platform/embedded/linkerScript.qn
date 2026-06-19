@@ -1,0 +1,22 @@
+pub LinkerScript {
+  path: string
+  memoryRegionsDeclared: bool
+  entryDeclared: bool
+  valid: bool
+}
+
+impl LinkerScript {
+  pub LinkerScript(path: string, memoryRegionsDeclared: bool, entryDeclared: bool) =
+    This {
+      path
+      memoryRegionsDeclared
+      entryDeclared
+      valid: path != "" && memoryRegionsDeclared && entryDeclared
+    }
+}
+
+impl view LinkerScript {
+  pub declaresMemory => memoryRegionsDeclared
+  pub declaresEntry => entryDeclared
+  pub linkable => valid
+}

@@ -1,0 +1,65 @@
+import mir::{*}
+import hir::{HirItem, HirFunction, HirControlFlowFact}
+
+pub HirMirLoweringProof {
+  hirFunctionAccepted: bool
+  mirBodyProduced: bool
+  cfgProduced: bool
+  returnLowered: bool
+  branchLowered: bool
+  requireLowered: bool
+  deterministicProduct: bool
+  valid: bool
+}
+
+pub hirMirLoweringProof() -> HirMirLoweringProof {
+  let item = HirItem(7, "compileModule", "function", 80, true)
+  let function = HirFunction(item, 2, 3, true, 1)
+  let flow = HirControlFlowFact(item.id, true, true, true, true)
+  let lowering = HirMirLoweringFact(function, flow)
+
+  let hirFunctionAccepted = function.valid &&
+    lowering.hirFunction.item.name == "compileModule"
+
+  let mirBodyProduced = lowering.mirBody.valid &&
+    lowering.mirBody.functionName == function.item.name &&
+    lowering.mirBody.blockCount == function.blockCount + 1
+
+  let cfgProduced = lowering.cfg.deterministic &&
+    lowering.cfg.blockCount == lowering.mirBody.blockCount
+
+  let returnLowered = lowering.returnTerminator.valid &&
+    lowering.returnTerminator.kind == "return" &&
+    lowering.returnTerminator.returns
+
+  let branchLowered = lowering.branchTerminator.valid &&
+    lowering.branchTerminator.kind == "branch" &&
+    lowering.branchTerminator.targetCount == 2
+
+  let requireLowered = lowering.requireTerminator.valid &&
+    lowering.requireTerminator.kind == "requireFail" &&
+    lowering.requireTerminator.returns
+
+  let deterministicProduct = lowering.valid &&
+    lowering.deterministic &&
+    lowering.diagnosticCode == ""
+
+  let valid = hirFunctionAccepted &&
+    mirBodyProduced &&
+    cfgProduced &&
+    returnLowered &&
+    branchLowered &&
+    requireLowered &&
+    deterministicProduct
+
+  return HirMirLoweringProof {
+    hirFunctionAccepted: hirFunctionAccepted,
+    mirBodyProduced: mirBodyProduced,
+    cfgProduced: cfgProduced,
+    returnLowered: returnLowered,
+    branchLowered: branchLowered,
+    requireLowered: requireLowered,
+    deterministicProduct: deterministicProduct,
+    valid: valid,
+  }
+}

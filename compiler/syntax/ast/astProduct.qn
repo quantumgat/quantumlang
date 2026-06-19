@@ -1,0 +1,208 @@
+import core::{FileId}
+import source::{SourceSpan}
+
+pub AstProduct {
+  fileId: FileId = {}
+  arena: AstArena = {}
+  declarations: Vec<AstDeclaration> = []
+  declarationRowCount: i64 = 0
+  functionCount: i64 = 0
+  typeCount: i64 = 0
+  implCount: i64 = 0
+  viewCount: i64 = 0
+  roleCount: i64 = 0
+  importCount: i64 = 0
+  contextCount: i64 = 0
+  extractCount: i64 = 0
+  extendCount: i64 = 0
+  returnCount: i64 = 0
+  callCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl AstProduct {
+  pub AstProduct(fileId: FileId) =
+    This {
+      fileId
+      arena: AstArena(fileId)
+    }
+
+  pub addNode(node: AstNode) {
+    arena.add(node)
+  }
+
+  pub setRoot(root: AstNodeId) {
+    arena.addRoot(root)
+  }
+
+  pub addDiagnostic(span: SourceSpan) {
+    arena.addDiagnostic(span)
+  }
+
+  pub addDeclaration(declaration: AstDeclaration) {
+    declarations.push(declaration)
+    declarationRowCount = declarationRowCount + 1
+  }
+}
+
+impl view AstProduct {
+  pub rootCount: i64 => arena.rootCount
+  pub nodeCount: i64 => arena.count
+  pub diagnosticCount: i64 => arena.diagnosticCount
+  pub declarationCount: i64 => declarationRowCount
+  pub clean: bool => arena.clean
+  pub moduleRoot: bool => rootCount == 1
+  pub imports: bool => importCount > 0
+  pub functionItems: bool => functionCount > 0
+  pub returns: bool => returnCount > 0
+  pub calls: bool => callCount > 0
+  pub arenaOwned: bool => arena.fileId == fileId && arena.storageAligned
+
+  pub nodeAt(index: i64) -> AstNode {
+    arena.nodeAt(index)
+  }
+
+  pub declarationAt(index: i64) -> AstDeclaration {
+    declarations[index]
+  }
+
+  pub valid: bool =>
+    fileId.valid &&
+    moduleRoot &&
+    nodeCount > 0 &&
+    declarations.count == declarationCount &&
+    arenaOwned &&
+    arena.valid &&
+    clean &&
+    deterministic
+}
+
+pub PackageAstProduct {
+  files: Vec<AstProduct> = []
+  declarations: Vec<AstDeclaration> = []
+  fileRowCount: i64 = 0
+  declarationRowCount: i64 = 0
+  rootCount: i64 = 0
+  nodeCount: i64 = 0
+  diagnosticCount: i64 = 0
+  functionCount: i64 = 0
+  typeCount: i64 = 0
+  implCount: i64 = 0
+  viewCount: i64 = 0
+  roleCount: i64 = 0
+  importCount: i64 = 0
+  contextCount: i64 = 0
+  extractCount: i64 = 0
+  extendCount: i64 = 0
+  returnCount: i64 = 0
+  callCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl PackageAstProduct {
+  pub addFile(product: AstProduct) {
+    let declarationIndex: i64 = 0
+    while declarationIndex < product.declarationCount {
+      declarations.push(product.declarationAt(declarationIndex))
+      declarationIndex = declarationIndex + 1
+    }
+    fileRowCount = fileRowCount + 1
+    declarationRowCount = declarationRowCount + product.declarationCount
+    rootCount = rootCount + product.rootCount
+    nodeCount = nodeCount + product.nodeCount
+    diagnosticCount = diagnosticCount + product.diagnosticCount
+    functionCount = functionCount + product.functionCount
+    typeCount = typeCount + product.typeCount
+    implCount = implCount + product.implCount
+    viewCount = viewCount + product.viewCount
+    roleCount = roleCount + product.roleCount
+    importCount = importCount + product.importCount
+    contextCount = contextCount + product.contextCount
+    extractCount = extractCount + product.extractCount
+    extendCount = extendCount + product.extendCount
+    returnCount = returnCount + product.returnCount
+    callCount = callCount + product.callCount
+    files.push(product)
+  }
+}
+
+impl view PackageAstProduct {
+  pub fileCount: i64 => fileRowCount
+  pub declarationCount: i64 => declarationRowCount
+  pub clean: bool => diagnosticCount == 0
+  pub moduleRoot: bool => rootCount == fileCount
+  pub imports: bool => importCount > 0
+  pub functionItems: bool => functionCount > 0
+  pub returns: bool => returnCount > 0
+  pub calls: bool => callCount > 0
+
+  pub declarationAt(index: i64) -> AstDeclaration {
+    declarations[index]
+  }
+
+  pub fileAt(index: i64) -> AstProduct {
+    files[index]
+  }
+
+  pub fileIdAt(index: i64) -> FileId {
+    files[index].fileId
+  }
+
+  pub nodeAt(index: i64) -> AstNode {
+    let fileIndex: i64 = 0
+    let offset: i64 = index
+    while fileIndex < files.count {
+      let file = files[fileIndex]
+      if offset < file.nodeCount {
+        return file.nodeAt(offset)
+      }
+      offset = offset - file.nodeCount
+      fileIndex = fileIndex + 1
+    }
+    return AstNode(0, AstNodeKind.Unknown, SourceSpan(), 0)
+  }
+
+  pub declarationCountFor(kind: AstDeclarationKind) -> i64 {
+    let count: i64 = 0
+    let index: i64 = 0
+    while index < declarationCount {
+      if declarationAt(index).kind == kind {
+        count = count + 1
+      }
+      index = index + 1
+    }
+    return count
+  }
+
+  pub firstDeclarationName(kind: AstDeclarationKind) -> string {
+    let index: i64 = 0
+    while index < declarationCount {
+      let declaration = declarationAt(index)
+      if declaration.kind == kind {
+        return declaration.name
+      }
+      index = index + 1
+    }
+    return ""
+  }
+
+  pub firstDeclarationModulePath(kind: AstDeclarationKind) -> string {
+    let index: i64 = 0
+    while index < declarationCount {
+      let declaration = declarationAt(index)
+      if declaration.kind == kind {
+        return declaration.modulePath
+      }
+      index = index + 1
+    }
+    return ""
+  }
+
+  pub valid: bool =>
+    fileCount > 0 &&
+    rootCount == fileCount &&
+    nodeCount >= rootCount &&
+    declarations.count == declarationCount &&
+    clean &&
+    deterministic
+}

@@ -1,0 +1,228 @@
+import core::{Vec}
+import source::{SourceSpan}
+import syntax::{AstCallArgument, KeywordKind, LexProduct}
+
+pub nextIsCallOpen(input: LexProduct, index: i64) -> bool {
+  return callOpenIndex(input, index) >= 0
+}
+
+pub callableNameAt(input: LexProduct, index: i64) -> bool {
+  let token = input.tokenAt(index)
+  if token.kind.identifierToken {
+    return true
+  }
+  if token.kind.keyword != KeywordKind.Module &&
+     token.kind.keyword != KeywordKind.Private &&
+     token.kind.keyword != KeywordKind.Loop &&
+     token.kind.keyword != KeywordKind.None &&
+     token.kind.keyword != KeywordKind.Parallel &&
+     token.kind.keyword != KeywordKind.View {
+    return false
+  }
+  if index > 0 && input.tokenAt(index - 1).text == "." {
+    return true
+  }
+  return index > 0 &&
+    input.tokenAt(index - 1).kind.keyword == KeywordKind.Pub
+}
+
+pub callOpenIndex(input: LexProduct, index: i64) -> i64 {
+  let cursor = index + 1
+  if cursor >= input.tokenCount {
+    return -1
+  }
+  if input.tokenAt(cursor).text == "(" {
+    return cursor
+  }
+  if input.tokenAt(cursor).text != "<" {
+    return -1
+  }
+
+  let depth: i64 = 0
+  while cursor < input.tokenCount {
+    let token = input.tokenAt(cursor)
+    if token.text == "<" {
+      depth = depth + 1
+    } else if token.text == ">" {
+      depth = depth - 1
+      if depth == 0 {
+        if cursor + 1 < input.tokenCount &&
+           input.tokenAt(cursor + 1).text == "(" {
+          return cursor + 1
+        }
+        return -1
+      }
+    }
+    cursor = cursor + 1
+  }
+  return -1
+}
+
+pub genericArgumentsAt(input: LexProduct, index: i64) -> Vec<string> {
+  let rows: Vec<string> = []
+  if index + 1 >= input.tokenCount || input.tokenAt(index + 1).text != "<" {
+    return rows
+  }
+  let depth: i64 = 1
+  let cursor = index + 2
+  let start = cursor
+  while cursor < input.tokenCount && depth > 0 {
+    let token = input.tokenAt(cursor)
+    if token.text == "<" {
+      depth = depth + 1
+    } else if token.text == ">" {
+      depth = depth - 1
+      if depth == 0 && cursor > start {
+        rows.push(tokenText(input, start, cursor))
+      }
+    } else if depth == 1 && token.text == "," {
+      if cursor > start {
+        rows.push(tokenText(input, start, cursor))
+      }
+      start = cursor + 1
+    }
+    cursor = cursor + 1
+  }
+  return rows
+}
+
+pub callArgumentsAt(input: LexProduct, index: i64) -> Vec<AstCallArgument> {
+  let rows: Vec<AstCallArgument> = []
+  let cursor = callOpenIndex(input, index)
+  if cursor < 0 || cursor + 1 >= input.tokenCount {
+    return rows
+  }
+  cursor = cursor + 1
+  if input.tokenAt(cursor).text == ")" {
+    return rows
+  }
+
+  let depth: i64 = 1
+  let start = cursor
+  while cursor < input.tokenCount && depth > 0 {
+    let token = input.tokenAt(cursor)
+    if token.text == "(" || token.text == "[" || token.text == "{" {
+      depth = depth + 1
+    } else if token.text == ")" || token.text == "]" || token.text == "}" {
+      depth = depth - 1
+      if depth == 0 && cursor > start {
+        rows.push(callArgumentFromRange(input, start, cursor, rows.count))
+      }
+    } else if depth == 1 && token.text == "," {
+      if cursor > start {
+        rows.push(callArgumentFromRange(input, start, cursor, rows.count))
+      }
+      start = cursor + 1
+    }
+    cursor = cursor + 1
+  }
+  return rows
+}
+
+callArgumentFromRange(
+  input: LexProduct,
+  start: i64,
+  end: i64,
+  position: i64
+) -> AstCallArgument {
+  if start >= end {
+    return AstCallArgument()
+  }
+  let cursor = start
+  let spread = false
+  if input.tokenAt(cursor).text == "..." {
+    spread = true
+    cursor = cursor + 1
+  }
+
+  let name = ""
+  let named = false
+  if cursor + 1 < end &&
+     input.tokenAt(cursor).kind.identifierToken &&
+     input.tokenAt(cursor + 1).text == ":" {
+    name = input.tokenAt(cursor).text
+    named = true
+    cursor = cursor + 2
+  }
+  if cursor >= end {
+    return AstCallArgument()
+  }
+
+  let first = input.tokenAt(start)
+  let last = input.tokenAt(end - 1)
+  return AstCallArgument {
+    position: position as usize
+    name
+    expressionText: tokenText(input, cursor, end)
+    inferredTypeName: inferredTypeForToken(input, cursor)
+    span: SourceSpan(first.span.fileId, first.span.start, last.span.end)
+    named
+    spread
+  }
+}
+
+pub declarationLikeCall(input: LexProduct, index: i64) -> bool {
+  let nameToken = input.tokenAt(index)
+  let keywordCallable =
+    nameToken.kind.keyword == KeywordKind.Module ||
+    nameToken.kind.keyword == KeywordKind.Private ||
+    nameToken.kind.keyword == KeywordKind.Loop ||
+    nameToken.kind.keyword == KeywordKind.None ||
+    nameToken.kind.keyword == KeywordKind.Parallel ||
+    nameToken.kind.keyword == KeywordKind.View
+  let keywordPosition =
+    index > 0 &&
+    (input.tokenAt(index - 1).text == "." ||
+     input.tokenAt(index - 1).kind.keyword == KeywordKind.Pub)
+  if !nameToken.kind.identifierToken &&
+     !(keywordCallable && keywordPosition) {
+    return false
+  }
+  if index == 0 {
+    return true
+  }
+  let previousIndex = index - 1
+  let previous = input.tokenAt(previousIndex)
+  let close = callCloseIndex(input, index)
+  if close < 0 || close + 1 >= input.tokenCount {
+    return false
+  }
+  let suffix = input.tokenAt(close + 1).text
+  let declarationSuffix =
+    suffix == "->" ||
+    suffix == "=" ||
+    suffix == "=>" ||
+    suffix == "{" ||
+    suffix == "requires"
+  if !declarationSuffix {
+    return false
+  }
+  if previous.kind.keyword == KeywordKind.Pub {
+    return true
+  }
+  if previous.text == "." || previous.text == "::" {
+    return false
+  }
+  return true
+}
+
+pub callCloseIndex(input: LexProduct, index: i64) -> i64 {
+  let cursor = callOpenIndex(input, index)
+  if cursor < 0 {
+    return -1
+  }
+  let depth: i64 = 0
+  while cursor < input.tokenCount {
+    let text = input.tokenAt(cursor).text
+    if text == "(" {
+      depth = depth + 1
+    } else if text == ")" {
+      depth = depth - 1
+      if depth == 0 {
+        return cursor
+      }
+    }
+    cursor = cursor + 1
+  }
+  return -1
+}

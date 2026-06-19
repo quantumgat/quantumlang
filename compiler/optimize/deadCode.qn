@@ -1,0 +1,21 @@
+pub DeadCodePass {
+  removed: i64
+  unreachableOnly: bool
+  debugSafe: bool
+  valid: bool
+}
+
+impl DeadCodePass {
+  pub DeadCodePass(removed: i64, unreachableOnly: bool) =
+    This {
+      removed
+      unreachableOnly
+      debugSafe: unreachableOnly
+      valid: removed >= 0 && unreachableOnly
+    }
+}
+
+impl view DeadCodePass {
+  pub removedAny => removed > 0
+  pub safe => valid && debugSafe
+}

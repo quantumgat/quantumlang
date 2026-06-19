@@ -1,0 +1,135 @@
+pub AsciiByte {
+  value: i64
+}
+
+impl AsciiByte {
+  pub AsciiByte(value: i64) =
+    This { value }
+
+  pub isAscii() -> bool {
+    return value >= 0 && value <= 127
+  }
+
+  pub isControl() -> bool {
+    return (value >= 0 && value <= 31) || value == 127
+  }
+
+  pub isPrintable() -> bool {
+    return value >= 32 && value <= 126
+  }
+
+  pub isWhitespace() -> bool {
+    return value == 32 || value == 9 || value == 10 || value == 13
+  }
+
+  pub isHorizontalWhitespace() -> bool {
+    return value == 32 || value == 9
+  }
+
+  pub isLineBreak() -> bool {
+    return value == 10 || value == 13
+  }
+
+  pub isDigit() -> bool {
+    return value >= 48 && value <= 57
+  }
+
+  pub isHexDigit() -> bool {
+    return this.isDigit() ||
+      (value >= 65 && value <= 70) ||
+      (value >= 97 && value <= 102)
+  }
+
+  pub isBinaryDigit() -> bool {
+    return value == 48 || value == 49
+  }
+
+  pub isOctalDigit() -> bool {
+    return value >= 48 && value <= 55
+  }
+
+  pub isUpper() -> bool {
+    return value >= 65 && value <= 90
+  }
+
+  pub isLower() -> bool {
+    return value >= 97 && value <= 122
+  }
+
+  pub isAlpha() -> bool {
+    return this.isUpper() || this.isLower()
+  }
+
+  pub isAlphaNumeric() -> bool {
+    return this.isAlpha() || this.isDigit()
+  }
+
+  pub isUnderscore() -> bool {
+    return value == 95
+  }
+
+  pub isIdentifierStart() -> bool {
+    return this.isUnderscore() || this.isAlpha()
+  }
+
+  pub isIdentifierContinue() -> bool {
+    return this.isIdentifierStart() || this.isDigit()
+  }
+
+  pub isDelimiter() -> bool {
+    return value == 40 ||
+      value == 41 ||
+      value == 91 ||
+      value == 93 ||
+      value == 123 ||
+      value == 125 ||
+      value == 44 ||
+      value == 59
+  }
+
+  pub isQuote() -> bool {
+    return value == 34 || value == 39 || value == 96
+  }
+
+  pub isOperatorStart() -> bool {
+    return value == 33 ||
+      value == 37 ||
+      value == 38 ||
+      value == 42 ||
+      value == 43 ||
+      value == 45 ||
+      value == 46 ||
+      value == 47 ||
+      value == 58 ||
+      value == 60 ||
+      value == 61 ||
+      value == 62 ||
+      value == 63 ||
+      value == 94 ||
+      value == 124
+  }
+
+  pub digitValue() -> i64 {
+    if this.isDigit() {
+      return value - 48
+    }
+    return -1
+  }
+
+  pub hexValue() -> i64 {
+    if this.isDigit() {
+      return value - 48
+    }
+    if value >= 65 && value <= 70 {
+      return value - 55
+    }
+    if value >= 97 && value <= 102 {
+      return value - 87
+    }
+    return -1
+  }
+}
+
+impl view AsciiByte {
+  pub valid => value >= 0 && value <= 127
+}

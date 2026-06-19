@@ -1,0 +1,21 @@
+pub QuantumSchedule {
+  stepCount: i64
+  respectsDependencies: bool
+  respectsTopology: bool
+  valid: bool
+}
+
+impl QuantumSchedule {
+  pub QuantumSchedule(stepCount: i64, respectsDependencies: bool, respectsTopology: bool) =
+    This {
+      stepCount
+      respectsDependencies
+      respectsTopology
+      valid: stepCount >= 0 && respectsDependencies && respectsTopology
+    }
+}
+
+impl view QuantumSchedule {
+  pub deterministic => respectsDependencies && respectsTopology
+  pub schedulable => valid
+}

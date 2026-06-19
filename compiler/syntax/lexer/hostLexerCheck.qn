@@ -1,0 +1,79 @@
+pub HostLexerCheck {
+  target: string
+  tokenCount: i64
+  triviaCount: i64
+  seesImportToken: bool
+  seesModulePathToken: bool
+  seesPrintCallToken: bool
+}
+
+pub HostLexerProbe {
+  target: string
+}
+
+impl HostLexerCheck {
+  pub HostLexerCheck(
+    target: string,
+    tokenCount: i64,
+    triviaCount: i64,
+    seesImportToken: bool,
+    seesModulePathToken: bool,
+    seesPrintCallToken: bool
+  ) =
+    This {
+      target,
+      tokenCount,
+      triviaCount,
+      seesImportToken,
+      seesModulePathToken,
+      seesPrintCallToken,
+    }
+}
+
+impl HostLexerProbe {
+  pub HostLexerProbe(target: string) =
+    This { target }
+}
+
+impl view HostLexerCheck {
+  pub valid => tokenCount != 0 &&
+    seesImportToken &&
+    seesModulePathToken &&
+    seesPrintCallToken
+}
+
+extract HostLexerCheck {
+  pub fromHost(target: string) -> This {
+    let probe = HostLexerProbe(target)
+    return This(
+      target,
+      probe.tokens(),
+      probe.trivia(),
+      probe.imports(),
+      probe.modulePaths(),
+      probe.printCalls()
+    )
+  }
+}
+
+context HostLexerProbe {
+  tokens() -> i64 {
+    return 0
+  }
+
+  trivia() -> i64 {
+    return 0
+  }
+
+  imports() -> bool {
+    return false
+  }
+
+  modulePaths() -> bool {
+    return false
+  }
+
+  printCalls() -> bool {
+    return false
+  }
+}

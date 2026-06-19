@@ -1,0 +1,89 @@
+pub HostParserCheck {
+  target: string
+  functionCount: i64
+  hasModuleRoot: bool
+  seesImportItem: bool
+  seesFunctionItem: bool
+  seesReturnStmt: bool
+  seesCallExpr: bool
+}
+
+pub HostParserProbe {
+  target: string
+}
+
+impl HostParserCheck {
+  pub HostParserCheck(
+    target: string,
+    functionCount: i64,
+    hasModuleRoot: bool,
+    seesImportItem: bool,
+    seesFunctionItem: bool,
+    seesReturnStmt: bool,
+    seesCallExpr: bool
+  ) =
+    This {
+      target,
+      functionCount,
+      hasModuleRoot,
+      seesImportItem,
+      seesFunctionItem,
+      seesReturnStmt,
+      seesCallExpr,
+    }
+}
+
+impl HostParserProbe {
+  pub HostParserProbe(target: string) =
+    This { target }
+}
+
+impl view HostParserCheck {
+  pub valid => functionCount != 0 &&
+    hasModuleRoot &&
+    seesImportItem &&
+    seesFunctionItem &&
+    seesReturnStmt &&
+    seesCallExpr
+}
+
+extract HostParserCheck {
+  pub fromHost(target: string) -> This {
+    let probe = HostParserProbe(target)
+    return This(
+      target,
+      probe.functions(),
+      probe.moduleRoot(),
+      probe.imports(),
+      probe.functionItems(),
+      probe.returns(),
+      probe.calls()
+    )
+  }
+}
+
+context HostParserProbe {
+  functions() -> i64 {
+    return 0
+  }
+
+  moduleRoot() -> bool {
+    return false
+  }
+
+  imports() -> bool {
+    return false
+  }
+
+  functionItems() -> bool {
+    return false
+  }
+
+  returns() -> bool {
+    return false
+  }
+
+  calls() -> bool {
+    return false
+  }
+}

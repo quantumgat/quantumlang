@@ -1,0 +1,55 @@
+pub enum TextFormatKind {
+  Default
+  Debug
+  Decimal
+  Binary
+  Octal
+  HexLower
+  HexUpper
+  Fixed
+  ScientificLower
+  ScientificUpper
+  Precision
+  AlignLeft
+  AlignRight
+  AlignCenter
+  Sign
+  Alternate
+  ZeroPad
+  Unknown
+}
+
+pub TextFormatSpec {
+  spelling: string
+  kind: TextFormatKind = TextFormatKind.Unknown
+  numericOnly: bool = false
+  compileTimePlan: bool = true
+}
+
+impl TextFormatSpec {
+  pub fromSpelling(spelling: string) -> This {
+    if spelling == "" { return This { spelling, kind: TextFormatKind.Default } }
+    if spelling == "?" { return This { spelling, kind: TextFormatKind.Debug } }
+    if spelling == "d" { return This { spelling, kind: TextFormatKind.Decimal, numericOnly: true } }
+    if spelling == "b" { return This { spelling, kind: TextFormatKind.Binary, numericOnly: true } }
+    if spelling == "o" { return This { spelling, kind: TextFormatKind.Octal, numericOnly: true } }
+    if spelling == "x" { return This { spelling, kind: TextFormatKind.HexLower, numericOnly: true } }
+    if spelling == "X" { return This { spelling, kind: TextFormatKind.HexUpper, numericOnly: true } }
+    if spelling == "f" { return This { spelling, kind: TextFormatKind.Fixed, numericOnly: true } }
+    if spelling == "e" { return This { spelling, kind: TextFormatKind.ScientificLower, numericOnly: true } }
+    if spelling == "E" { return This { spelling, kind: TextFormatKind.ScientificUpper, numericOnly: true } }
+    if spelling == ".N" { return This { spelling, kind: TextFormatKind.Precision, numericOnly: true } }
+    if spelling == "<N" { return This { spelling, kind: TextFormatKind.AlignLeft } }
+    if spelling == ">N" { return This { spelling, kind: TextFormatKind.AlignRight } }
+    if spelling == "^N" { return This { spelling, kind: TextFormatKind.AlignCenter } }
+    if spelling == "+" { return This { spelling, kind: TextFormatKind.Sign, numericOnly: true } }
+    if spelling == "#" { return This { spelling, kind: TextFormatKind.Alternate, numericOnly: true } }
+    if spelling == "0N" { return This { spelling, kind: TextFormatKind.ZeroPad, numericOnly: true } }
+    return This { spelling }
+  }
+}
+
+impl view TextFormatSpec {
+  pub valid: bool => kind != TextFormatKind.Unknown
+  pub hotPath: bool => valid && compileTimePlan
+}

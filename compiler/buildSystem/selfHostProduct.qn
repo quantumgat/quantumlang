@@ -1,0 +1,216 @@
+import frontend::{FrontendProduct}
+import buildSystem::{SelfHostNativeProductPlan, SelfHostLinkProductPlan}
+
+pub enum SelfHostProductStatus {
+  Pending
+  Ready
+  Blocked
+  Failed
+}
+
+pub SelfHostProduct {
+  name: string
+  kind: string
+  status: SelfHostProductStatus
+  fingerprint: string = ""
+  path: string = ""
+  reason: string = ""
+}
+
+impl SelfHostProduct {
+  pub ready(name: string, kind: string, fingerprint: string, path: string) =
+    This {
+      name
+      kind
+      status: SelfHostProductStatus.Ready
+      fingerprint
+      path
+    }
+
+  pub pending(name: string, kind: string, reason: string) =
+    This {
+      name
+      kind
+      status: SelfHostProductStatus.Pending
+      reason
+    }
+
+  pub blocked(name: string, kind: string, reason: string) =
+    This {
+      name
+      kind
+      status: SelfHostProductStatus.Blocked
+      reason
+    }
+
+  pub failed(name: string, kind: string, reason: string) =
+    This {
+      name
+      kind
+      status: SelfHostProductStatus.Failed
+      reason
+    }
+}
+
+impl view SelfHostProduct {
+  pub ready => status == SelfHostProductStatus.Ready
+  pub pending => status == SelfHostProductStatus.Pending
+  pub blocked => status == SelfHostProductStatus.Blocked
+  pub failed => status == SelfHostProductStatus.Failed
+  pub deterministic => fingerprint != "" || pending
+  pub materialized => ready && path != ""
+
+  pub statusText => match true {
+    ready => "ready"
+    pending => "pending"
+    blocked => "blocked"
+    failed => "failed"
+    _ => "unknown"
+  }
+
+  pub summary => "{kind}:{statusText}:{name}"
+}
+
+pub SelfHostProductPipeline {
+  source: SelfHostProduct
+  hir: SelfHostProduct
+  mir: SelfHostProduct
+  object: SelfHostProduct
+  link: SelfHostProduct
+  typedNodeCount: i64 = 0
+  hirNodeCount: i64 = 0
+  typeFactCount: i64 = 0
+}
+
+impl SelfHostProductPipeline {
+  pub forNativeObjects(
+    frontend: FrontendProduct,
+    sourceValidated: bool,
+    typedNodeCount: i64,
+    typeFactCount: i64
+  ) -> This {
+    let checkedProducts =
+      sourceValidated &&
+      typedNodeCount > 0 &&
+      typeFactCount > 0
+    let source = SelfHostProduct.ready(
+      "checked-source",
+      "source",
+      "source-product-ready",
+      frontend.target
+    )
+    let nativePlan = SelfHostNativeProductPlan.fromFrontend(frontend)
+    let linkPlan = SelfHostLinkProductPlan.fromNative(nativePlan)
+    This {
+      source
+      hir: match checkedProducts {
+        true => SelfHostProduct.ready(
+          "hir-lowering",
+          "hir",
+          "typed-hir-product-ready",
+          "build/debug/qtlc2.hir"
+        )
+        false => SelfHostProduct.blocked(
+          "hir-lowering",
+          "hir",
+          "checked-type-products-invalid"
+        )
+      }
+      mir: match checkedProducts {
+        true => SelfHostProduct.ready(
+          "mir-lowering",
+          "mir",
+          "mir-product-ready",
+          "build/debug/qtlc2.mir"
+        )
+        false => SelfHostProduct.blocked(
+          "mir-lowering",
+          "mir",
+          "checked-type-products-invalid"
+        )
+      }
+      object: match true {
+        checkedProducts && nativePlan.valid => SelfHostProduct.ready(
+          "native-object-units",
+          "object",
+          nativePlan.fingerprint,
+          nativePlan.outputPath
+        )
+        checkedProducts == false => SelfHostProduct.blocked(
+          "native-object-units",
+          "object",
+          "checked-type-products-invalid"
+        )
+        _ => SelfHostProduct.blocked("native-object-units", "object", "native-object-plan-invalid")
+      }
+      link: match true {
+        checkedProducts && linkPlan.valid => SelfHostProduct.ready(
+          "linked-qtlc2",
+          "link",
+          linkPlan.fingerprint,
+          linkPlan.outputPath
+        )
+        checkedProducts == false => SelfHostProduct.blocked(
+          "linked-qtlc2",
+          "link",
+          "checked-type-products-invalid"
+        )
+        _ => SelfHostProduct.blocked("linked-qtlc2", "link", "qtlc1-link-plan-invalid")
+      }
+      typedNodeCount
+      hirNodeCount: typedNodeCount
+      typeFactCount
+    }
+  }
+
+  pub blockedBySource(target: string, sourceStatus: string) =
+    This {
+      source: SelfHostProduct.failed("checked-source", "source", sourceStatus)
+      hir: SelfHostProduct.blocked("hir-lowering", "hir", "source-check-failed")
+      mir: SelfHostProduct.blocked("mir-lowering", "mir", "source-check-failed")
+      object: SelfHostProduct.blocked("native-object-units", "object", "source-check-failed")
+      link: SelfHostProduct.blocked("linked-qtlc2", "link", "source-check-failed")
+    }
+
+}
+
+impl view SelfHostProductPipeline {
+  pub readyForMaterialization: bool => {
+    source.status == SelfHostProductStatus.Ready &&
+      hir.status == SelfHostProductStatus.Ready &&
+      mir.status == SelfHostProductStatus.Ready &&
+      object.status == SelfHostProductStatus.Ready &&
+      link.status == SelfHostProductStatus.Ready &&
+      typedNodeCount > 0 &&
+      hirNodeCount == typedNodeCount &&
+      typeFactCount > 0
+  }
+
+  pub sourceReady => source.ready
+  pub hirReady => hir.ready
+  pub mirReady => mir.ready
+  pub objectReady => object.ready
+  pub linkReady => link.ready
+  pub typedHirReady =>
+    typedNodeCount > 0 &&
+    hirNodeCount == typedNodeCount
+  pub deterministicProductsReady =>
+    sourceReady &&
+    hirReady &&
+    typedHirReady &&
+    mirReady &&
+    objectReady &&
+    linkReady
+  pub buildable => sourceReady
+  pub statusText => match true {
+    deterministicProductsReady => "ready"
+    sourceReady && hirReady && mirReady && objectReady => "pending-link-qtlc1-builder"
+    sourceReady && hirReady && mirReady => "pending-native-qtlc1-builder"
+    sourceReady && hirReady => "pending-mir-qtlc1-builder"
+    sourceReady => "pending-real-qtlc1-builder"
+    _ => "blocked"
+  }
+
+  pub summary =>
+    "{source.summary} {hir.summary} {mir.summary} {object.summary} {link.summary}"
+}

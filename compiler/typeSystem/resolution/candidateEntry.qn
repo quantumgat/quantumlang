@@ -1,0 +1,38 @@
+import core::{SymbolId, TypeId}
+import source::{SourceSpan}
+
+pub CandidateEntry {
+  id: CandidateId = {}
+  symbol: SymbolId = {}
+  callableType: TypeId = {}
+  ownerType: TypeId = {}
+  key: CandidateKey = {}
+  source: CandidateSource = CandidateSource.Unknown
+  access: CandidateAccess = {}
+  declarationSpan: SourceSpan = {}
+  displayName: string = ""
+  symbolRow: i64 = -1
+  genericParameterCount: usize = 0
+  generic: bool = false
+  variadic: bool = false
+  minimumArity: usize = 0
+  maximumArity: usize = 0
+  defaultedParameterCount: usize = 0
+  builtin: bool = false
+}
+
+impl view CandidateEntry {
+  pub callableSymbol: bool => symbol.valid
+
+  pub arityBounded: bool => maximumArity >= minimumArity
+
+  pub valid: bool =>
+    id.valid &&
+    key.valid &&
+    source != CandidateSource.Unknown &&
+    access.valid &&
+    (declarationSpan.valid || builtin) &&
+    displayName != "" &&
+    arityBounded &&
+    (callableSymbol || builtin)
+}

@@ -1,0 +1,51 @@
+pub QuantumForBodyFact {
+  ownershipPreserved: bool
+  noClonePreserved: bool
+  noLeak: bool
+  resetReleaseBalanced: bool
+  diagnosticCode: string
+  valid: bool
+}
+
+impl QuantumForBodyFact {
+  pub QuantumForBodyFact(
+    ownership: QuantumOwnership,
+    noClone: QuantumNoCloneRule,
+    lifetime: QuantumLifetime,
+    reset: QuantumReset,
+    release: QuantumRelease,
+  ) {
+    let noLeak = lifetime.valid && !lifetime.escapesScope
+    let resetReleaseBalanced = reset.valid && release.valid && reset.performed == release.resetVerified
+    let valid = ownership.valid &&
+      ownership.noClone &&
+      noClone.enforced &&
+      noClone.duplicateRejected &&
+      noLeak &&
+      resetReleaseBalanced
+
+    if valid {
+      return This {
+        ownershipPreserved: true
+        noClonePreserved: true
+        noLeak: true
+        resetReleaseBalanced: true
+        diagnosticCode: ""
+        valid: true
+      }
+    }
+
+    This {
+      ownershipPreserved: ownership.valid && ownership.noClone
+      noClonePreserved: noClone.enforced && noClone.duplicateRejected
+      noLeak
+      resetReleaseBalanced
+      diagnosticCode: "QTQUANTUM0203"
+      valid: false
+    }
+  }
+}
+
+impl view QuantumForBodyFact {
+  pub resourceSafe => ownershipPreserved && noClonePreserved && noLeak && resetReleaseBalanced
+}

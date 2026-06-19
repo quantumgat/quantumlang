@@ -1,0 +1,140 @@
+pub StablePackageId {
+  id: StableId
+}
+
+pub StableModuleId {
+  id: StableId
+}
+
+pub StableFileId {
+  id: StableId
+}
+
+pub StableItemId {
+  id: StableId
+}
+
+pub StableBodyId {
+  id: StableId
+}
+
+pub StableNodeId {
+  id: StableId
+}
+
+pub StableSymbolId {
+  id: StableId
+}
+
+pub StableTypeId {
+  id: StableId
+}
+
+pub StableEffectId {
+  id: StableId
+}
+
+pub StableQuantumResourceId {
+  id: StableId
+}
+
+pub StableGenericInstanceId {
+  id: StableId
+}
+
+pub StableCodegenUnitId {
+  id: StableId
+}
+
+pub StableObjectUnitId {
+  id: StableId
+}
+
+pub StableLinkTargetId {
+  id: StableId
+}
+
+impl StablePackageId {
+  pub StablePackageId(packageHash: u64) =
+    This { id: StableId.package(packageHash) }
+}
+
+impl StableModuleId {
+  pub StableModuleId(packageHash: u64, moduleHash: u64) =
+    This { id: StableId.module(packageHash, moduleHash) }
+}
+
+impl StableFileId {
+  pub StableFileId(packageHash: u64, moduleHash: u64, fileHash: u64) =
+    This { id: StableId.file(packageHash, moduleHash, fileHash) }
+}
+
+impl StableItemId {
+  pub StableItemId(packageHash: u64, moduleHash: u64, itemHash: u64, disambiguator: u64) =
+    This { id: StableId.item(packageHash, moduleHash, itemHash, disambiguator) }
+}
+
+impl StableBodyId {
+  pub StableBodyId(packageHash: u64, moduleHash: u64, bodyHash: u64, disambiguator: u64) =
+    This { id: StableId.body(packageHash, moduleHash, bodyHash, disambiguator) }
+}
+
+impl StableNodeId {
+  pub StableNodeId(packageHash: u64, moduleHash: u64, nodeHash: u64, disambiguator: u64) =
+    This { id: StableId.node(packageHash, moduleHash, nodeHash, disambiguator) }
+}
+
+impl StableSymbolId {
+  pub StableSymbolId(packageHash: u64, moduleHash: u64, symbolHash: u64, disambiguator: u64) =
+    This { id: StableId.symbol(packageHash, moduleHash, symbolHash, disambiguator) }
+}
+
+impl StableTypeId {
+  pub StableTypeId(packageHash: u64, moduleHash: u64, typeHash: u64, disambiguator: u64) =
+    This { id: StableId.typeId(packageHash, moduleHash, typeHash, disambiguator) }
+}
+
+impl StableEffectId {
+  pub StableEffectId(packageHash: u64, moduleHash: u64, effectHash: u64, disambiguator: u64) =
+    This { id: StableId.effect(packageHash, moduleHash, effectHash, disambiguator) }
+}
+
+impl StableQuantumResourceId {
+  pub StableQuantumResourceId(packageHash: u64, moduleHash: u64, resourceHash: u64, disambiguator: u64) =
+    This { id: StableId.quantumResource(packageHash, moduleHash, resourceHash, disambiguator) }
+}
+
+impl StableGenericInstanceId {
+  pub StableGenericInstanceId(packageHash: u64, moduleHash: u64, argumentHash: u64, disambiguator: u64) =
+    This { id: StableId.genericInstance(packageHash, moduleHash, argumentHash, disambiguator) }
+}
+
+impl StableCodegenUnitId {
+  pub StableCodegenUnitId(packageHash: u64, moduleHash: u64, unitHash: u64, disambiguator: u64) =
+    This { id: StableId.codegenUnit(packageHash, moduleHash, unitHash, disambiguator) }
+}
+
+impl StableObjectUnitId {
+  pub StableObjectUnitId(packageHash: u64, moduleHash: u64, unitHash: u64, disambiguator: u64) =
+    This { id: StableId.objectUnit(packageHash, moduleHash, unitHash, disambiguator) }
+}
+
+impl StableLinkTargetId {
+  pub StableLinkTargetId(packageHash: u64, targetHash: u64, disambiguator: u64) =
+    This { id: StableId.linkTarget(packageHash, targetHash, disambiguator) }
+}
+
+impl view StablePackageId { pub valid => id.kind == StableIdKind.Package && id.valid }
+impl view StableModuleId { pub valid => id.kind == StableIdKind.Module && id.valid }
+impl view StableFileId { pub valid => id.kind == StableIdKind.File && id.valid }
+impl view StableItemId { pub valid => id.kind == StableIdKind.Item && id.valid }
+impl view StableBodyId { pub valid => id.kind == StableIdKind.Body && id.valid }
+impl view StableNodeId { pub valid => id.kind == StableIdKind.Node && id.valid }
+impl view StableSymbolId { pub valid => id.kind == StableIdKind.Symbol && id.valid }
+impl view StableTypeId { pub valid => id.kind == StableIdKind.Type && id.valid }
+impl view StableEffectId { pub valid => id.kind == StableIdKind.Effect && id.valid }
+impl view StableQuantumResourceId { pub valid => id.kind == StableIdKind.QuantumResource && id.valid }
+impl view StableGenericInstanceId { pub valid => id.kind == StableIdKind.GenericInstance && id.valid }
+impl view StableCodegenUnitId { pub valid => id.kind == StableIdKind.CodegenUnit && id.valid }
+impl view StableObjectUnitId { pub valid => id.kind == StableIdKind.ObjectUnit && id.valid }
+impl view StableLinkTargetId { pub valid => id.kind == StableIdKind.LinkTarget && id.valid }

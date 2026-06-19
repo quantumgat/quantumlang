@@ -1,0 +1,72 @@
+import backend::quantum::{*}
+pub QuantumBackendProof {
+  backendEnabled: bool
+  qirArtifactStable: bool
+  openQasmArtifactStable: bool
+  providerTargetValid: bool
+  simulatorPlanValid: bool
+  transpileStable: bool
+  valid: bool
+}
+
+pub quantumBackendProof() -> QuantumBackendProof {
+  let provider = QuantumProvider("local-simulator", false, true)
+  let providerProfile = QuantumProviderProfile("local-qasm3", provider.name, true, true)
+  let target = QuantumTargetProfile("state-vector", provider.name, 32, true)
+  let backend = QuantumBackend(true, provider.name, target.name)
+  let qir = QirEmitter(1, "qir:aaa")
+  let qasm = OpenQasmEmitter(1, "qasm:aaa", "3.0")
+  let transpile = QuantumTranspilePlan(3, "qmir", "openqasm3")
+  let shots = QuantumShotPlan(1024, true)
+  let noise = QuantumNoiseModel(true, "depolarizing")
+  let simulator = QuantumSimulatorPlan("state-vector", true, shots)
+  let qirArtifact = QuantumArtifact("build/debug/qtlc1.qir", "qir", qir.moduleHash, provider.name)
+  let qasmArtifact = QuantumArtifact("build/debug/qtlc1.qasm", "openqasm3", qasm.programHash, provider.name)
+
+  let backendEnabled = backend.valid &&
+    backend.enabled &&
+    backend.providerName == provider.name
+
+  let qirArtifactStable = qir.valid &&
+    qir.deterministic &&
+    qirArtifact.valid &&
+    qirArtifact.artifactHash == qir.moduleHash
+
+  let openQasmArtifactStable = qasm.valid &&
+    qasm.deterministic &&
+    qasm.version == "3.0" &&
+    qasmArtifact.valid &&
+    qasmArtifact.artifactHash == qasm.programHash
+
+  let providerTargetValid = provider.valid &&
+    providerProfile.valid &&
+    target.valid &&
+    target.providerName == provider.name
+
+  let simulatorPlanValid = shots.valid &&
+    noise.valid &&
+    simulator.valid &&
+    simulator.shotPlan.shots == 1024
+
+  let transpileStable = transpile.valid &&
+    transpile.deterministic &&
+    transpile.sourceFormat == "qmir" &&
+    transpile.targetFormat == "openqasm3"
+
+  let valid = backendEnabled &&
+    qirArtifactStable &&
+    openQasmArtifactStable &&
+    providerTargetValid &&
+    simulatorPlanValid &&
+    transpileStable
+
+  return QuantumBackendProof {
+    backendEnabled: backendEnabled,
+    qirArtifactStable: qirArtifactStable,
+    openQasmArtifactStable: openQasmArtifactStable,
+    providerTargetValid: providerTargetValid,
+    simulatorPlanValid: simulatorPlanValid,
+    transpileStable: transpileStable,
+    valid: valid,
+  }
+}

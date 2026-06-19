@@ -1,0 +1,91 @@
+pub MirBlock {
+  id: i64
+  instructionCount: i64
+  terminatorKind: string
+  diagnosticCode: string = ""
+}
+
+impl MirBlock {
+  pub MirBlock(id: i64, instructionCount: i64, terminatorKind: string) =
+    This {
+      id
+      instructionCount
+      terminatorKind
+    }
+
+  pub entry() =
+    This {
+      id: 0
+      instructionCount: 0
+      terminatorKind: "entry"
+    }
+
+  pub empty(id: i64) =
+    This {
+      id
+      instructionCount: 0
+      terminatorKind: ""
+    }
+
+  pub invalid(id: i64, terminatorKind: string) =
+    This {
+      id
+      instructionCount: 0
+      terminatorKind
+      diagnosticCode: "QMIR0001"
+    }
+
+  withTerminator(kind: string) =
+    this {
+      terminatorKind: kind
+      diagnosticCode: ""
+    }
+
+  withInstructionCount(count: i64) =
+    this {
+      instructionCount: count
+    }
+
+  addInstruction() =
+    this {
+      instructionCount: instructionCount + 1
+    }
+
+  removeInstruction() =
+    this {
+      instructionCount: instructionCount - 1
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QMIR0001"
+    }
+
+  diagnosticSummary() =
+    "mir block {id}: instructions={instructionCount}, terminator={terminatorKind}, valid={valid}"
+}
+
+impl view MirBlock {
+  pub valid => diagnosticCode == "" && validShape
+  pub isValid => valid
+  pub isEntry => id == 0
+  pub isEmpty => instructionCount == 0
+  pub hasTerminator => terminatorKind != ""
+  pub isReturnBlock => terminatorKind == "return"
+  pub isBranchBlock => terminatorKind == "branch"
+  pub isUnreachable => terminatorKind == "unreachable"
+  pub canFallthrough => terminatorKind == "" || terminatorKind == "fallthrough"
+  pub canBranch => terminatorKind == "branch"
+  pub canReturn => terminatorKind == "return"
+  pub terminatesFunction => terminatorKind == "return" || terminatorKind == "unreachable"
+  pub needsTerminator => terminatorKind == ""
+  pub validShape => id >= 0 && instructionCount >= 0 && terminatorKind != ""
+  pub validTerminator => terminatorKind != ""
+  pub validInstructionCount => instructionCount >= 0
+  pub lowerable => valid && terminatorKind != ""
+  pub lowerTerminator => terminatorKind
+  pub layoutCost => instructionCount + 1
+  pub estimatedCost => instructionCount
+  pub label => "mir.block.{id}"
+  pub debugName => "mir.block.{id}.{terminatorKind}"
+}

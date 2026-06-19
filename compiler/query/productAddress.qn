@@ -1,0 +1,38 @@
+import storage::{CacheHash256, CacheProductKind, GlobalCacheContract}
+
+pub ProductAddress {
+  root: string = ""
+  bucket: string = ""
+  content: CacheHash256
+  kind: CacheProductKind = CacheProductKind.Metadata
+  extension: string = ".qcm"
+}
+
+impl ProductAddress {
+  pub global(
+    root: string,
+    bucket: string,
+    content: CacheHash256,
+    kind: CacheProductKind
+  ) =
+    This {
+      root
+      bucket
+      content
+      kind
+      extension: GlobalCacheContract().extensionFor(kind)
+    }
+}
+
+impl view ProductAddress {
+  pub bucketValid: bool => bucket.length() == 2
+  pub globalPath: string =>
+    "{root}/{bucket}/{content.digest}{extension}"
+
+  pub valid: bool =>
+    root != "" &&
+    bucketValid &&
+    content.valid &&
+    content.contentHash &&
+    extension != ""
+}

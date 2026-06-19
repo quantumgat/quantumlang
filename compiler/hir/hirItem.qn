@@ -1,0 +1,60 @@
+pub HirItem {
+  id: i64
+  name: string
+  kind: string
+  sourceNodeId: i64
+  exported: bool
+  diagnosticCode: string = ""
+}
+
+impl HirItem {
+  pub HirItem(id: i64, name: string, kind: string, sourceNodeId: i64, exported: bool) =
+    This { id, name, kind, sourceNodeId, exported }
+
+  pub function(id: i64, name: string, sourceNodeId: i64, exported: bool) =
+    This { id, name, kind: "function", sourceNodeId, exported }
+
+  pub typeItem(id: i64, name: string, sourceNodeId: i64, exported: bool) =
+    This { id, name, kind: "type", sourceNodeId, exported }
+
+  pub structItem(id: i64, name: string, sourceNodeId: i64, exported: bool) =
+    This { id, name, kind: "struct", sourceNodeId, exported }
+
+  pub enumItem(id: i64, name: string, sourceNodeId: i64, exported: bool) =
+    This { id, name, kind: "enum", sourceNodeId, exported }
+
+  pub invalid(id: i64, name: string, kind: string) =
+    This {
+      id
+      name
+      kind
+      sourceNodeId: -1
+      exported: false
+      diagnosticCode: "QHIR0101"
+    }
+
+  withExported(exported: bool) =
+    this {
+      exported
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QHIR0101"
+    }
+}
+
+impl view HirItem {
+  pub valid => diagnosticCode == "" && validShape
+  pub validShape => id >= 0 && name != "" && kind != ""
+  pub functionItem => kind == "function"
+  pub typeItem => kind == "type" || kind == "struct" || kind == "enum"
+  pub valueItem => functionItem
+  pub publicShape => exported
+  pub publicApi => exported && valid
+  pub privateApi => exported == false && valid
+  pub sourceBacked => sourceNodeId >= 0
+  pub lowerable => valid
+  pub symbolKey => "{kind}:{name}"
+  pub debugName => "hir.item.{id}.{kind}.{name}"
+}

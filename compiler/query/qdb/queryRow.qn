@@ -1,0 +1,17 @@
+pub QdbQueryRow {
+  keyHash: Fingerprint = {}
+  subjectHash: Fingerprint = {}
+  kind: QueryKind = QueryKind.SourceFingerprint
+  component: QueryComponent = QueryComponent.Source
+  epoch: u64 = 1
+  productRow: u64 = 0
+  firstDependencyRow: u64 = 0
+  dependencyCount: u64 = 0
+  flags: u64 = 0
+}
+
+impl view QdbQueryRow {
+  pub hasKey: bool => keyHash.nonzero && subjectHash.nonzero
+  pub hasProduct: bool => productRow > 0
+  pub valid: bool => hasKey && epoch > 0
+}

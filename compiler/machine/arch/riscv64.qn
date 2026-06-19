@@ -1,0 +1,3 @@
+pub Riscv64Arch {
+  pointerBits: i64
+}

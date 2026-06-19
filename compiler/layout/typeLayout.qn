@@ -1,0 +1,23 @@
+import core::{TypeId}
+
+pub TypeLayout {
+  typeId: TypeId
+  size: u64
+  alignment: u64
+  sized: bool = true
+  deterministic: bool = true
+}
+
+impl TypeLayout {
+  pub TypeLayout(typeId: TypeId, size: u64, alignment: u64) =
+    This { typeId, size, alignment }
+}
+
+impl view TypeLayout {
+  pub valid: bool =>
+    typeId.id.valid &&
+    sized &&
+    alignment > 0 &&
+    size % alignment == 0 &&
+    deterministic
+}

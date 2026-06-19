@@ -1,0 +1,23 @@
+pub QuantumEffect {
+  name: string
+  measurement: bool
+  entanglement: bool
+  targetGated: bool
+  valid: bool
+}
+
+impl QuantumEffect {
+  pub QuantumEffect(name: string, measurement: bool, entanglement: bool, targetGated: bool) =
+    This {
+      name
+      measurement
+      entanglement
+      targetGated
+      valid: name != ""
+    }
+}
+
+impl view QuantumEffect {
+  pub named => name != ""
+  pub requiresTarget => targetGated
+}

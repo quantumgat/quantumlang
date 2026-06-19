@@ -1,0 +1,25 @@
+module lexer
+
+mod {
+  lexer
+  lexProduct
+  tokenStream
+  triviaStream
+  sourceLexer
+  scanner
+  numberLexer
+  stringLexer
+  hostLexerCheck
+}
+
+export {
+  lexer.{Lexer, LexedTokenFact}
+  lexProduct.{LexProduct, PackageLexProduct}
+  tokenStream.TokenStream
+  triviaStream.TriviaStream
+  sourceLexer.SourceLexer
+  scanner.{Scanner, ScannerCursor}
+  numberLexer.NumberLexer
+  stringLexer.StringLexer
+  hostLexerCheck.{HostLexerCheck}
+}

@@ -1,0 +1,20 @@
+pub DiagnosticReporter {
+  emitted: i64
+  color: DiagnosticColor
+  failOnError: bool
+}
+
+impl DiagnosticReporter {
+  pub DiagnosticReporter(emitted: i64, color: DiagnosticColor, failOnError: bool) =
+    This { emitted, color, failOnError }
+}
+
+impl view DiagnosticReporter {
+  pub emittedAny => emitted > 0
+
+  pub colorEnabled => color.enabled
+
+  pub failFast => failOnError
+
+  pub valid => emitted >= 0 && color.valid
+}

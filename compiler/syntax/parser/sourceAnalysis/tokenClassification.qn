@@ -1,0 +1,204 @@
+import syntax::{AstNodeKind, KeywordKind, LexProduct, TokenRole}
+
+pub nodeKindForToken(input: LexProduct, index: i64) -> AstNodeKind {
+  let token = input.tokenAt(index)
+  if token.text == "{" || token.text == "}" {
+    return AstNodeKind.Block
+  }
+  if tokenInsideModuleSurfaceBlock(input, index) {
+    return AstNodeKind.Token
+  }
+  if token.text == "." {
+    return AstNodeKind.Token
+  }
+  if token.kind.keyword == KeywordKind.Import {
+    return AstNodeKind.Import
+  }
+  if token.kind.keyword == KeywordKind.Export {
+    return AstNodeKind.Export
+  }
+  if token.kind.keyword == KeywordKind.Impl ||
+     token.kind.keyword == KeywordKind.View ||
+     token.kind.keyword == KeywordKind.Context ||
+     token.kind.keyword == KeywordKind.Extract ||
+     token.kind.keyword == KeywordKind.Extend {
+    return AstNodeKind.ImplDecl
+  }
+  if token.kind.keyword == KeywordKind.Enum {
+    return AstNodeKind.TypeDecl
+  }
+  if nextIsCallOpen(input, index) &&
+     declarationLikeCall(input, index) {
+    return AstNodeKind.FunctionDecl
+  }
+  if token.kind.keyword == KeywordKind.Let ||
+     token.kind.keyword == KeywordKind.Return ||
+     token.kind.keyword == KeywordKind.If ||
+     token.kind.keyword == KeywordKind.Match ||
+     token.kind.keyword == KeywordKind.Par ||
+     token.kind.keyword == KeywordKind.Shard ||
+     token.kind.keyword == KeywordKind.Parallel ||
+     token.kind.keyword == KeywordKind.For ||
+     token.kind.keyword == KeywordKind.While ||
+     token.kind.keyword == KeywordKind.Loop ||
+     token.kind.keyword == KeywordKind.Qif ||
+     token.kind.keyword == KeywordKind.Qfor ||
+     token.kind.keyword == KeywordKind.Qwhile ||
+     token.kind.keyword == KeywordKind.Qloop {
+    return AstNodeKind.Statement
+  }
+  if token.kind.role == TokenRole.IntegerLiteral ||
+     token.kind.role == TokenRole.FloatLiteral ||
+     token.kind.role == TokenRole.StringLiteral ||
+     token.kind.role == TokenRole.Operator {
+    return AstNodeKind.Expression
+  }
+  let keywordCallable =
+    token.kind.keyword == KeywordKind.Module ||
+    token.kind.keyword == KeywordKind.Private ||
+    token.kind.keyword == KeywordKind.Loop ||
+    token.kind.keyword == KeywordKind.None ||
+    token.kind.keyword == KeywordKind.Parallel ||
+    token.kind.keyword == KeywordKind.View
+  let keywordPosition =
+    index > 0 &&
+    (input.tokenAt(index - 1).text == "." ||
+     input.tokenAt(index - 1).kind.keyword == KeywordKind.Pub)
+  if (token.kind.identifierToken || (keywordCallable && keywordPosition)) &&
+     nextIsCallOpen(input, index) {
+    return AstNodeKind.Expression
+  }
+  return AstNodeKind.Token
+}
+
+pub semanticKindForToken(input: LexProduct, index: i64) -> string {
+  let token = input.tokenAt(index)
+  if token.text == "{" || token.text == "}" {
+    return "lexical-scope"
+  }
+  if token.kind.role == TokenRole.IntegerLiteral ||
+     token.kind.role == TokenRole.FloatLiteral ||
+     token.kind.role == TokenRole.StringLiteral ||
+     token.kind.role == TokenRole.BytesLiteral ||
+     token.kind.role == TokenRole.ByteLiteral ||
+     token.kind.keyword == KeywordKind.True ||
+     token.kind.keyword == KeywordKind.False ||
+     token.kind.keyword == KeywordKind.None {
+    return "literal"
+  }
+  if tokenInsideModuleSurfaceBlock(input, index) {
+    return "syntax"
+  }
+  if token.text == "." {
+    return "syntax"
+  }
+  let keywordCallable =
+    token.kind.keyword == KeywordKind.Module ||
+    token.kind.keyword == KeywordKind.Private ||
+    token.kind.keyword == KeywordKind.Loop ||
+    token.kind.keyword == KeywordKind.None ||
+    token.kind.keyword == KeywordKind.Parallel ||
+    token.kind.keyword == KeywordKind.View
+  let keywordPosition =
+    index > 0 &&
+    (input.tokenAt(index - 1).text == "." ||
+     input.tokenAt(index - 1).kind.keyword == KeywordKind.Pub)
+  if (token.kind.identifierToken || (keywordCallable && keywordPosition)) &&
+     nextIsCallOpen(input, index) {
+    return "call"
+  }
+  if token.text == ":" ||
+     token.text == "::" ||
+     token.text == "->" ||
+     token.text == "=>" ||
+     declarationBodyEquals(input, index) {
+    return "syntax"
+  }
+  if token.kind.role == TokenRole.Operator {
+    return "operator"
+  }
+  if token.kind.role == TokenRole.PrimitiveType {
+    return "type"
+  }
+  if token.kind.keyword == KeywordKind.Par {
+    return "par-for"
+  }
+  if token.kind.keyword == KeywordKind.Shard {
+    return "shard-for"
+  }
+  if token.kind.keyword == KeywordKind.Parallel {
+    return "parallel-workers"
+  }
+  if token.text == "atomic" {
+    return "atomic-type"
+  }
+  if token.text == "Option" || token.text == "Result" {
+    return "carrier-type"
+  }
+  if token.kind.keyword == KeywordKind.Let {
+    return "local-binding"
+  }
+  if token.kind.identifierToken {
+    return "name"
+  }
+  return ""
+}
+
+tokenInsideModuleSurfaceBlock(input: LexProduct, index: i64) -> bool {
+  let cursor = index - 1
+  let nestedBlocks: i64 = 0
+  while cursor >= 0 {
+    let token = input.tokenAt(cursor)
+    if token.text == "}" {
+      nestedBlocks = nestedBlocks + 1
+    } else if token.text == "{" {
+      if nestedBlocks > 0 {
+        nestedBlocks = nestedBlocks - 1
+      } else {
+        if cursor == 0 {
+          return false
+        }
+        let owner = input.tokenAt(cursor - 1).kind.keyword
+        return owner == KeywordKind.Mod ||
+          owner == KeywordKind.Export
+      }
+    }
+    cursor = cursor - 1
+  }
+  return false
+}
+
+declarationBodyEquals(input: LexProduct, index: i64) -> bool {
+  if input.tokenAt(index).text != "=" {
+    return false
+  }
+
+  let cursor = index - 1
+  while cursor >= 0 {
+    if input.tokenAt(cursor).text == ")" {
+      let depth: i64 = 1
+      cursor = cursor - 1
+      while cursor >= 0 {
+        let token = input.tokenAt(cursor)
+        if token.text == ")" {
+          depth = depth + 1
+        } else if token.text == "(" {
+          depth = depth - 1
+          if depth == 0 {
+            return cursor > 0 &&
+              declarationLikeCall(input, cursor - 1)
+          }
+        }
+        cursor = cursor - 1
+      }
+      return false
+    }
+    if input.tokenAt(cursor).text == "{" ||
+       input.tokenAt(cursor).text == "}" ||
+       input.tokenAt(cursor).text == "=" {
+      return false
+    }
+    cursor = cursor - 1
+  }
+  return false
+}

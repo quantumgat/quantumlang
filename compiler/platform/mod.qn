@@ -1,0 +1,27 @@
+module platform
+
+mod {
+  os.linux as linux
+  os.windows as windows
+  os.macos as macos
+  os.none as none
+  embedded.memoryMap as memoryMap
+  embedded.interruptVector as interruptVector
+  embedded.startup as startup
+  embedded.linkerScript as linkerScript
+  embedded.boardProfile as boardProfile
+  embedded.deviceProfile as deviceProfile
+}
+
+export {
+  linux.LinuxPlatform
+  windows.WindowsPlatform
+  macos.MacosPlatform
+  none.NoOsPlatform
+  memoryMap.MemoryMap
+  interruptVector.InterruptVector
+  startup.StartupPlan
+  linkerScript.LinkerScript
+  boardProfile.BoardProfile
+  deviceProfile.DeviceProfile
+}

@@ -1,0 +1,39 @@
+pub NativeBackend {
+  enabled: bool
+  targetName: string
+  objectFormat: string
+  diagnosticCode: string = ""
+}
+
+impl NativeBackend {
+  pub NativeBackend(enabled: bool, targetName: string, objectFormat: string) =
+    This { enabled, targetName, objectFormat }
+
+  pub disabled(targetName: string) =
+    This {
+      enabled: false
+      targetName
+      objectFormat: ""
+      diagnosticCode: "QNATIVE0001"
+    }
+
+  withObjectFormat(objectFormat: string) =
+    this {
+      objectFormat
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QNATIVE0001"
+    }
+}
+
+impl view NativeBackend {
+  pub valid => diagnosticCode == "" && enabled && targetName != "" && objectFormat != ""
+  pub ready => valid
+  pub nativeObjectReady => ready
+  pub targetReady => targetName != ""
+  pub objectFormatReady => objectFormat != ""
+  pub lowerable => valid
+  pub debugName => "native.backend.{targetName}.{objectFormat}"
+}

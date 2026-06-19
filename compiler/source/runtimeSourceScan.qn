@@ -1,0 +1,25 @@
+pub RuntimeSourceScan {
+  target: string
+}
+
+impl RuntimeSourceScan {
+  pub RuntimeSourceScan(target: string) =
+    This { target }
+}
+
+impl view RuntimeSourceScan {
+  pub fileCount: i64 => sourceFileCount(target)
+  pub byteCount: i64 => sourceByteCount(target)
+  pub moduleBoundaryCount: i64 => moduleBoundaryCount(target)
+  pub manifestFound: bool => manifestExists(target)
+  pub sourceRootFound: bool => sourceRootExists(target)
+  pub appMainFound: bool => appMainExists(target)
+  pub valid: bool => fileCount != 0 && byteCount != 0 && manifestFound && sourceRootFound && appMainFound
+}
+
+sourceFileCount(target: string) -> i64
+sourceByteCount(target: string) -> i64
+moduleBoundaryCount(target: string) -> i64
+manifestExists(target: string) -> bool
+sourceRootExists(target: string) -> bool
+appMainExists(target: string) -> bool

@@ -1,0 +1,9 @@
+extract HttpCtx<...Caps> : pub OverloadNamedExtractor<...Caps> {
+  query<T>() -> Result<T, IntoHttpError> {
+    return slots.query<T>(request)
+  }
+
+  query<T>(name: TextView = TextView("")) -> Result<T, IntoHttpError> {
+    return slots.query<T>(request, name)
+  }
+}

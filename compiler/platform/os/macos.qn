@@ -1,0 +1,24 @@
+pub MacosPlatform {
+  name: string
+  syscallAbi: string
+  objectFormat: string
+  dynamicLinker: bool
+  valid: bool
+}
+
+impl MacosPlatform {
+  pub MacosPlatform() =
+    This {
+      name: "macos"
+      syscallAbi: "darwin"
+      objectFormat: "macho"
+      dynamicLinker: true
+      valid: true
+    }
+}
+
+impl view MacosPlatform {
+  pub hosted => dynamicLinker
+  pub macho => objectFormat == "macho"
+  pub nativeLinkable => valid && macho
+}

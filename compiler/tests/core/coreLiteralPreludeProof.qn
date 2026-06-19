@@ -1,0 +1,151 @@
+import core::{Arena, Array, CompilerId, DeclarationId, Index, Map, NameId, Range, Slice, Vec}
+
+pub CoreLiteralUser {
+  id: string
+  name: string
+}
+
+pub CoreLiteralPreludeProof {
+  vecLiteralOk: bool
+  fixedArrayLiteralOk: bool
+  mapLiteralOk: bool
+  anonymousRecordOk: bool
+  targetObjectLiteralOk: bool
+  optionOk: bool
+  resultOk: bool
+  coreVecOk: bool
+  coreArenaOk: bool
+  coreArrayOk: bool
+  coreIndexOk: bool
+  coreMapOk: bool
+  coreSliceOk: bool
+}
+
+impl CoreLiteralPreludeProof {
+  pub CoreLiteralPreludeProof(
+    vecLiteralOk: bool,
+    fixedArrayLiteralOk: bool,
+    mapLiteralOk: bool,
+    anonymousRecordOk: bool,
+    targetObjectLiteralOk: bool,
+    optionOk: bool,
+    resultOk: bool,
+    coreVecOk: bool,
+    coreArenaOk: bool,
+    coreArrayOk: bool,
+    coreIndexOk: bool,
+    coreMapOk: bool,
+    coreSliceOk: bool
+  ) =
+    This {
+      vecLiteralOk,
+      fixedArrayLiteralOk,
+      mapLiteralOk,
+      anonymousRecordOk,
+      targetObjectLiteralOk,
+      optionOk,
+      resultOk,
+      coreVecOk,
+      coreArenaOk,
+      coreArrayOk,
+      coreIndexOk,
+      coreMapOk,
+      coreSliceOk
+    }
+}
+
+impl view CoreLiteralPreludeProof {
+  pub literalsOk =>
+    vecLiteralOk &&
+    fixedArrayLiteralOk &&
+    mapLiteralOk &&
+    anonymousRecordOk &&
+    targetObjectLiteralOk
+
+  pub preludeOk =>
+    optionOk &&
+    resultOk
+
+  pub coreOk =>
+    coreVecOk &&
+    coreArenaOk &&
+    coreArrayOk &&
+    coreIndexOk &&
+    coreMapOk &&
+    coreSliceOk
+
+  pub valid =>
+    literalsOk &&
+    preludeOk &&
+    coreOk
+}
+
+pub coreLiteralPreludeProof() -> CoreLiteralPreludeProof {
+  let user: CoreLiteralUser = {
+    id: "u1"
+    name: "Ali"
+  }
+
+  let targetUser: CoreLiteralUser = {
+    id: "u2"
+    name: "Sara"
+  }
+
+  let vecValues: vec<i64> = [1, 2, 3]
+  let fixedValues: Array<i64, 3> = [1, 2, 3]
+
+  let table: Map<string, CoreLiteralUser> = {
+    "id": {
+      id: "u3"
+      name: "MapUser"
+    }
+  }
+
+  let record = {
+    id: "r1"
+    name: "RecordUser"
+  }
+
+  let maybeUser: Option<CoreLiteralUser> = some(user)
+  let userResult: Result<CoreLiteralUser, string> = ok(targetUser)
+
+  let packageId = CompilerId.package(10)
+  let emptyNameId: NameId = {}
+  let emptyDeclarationId: DeclarationId = {}
+  let range: Range<NameId> = Range<NameId>(0, 3)
+  let allRange: Range<NameId> = Range<NameId>.all(3)
+  let singleRange: Range<NameId> = Range<NameId>.single(2)
+  let emptySlice: Slice<NameId> = []
+  let emptyIndex: Index<NameId, NameId> = {}
+  let emptyMap: Map<NameId, NameId> = {}
+  let slice: Slice<NameId> = Slice(0, 3)
+  let sliceFromCount: Slice<NameId> = Slice(3)
+  let ownedSlice: Slice<NameId> = Slice(3, packageId, 1)
+  let coreVec: Vec<NameId> = Vec(3, packageId, 1)
+  let coreArena: Arena<NameId> = Arena(3, packageId, 1)
+  let coreArray: Array<NameId, 3> = Array(3)
+  let coreIndex: Index<NameId, NameId> = Index(3)
+  let coreIndexFromRanges: Index<NameId, NameId> = Index(range, allRange)
+  let coreMap: Map<NameId, NameId> = Map.fromRows(range, allRange)
+  let coreMapFromIndex: Map<NameId, NameId> = Map<NameId, NameId>(coreIndex)
+
+  CoreLiteralPreludeProof(
+    true,
+    true,
+    true,
+    record.id == "r1" && record.name == "RecordUser",
+    targetUser.id == "u2" && targetUser.name == "Sara",
+    true,
+    true,
+    coreVec.valid && coreVec.count == 3,
+    coreArena.valid && coreArena.count == 3,
+    coreArray.valid && coreArray.count == 3,
+    coreIndex.valid && coreIndex.count == 3 && coreIndexFromRanges.valid && emptyIndex.empty,
+    coreMap.valid && coreMapFromIndex.valid && coreMap.count == 3 && emptyMap.empty && emptyNameId.valid == false && emptyDeclarationId.valid == false,
+    emptySlice.empty &&
+      slice.valid &&
+      sliceFromCount.count == 3 &&
+      ownedSlice.isOwned &&
+      singleRange.start == 2
+  )
+}

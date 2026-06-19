@@ -1,0 +1,73 @@
+import core::{ModuleId, ScopeId, SymbolId}
+import source::{SourceSpan}
+
+pub enum TypeScopeKind {
+  Package
+  Module
+  Type
+  Function
+  Generic
+  Lexical
+  Unknown
+}
+
+pub TypeScope {
+  id: ScopeId = {}
+  parent: ScopeId = {}
+  module: ModuleId = {}
+  owner: SymbolId = {}
+  kind: TypeScopeKind = TypeScopeKind.Unknown
+  depth: i64 = 0
+  genericParameterCount: i64 = 0
+  span: SourceSpan = {}
+  deterministic: bool = true
+}
+
+impl TypeScope {
+  pub TypeScope(
+    id: ScopeId,
+    parent: ScopeId,
+    module: ModuleId,
+    owner: SymbolId,
+    kind: TypeScopeKind,
+    depth: i64,
+    span: SourceSpan
+  ) =
+    This { id, parent, module, owner, kind, depth, span }
+
+  pub generic(
+    id: ScopeId,
+    parent: ScopeId,
+    module: ModuleId,
+    owner: SymbolId,
+    depth: i64,
+    genericParameterCount: i64,
+    span: SourceSpan
+  ) =
+    This {
+      id
+      parent
+      module
+      owner
+      kind: TypeScopeKind.Generic
+      depth
+      genericParameterCount
+      span
+    }
+
+}
+
+impl view TypeScope {
+  pub moduleId: ModuleId => module
+
+  pub root: bool => kind == TypeScopeKind.Package
+
+  pub generic: bool => kind == TypeScopeKind.Generic
+
+  pub valid: bool =>
+    id.valid &&
+    kind != TypeScopeKind.Unknown &&
+    depth >= 0 &&
+    genericParameterCount >= 0 &&
+    deterministic
+}

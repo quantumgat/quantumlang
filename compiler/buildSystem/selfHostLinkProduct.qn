@@ -1,0 +1,47 @@
+import buildSystem::{SelfHostNativeProductPlan}
+import backend::{LinkInputSet, LinkPlan, LinkProduct}
+
+pub SelfHostLinkProductPlan {
+  targetTriple: string = "x86_64-unknown-linux-gnu"
+  profile: string = "debug"
+  outputPath: string = "build/debug/qtlc2"
+  objectUnitCount: i64
+  inputSetHash: string
+}
+
+impl SelfHostLinkProductPlan {
+  pub fromNative(nativePlan: SelfHostNativeProductPlan) =
+    This {
+      objectUnitCount: nativePlan.unitCount
+      inputSetHash: "qtlc2-link-inputs-ready"
+    }
+}
+
+impl view SelfHostLinkProductPlan {
+  pub inputSet() =
+    LinkInputSet(
+      objectUnitCount,
+      "qtlc2-objects-ready",
+      "qtlc1-runtime-none",
+      "default-linker-script",
+      "native-debug-target-options",
+      inputSetHash
+    )
+
+  pub plan() =
+    LinkPlan.relink(
+      objectUnitCount,
+      inputSetHash,
+      targetTriple,
+      profile,
+      outputPath
+    )
+
+  pub product() =
+    LinkProduct.linked(outputPath, "qtlc2-executable-ready", "first-qtlc1-link")
+
+  pub valid => inputSet().valid && plan().valid && product().valid
+  pub deterministic => inputSet().deterministic && product().deterministic
+  pub runnable => product().runnable
+  pub fingerprint => "linked-qtlc2-ready"
+}

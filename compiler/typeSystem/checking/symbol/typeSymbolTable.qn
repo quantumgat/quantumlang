@@ -1,0 +1,1116 @@
+import core::{Arena, CompilerId, DeclarationId, Index, ModuleId, Slice, SymbolId, TypeId, Vec}
+import declaration::{DeclarationKey, DeclarationRecord}
+import diagnostics::{DiagnosticRegistry, DiagnosticSpec, TypeDiagnosticCode}
+import frontend::{FrontendProduct}
+import host::{CompilerProgress}
+import source::{SourceSpan}
+
+pub TypeSymbolIssue {
+  symbolId: SymbolId = {}
+  diagnostic: DiagnosticSpec = {}
+  subject: string = ""
+  span: SourceSpan = {}
+  duplicate: bool = false
+  unresolved: bool = false
+}
+
+impl view TypeSymbolIssue {
+  pub code: string => this.diagnostic.code.display
+
+  pub message: string => this.diagnostic.format(this.subject)
+
+  pub valid: bool =>
+    diagnostic.valid &&
+    message != "" &&
+    span.valid &&
+    (duplicate || unresolved)
+}
+
+pub TypeSymbolTable {
+  unresolvedSymbolCount: i64 = 0
+  duplicateSymbolCount: i64 = 0
+  moduleSymbolTotal: i64 = 0
+  typeSymbolTotal: i64 = 0
+  functionSymbolTotal: i64 = 0
+  valueSymbolTotal: i64 = 0
+  importSymbolTotal: i64 = 0
+  publicSymbolTotal: i64 = 0
+  privateSymbolTotal: i64 = 0
+  symbols: Arena<TypeSymbol> = {}
+  symbolValues: Vec<TypeSymbol> = []
+  symbolIdValues: Vec<SymbolId> = []
+  declarationIdValues: Vec<DeclarationId> = []
+  typeIdValues: Vec<TypeId> = []
+  issueValues: Vec<TypeSymbolIssue> = []
+  symbolIds: Slice<SymbolId> = []
+  declarationIds: Slice<DeclarationId> = []
+  moduleSymbols: Slice<SymbolId> = []
+  typeSymbols: Slice<SymbolId> = []
+  functionSymbols: Slice<SymbolId> = []
+  valueSymbols: Slice<SymbolId> = []
+  importSymbols: Slice<SymbolId> = []
+  publicSymbols: Slice<SymbolId> = []
+  privateSymbols: Slice<SymbolId> = []
+  symbolIndex: Index<DeclarationKey, SymbolId> = {}
+  symbolIdLookup: TypeNameLookupIndex = {}
+  declarationIdLookup: TypeNameLookupIndex = {}
+  typeIdLookup: TypeNameLookupIndex = {}
+  sourceLookup: TypeNameLookupIndex = {}
+  sourcePositionLookup: TypeNameLookupIndex = {}
+  nameLookup: TypeNameLookupIndex = {}
+  qualifiedLookup: TypeNameLookupIndex = {}
+  moduleQualifiedLookup: TypeNameLookupIndex = {}
+  packagePublicLookup: TypeNameLookupIndex = {}
+  packagePublicAmbiguousLookup: TypeNameLookupIndex = {}
+  callLookup: TypeNameLookupIndex = {}
+  inferredCallLookup: TypeNameLookupIndex = {}
+  callableNameLookup: TypeNameLookupIndex = {}
+  callableNameAmbiguousLookup: TypeNameLookupIndex = {}
+  typeOwnerLookup: TypeNameLookupIndex = {}
+  packageTypeOwnerLookup: TypeNameLookupIndex = {}
+  packageTypeOwnerAmbiguousLookup: TypeNameLookupIndex = {}
+  globalTypeOwnerLookup: TypeNameLookupIndex = {}
+  globalTypeOwnerAmbiguousLookup: TypeNameLookupIndex = {}
+  behaviorOwnerLookup: TypeNameLookupIndex = {}
+  behaviorOwnerAmbiguousLookup: TypeNameLookupIndex = {}
+  extensionOwnerLookup: TypeNameLookupIndex = {}
+  packageExtensionOwnerLookup: TypeNameLookupIndex = {}
+  packageExtensionOwnerAmbiguousLookup: TypeNameLookupIndex = {}
+  memberSignatureLookup: TypeNameLookupIndex = {}
+  memberLookup: TypeNameLookupIndex = {}
+  inferredMemberLookup: TypeNameLookupIndex = {}
+  moduleMemberCallLookup: TypeNameLookupIndex = {}
+  moduleMemberCallAmbiguousLookup: TypeNameLookupIndex = {}
+  moduleMemberCallableLookup: TypeNameLookupIndex = {}
+  moduleMemberCallableAmbiguousLookup: TypeNameLookupIndex = {}
+  memberValueLookup: TypeNameLookupIndex = {}
+  moduleMemberValueLookup: TypeNameLookupIndex = {}
+  moduleMemberValueAmbiguousLookup: TypeNameLookupIndex = {}
+  packageMemberValueLookup: TypeNameLookupIndex = {}
+  packageMemberValueAmbiguousLookup: TypeNameLookupIndex = {}
+  deterministic: bool = true
+}
+
+impl TypeSymbolTable {
+  pub forFrontend(frontend: FrontendProduct) -> This {
+    return This.fromRecords(
+      frontend.declarations.records.recordValues,
+      frontend.valid
+    )
+  }
+
+  pub fromRecords(records: Vec<DeclarationRecord>, recordsValid: bool) -> This {
+    let table = This {
+      nameLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      symbolIdLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      declarationIdLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      typeIdLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      sourceLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      sourcePositionLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      qualifiedLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      moduleQualifiedLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      packagePublicLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      packagePublicAmbiguousLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      callLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      inferredCallLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      callableNameLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      callableNameAmbiguousLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      typeOwnerLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      packageTypeOwnerLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      packageTypeOwnerAmbiguousLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      globalTypeOwnerLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      globalTypeOwnerAmbiguousLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      behaviorOwnerLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      behaviorOwnerAmbiguousLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      extensionOwnerLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      packageExtensionOwnerLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      packageExtensionOwnerAmbiguousLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      memberSignatureLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      memberLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      inferredMemberLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      moduleMemberCallLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      moduleMemberCallAmbiguousLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      moduleMemberCallableLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      moduleMemberCallableAmbiguousLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      memberValueLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      moduleMemberValueLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      moduleMemberValueAmbiguousLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      packageMemberValueLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      packageMemberValueAmbiguousLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      deterministic: recordsValid
+    }
+    let progress = CompilerProgress()
+
+    let row: i64 = 0
+    while row < records.count {
+      table.addRecord(records[row])
+      row = row + 1
+      if row % 256 == 0 || row == records.count {
+        progress.advance(
+          "Symbols",
+          row,
+          records.count,
+          records[row - 1].modulePath,
+          0,
+          0,
+          table.symbolValues.count,
+          0
+        )
+      }
+    }
+
+    let count = table.symbolValues.count
+    table.symbols = Arena(count)
+    table.symbolIds = Slice(count)
+    table.declarationIds = Slice(count)
+    table.moduleSymbols = Slice(table.moduleSymbolTotal)
+    table.typeSymbols = Slice(table.typeSymbolTotal)
+    table.functionSymbols = Slice(table.functionSymbolTotal)
+    table.valueSymbols = Slice(table.valueSymbolTotal)
+    table.importSymbols = Slice(table.importSymbolTotal)
+    table.publicSymbols = Slice(table.publicSymbolTotal)
+    table.privateSymbols = Slice(table.privateSymbolTotal)
+    table.symbolIndex = Index(count)
+    return table
+  }
+
+  addRecord(record: DeclarationRecord) {
+    let symbol = TypeSymbol.fromRecord(record)
+    if symbol.kind == TypeSymbolKind.Unknown || !record.resolved {
+      unresolvedSymbolCount = unresolvedSymbolCount + 1
+      issueValues.push(TypeSymbolIssue {
+        symbolId: symbol.id
+        diagnostic: DiagnosticRegistry.type(TypeDiagnosticCode.UnresolvedDeclaration)
+        subject: record.name
+        span: record.span
+        unresolved: true
+      })
+      return
+    }
+    if (This.duplicateConstrained(symbol.kind) &&
+       !symbol.member &&
+       this.containsDeclarationSymbol(symbol)) ||
+       (symbol.memberCallable &&
+        memberSignatureLookup.contains(
+          TypeSymbolLookupKey.memberOwner(symbol.moduleId, symbol.ownerTypeName),
+          this.memberSignatureKey(symbol)
+        )) ||
+       (symbol.memberValue &&
+        memberValueLookup.contains(
+          TypeSymbolLookupKey.memberOwner(symbol.moduleId, symbol.ownerTypeName),
+          symbol.name
+        )) {
+      duplicateSymbolCount = duplicateSymbolCount + 1
+      issueValues.push(TypeSymbolIssue {
+        symbolId: symbol.id
+        diagnostic: DiagnosticRegistry.type(TypeDiagnosticCode.DuplicateDeclaration)
+        subject: "{record.modulePath}::{record.name}"
+        span: record.span
+        duplicate: true
+      })
+      return
+    }
+    symbolValues.push(symbol)
+    let symbolRow = symbolValues.count - 1
+    let rowIndex = symbolRow as usize
+    nameLookup.add("", symbol.name, symbolRow as usize)
+    symbolIdLookup.add("", TypeSymbolLookupKey.symbol(symbol.id), rowIndex)
+    declarationIdLookup.add("", TypeSymbolLookupKey.declaration(symbol.declarationId), rowIndex)
+    typeIdLookup.add("", TypeSymbolLookupKey.type(symbol.typeId), rowIndex)
+    sourceLookup.add(
+      "",
+      TypeSymbolLookupKey.source(
+        symbol.span.fileId.id.moduleHash,
+        symbol.span.start,
+        symbol.name
+      ),
+      rowIndex
+    )
+    sourcePositionLookup.add(
+      "",
+      TypeSymbolLookupKey.sourcePosition(symbol.span.fileId.id.moduleHash, symbol.span.start),
+      rowIndex
+    )
+    if !symbol.member {
+      qualifiedLookup.add(symbol.moduleName, symbol.name, symbolRow as usize)
+      moduleQualifiedLookup.add(
+        TypeSymbolLookupKey.moduleSymbol(symbol.moduleId),
+        symbol.name,
+        rowIndex
+      )
+      if symbol.public {
+        if !packagePublicLookup.add(
+          TypeSymbolLookupKey.packageSymbol(symbol.moduleId),
+          symbol.name,
+          rowIndex
+        ) {
+          packagePublicAmbiguousLookup.add(
+            TypeSymbolLookupKey.packageSymbol(symbol.moduleId),
+            symbol.name,
+            rowIndex
+          )
+        }
+      }
+    }
+    if symbol.kind == TypeSymbolKind.Type ||
+       symbol.kind == TypeSymbolKind.Enum ||
+       symbol.kind == TypeSymbolKind.Role {
+      typeOwnerLookup.add(
+        TypeSymbolLookupKey.moduleSymbol(symbol.moduleId),
+        symbol.name,
+        rowIndex
+      )
+      if !packageTypeOwnerLookup.add(
+        TypeSymbolLookupKey.packageSymbol(symbol.moduleId),
+        symbol.name,
+        rowIndex
+      ) {
+        packageTypeOwnerAmbiguousLookup.add(
+          TypeSymbolLookupKey.packageSymbol(symbol.moduleId),
+          symbol.name,
+          rowIndex
+        )
+      }
+      if !globalTypeOwnerLookup.add("", symbol.name, rowIndex) {
+        globalTypeOwnerAmbiguousLookup.add("", symbol.name, rowIndex)
+      }
+    }
+    if symbol.kind == TypeSymbolKind.Impl ||
+       symbol.kind == TypeSymbolKind.View ||
+       symbol.kind == TypeSymbolKind.Context ||
+       symbol.kind == TypeSymbolKind.Extract ||
+       symbol.kind == TypeSymbolKind.Extend {
+      extensionOwnerLookup.add(
+        TypeSymbolLookupKey.moduleSymbol(symbol.moduleId),
+        symbol.name,
+        rowIndex
+      )
+      if !packageExtensionOwnerLookup.add(
+        TypeSymbolLookupKey.packageSymbol(symbol.moduleId),
+        symbol.name,
+        rowIndex
+      ) {
+        packageExtensionOwnerAmbiguousLookup.add(
+          TypeSymbolLookupKey.packageSymbol(symbol.moduleId),
+          symbol.name,
+          rowIndex
+        )
+      }
+    }
+    if symbol.kind == TypeSymbolKind.Impl ||
+       symbol.kind == TypeSymbolKind.View ||
+       symbol.kind == TypeSymbolKind.Context ||
+       symbol.kind == TypeSymbolKind.Extract ||
+       symbol.kind == TypeSymbolKind.Extend {
+      if !behaviorOwnerLookup.add(
+        TypeSymbolLookupKey.moduleSymbol(symbol.moduleId),
+        symbol.name,
+        rowIndex
+      ) {
+        behaviorOwnerAmbiguousLookup.add(
+          TypeSymbolLookupKey.moduleSymbol(symbol.moduleId),
+          symbol.name,
+          rowIndex
+        )
+      }
+    }
+    if symbol.kind == TypeSymbolKind.Function ||
+       symbol.kind == TypeSymbolKind.Type ||
+       symbol.kind == TypeSymbolKind.Enum {
+      if !callableNameLookup.add("", symbol.name, rowIndex) {
+        callableNameAmbiguousLookup.add("", symbol.name, rowIndex)
+      }
+      callLookup.add(
+        "",
+        TypeSymbolLookupKey.call(
+          symbol.name,
+          symbol.callableParameterCount,
+          symbol.genericParameterCount
+        ),
+        rowIndex
+      )
+      if symbol.genericParameterCount > 0 {
+        inferredCallLookup.add(
+          "",
+          TypeSymbolLookupKey.call(symbol.name, symbol.callableParameterCount, 0),
+          rowIndex
+        )
+      }
+    }
+    if symbol.memberCallable {
+      memberSignatureLookup.add(
+        TypeSymbolLookupKey.memberOwner(symbol.moduleId, symbol.ownerTypeName),
+        this.memberSignatureKey(symbol),
+        symbolRow as usize
+      )
+      memberLookup.add(
+        TypeSymbolLookupKey.memberOwner(symbol.moduleId, symbol.ownerTypeName),
+        TypeSymbolLookupKey.memberCall(
+          symbol.name,
+          symbol.callableParameterCount,
+          symbol.genericParameterCount
+        ),
+        symbolRow as usize
+      )
+      memberLookup.add(
+        symbol.ownerTypeName,
+        TypeSymbolLookupKey.memberCall(
+          symbol.name,
+          symbol.callableParameterCount,
+          symbol.genericParameterCount
+        ),
+        symbolRow as usize
+      )
+      let moduleMemberKey = TypeSymbolLookupKey.memberCall(
+        symbol.name,
+        symbol.callableParameterCount,
+        symbol.genericParameterCount
+      )
+      if !moduleMemberCallLookup.add(
+        TypeSymbolLookupKey.moduleSymbol(symbol.moduleId),
+        moduleMemberKey,
+        rowIndex
+      ) {
+        moduleMemberCallAmbiguousLookup.add(
+          TypeSymbolLookupKey.moduleSymbol(symbol.moduleId),
+          moduleMemberKey,
+          rowIndex
+        )
+      }
+      if !moduleMemberCallableLookup.add(
+        TypeSymbolLookupKey.moduleSymbol(symbol.moduleId),
+        symbol.name,
+        rowIndex
+      ) {
+        moduleMemberCallableAmbiguousLookup.add(
+          TypeSymbolLookupKey.moduleSymbol(symbol.moduleId),
+          symbol.name,
+          rowIndex
+        )
+      }
+      if symbol.genericParameterCount > 0 {
+        inferredMemberLookup.add(
+          TypeSymbolLookupKey.memberOwner(symbol.moduleId, symbol.ownerTypeName),
+          TypeSymbolLookupKey.memberCall(symbol.name, symbol.callableParameterCount, 0),
+          symbolRow as usize
+        )
+        inferredMemberLookup.add(
+          symbol.ownerTypeName,
+          TypeSymbolLookupKey.memberCall(symbol.name, symbol.callableParameterCount, 0),
+          symbolRow as usize
+        )
+      }
+    } else if symbol.memberValue {
+      memberValueLookup.add(
+        TypeSymbolLookupKey.memberOwner(symbol.moduleId, symbol.ownerTypeName),
+        symbol.name,
+        symbolRow as usize
+      )
+      memberValueLookup.add(symbol.ownerTypeName, symbol.name, symbolRow as usize)
+      if !moduleMemberValueLookup.add(
+        TypeSymbolLookupKey.moduleSymbol(symbol.moduleId),
+        symbol.name,
+        rowIndex
+      ) {
+        moduleMemberValueAmbiguousLookup.add(
+          TypeSymbolLookupKey.moduleSymbol(symbol.moduleId),
+          symbol.name,
+          rowIndex
+        )
+      }
+      if !packageMemberValueLookup.add(
+        TypeSymbolLookupKey.packageMemberOwner(symbol.moduleId, symbol.ownerTypeName),
+        symbol.name,
+        rowIndex
+      ) {
+        packageMemberValueAmbiguousLookup.add(
+          TypeSymbolLookupKey.packageMemberOwner(symbol.moduleId, symbol.ownerTypeName),
+          symbol.name,
+          rowIndex
+        )
+      }
+    }
+    symbolIdValues.push(symbol.id)
+    declarationIdValues.push(symbol.declarationId)
+    typeIdValues.push(symbol.typeId)
+    recordSymbolTotals(symbol)
+  }
+
+  recordSymbolTotals(symbol: TypeSymbol) {
+    if symbol.kind == TypeSymbolKind.Module {
+      moduleSymbolTotal = moduleSymbolTotal + 1
+    }
+    if symbol.kind == TypeSymbolKind.Type ||
+       symbol.kind == TypeSymbolKind.Enum ||
+       symbol.kind == TypeSymbolKind.Role {
+      typeSymbolTotal = typeSymbolTotal + 1
+    }
+    if symbol.behavioral {
+      functionSymbolTotal = functionSymbolTotal + 1
+    }
+    if symbol.kind == TypeSymbolKind.Value {
+      valueSymbolTotal = valueSymbolTotal + 1
+    }
+    if symbol.kind == TypeSymbolKind.Import {
+      importSymbolTotal = importSymbolTotal + 1
+    }
+    if symbol.public {
+      publicSymbolTotal = publicSymbolTotal + 1
+    } else {
+      privateSymbolTotal = privateSymbolTotal + 1
+    }
+  }
+
+  pub symbolAt(index: i64) -> TypeSymbol {
+    return symbolValues[index]
+  }
+
+  pub contains(moduleName: string, name: string) -> bool {
+    return qualifiedLookup.contains(moduleName, name)
+  }
+
+  containsDeclarationSymbol(symbol: TypeSymbol) -> bool {
+    let row: i64 = 0
+    while row < symbolValues.count {
+      let existing = symbolValues[row]
+      if !existing.member &&
+         existing.kind == symbol.kind &&
+         existing.moduleId.id.packageHash == symbol.moduleId.id.packageHash &&
+         existing.moduleId.id.moduleHash == symbol.moduleId.id.moduleHash &&
+         existing.name == symbol.name {
+        return true
+      }
+      row = row + 1
+    }
+    return false
+  }
+
+  pub symbolForDeclaration(declarationId: DeclarationId) -> Option<TypeSymbol> {
+    return match declarationIdLookup.rowFor(TypeSymbolLookupKey.declaration(declarationId)) {
+      Some(row) => Some(symbolValues[row])
+      None => None
+    }
+  }
+
+  pub symbolForType(typeId: TypeId) -> Option<TypeSymbol> {
+    return match typeIdLookup.rowFor(TypeSymbolLookupKey.type(typeId)) {
+      Some(row) => Some(symbolValues[row])
+      None => None
+    }
+  }
+
+  pub symbolForId(symbolId: SymbolId) -> Option<TypeSymbol> {
+    if !symbolId.valid {
+      return None
+    }
+    return match symbolIdLookup.rowFor(TypeSymbolLookupKey.symbol(symbolId)) {
+      Some(row) => Some(symbolValues[row])
+      None => None
+    }
+  }
+
+  pub symbolValueForId(symbolId: SymbolId) -> TypeSymbol {
+    if !symbolId.valid {
+      return TypeSymbol()
+    }
+    return match symbolIdLookup.rowFor(TypeSymbolLookupKey.symbol(symbolId)) {
+      Some(row) => symbolValues[row]
+      None => TypeSymbol()
+    }
+  }
+
+  pub symbolForName(name: string) -> Option<TypeSymbol> {
+    return match nameLookup.rowFor(name) {
+      Some(row) => Some(symbolValues[row])
+      None => None
+    }
+  }
+
+  pub symbolValueForName(name: string) -> TypeSymbol {
+    return match nameLookup.rowFor(name) {
+      Some(row) => symbolValues[row]
+      None => TypeSymbol()
+    }
+  }
+
+  pub symbolValueForName(moduleId: ModuleId, name: string) -> TypeSymbol {
+    match moduleQualifiedLookup.rowFor(TypeSymbolLookupKey.moduleSymbol(moduleId), name) {
+      Some(row) => return symbolValues[row]
+      None => {}
+    }
+    if packagePublicAmbiguousLookup.contains(TypeSymbolLookupKey.packageSymbol(moduleId), name) {
+      return TypeSymbol()
+    }
+    return match packagePublicLookup.rowFor(TypeSymbolLookupKey.packageSymbol(moduleId), name) {
+      Some(row) => symbolValues[row]
+      None => TypeSymbol()
+    }
+  }
+
+  pub symbolValueForCall(
+    name: string,
+    argumentCount: i64,
+    genericArgumentCount: i64
+  ) -> TypeSymbol {
+    let key = TypeSymbolLookupKey.call(name, argumentCount, genericArgumentCount)
+    match callLookup.rowFor(key) {
+      Some(row) => return symbolValues[row]
+      None => {}
+    }
+    if genericArgumentCount == 0 {
+      match inferredCallLookup.rowFor(key) {
+        Some(row) => return symbolValues[row]
+        None => {}
+      }
+    }
+    return symbolValueForName(name)
+  }
+
+  pub symbolValueForCallableName(name: string) -> TypeSymbol {
+    if callableNameAmbiguousLookup.contains("", name) {
+      return TypeSymbol()
+    }
+    return match callableNameLookup.rowFor("", name) {
+      Some(row) => symbolValues[row]
+      None => TypeSymbol()
+    }
+  }
+
+  pub typeOwnerSymbolFor(ownerTypeName: string, moduleId: ModuleId) -> TypeSymbol {
+    let baseOwnerTypeName = TypeSymbolLookupKey.genericBaseName(ownerTypeName)
+    match typeOwnerLookup.rowFor(TypeSymbolLookupKey.moduleSymbol(moduleId), baseOwnerTypeName) {
+      Some(row) => return symbolValues[row]
+      None => {}
+    }
+    if packageTypeOwnerAmbiguousLookup.contains(
+      TypeSymbolLookupKey.packageSymbol(moduleId),
+      baseOwnerTypeName
+    ) {
+      return TypeSymbol()
+    }
+    return match packageTypeOwnerLookup.rowFor(
+      TypeSymbolLookupKey.packageSymbol(moduleId),
+      baseOwnerTypeName
+    ) {
+      Some(row) => symbolValues[row]
+      None => TypeSymbol()
+    }
+  }
+
+  pub typeOwnerSymbolFor(ownerTypeName: string) -> TypeSymbol {
+    let baseOwnerTypeName = TypeSymbolLookupKey.genericBaseName(ownerTypeName)
+    if globalTypeOwnerAmbiguousLookup.contains("", baseOwnerTypeName) {
+      return TypeSymbol()
+    }
+    return match globalTypeOwnerLookup.rowFor("", baseOwnerTypeName) {
+      Some(row) => symbolValues[row]
+      None => TypeSymbol()
+    }
+  }
+
+  pub extensionOwnerSymbolFor(
+    ownerTypeName: string,
+    moduleId: ModuleId
+  ) -> TypeSymbol {
+    match extensionOwnerLookup.rowFor(
+      TypeSymbolLookupKey.moduleSymbol(moduleId),
+      ownerTypeName
+    ) {
+      Some(row) => return symbolValues[row]
+      None => {}
+    }
+    if packageExtensionOwnerAmbiguousLookup.contains(
+      TypeSymbolLookupKey.packageSymbol(moduleId),
+      ownerTypeName
+    ) {
+      return TypeSymbol()
+    }
+    return match packageExtensionOwnerLookup.rowFor(
+      TypeSymbolLookupKey.packageSymbol(moduleId),
+      ownerTypeName
+    ) {
+      Some(row) => symbolValues[row]
+      None => TypeSymbol()
+    }
+  }
+
+  pub behaviorOwnerSymbolFor(
+    ownerTypeName: string,
+    moduleId: ModuleId
+  ) -> TypeSymbol {
+    if behaviorOwnerAmbiguousLookup.contains(
+      TypeSymbolLookupKey.moduleSymbol(moduleId),
+      ownerTypeName
+    ) {
+      return TypeSymbol()
+    }
+    return match behaviorOwnerLookup.rowFor(
+      TypeSymbolLookupKey.moduleSymbol(moduleId),
+      ownerTypeName
+    ) {
+      Some(row) => symbolValues[row]
+      None => TypeSymbol()
+    }
+  }
+
+  pub symbolValueForMemberCall(
+    moduleId: ModuleId,
+    ownerTypeName: string,
+    name: string,
+    argumentCount: i64,
+    genericArgumentCount: i64
+  ) -> TypeSymbol {
+    let ownerKey = TypeSymbolLookupKey.memberOwner(moduleId, ownerTypeName)
+    let key = TypeSymbolLookupKey.memberCall(name, argumentCount, genericArgumentCount)
+    match memberLookup.rowFor(ownerKey, key) {
+      Some(row) => return symbolValues[row]
+      None => {}
+    }
+    let baseOwnerTypeName = TypeSymbolLookupKey.genericBaseName(ownerTypeName)
+    if baseOwnerTypeName != ownerTypeName {
+      match memberLookup.rowFor(
+        TypeSymbolLookupKey.memberOwner(moduleId, baseOwnerTypeName),
+        key
+      ) {
+        Some(row) => return symbolValues[row].specializedFor(ownerTypeName)
+        None => {}
+      }
+    }
+    if genericArgumentCount == 0 {
+      match inferredMemberLookup.rowFor(ownerKey, key) {
+        Some(row) => return symbolValues[row]
+        None => {}
+      }
+      if baseOwnerTypeName != ownerTypeName {
+        match inferredMemberLookup.rowFor(
+          TypeSymbolLookupKey.memberOwner(moduleId, baseOwnerTypeName),
+          key
+        ) {
+          Some(row) => return symbolValues[row].specializedFor(ownerTypeName)
+          None => {}
+        }
+      }
+    }
+
+    return TypeSymbol()
+  }
+
+  pub symbolValueForMemberCall(
+    ownerTypeName: string,
+    name: string,
+    argumentCount: i64,
+    genericArgumentCount: i64
+  ) -> TypeSymbol {
+    let key = TypeSymbolLookupKey.memberCall(name, argumentCount, genericArgumentCount)
+    match memberLookup.rowFor(ownerTypeName, key) {
+      Some(row) => return symbolValues[row]
+      None => {}
+    }
+    let baseOwnerTypeName = TypeSymbolLookupKey.genericBaseName(ownerTypeName)
+    if baseOwnerTypeName != ownerTypeName {
+      match memberLookup.rowFor(baseOwnerTypeName, key) {
+        Some(row) => return symbolValues[row].specializedFor(ownerTypeName)
+        None => {}
+      }
+    }
+    if genericArgumentCount == 0 {
+      match inferredMemberLookup.rowFor(ownerTypeName, key) {
+        Some(row) => return symbolValues[row]
+        None => {}
+      }
+      if baseOwnerTypeName != ownerTypeName {
+        match inferredMemberLookup.rowFor(baseOwnerTypeName, key) {
+          Some(row) => return symbolValues[row].specializedFor(ownerTypeName)
+          None => {}
+        }
+      }
+    }
+
+    return TypeSymbol()
+  }
+
+  pub symbolValueForModuleMemberCall(
+    moduleId: ModuleId,
+    name: string,
+    argumentCount: i64,
+    genericArgumentCount: i64
+  ) -> TypeSymbol {
+    let key = TypeSymbolLookupKey.memberCall(name, argumentCount, genericArgumentCount)
+    if moduleMemberCallAmbiguousLookup.contains(TypeSymbolLookupKey.moduleSymbol(moduleId), key) {
+      return TypeSymbol()
+    }
+    return match moduleMemberCallLookup.rowFor(TypeSymbolLookupKey.moduleSymbol(moduleId), key) {
+      Some(row) => symbolValues[row]
+      None => TypeSymbol()
+    }
+  }
+
+  pub symbolValueForModuleMemberCallable(
+    moduleId: ModuleId,
+    name: string
+  ) -> TypeSymbol {
+    if moduleMemberCallableAmbiguousLookup.contains(
+      TypeSymbolLookupKey.moduleSymbol(moduleId),
+      name
+    ) {
+      return TypeSymbol()
+    }
+    return match moduleMemberCallableLookup.rowFor(TypeSymbolLookupKey.moduleSymbol(moduleId), name) {
+      Some(row) => symbolValues[row]
+      None => TypeSymbol()
+    }
+  }
+
+  pub symbolValueForMember(
+    moduleId: ModuleId,
+    ownerTypeName: string,
+    name: string
+  ) -> TypeSymbol {
+    let ownerKey = TypeSymbolLookupKey.memberOwner(moduleId, ownerTypeName)
+    match memberValueLookup.rowFor(
+      ownerKey,
+      name
+    ) {
+      Some(row) => return symbolValues[row]
+      None => {}
+    }
+    let baseOwnerTypeName = TypeSymbolLookupKey.genericBaseName(ownerTypeName)
+    if baseOwnerTypeName != ownerTypeName {
+      match memberValueLookup.rowFor(
+        TypeSymbolLookupKey.memberOwner(moduleId, baseOwnerTypeName),
+        name
+      ) {
+        Some(row) => return symbolValues[row].specializedFor(ownerTypeName)
+        None => {}
+      }
+    }
+
+    let packageOwnerKey = TypeSymbolLookupKey.packageMemberOwner(moduleId, ownerTypeName)
+    if packageMemberValueAmbiguousLookup.contains(packageOwnerKey, name) {
+      return TypeSymbol()
+    }
+    match packageMemberValueLookup.rowFor(packageOwnerKey, name) {
+      Some(row) => return symbolValues[row].specializedFor(ownerTypeName)
+      None => {}
+    }
+    if baseOwnerTypeName != ownerTypeName {
+      let basePackageOwnerKey = TypeSymbolLookupKey.packageMemberOwner(moduleId, baseOwnerTypeName)
+      if packageMemberValueAmbiguousLookup.contains(basePackageOwnerKey, name) {
+        return TypeSymbol()
+      }
+      match packageMemberValueLookup.rowFor(basePackageOwnerKey, name) {
+        Some(row) => return symbolValues[row].specializedFor(ownerTypeName)
+        None => {}
+      }
+    }
+    return TypeSymbol()
+  }
+
+  pub symbolValueForModuleMember(
+    moduleId: ModuleId,
+    name: string
+  ) -> TypeSymbol {
+    if moduleMemberValueAmbiguousLookup.contains(
+      TypeSymbolLookupKey.moduleSymbol(moduleId),
+      name
+    ) {
+      return TypeSymbol()
+    }
+    return match moduleMemberValueLookup.rowFor(TypeSymbolLookupKey.moduleSymbol(moduleId), name) {
+      Some(row) => symbolValues[row]
+      None => TypeSymbol()
+    }
+  }
+
+  pub symbolValueForMember(
+    ownerTypeName: string,
+    name: string
+  ) -> TypeSymbol {
+    match memberValueLookup.rowFor(ownerTypeName, name) {
+      Some(row) => return symbolValues[row]
+      None => {}
+    }
+    let baseOwnerTypeName = TypeSymbolLookupKey.genericBaseName(ownerTypeName)
+    if baseOwnerTypeName != ownerTypeName {
+      match memberValueLookup.rowFor(baseOwnerTypeName, name) {
+        Some(row) => return symbolValues[row].specializedFor(ownerTypeName)
+        None => {}
+      }
+    }
+
+    return TypeSymbol()
+  }
+
+  pub symbolForName(moduleName: string, name: string) -> Option<TypeSymbol> {
+    return match qualifiedLookup.rowFor(moduleName, name) {
+      Some(row) => Some(symbolValues[row])
+      None => None
+    }
+  }
+
+  pub symbolAtSource(
+    moduleHash: u64,
+    start: i64,
+    name: string
+  ) -> Option<TypeSymbol> {
+    if name != "" {
+      match sourceLookup.rowFor(TypeSymbolLookupKey.source(moduleHash, start, name)) {
+        Some(row) => return Some(symbolValues[row])
+        None => {}
+      }
+    }
+    return match sourcePositionLookup.rowFor(TypeSymbolLookupKey.sourcePosition(moduleHash, start)) {
+      Some(row) => Some(symbolValues[row])
+      None => None
+    }
+  }
+
+  pub symbolValueAtSource(
+    moduleHash: u64,
+    start: i64,
+    name: string
+  ) -> TypeSymbol {
+    if name != "" {
+      match sourceLookup.rowFor(TypeSymbolLookupKey.source(moduleHash, start, name)) {
+        Some(row) => return symbolValues[row]
+        None => {}
+      }
+    }
+    return match sourcePositionLookup.rowFor(TypeSymbolLookupKey.sourcePosition(moduleHash, start)) {
+      Some(row) => symbolValues[row]
+      None => TypeSymbol()
+    }
+  }
+
+  pub issueAt(index: i64) -> TypeSymbolIssue {
+    return issueValues[index]
+  }
+
+  pub typeNameForName(name: string) -> string {
+    return match nameLookup.rowFor(name) {
+      Some(row) => symbolValues[row].typeName
+      None => ""
+    }
+  }
+
+  duplicateConstrained(kind: TypeSymbolKind) -> bool {
+    return kind == TypeSymbolKind.Module ||
+      kind == TypeSymbolKind.Type ||
+      kind == TypeSymbolKind.Enum ||
+      kind == TypeSymbolKind.Role ||
+      kind == TypeSymbolKind.Value
+  }
+
+  memberSignatureKey(symbol: TypeSymbol) -> string {
+    let key = "{symbol.name}#{symbol.genericParameterCount}#"
+    let row: i64 = 0
+    while row < symbol.callableParameterCount {
+      key = "{key}{this.parameterTypeNameForSignature(symbol, row)};"
+      row = row + 1
+    }
+    return key
+  }
+
+  parameterTypeNameForSignature(symbol: TypeSymbol, row: i64) -> string {
+    if row < symbol.parameterRows.count &&
+       symbol.parameterRows[row].typeName != "" {
+      return symbol.parameterRows[row].typeName
+    }
+    return "value"
+  }
+}
+
+pub TypeSymbolLookupKey {
+}
+
+impl TypeSymbolLookupKey {
+  pub memberCall(
+    name: string,
+    argumentCount: i64,
+    genericArgumentCount: i64
+  ) -> string {
+    return "{name}#{argumentCount}#{genericArgumentCount}"
+  }
+
+  pub call(
+    name: string,
+    argumentCount: i64,
+    genericArgumentCount: i64
+  ) -> string {
+    return "{name}#{argumentCount}#{genericArgumentCount}"
+  }
+
+  pub memberOwner(moduleId: ModuleId, ownerTypeName: string) -> string {
+    return "{moduleId.id.packageHash}:{moduleId.id.moduleHash}:{ownerTypeName}"
+  }
+
+  pub packageMemberOwner(
+    moduleId: ModuleId,
+    ownerTypeName: string
+  ) -> string {
+    return "{moduleId.id.packageHash}:{ownerTypeName}"
+  }
+
+  pub moduleSymbol(moduleId: ModuleId) -> string {
+    return "{moduleId.id.packageHash}:{moduleId.id.moduleHash}"
+  }
+
+  pub packageSymbol(moduleId: ModuleId) -> string {
+    return "{moduleId.id.packageHash}"
+  }
+
+  pub symbol(id: SymbolId) -> string {
+    return compilerId(id.id)
+  }
+
+  pub declaration(id: DeclarationId) -> string {
+    return compilerId(id.id)
+  }
+
+  pub type(id: TypeId) -> string {
+    return compilerId(id.id)
+  }
+
+  pub source(moduleHash: u64, start: i64, name: string) -> string {
+    return "{moduleHash}:{start}:{name}"
+  }
+
+  pub sourcePosition(moduleHash: u64, start: i64) -> string {
+    return "{moduleHash}:{start}"
+  }
+
+  pub genericBaseName(typeName: string) -> string {
+    let open = typeName.find("<")
+    if open < 0 {
+      return typeName
+    }
+    return typeName.slice(0, open).toString()
+  }
+
+  compilerId(id: CompilerId) -> string {
+    return "{id.packageHash}:{id.moduleHash}:{id.localHash}:{id.disambiguator}"
+  }
+}
+
+impl view TypeSymbolTable {
+  pub moduleSymbolCount: i64 => moduleSymbols.count
+
+  pub typeSymbolCount: i64 => typeSymbols.count
+
+  pub functionSymbolCount: i64 => functionSymbols.count
+
+  pub valueSymbolCount: i64 => valueSymbols.count
+
+  pub importSymbolCount: i64 => importSymbols.count
+
+  pub publicSymbolCount: i64 => publicSymbols.count
+
+  pub privateSymbolCount: i64 => privateSymbols.count
+
+  pub symbolCount: i64 => symbolValues.count
+
+  pub hasModules: bool => moduleSymbolCount > 0
+
+  pub hasTypes: bool => typeSymbolCount > 0
+
+  pub hasFunctions: bool => functionSymbolCount > 0
+
+  pub hasValues: bool => valueSymbolCount >= 0
+
+  pub importsResolved: bool => unresolvedSymbolCount == 0
+
+  pub unique: bool => duplicateSymbolCount == 0
+
+  pub duplicateCount: i64 => duplicateSymbolCount
+
+  pub unresolvedCount: i64 => unresolvedSymbolCount
+
+  pub issueCount: i64 => issueValues.count
+
+  pub symbolRecordsOwned: bool =>
+    symbols.valid &&
+    symbolIds.valid &&
+    declarationIds.valid &&
+    moduleSymbols.valid &&
+    typeSymbols.valid &&
+    functionSymbols.valid &&
+    valueSymbols.valid &&
+    importSymbols.valid &&
+    symbolIndex.valid &&
+    symbolIdLookup.valid &&
+    declarationIdLookup.valid &&
+    typeIdLookup.valid &&
+    sourceLookup.valid &&
+    sourcePositionLookup.valid &&
+    symbolValues.valid &&
+    symbolIdValues.valid &&
+    declarationIdValues.valid &&
+    typeIdValues.valid &&
+    nameLookup.valid &&
+    qualifiedLookup.valid &&
+    moduleQualifiedLookup.valid &&
+    packagePublicLookup.valid &&
+    packagePublicAmbiguousLookup.valid &&
+    callLookup.valid &&
+    inferredCallLookup.valid &&
+    typeOwnerLookup.valid &&
+    packageTypeOwnerLookup.valid &&
+    packageTypeOwnerAmbiguousLookup.valid &&
+    globalTypeOwnerLookup.valid &&
+    globalTypeOwnerAmbiguousLookup.valid &&
+    behaviorOwnerLookup.valid &&
+    behaviorOwnerAmbiguousLookup.valid &&
+    extensionOwnerLookup.valid &&
+    packageExtensionOwnerLookup.valid &&
+    packageExtensionOwnerAmbiguousLookup.valid &&
+    memberSignatureLookup.valid &&
+    memberLookup.valid &&
+    inferredMemberLookup.valid &&
+    moduleMemberCallLookup.valid &&
+    moduleMemberCallAmbiguousLookup.valid &&
+    moduleMemberCallableLookup.valid &&
+    moduleMemberCallableAmbiguousLookup.valid &&
+    memberValueLookup.valid &&
+    moduleMemberValueLookup.valid &&
+    moduleMemberValueAmbiguousLookup.valid &&
+    packageMemberValueLookup.valid &&
+    packageMemberValueAmbiguousLookup.valid &&
+    symbols.count == symbolCount &&
+    symbolValues.count == symbolCount &&
+    symbolIdValues.count == symbolCount &&
+    declarationIdValues.count == symbolCount &&
+    typeIdValues.count == symbolCount &&
+    symbolIds.count == symbolCount &&
+    declarationIds.count == symbolCount &&
+    symbolIndex.count == symbolCount
+
+  pub publicSurfaceOwned: bool =>
+    publicSymbols.valid &&
+    privateSymbols.valid &&
+    publicSymbols.count == publicSymbolCount &&
+    privateSymbols.count == privateSymbolCount
+
+  pub countsConsistent: bool =>
+    moduleSymbolCount >= 0 &&
+    typeSymbolCount >= 0 &&
+    functionSymbolCount >= 0 &&
+    valueSymbolCount >= 0 &&
+    importSymbolCount >= 0 &&
+    publicSymbolCount >= 0 &&
+    privateSymbolCount >= 0 &&
+    unresolvedSymbolCount >= 0
+    && duplicateSymbolCount >= 0
+    && issueCount == unresolvedSymbolCount + duplicateSymbolCount
+
+  pub valid: bool =>
+    deterministic &&
+    countsConsistent &&
+    importsResolved &&
+    unique &&
+    symbolRecordsOwned &&
+    publicSurfaceOwned &&
+    hasModules &&
+    hasTypes &&
+    hasFunctions &&
+    hasValues
+}

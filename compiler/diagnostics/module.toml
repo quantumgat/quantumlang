@@ -1,0 +1,9 @@
+[module]
+name = "diagnostics"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/diagnostics"
+role = "diagnostics"
+
+[dependencies]
+modules = ["core", "source"]

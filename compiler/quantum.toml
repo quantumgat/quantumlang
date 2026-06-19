@@ -1,0 +1,28 @@
+[package]
+name = "qtlc1"
+version = "0.1.0"
+edition = "2026"
+
+[library]
+importRoot = "qtlc1"
+
+[source]
+root = "."
+exclude = ["tests/**"]
+
+[targets.app]
+kind = "bin"
+main = "main.qn"
+backend = "native"
+
+[toolchainStage]
+stage = "qtlc1"
+builtBy = "qtlc0"
+purpose = "self-hosted-compiler-seed"
+
+[selfHost]
+inputStage = "qtlc1"
+outputStage = "qtlc2"
+outputName = "qtlc2"
+outputPath = "build/debug/qtlc2"
+proof = "qtlc1-builds-qtlc2"

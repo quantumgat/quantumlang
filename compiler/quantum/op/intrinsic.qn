@@ -1,0 +1,20 @@
+pub QuantumIntrinsic {
+  qisName: string
+  loweringName: string
+  targetRequired: bool
+  valid: bool
+}
+
+impl QuantumIntrinsic {
+  pub QuantumIntrinsic(qisName: string, loweringName: string) =
+    This {
+      qisName
+      loweringName
+      targetRequired: true
+      valid: qisName != "" && loweringName != ""
+    }
+}
+
+impl view QuantumIntrinsic {
+  pub lowerable => valid && targetRequired
+}

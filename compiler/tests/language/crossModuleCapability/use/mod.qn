@@ -1,0 +1,9 @@
+module use
+
+mod {
+  proof
+}
+
+export {
+  proof.*
+}

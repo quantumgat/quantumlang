@@ -1,0 +1,79 @@
+import diagnostics::{DiagnosticRegistry, DiagnosticSpec, LiteralDiagnosticCode}
+
+pub LiteralDiagnosticFact {
+  kind: LiteralDiagnosticKind = Unknown
+  diagnostic: DiagnosticSpec = {}
+  blocking: bool = false
+}
+
+impl LiteralDiagnosticFact {
+  pub unknown() =
+    This {
+      kind: LiteralDiagnosticKind.Unknown
+      diagnostic: DiagnosticRegistry.literal(LiteralDiagnosticCode.Unknown)
+    }
+
+  pub fromKind(kind: LiteralDiagnosticKind) -> This {
+    if kind == LiteralDiagnosticKind.NoneWithoutOptionTarget {
+      return This { kind, diagnostic: DiagnosticRegistry.literal(LiteralDiagnosticCode.NoneWithoutOptionTarget), blocking: true }
+    }
+    if kind == LiteralDiagnosticKind.UnclearEmptyArray {
+      return This { kind, diagnostic: DiagnosticRegistry.literal(LiteralDiagnosticCode.UnclearEmptyArray), blocking: true }
+    }
+    if kind == LiteralDiagnosticKind.UnclearMapLiteral {
+      return This { kind, diagnostic: DiagnosticRegistry.literal(LiteralDiagnosticCode.UnclearMapLiteral), blocking: true }
+    }
+    if kind == LiteralDiagnosticKind.DuplicateRecordField {
+      return This { kind, diagnostic: DiagnosticRegistry.literal(LiteralDiagnosticCode.DuplicateRecordField), blocking: true }
+    }
+    if kind == LiteralDiagnosticKind.MapKeyMismatch {
+      return This { kind, diagnostic: DiagnosticRegistry.literal(LiteralDiagnosticCode.MapKeyMismatch), blocking: true }
+    }
+    if kind == LiteralDiagnosticKind.ByteLiteralOverflow {
+      return This { kind, diagnostic: DiagnosticRegistry.literal(LiteralDiagnosticCode.ByteLiteralOverflow), blocking: true }
+    }
+    if kind == LiteralDiagnosticKind.IntegerLiteralOverflow {
+      return This { kind, diagnostic: DiagnosticRegistry.literal(LiteralDiagnosticCode.IntegerLiteralOverflow), blocking: true }
+    }
+    if kind == LiteralDiagnosticKind.InvalidLiteralTarget {
+      return This { kind, diagnostic: DiagnosticRegistry.literal(LiteralDiagnosticCode.InvalidLiteralTarget), blocking: true }
+    }
+    return This.unknown()
+  }
+
+  pub fromCode(code: string) -> This {
+    let registryKind = DiagnosticRegistry.literalKind(code)
+    if registryKind == LiteralDiagnosticCode.NoneWithoutOptionTarget {
+      return This.fromKind(LiteralDiagnosticKind.NoneWithoutOptionTarget)
+    }
+    if registryKind == LiteralDiagnosticCode.UnclearEmptyArray {
+      return This.fromKind(LiteralDiagnosticKind.UnclearEmptyArray)
+    }
+    if registryKind == LiteralDiagnosticCode.UnclearMapLiteral {
+      return This.fromKind(LiteralDiagnosticKind.UnclearMapLiteral)
+    }
+    if registryKind == LiteralDiagnosticCode.DuplicateRecordField {
+      return This.fromKind(LiteralDiagnosticKind.DuplicateRecordField)
+    }
+    if registryKind == LiteralDiagnosticCode.MapKeyMismatch {
+      return This.fromKind(LiteralDiagnosticKind.MapKeyMismatch)
+    }
+    if registryKind == LiteralDiagnosticCode.ByteLiteralOverflow {
+      return This.fromKind(LiteralDiagnosticKind.ByteLiteralOverflow)
+    }
+    if registryKind == LiteralDiagnosticCode.IntegerLiteralOverflow {
+      return This.fromKind(LiteralDiagnosticKind.IntegerLiteralOverflow)
+    }
+    if registryKind == LiteralDiagnosticCode.InvalidLiteralTarget {
+      return This.fromKind(LiteralDiagnosticKind.InvalidLiteralTarget)
+    }
+    return This.fromKind(LiteralDiagnosticKind.Unknown)
+  }
+}
+
+impl view LiteralDiagnosticFact {
+  pub code: string => diagnostic.code.display
+  pub message: string => diagnostic.format("")
+  pub valid => diagnostic.present && kind != LiteralDiagnosticKind.Unknown
+  pub fatal => blocking
+}

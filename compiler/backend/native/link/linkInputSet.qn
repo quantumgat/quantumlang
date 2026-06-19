@@ -1,0 +1,43 @@
+pub LinkInputSet {
+  objectUnitCount: i64
+  sortedObjectHash: string
+  runtimeArchiveHash: string
+  linkerScriptHash: string
+  targetOptionsHash: string
+  inputSetHash: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl LinkInputSet {
+  pub LinkInputSet(
+    objectUnitCount: i64,
+    sortedObjectHash: string,
+    runtimeArchiveHash: string,
+    linkerScriptHash: string,
+    targetOptionsHash: string,
+    inputSetHash: string
+  ) =
+    This { objectUnitCount, sortedObjectHash, runtimeArchiveHash, linkerScriptHash, targetOptionsHash, inputSetHash }
+
+  withInputSetHash(inputSetHash: string) =
+    this {
+      inputSetHash
+    }
+}
+
+impl view LinkInputSet {
+  pub valid => diagnosticCode == "" &&
+    objectUnitCount >= 0 &&
+    sortedObjectHash != "" &&
+    runtimeArchiveHash != "" &&
+    linkerScriptHash != "" &&
+    targetOptionsHash != "" &&
+    inputSetHash != ""
+
+  pub hasObjects => objectUnitCount > 0
+  pub runtimeLinked => runtimeArchiveHash != ""
+  pub relinkKey => "{sortedObjectHash}:{runtimeArchiveHash}:{linkerScriptHash}:{targetOptionsHash}"
+  pub lowerable => valid
+  pub debugName => "native.link.inputs.{objectUnitCount}.{inputSetHash}"
+}

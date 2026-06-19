@@ -1,0 +1,9 @@
+pub enum ProductValidationState {
+  Valid
+  Missing
+  Stale
+  SchemaMismatch
+  AlgorithmMismatch
+  FingerprintMismatch
+  Rejected
+}

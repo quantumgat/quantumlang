@@ -1,0 +1,29 @@
+pub ExitCode {
+  pub code: i64
+}
+
+impl ExitCode {
+  pub ok() = This { code: 0 }
+
+  pub usage() = This { code: 2 }
+
+  pub failed() = This { code: 1 }
+}
+
+impl view ExitCode {
+  success => code == 0
+
+  failure => code != 0
+
+  usageFailure => code == 2
+}
+
+extend ExitCode : internal DriverExitStatus {
+  exitStatus() -> i64 {
+    code
+  }
+
+  succeeded() -> bool {
+    success
+  }
+}

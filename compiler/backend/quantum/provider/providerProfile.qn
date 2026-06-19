@@ -1,0 +1,37 @@
+pub QuantumProviderProfile {
+  name: string
+  providerName: string
+  supportsQir: bool
+  supportsOpenQasm: bool
+  diagnosticCode: string = ""
+}
+
+impl QuantumProviderProfile {
+  pub QuantumProviderProfile(name: string, providerName: string, supportsQir: bool, supportsOpenQasm: bool) =
+    This { name, providerName, supportsQir, supportsOpenQasm }
+
+  pub qir(name: string, providerName: string) =
+    This {
+      name
+      providerName
+      supportsQir: true
+      supportsOpenQasm: false
+    }
+
+  pub openQasm(name: string, providerName: string) =
+    This {
+      name
+      providerName
+      supportsQir: false
+      supportsOpenQasm: true
+    }
+}
+
+impl view QuantumProviderProfile {
+  pub valid => diagnosticCode == "" && name != "" && providerName != "" && (supportsQir || supportsOpenQasm)
+  pub multiFormat => supportsQir && supportsOpenQasm
+  pub qirReady => supportsQir
+  pub openQasmReady => supportsOpenQasm
+  pub lowerable => valid
+  pub debugName => "quantum.providerProfile.{providerName}.{name}"
+}

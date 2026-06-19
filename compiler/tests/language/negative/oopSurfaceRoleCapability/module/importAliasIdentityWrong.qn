@@ -1,0 +1,8 @@
+module app.badAlias
+
+import http.{Session as HttpSession}
+import db.session.{Session as DbSession}
+
+pub aliasIdentityWrong(value: HttpSession<UserSession>) -> DbSession<UserSession> {
+  return value
+}

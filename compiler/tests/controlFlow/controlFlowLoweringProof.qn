@@ -1,0 +1,68 @@
+import controlFlow::{*}
+import hir::{AstLowering, ControlFlowLoweringFact, HirNode}
+import mir::{MirControlFlowGraph, MirNode}
+
+pub ControlFlowLoweringProof {
+  ifHirProductOk: bool
+  ifMirProductOk: bool
+  returnMirProductOk: bool
+  requireMirProductOk: bool
+  normalFlowLowersToHirMir: bool
+  loopFlowLowersToHirMir: bool
+  parallelLoweringExcluded: bool
+  hirMirProductsDeterministic: bool
+  valid: bool
+}
+
+pub controlFlowLoweringProof() -> ControlFlowLoweringProof {
+  let ifLowering = ControlFlowLoweringFact.normal(NormalControlFlowKind.If)
+  let returnLowering = ControlFlowLoweringFact.normal(NormalControlFlowKind.Return)
+  let requireLowering = ControlFlowLoweringFact.normal(NormalControlFlowKind.Require)
+  let whileLowering = ControlFlowLoweringFact.loop(LoopKind.While)
+  let whileLetLowering = ControlFlowLoweringFact.loop(LoopKind.WhileLet)
+  let rangeLowering = ControlFlowLoweringFact.loop(LoopKind.RangeFor)
+  let parallelLowering = ControlFlowLoweringFact.loop(LoopKind.Parallel)
+  let hir = HirNode(1, ifLowering.hirProduct, 10)
+  let lowered = AstLowering(1, ifLowering.hirProduct)
+  let mir = MirNode(1, ifLowering.mirProduct, hir.id)
+  let graph = MirControlFlowGraph(4, 3)
+
+  let ifHirProductOk = ifLowering.hirProduct == "hir.if"
+  let ifMirProductOk = ifLowering.mirProduct == "mir.branch"
+  let returnMirProductOk = returnLowering.mirProduct == "mir.return"
+  let requireMirProductOk = requireLowering.mirProduct == "mir.guard"
+
+  let normalFlowLowersToHirMir = ifHirProductOk &&
+    ifMirProductOk &&
+    returnMirProductOk &&
+    requireMirProductOk
+
+  let loopFlowLowersToHirMir = whileLowering.hirProduct == "hir.while" &&
+    whileLetLowering.hirProduct == "hir.whileLet" &&
+    rangeLowering.mirProduct == "mir.forRange"
+
+  let parallelLoweringExcluded = parallelLowering.parallelLowering &&
+    !parallelLowering.valid
+
+  let hirMirProductsDeterministic = lowered.deterministic &&
+    hir.kind == "hir.if" &&
+    mir.kind == "mir.branch" &&
+    graph.deterministic
+
+  let valid = normalFlowLowersToHirMir &&
+    loopFlowLowersToHirMir &&
+    parallelLoweringExcluded &&
+    hirMirProductsDeterministic
+
+  return ControlFlowLoweringProof {
+    ifHirProductOk: ifHirProductOk,
+    ifMirProductOk: ifMirProductOk,
+    returnMirProductOk: returnMirProductOk,
+    requireMirProductOk: requireMirProductOk,
+    normalFlowLowersToHirMir: normalFlowLowersToHirMir,
+    loopFlowLowersToHirMir: loopFlowLowersToHirMir,
+    parallelLoweringExcluded: parallelLoweringExcluded,
+    hirMirProductsDeterministic: hirMirProductsDeterministic,
+    valid: valid,
+  }
+}

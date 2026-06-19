@@ -1,0 +1,21 @@
+pub QuantumAllocation {
+  qubitCount: i64
+  qregSized: bool
+  resourceTracked: bool
+  valid: bool
+}
+
+impl QuantumAllocation {
+  pub QuantumAllocation(qubitCount: i64, qregSized: bool) =
+    This {
+      qubitCount
+      qregSized
+      resourceTracked: true
+      valid: qubitCount >= 0
+    }
+}
+
+impl view QuantumAllocation {
+  pub tracked => resourceTracked
+  pub sizedRegister => qregSized
+}

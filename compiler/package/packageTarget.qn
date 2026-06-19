@@ -1,0 +1,35 @@
+pub enum PackageTargetKind {
+  Application
+  Library
+  Test
+  Tool
+}
+
+pub PackageTarget {
+  name: string
+  kind: PackageTargetKind
+  triple: string
+  entry: string
+  deterministic: bool = true
+}
+
+impl PackageTarget {
+  pub application(name: string, triple: string, entry: string) =
+    This { name, kind: PackageTargetKind.Application, triple, entry }
+
+  pub library(name: string, triple: string) =
+    This { name, kind: PackageTargetKind.Library, triple, entry: "" }
+}
+
+impl view PackageTarget {
+  pub executable: bool =>
+    kind == PackageTargetKind.Application ||
+    kind == PackageTargetKind.Test ||
+    kind == PackageTargetKind.Tool
+
+  pub valid: bool =>
+    name != "" &&
+    triple != "" &&
+    deterministic &&
+    (executable == false || entry != "")
+}

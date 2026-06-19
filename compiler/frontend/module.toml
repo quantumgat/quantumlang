@@ -1,0 +1,6 @@
+[module]
+name = "frontend"
+version = "0.1.0"
+
+[dependencies]
+modules = ["core", "declaration", "host", "source", "syntax", "moduleSystem"]

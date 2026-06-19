@@ -1,0 +1,154 @@
+import core::{ModuleId, NameId, QualifiedName, ScopeId, SymbolId}
+import declaration::{DeclarationKind, DeclarationRecord, DeclarationRecordTable, DeclarationTable}
+import moduleSystem::{ImportPath, ModuleGraph, ModuleResolutionDiagnostic}
+
+pub Resolver {
+  graph: ModuleGraph = {}
+  scopes: ScopeArena = {}
+  symbols: SymbolIndex = {}
+  pub resolved: i64 = 0
+  pub unresolved: i64 = 0
+  diagnostics: Vec<ModuleResolutionDiagnostic> = []
+  deterministic: bool = true
+}
+
+impl Resolver {
+  pub Resolver(resolved: i64) =
+    This {
+      scopes: ScopeArena(resolved)
+      symbols: SymbolIndex(resolved)
+      resolved
+    }
+
+  pub fromDeclarations(table: DeclarationTable) -> This {
+    let imports = table.imports
+    let unresolvedCount = imports.unresolvedCount
+    return This {
+      graph: ModuleGraph.fromDeclarations(table)
+      scopes: ScopeArena.fromCounts(table.moduleCount, table.symbolCount, table.symbolCount)
+      symbols: SymbolIndex.fromCounts(table.symbolCount, unresolvedCount)
+      resolved: table.symbolCount - unresolvedCount
+      unresolved: unresolvedCount
+      deterministic: table.deterministic
+    }
+  }
+
+  pub fromRecords(table: DeclarationRecordTable) -> This {
+    return This.fromRecordValues(table.recordValues, table.valid)
+  }
+
+  pub fromRecordValues(
+    recordValues: Vec<DeclarationRecord>
+  ) =
+    This.fromRecordValues(recordValues, true)
+
+  pub fromRecordValues(
+    recordValues: Vec<DeclarationRecord>,
+    recordsValid: bool
+  ) -> This {
+    let graph = ModuleGraph.fromRecordValues(recordValues, recordsValid)
+    let resolver = This {
+      graph
+      deterministic: recordsValid
+    }
+
+    let moduleRow: i64 = 0
+    while moduleRow < graph.graphNodeCount {
+      let module = graph.moduleAt(moduleRow)
+      resolver.scopes.addScope(Scope.forModule(
+        ScopeId(moduleRow + 1),
+        module.id,
+        0
+      ))
+      moduleRow = moduleRow + 1
+    }
+
+    let row: i64 = 0
+    while row < recordValues.count {
+      let record = recordValues[row]
+      if record.kind != DeclarationKind.Import {
+        let module = graph.moduleIdForPath(record.modulePath)
+        if ModuleGraph.duplicateConstrained(record.kind) &&
+           resolver.symbols.contains(module, record.name) {
+          resolver.diagnostics.push(
+            ModuleResolutionDiagnostic.duplicateDeclaration(
+              record.modulePath,
+              record.name
+            )
+          )
+        } else {
+          let symbol = Symbol.fromRecord(record, module)
+          resolver.symbols.add(symbol)
+          resolver.scopes.addEntry(ScopeEntry(
+            NameId(record.id),
+            symbol.id,
+            ScopeId(module.id.moduleHash)
+          ))
+        }
+      }
+      row = row + 1
+    }
+
+    let symbolIndex = resolver.symbols
+    resolver.resolved = symbolIndex.symbolCount
+    resolver.unresolved = graph.unresolvedImportCount
+    let diagnosticRow: i64 = 0
+    while diagnosticRow < graph.diagnosticCount {
+      resolver.diagnostics.push(graph.diagnosticAt(diagnosticRow))
+      diagnosticRow = diagnosticRow + 1
+    }
+    return resolver
+  }
+
+  pub resolve(name: QualifiedName) -> Option<SymbolId> {
+    return symbols.lookup(name)
+  }
+
+  pub resolveName(name: string) -> Option<SymbolId> {
+    return symbols.lookupName(name)
+  }
+
+  pub resolveImport(path: ImportPath) -> Option<ModuleId> {
+    return graph.resolveImport(path)
+  }
+
+  pub resolveAlias(alias: string) -> Option<ModuleId> {
+    return graph.resolveAlias(alias)
+  }
+
+  pub resolveExport(module: ModuleId, name: string) -> Option<SymbolId> {
+    return graph.resolveExport(module, name)
+  }
+
+  pub diagnosticAt(index: i64) -> ModuleResolutionDiagnostic {
+    return diagnostics[index]
+  }
+}
+
+impl view Resolver {
+  pub scopeCount: i64 => scopes.count
+
+  pub symbolCount: i64 => symbols.symbolCount
+
+  pub diagnosticCount: i64 => diagnostics.count
+
+  pub graphReady: bool => graph.valid
+
+  pub scopeReady: bool => scopes.valid
+
+  pub symbolReady: bool => symbols.valid
+
+  pub resolvedAll: bool => unresolved == 0 && symbols.resolved
+
+  pub lookupReady: bool =>
+    graphReady &&
+    scopeReady &&
+    symbolReady
+
+  pub valid: bool =>
+    deterministic &&
+    resolved >= 0 &&
+    unresolved >= 0 &&
+    diagnosticCount >= unresolved &&
+    lookupReady
+}

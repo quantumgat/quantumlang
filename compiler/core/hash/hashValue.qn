@@ -1,0 +1,46 @@
+pub HashValue {
+  algorithm: HashAlgorithm = HashAlgorithm.Unknown
+  domain: HashDomain = HashDomain.Unknown
+  width: HashWidth = HashWidth.Unknown
+  value: bytes = ByteValue.empty()
+}
+
+impl HashValue {
+  pub fromBytes(
+    algorithm: HashAlgorithm,
+    domain: HashDomain,
+    width: HashWidth,
+    value: bytes
+  ) -> Result<HashValue, HashError> {
+    if width.valid == false {
+      return Err(HashError { kind: HashErrorKind.InvalidWidth })
+    }
+    if value.length() != width.byteCount {
+      return Err(HashError {
+        kind: HashErrorKind.InvalidDigestLength
+        expected: width.byteCount
+        actual: value.length()
+      })
+    }
+    return Ok(This { algorithm, domain, width, value })
+  }
+
+}
+
+impl view HashValue {
+  pub toBytes() -> bytes {
+    return value
+  }
+
+  pub asView() -> ByteView {
+    return ByteView(value)
+  }
+
+  pub length: usize => width.byteCount
+  pub empty: bool => value.length() == 0
+  pub valid: bool =>
+    algorithm.valid &&
+    domain.valid &&
+    width.valid &&
+    value.length() == length
+}

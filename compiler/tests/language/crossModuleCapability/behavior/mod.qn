@@ -1,0 +1,9 @@
+module behavior
+
+mod {
+  counterBehavior
+}
+
+export {
+  counterBehavior.*
+}

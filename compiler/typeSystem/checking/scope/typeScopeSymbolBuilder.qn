@@ -1,0 +1,325 @@
+import core::{ModuleId, ScopeId, SymbolId}
+import source::{SourceSpan}
+
+impl TypeScopeTable {
+  populateSymbolScopes(symbols: TypeSymbolTable) {
+    this.indexSymbolModuleScopes(symbols)
+
+    let symbolRow: i64 = 0
+    while symbolRow < symbols.symbolCount {
+      let symbol = symbols.symbolAt(symbolRow)
+      if symbol.kind == TypeSymbolKind.Module {
+        addModuleScope(symbol)
+      }
+      symbolRow = symbolRow + 1
+    }
+
+    symbolRow = 0
+    while symbolRow < symbols.symbolCount {
+      let symbol = symbols.symbolAt(symbolRow)
+      if symbol.kind == TypeSymbolKind.Type ||
+         symbol.kind == TypeSymbolKind.Enum ||
+         symbol.kind == TypeSymbolKind.Role {
+        addOwnerScopes(symbol, moduleScopeFor(symbol.moduleId), symbols)
+      }
+      symbolRow = symbolRow + 1
+    }
+
+    symbolRow = 0
+    while symbolRow < symbols.symbolCount {
+      let symbol = symbols.symbolAt(symbolRow)
+      if symbol.kind != TypeSymbolKind.Type &&
+         symbol.kind != TypeSymbolKind.Enum &&
+         symbol.kind != TypeSymbolKind.Role {
+        addOwnerScopes(symbol, moduleScopeFor(symbol.moduleId), symbols)
+      }
+      symbolRow = symbolRow + 1
+    }
+
+    symbolRow = 0
+    while symbolRow < symbols.symbolCount {
+      let symbol = symbols.symbolAt(symbolRow)
+      if bindsNameInScope(symbol) {
+        let bindingScope = bindingScopeFor(symbol, symbols)
+        addBinding(TypeScopeBinding.forSymbol(bindingScope, symbol))
+      }
+      symbolRow = symbolRow + 1
+    }
+  }
+
+  indexSymbolModuleScopes(symbols: TypeSymbolTable) {
+    let symbolRow: i64 = 0
+    while symbolRow < symbols.symbolCount {
+      let symbol = symbols.symbolAt(symbolRow)
+      this.ensureModuleScope(symbol.moduleId)
+      symbolRow = symbolRow + 1
+    }
+  }
+
+  addSourceModuleScope(moduleId: ModuleId) {
+    let scopeId = ScopeId(
+      moduleId.id.packageHash,
+      moduleId.id.moduleHash,
+      moduleId.id.moduleHash,
+      1
+    )
+    add(TypeScope(
+      scopeId,
+      root,
+      moduleId,
+      SymbolId(),
+      TypeScopeKind.Module,
+      1,
+      SourceSpan()
+    ))
+  }
+
+  addModuleScope(symbol: TypeSymbol) {
+    let scopeId = ScopeId(
+      symbol.moduleId.id.packageHash,
+      symbol.moduleId.id.moduleHash,
+      symbol.moduleId.id.moduleHash,
+      1
+    )
+    if !scopeExists(scopeId) {
+      add(TypeScope(
+        scopeId,
+        root,
+        symbol.moduleId,
+        symbol.id,
+        TypeScopeKind.Module,
+        1,
+        symbol.span
+      ))
+    }
+    if !bindingExists(scopeId, symbol.name) {
+      addBinding(TypeScopeBinding.forSymbol(scopeId, symbol))
+    }
+  }
+
+  addOwnerScopes(
+    symbol: TypeSymbol,
+    moduleScope: ScopeId,
+    symbols: TypeSymbolTable
+  ) {
+    let kind = TypeScopeRules.ownerKindFor(symbol)
+    if kind == TypeScopeKind.Unknown || kind == TypeScopeKind.Module {
+      return
+    }
+
+    let parent = moduleScope
+    let enclosingOwner = enclosingOwnerScopeFor(symbol, symbols)
+    if enclosingOwner.valid {
+      parent = enclosingOwner
+    }
+    if symbol.generic {
+      let genericScope = TypeScopeIdentity.genericOwnerScopeFor(symbol)
+      add(TypeScope.generic(
+        genericScope,
+        moduleScope,
+        symbol.moduleId,
+        symbol.id,
+        2,
+        symbol.genericParameterCount,
+        symbol.span
+      ))
+      let genericRow: i64 = 0
+      while genericRow < symbol.genericParameters.count {
+        addBinding(TypeScopeBinding.generic(
+          genericScope,
+          TypeSymbol.genericParameter(
+            symbol.genericParameters[genericRow],
+            symbol,
+            genericRow
+          )
+        ))
+        genericRow = genericRow + 1
+      }
+      parent = genericScope
+    }
+
+    let ownerScope = TypeScopeIdentity.ownerScopeFor(symbol)
+    add(TypeScope(
+      ownerScope,
+      parent,
+      symbol.moduleId,
+      symbol.id,
+      kind,
+      parentDepth(parent) + 1,
+      symbol.span
+    ))
+
+    addParameterBindings(ownerScope, symbol)
+  }
+
+  addParameterBindings(scope: ScopeId, symbol: TypeSymbol) {
+    let parameterCount = symbol.callableParameterCount
+    let parameterRow: i64 = 0
+    while parameterRow < parameterCount {
+      let parameterName = parameterNameAt(symbol, parameterRow)
+      if parameterName == "" {
+        parameterRow = parameterRow + 1
+        continue
+      }
+      let parameterType = "value"
+      if parameterRow < symbol.parameterRows.count &&
+         symbol.parameterRows[parameterRow].typeName != "" {
+        parameterType = symbol.parameterRows[parameterRow].typeName
+      }
+      if parameterRow >= symbol.parameterRows.count ||
+         !symbol.parameterRows[parameterRow].span.valid {
+        parameterMetadataComplete = false
+        parameterRow = parameterRow + 1
+        continue
+      }
+      let parameterSpan = symbol.parameterRows[parameterRow].span
+      let parameterSymbol = TypeSymbol.local(
+        parameterName,
+        parameterType,
+        symbol.moduleId,
+        parameterSpan,
+        parameterRow + 1
+      )
+      if addBinding(TypeScopeBinding.parameter(scope, parameterSymbol)) {
+        let ownerContext = enclosingOwnerContext(scope)
+        localSymbolValues.push(parameterSymbol)
+        localValues.push(TypeLocalBinding {
+          name: parameterName
+          scope
+          nodeId: parameterRow + 1
+          owner: ownerContext.owner
+          typeOwner: ownerContext.typeOwner
+          symbol: parameterSymbol
+        })
+      }
+      parameterRow = parameterRow + 1
+    }
+  }
+
+  parameterNameAt(symbol: TypeSymbol, parameterRow: i64) -> string {
+    if parameterRow < symbol.parameterRows.count {
+      return symbol.parameterRows[parameterRow].name
+    }
+    if parameterRow < symbol.parameters.count {
+      return symbol.parameters[parameterRow]
+    }
+    return ""
+  }
+
+  bindingScopeFor(
+    symbol: TypeSymbol,
+    symbols: TypeSymbolTable
+  ) -> ScopeId {
+    let moduleScope = this.ensureModuleScope(symbol.moduleId)
+    if !symbol.member {
+      return moduleScope
+    }
+    let ownerScope = memberOwnerScopeFor(symbol, symbols)
+    if ownerScope.valid {
+      return ownerScope
+    }
+    return moduleScope
+  }
+
+  memberOwnerScopeFor(
+    member: TypeSymbol,
+    symbols: TypeSymbolTable
+  ) -> ScopeId {
+    let owner = typeOwnerSymbolFor(
+      member.ownerTypeName,
+      member.moduleId,
+      symbols
+    )
+    if owner.id.valid {
+      return ownerScopeFor(owner.id)
+    }
+    let sourceExtensionOwner = this.sourceExtensionOwnerForMember(
+      member,
+      symbols
+    )
+    if sourceExtensionOwner.id.valid {
+      return ownerScopeFor(sourceExtensionOwner.id)
+    }
+    let extensionOwner = extensionOwnerSymbolFor(
+      member.ownerTypeName,
+      member.moduleId,
+      symbols
+    )
+    if extensionOwner.id.valid {
+      return ownerScopeFor(extensionOwner.id)
+    }
+    return ScopeId()
+  }
+
+  sourceExtensionOwnerForMember(
+    member: TypeSymbol,
+    symbols: TypeSymbolTable
+  ) -> TypeSymbol {
+    if member.ownerTypeName == "" {
+      return TypeSymbol()
+    }
+    let best = TypeSymbol()
+    let bestStart: i64 = -1
+    let row: i64 = 0
+    while row < symbols.symbolCount {
+      let candidate = symbols.symbolAt(row)
+      if candidate.kind == TypeSymbolKind.Extend &&
+         candidate.name == member.ownerTypeName &&
+         candidate.span.fileId.id.same(member.span.fileId.id) &&
+         candidate.span.start < member.span.start &&
+         candidate.span.start > bestStart {
+        best = candidate
+        bestStart = candidate.span.start
+      }
+      row = row + 1
+    }
+    return best
+  }
+
+  extensionOwnerSymbolFor(
+    ownerTypeName: string,
+    moduleId: ModuleId,
+    symbols: TypeSymbolTable
+  ) -> TypeSymbol {
+    return symbols.extensionOwnerSymbolFor(ownerTypeName, moduleId)
+  }
+
+  enclosingOwnerScopeFor(
+    symbol: TypeSymbol,
+    symbols: TypeSymbolTable
+  ) -> ScopeId {
+    if symbol.member {
+      return memberOwnerScopeFor(symbol, symbols)
+    }
+    if symbol.kind != TypeSymbolKind.Impl &&
+       symbol.kind != TypeSymbolKind.View &&
+       symbol.kind != TypeSymbolKind.Context &&
+       symbol.kind != TypeSymbolKind.Extract &&
+       symbol.kind != TypeSymbolKind.Extend {
+      return ScopeId()
+    }
+
+    let owner = typeOwnerSymbolFor(symbol.name, symbol.moduleId, symbols)
+    if owner.id.valid {
+      return ownerScopeFor(owner.id)
+    }
+    return ScopeId()
+  }
+
+  typeOwnerSymbolFor(
+    ownerTypeName: string,
+    moduleId: ModuleId,
+    symbols: TypeSymbolTable
+  ) -> TypeSymbol {
+    return symbols.typeOwnerSymbolFor(ownerTypeName, moduleId)
+  }
+
+  bindsNameInScope(symbol: TypeSymbol) -> bool {
+    return symbol.kind == TypeSymbolKind.Type ||
+      symbol.kind == TypeSymbolKind.Enum ||
+      symbol.kind == TypeSymbolKind.Role ||
+      symbol.kind == TypeSymbolKind.Function ||
+      symbol.kind == TypeSymbolKind.Value ||
+      symbol.kind == TypeSymbolKind.Import
+  }
+}

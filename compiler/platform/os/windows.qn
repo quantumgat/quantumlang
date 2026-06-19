@@ -1,0 +1,24 @@
+pub WindowsPlatform {
+  name: string
+  syscallAbi: string
+  objectFormat: string
+  dynamicLinker: bool
+  valid: bool
+}
+
+impl WindowsPlatform {
+  pub WindowsPlatform() =
+    This {
+      name: "windows"
+      syscallAbi: "win32"
+      objectFormat: "coff"
+      dynamicLinker: true
+      valid: true
+    }
+}
+
+impl view WindowsPlatform {
+  pub hosted => dynamicLinker
+  pub coff => objectFormat == "coff"
+  pub nativeLinkable => valid && coff
+}

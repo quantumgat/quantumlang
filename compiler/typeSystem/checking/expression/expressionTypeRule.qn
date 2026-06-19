@@ -1,0 +1,196 @@
+import diagnostics::{DiagnosticRegistry, DiagnosticSpec, TypeDiagnosticCode}
+import typeSystem::{BuiltinOperatorFact, LiteralTargetContext, TypeLiteralKind}
+
+pub ExpressionTypeRule {
+  expressionKind: ExpressionKind
+  resolvedType: string
+  diagnostic: DiagnosticSpec = {}
+  valid: bool
+}
+
+impl ExpressionTypeRule {
+  pub ExpressionTypeRule(
+    expressionKind: ExpressionKind,
+    resolvedType: string,
+    diagnostic: DiagnosticSpec,
+    valid: bool
+  ) =
+    This { expressionKind, resolvedType, diagnostic, valid }
+
+  pub fromExpression(
+    expressionKind: ExpressionKind,
+    literalKind: TypeLiteralKind,
+    context: ExpressionTypingContext
+  ) -> This {
+    if expressionKind == ExpressionKind.Literal {
+      return This.fromLiteral(expressionKind, literalKind, context)
+    }
+
+    if expressionKind == ExpressionKind.NoneLiteral {
+      return This.fromLiteral(expressionKind, TypeLiteralKind.None, context)
+    }
+
+    if expressionKind == ExpressionKind.RecordLiteral {
+      return This.fromLiteral(expressionKind, TypeLiteralKind.Record, context)
+    }
+
+    if expressionKind == ExpressionKind.VecLiteral {
+      return This.fromLiteral(expressionKind, TypeLiteralKind.Vec, context)
+    }
+
+    if expressionKind == ExpressionKind.FixedArrayLiteral {
+      return This.fromLiteral(expressionKind, TypeLiteralKind.FixedArray, context)
+    }
+
+    if expressionKind == ExpressionKind.MapLiteral {
+      return This.fromLiteral(expressionKind, TypeLiteralKind.Map, context)
+    }
+
+    if expressionKind == ExpressionKind.ThisValue {
+      return This(expressionKind, context.currentType, {}, context.hasCurrentType)
+    }
+
+    if expressionKind == ExpressionKind.ThisType {
+      return This(expressionKind, context.currentType, {}, context.hasCurrentType)
+    }
+
+    if expressionKind == ExpressionKind.VoidReturn {
+      return This(expressionKind, "void", {}, true)
+    }
+
+    if expressionKind == ExpressionKind.BinaryOperator {
+      return This.binaryOperator(context)
+    }
+
+    if expressionKind == ExpressionKind.UnaryOperator {
+      return This.unaryOperator(context)
+    }
+
+    if expressionKind == ExpressionKind.AssignmentOperator {
+      return This.assignmentOperator(context)
+    }
+
+    if expressionKind == ExpressionKind.IndexAccess {
+      return This.indexAccess(context)
+    }
+
+    if expressionKind == ExpressionKind.CallAccess {
+      return This.callAccess(context)
+    }
+
+    if expressionKind == ExpressionKind.MemberAccess {
+      return This.memberAccess(context)
+    }
+
+    if expressionKind == ExpressionKind.CastOperator {
+      return This.castOperator(context)
+    }
+
+    if expressionKind == ExpressionKind.PropagateOperator {
+      return This.propagateOperator(context)
+    }
+
+    return This(
+      expressionKind,
+      "",
+      DiagnosticRegistry.type(TypeDiagnosticCode.Unknown),
+      false
+    )
+  }
+
+  pub fromLiteral(
+    expressionKind: ExpressionKind,
+    literalKind: TypeLiteralKind,
+    context: ExpressionTypingContext
+  ) -> This {
+    let literalTarget = LiteralTargetContext(
+      context.targetType,
+      context.contextClear,
+      context.quotedMapKeys
+    )
+    let resolution = literalTarget.resolve(literalKind)
+    return This(expressionKind, resolution.resolvedType, resolution.diagnostic, resolution.valid)
+  }
+
+  pub binaryOperator(context: ExpressionTypingContext) -> This {
+    let operator = BuiltinOperatorFact.fromSymbol(context.operatorSymbol)
+    if operator.hasFixedResult {
+      return This(ExpressionKind.BinaryOperator, operator.resultTypeName, {}, operator.valid)
+    }
+    if operator.arithmetic || operator.bitwise || operator.shift {
+      if !context.hasTarget && operator.valid {
+        return This(ExpressionKind.BinaryOperator, "operator", {}, true)
+      }
+      return This(ExpressionKind.BinaryOperator, context.targetType, {}, operator.valid && context.hasTarget)
+    }
+    return This(
+      ExpressionKind.BinaryOperator,
+      "",
+      DiagnosticRegistry.type(TypeDiagnosticCode.InvalidBinaryOperator),
+      false
+    )
+  }
+
+  pub unaryOperator(context: ExpressionTypingContext) -> This {
+    let operator = BuiltinOperatorFact.fromSymbol(context.operatorSymbol)
+    if operator.hasFixedResult {
+      return This(ExpressionKind.UnaryOperator, operator.resultTypeName, {}, operator.valid)
+    }
+    if operator.arithmetic || operator.bitwise || operator.address || operator.dereference {
+      if !context.hasTarget && operator.valid {
+        return This(ExpressionKind.UnaryOperator, "operator", {}, true)
+      }
+      return This(ExpressionKind.UnaryOperator, context.targetType, {}, operator.valid && context.hasTarget)
+    }
+    return This(
+      ExpressionKind.UnaryOperator,
+      "",
+      DiagnosticRegistry.type(TypeDiagnosticCode.InvalidUnaryOperator),
+      false
+    )
+  }
+
+  pub assignmentOperator(context: ExpressionTypingContext) -> This {
+    let operator = BuiltinOperatorFact.fromSymbol(context.operatorSymbol)
+    if operator.assignment {
+      return This(ExpressionKind.AssignmentOperator, context.targetType, {}, context.hasTarget)
+    }
+    return This(
+      ExpressionKind.AssignmentOperator,
+      "",
+      DiagnosticRegistry.type(TypeDiagnosticCode.InvalidAssignment),
+      false
+    )
+  }
+
+  pub indexAccess(context: ExpressionTypingContext) -> This {
+    let operator = BuiltinOperatorFact.fromSymbol(context.operatorSymbol)
+    return This(ExpressionKind.IndexAccess, context.targetType, {}, operator.index && context.hasTarget)
+  }
+
+  pub callAccess(context: ExpressionTypingContext) -> This {
+    let operator = BuiltinOperatorFact.fromSymbol(context.operatorSymbol)
+    return This(ExpressionKind.CallAccess, context.targetType, {}, operator.call && context.hasTarget)
+  }
+
+  pub memberAccess(context: ExpressionTypingContext) -> This {
+    let operator = BuiltinOperatorFact.fromSymbol(context.operatorSymbol)
+    return This(ExpressionKind.MemberAccess, context.targetType, {}, operator.access && context.hasTarget)
+  }
+
+  pub castOperator(context: ExpressionTypingContext) -> This {
+    let operator = BuiltinOperatorFact.fromSymbol(context.operatorSymbol)
+    return This(ExpressionKind.CastOperator, context.targetType, {}, operator.cast && context.hasTarget)
+  }
+
+  pub propagateOperator(context: ExpressionTypingContext) -> This {
+    let operator = BuiltinOperatorFact.fromSymbol(context.operatorSymbol)
+    return This(ExpressionKind.PropagateOperator, context.targetType, {}, operator.propagate && context.hasTarget)
+  }
+}
+
+impl view ExpressionTypeRule {
+  pub diagnosticCode: string => this.diagnostic.code.display
+  pub hasDiagnostic => this.diagnostic.present
+  pub resolved => resolvedType != ""
+}

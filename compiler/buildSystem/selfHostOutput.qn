@@ -1,0 +1,59 @@
+import host::{CompilerIo, OutputTransaction}
+
+pub SelfHostOutput {
+  packageRoot: string
+  outputDirectory: string
+  buildPlanPath: string
+  bootstrapCompilerPath: string = "qtlc/build/compiler/driver/qtlc"
+}
+
+impl SelfHostOutput {
+  pub SelfHostOutput(packageRoot: string) =
+    This {
+      packageRoot
+      outputDirectory: "{packageRoot}/build/debug"
+      buildPlanPath: "{packageRoot}/build/debug/qtlc2.build-plan"
+    }
+}
+
+context SelfHostOutput {
+  pub materialize(report: SelfHostBuildReport) -> bool {
+    if report.readyForMaterialization == false {
+      return false
+    }
+
+    let io = CompilerIo(packageRoot)
+    if io.createDirectories(outputDirectory) != 0 {
+      return false
+    }
+    if io.buildNativeCompiler(
+      bootstrapCompilerPath,
+      packageRoot,
+      report.outputPath
+    ) != 0 {
+      return false
+    }
+    if io.fileExists(report.outputPath) == false {
+      return false
+    }
+
+    let output = OutputTransaction(buildPlanPath)
+    let text = "input={report.inputStage}\noutput={report.outputStage}\ntarget={report.outputPath}\nsource={report.sourceCheckStatus}\nproducts={report.deterministicProductStatus}\nmaterializer=typed-bootstrap-native\n"
+
+    if output.prepare(io, outputDirectory) == false {
+      return false
+    }
+    if output.writeText(io, text) == false {
+      return false
+    }
+    output.publish(io)
+  }
+}
+
+impl view SelfHostOutput {
+  pub valid: bool =>
+    packageRoot != "" &&
+    outputDirectory != "" &&
+    buildPlanPath != "" &&
+    bootstrapCompilerPath != ""
+}

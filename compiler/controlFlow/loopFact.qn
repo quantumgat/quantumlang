@@ -1,0 +1,49 @@
+pub enum LoopKind {
+  Loop
+  While
+  WhileLet
+  For
+  RangeFor
+  Parallel
+  Quantum
+}
+
+pub LoopFact {
+  loopId: i64
+  kind: LoopKind
+  label: string
+  bodyId: i64
+  conditionRequired: bool = false
+  patternBinding: bool = false
+  rangeBased: bool = false
+  valid: bool = false
+}
+
+impl LoopFact {
+  pub LoopFact(loopId: i64, kind: LoopKind, label: string, bodyId: i64) -> This {
+    if kind == LoopKind.Loop {
+      return This { loopId, kind, label, bodyId, valid: true }
+    }
+    if kind == LoopKind.While {
+      return This { loopId, kind, label, bodyId, conditionRequired: true, valid: true }
+    }
+    if kind == LoopKind.WhileLet {
+      return This { loopId, kind, label, bodyId, conditionRequired: true, patternBinding: true, valid: true }
+    }
+    if kind == LoopKind.For {
+      return This { loopId, kind, label, bodyId, patternBinding: true, valid: true }
+    }
+    if kind == LoopKind.RangeFor {
+      return This { loopId, kind, label, bodyId, patternBinding: true, rangeBased: true, valid: true }
+    }
+    This { loopId, kind, label, bodyId, valid: kind == LoopKind.Parallel || kind == LoopKind.Quantum }
+  }
+
+  isConditional() = conditionRequired
+
+  hasPatternBinding() = patternBinding
+
+  isRangeBased() = rangeBased
+
+  isQuantum() = kind == LoopKind.Quantum
+}

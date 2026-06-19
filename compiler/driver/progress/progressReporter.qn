@@ -1,0 +1,56 @@
+import core::{event}
+
+pub ProgressReporter {
+  events: event<ProgressEvent> = {}
+  renderer: TerminalRenderer = {}
+  current: ProgressEvent = {}
+  active: bool = false
+}
+
+impl ProgressReporter {
+  pub ProgressReporter(mode: ProgressMode) =
+    This {
+      renderer: TerminalRenderer.detect(mode)
+    }
+
+  pub start(command: string, target: string, jobs: i64) {
+    current = ProgressEvent.started(command, target, jobs)
+    active = true
+    renderer.start(current)
+  }
+
+  pub advance(
+    phase: ProgressPhase,
+    completed: i64,
+    total: i64,
+    detail: string
+  ) {
+    if !active {
+      return
+    }
+    current = current.advanced(phase, completed, total, detail)
+    renderer.render(current)
+  }
+
+  pub finish(diagnostics: i64) {
+    if !active {
+      return
+    }
+    current = current.finished(diagnostics)
+    renderer.finish(current)
+    active = false
+  }
+
+  pub cancel() {
+    if !active {
+      return
+    }
+    current = current.cancelled()
+    renderer.finish(current)
+    active = false
+  }
+}
+
+impl view ProgressReporter {
+  pub cancelled: bool => renderer.cancelled()
+}

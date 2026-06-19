@@ -1,0 +1,34 @@
+pub duplicateRecordFieldDiagnostic(duplicate: bool) -> LiteralDiagnosticFact {
+  if duplicate {
+    return LiteralDiagnosticFact.fromKind(LiteralDiagnosticKind.DuplicateRecordField)
+  }
+  return LiteralDiagnosticFact.fromKind(LiteralDiagnosticKind.Unknown)
+}
+
+pub mapKeyMismatchDiagnostic(mismatch: bool) -> LiteralDiagnosticFact {
+  if mismatch {
+    return LiteralDiagnosticFact.fromKind(LiteralDiagnosticKind.MapKeyMismatch)
+  }
+  return LiteralDiagnosticFact.fromKind(LiteralDiagnosticKind.Unknown)
+}
+
+pub byteLiteralOverflowDiagnostic(value: u64) -> LiteralDiagnosticFact {
+  if value > 255 {
+    return LiteralDiagnosticFact.fromKind(LiteralDiagnosticKind.ByteLiteralOverflow)
+  }
+  return LiteralDiagnosticFact.fromKind(LiteralDiagnosticKind.Unknown)
+}
+
+pub integerLiteralOverflowDiagnostic(overflow: bool) -> LiteralDiagnosticFact {
+  if overflow {
+    return LiteralDiagnosticFact.fromKind(LiteralDiagnosticKind.IntegerLiteralOverflow)
+  }
+  return LiteralDiagnosticFact.fromKind(LiteralDiagnosticKind.Unknown)
+}
+
+pub literalTargetDiagnostic(resolution: LiteralTargetResolution) -> LiteralDiagnosticFact {
+  if resolution.diagnosticCode != "" {
+    return LiteralDiagnosticFact.fromCode(resolution.diagnosticCode)
+  }
+  return LiteralDiagnosticFact.fromKind(LiteralDiagnosticKind.Unknown)
+}

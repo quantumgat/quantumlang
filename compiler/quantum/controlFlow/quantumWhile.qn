@@ -1,0 +1,21 @@
+pub QuantumWhile {
+  profile: string
+  bounded: bool
+  targetSupported: bool
+  valid: bool
+}
+
+impl QuantumWhile {
+  pub QuantumWhile(profile: string, bounded: bool, targetSupported: bool) =
+    This {
+      profile
+      bounded
+      targetSupported
+      valid: profile != "" && bounded && targetSupported
+    }
+}
+
+impl view QuantumWhile {
+  pub supported => targetSupported
+  pub boundedLoop => bounded
+}

@@ -1,0 +1,14 @@
+pub enum QueryComponent {
+  Source
+  Syntax
+  Module
+  Resolve
+  Type
+  Hir
+  Mir
+  Optimize
+  Generic
+  Native
+  Quantum
+  Link
+}

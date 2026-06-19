@@ -1,0 +1,64 @@
+import interface::{QidxHandle, QidxLoadMode, QidxEntry, QidxProduct, QidxWriter}
+
+pub QidxEmitProof {
+  productStable: bool
+  entryValid: bool
+  writerDeterministic: bool
+  handleMemoryMapped: bool
+  countsMatchHandle: bool
+  valid: bool
+}
+
+pub qidxEmitProof() -> QidxEmitProof {
+  let product = QidxProduct("sysroot.qidx", 33, 44, 1, 3, 12, 12)
+  let entry = QidxEntry("qtlc::driver", "main", "capsules/qtlc.qcap", 128)
+  let writer = QidxWriter(1, product.indexPath)
+  let handle = QidxHandle.init(
+    product.indexPath,
+    QidxLoadMode.MemoryMapped,
+    product.contentHashHigh,
+    product.contentHashLow,
+    product.packageCount,
+    product.moduleIndexCount,
+    product.symbolIndexCount,
+    product.capsuleOffsetCount,
+    true
+  )
+
+  let productStable = product.valid &&
+    product.deterministic &&
+    product.indexPath == "sysroot.qidx"
+
+  let entryValid = entry.valid &&
+    entry.modulePath == "qtlc::driver" &&
+    entry.symbolName == "main" &&
+    entry.capsulePath == "capsules/qtlc.qcap"
+
+  let writerDeterministic = writer.valid &&
+    writer.deterministic &&
+    writer.indexPath == product.indexPath
+
+  let handleMemoryMapped = handle.valid &&
+    handle.loadMode == QidxLoadMode.MemoryMapped &&
+    handle.indexPath == product.indexPath
+
+  let countsMatchHandle = handle.packageCount == product.packageCount &&
+    handle.moduleIndexCount == product.moduleIndexCount &&
+    handle.symbolIndexCount == product.symbolIndexCount &&
+    handle.capsuleOffsetCount == product.capsuleOffsetCount
+
+  let valid = productStable &&
+    entryValid &&
+    writerDeterministic &&
+    handleMemoryMapped &&
+    countsMatchHandle
+
+  return QidxEmitProof {
+    productStable: productStable,
+    entryValid: entryValid,
+    writerDeterministic: writerDeterministic,
+    handleMemoryMapped: handleMemoryMapped,
+    countsMatchHandle: countsMatchHandle,
+    valid: valid,
+  }
+}

@@ -1,0 +1,94 @@
+import driver::{CheckReport}
+import buildSystem::{SelfHostBuildReport}
+
+pub Console {
+  name: string = "qtlc1"
+  mode: ProgressMode = {}
+}
+
+impl Console {
+  pub Console() =
+    This {}
+
+  pub Console(mode: ProgressMode) =
+    This { mode }
+}
+
+context Console {
+  printCheck(report: CheckReport) -> i64 {
+    if mode.quiet {
+      if report.exitCode != 0 {
+        println("check failed: {report.target}")
+        if report.firstDiagnosticMessage != "" {
+          println(report.firstDiagnosticMessage)
+        }
+      }
+      return report.exitCode
+    }
+    if mode.verbose {
+      println("qtlc1 check")
+      println("target: {report.target}")
+      println("source files: {report.sourceFileCount}")
+      println("lexemes: {report.lexemeCount}")
+      println("ast nodes: {report.astNodeCount}")
+      println("typed nodes: {report.typedNodeCount}")
+      println("type facts: {report.typeFactCount}")
+      println("source model: {report.sourceStatus.value}")
+      println("lexer model: {report.lexerStatus.value}")
+      println("parser model: {report.parserStatus.value}")
+      println("typecheck model: {report.typecheckStatus.value}")
+      println("module boundaries: {report.moduleBoundaryStatus.value}")
+      if report.firstDiagnosticMessage != "" {
+        println("first diagnostic: {report.firstDiagnosticMessage}")
+      }
+      println("status: {report.status.value}")
+      return report.exitCode
+    }
+    if report.exitCode != 0 && report.firstDiagnosticMessage != "" {
+      println(report.firstDiagnosticMessage)
+    }
+    println("Finished check: {report.target} · {report.sourceFileCount} files · {report.status.value}")
+    report.exitCode
+  }
+
+  printBuild(target: string, report: SelfHostBuildReport) -> i64 {
+    if mode.quiet {
+      if report.exitCode != 0 {
+        println("build failed: {target}")
+      }
+      return report.exitCode
+    }
+    if mode.verbose {
+      println("qtlc1 build")
+      println("target: {target}")
+      println("input stage: {report.inputStage}")
+      println("output stage: {report.outputStage}")
+      println("output: {report.outputPath}")
+      println("artifact: {report.artifactStatus}")
+      println("source check: {report.sourceCheckStatus}")
+      println("deterministic products: {report.deterministicProductStatus}")
+      println("source product: {report.products.source.statusText}")
+      println("hir product: {report.products.hir.statusText}")
+      println("mir product: {report.products.mir.statusText}")
+      println("object product: {report.products.object.statusText}")
+      println("link product: {report.products.link.statusText}")
+      println("status: {report.statusText}")
+      return report.exitCode
+    }
+    println("Finished build: {target} · {report.outputStage} · {report.statusText}")
+    report.exitCode
+  }
+
+  printVersion() -> i64 {
+    println("qtlc1 compiler 0.1.0")
+    0
+  }
+
+  printHelp() -> i64 {
+    println("qtlc1 compiler 0.1.0")
+    println("commands: check build version help")
+    println("usage: qtlc1 check <package-dir>")
+    println("options: -jN --quiet --verbose --color=auto|always|never")
+    0
+  }
+}

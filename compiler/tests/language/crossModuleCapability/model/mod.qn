@@ -1,0 +1,9 @@
+module model
+
+mod {
+  counter
+}
+
+export {
+  counter.*
+}

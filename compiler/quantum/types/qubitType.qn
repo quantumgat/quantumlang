@@ -1,0 +1,20 @@
+pub QubitType {
+  linear: bool
+  noClone: bool
+  mustResetBeforeRelease: bool
+  valid: bool
+}
+
+impl QubitType {
+  pub QubitType() =
+    This {
+      linear: true
+      noClone: true
+      mustResetBeforeRelease: true
+      valid: true
+    }
+}
+
+impl view QubitType {
+  pub resourceSafe => linear && noClone && mustResetBeforeRelease
+}

@@ -1,0 +1,40 @@
+pub ObjectEmission {
+  objectCount: i64
+  reusedCount: i64
+  rebuiltCount: i64
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl ObjectEmission {
+  pub ObjectEmission(objectCount: i64, reusedCount: i64, rebuiltCount: i64) =
+    This { objectCount, reusedCount, rebuiltCount }
+
+  pub empty() =
+    This {
+      objectCount: 0
+      reusedCount: 0
+      rebuiltCount: 0
+    }
+
+  addReused(count: i64) =
+    this {
+      objectCount: objectCount + count
+      reusedCount: reusedCount + count
+    }
+
+  addRebuilt(count: i64) =
+    this {
+      objectCount: objectCount + count
+      rebuiltCount: rebuiltCount + count
+    }
+}
+
+impl view ObjectEmission {
+  pub valid => diagnosticCode == "" && objectCount >= 0 && reusedCount >= 0 && rebuiltCount >= 0 && objectCount == reusedCount + rebuiltCount
+  pub fullyReused => objectCount > 0 && reusedCount == objectCount
+  pub hasRebuilds => rebuiltCount > 0
+  pub emitted => objectCount > 0
+  pub lowerable => valid
+  pub debugName => "native.object.emit.{objectCount}.{rebuiltCount}"
+}

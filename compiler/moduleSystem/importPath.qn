@@ -1,0 +1,55 @@
+pub ImportPath {
+  text: string
+  root: string = ""
+  selectedSymbol: string = ""
+  alias: string = ""
+  grouped: bool = false
+  wildcard: bool = false
+  valid: bool = false
+}
+
+impl ImportPath {
+  pub ImportPath(text: string) -> This =
+    This { text, valid: text != "" }
+
+  pub module(root: string, text: string) -> This =
+    This { text, root, valid: root != "" && text != "" }
+
+  pub selected(root: string, text: string, selectedSymbol: string) -> This =
+    This {
+      text,
+      root,
+      selectedSymbol,
+      grouped: true,
+      valid: root != "" && selectedSymbol != "",
+    }
+
+  pub star(root: string, text: string) -> This =
+    This {
+      text,
+      root,
+      grouped: true,
+      wildcard: true,
+      valid: root != "",
+    }
+
+  pub aliased(root: string, text: string, alias: string) -> This =
+    This {
+      text
+      root
+      alias
+      valid: root != "" && text != "" && alias != ""
+    }
+}
+
+impl view ImportPath {
+  pub qualified => valid && root != ""
+
+  pub selectedImport => grouped && selectedSymbol != ""
+
+  pub wildcardImport => grouped && wildcard
+
+  pub aliasedImport => valid && alias != ""
+
+  pub moduleOnly => valid && grouped == false && selectedSymbol == ""
+}

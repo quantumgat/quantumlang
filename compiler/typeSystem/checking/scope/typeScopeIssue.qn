@@ -1,0 +1,27 @@
+import core::{ScopeId}
+import diagnostics::{DiagnosticSpec}
+import source::{SourceSpan}
+
+pub TypeScopeIssue {
+  diagnostic: DiagnosticSpec = {}
+  subject: string = ""
+  name: string
+  scope: ScopeId
+  span: SourceSpan
+  duplicate: bool = false
+  unresolved: bool = false
+}
+
+impl view TypeScopeIssue {
+  pub code: string => this.diagnostic.code.display
+
+  pub message: string => this.diagnostic.format(this.subject)
+
+  pub valid: bool =>
+    diagnostic.valid &&
+    message != "" &&
+    name != "" &&
+    scope.valid &&
+    span.valid &&
+    (duplicate || unresolved)
+}

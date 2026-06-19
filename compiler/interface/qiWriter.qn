@@ -1,0 +1,16 @@
+pub QiWriter {
+  emitted: i64
+  importRoot: string
+  interfaceDir: string
+}
+
+impl QiWriter {
+  pub QiWriter(emitted: i64, importRoot: string, interfaceDir: string) =
+    This { emitted, importRoot, interfaceDir }
+}
+
+impl view QiWriter {
+  pub deterministic => true
+  pub wroteAny => emitted > 0
+  pub valid => emitted >= 0 && importRoot != "" && interfaceDir != ""
+}

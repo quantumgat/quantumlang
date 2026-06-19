@@ -1,0 +1,6 @@
+pub enum DeclarationVisibility {
+  Public
+  Private
+  Exported
+  Unknown
+}

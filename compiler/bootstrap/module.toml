@@ -1,0 +1,6 @@
+[module]
+name = "bootstrap"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/bootstrap"
+role = "bootstrap-proof"

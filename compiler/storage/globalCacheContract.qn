@@ -1,0 +1,140 @@
+pub enum CacheOwnership {
+  NormalProject
+  ToolchainSelfHost
+  InstalledToolchain
+}
+
+pub enum CacheProductKind {
+  Metadata
+  NativeObject
+  NativeArchive
+  Executable
+  Diagnostic
+  ActionIndex
+}
+
+pub enum DeliveryArtifactKind {
+  NativeLibrary
+  QuantumCapsule
+  QuantumIndex
+  QuantumNativeArchive
+  QuantumPackage
+  BootstrapPackage
+}
+
+pub GlobalCacheContract {
+  normalProjectRoot: string = "~/.cache/qtlc"
+  toolchainStoreRoot: string = "~/.quantumlang/qstore"
+  installedToolchainRoot: string = "~/.quantumlang/toolchains"
+  actionRoot: string = "actions"
+  temporaryRoot: string = ".tmp"
+  leaseRoot: string = ".leases"
+  quarantineRoot: string = ".quarantine"
+  contentBucketCount: i64 = 256
+  contentAddressed: bool = true
+  actionIndexed: bool = true
+  projectNameInIdentity: bool = false
+  projectInternalsVisible: bool = false
+  qtlc1UsesNormalProjectCache: bool = true
+  qtlc1UsesToolchainStore: bool = false
+  projectBuildStampAllowed: bool = false
+}
+
+impl GlobalCacheContract {
+  pub rootFor(ownership: CacheOwnership) -> string {
+    if ownership == CacheOwnership.NormalProject {
+      return normalProjectRoot
+    }
+
+    if ownership == CacheOwnership.ToolchainSelfHost {
+      return toolchainStoreRoot
+    }
+
+    return installedToolchainRoot
+  }
+
+  pub extensionFor(kind: CacheProductKind) -> string {
+    if kind == CacheProductKind.Metadata {
+      return ".qcm"
+    }
+
+    if kind == CacheProductKind.NativeObject {
+      return ".qco"
+    }
+
+    if kind == CacheProductKind.NativeArchive {
+      return ".qca"
+    }
+
+    if kind == CacheProductKind.Executable {
+      return ".qcx"
+    }
+
+    if kind == CacheProductKind.Diagnostic {
+      return ".qcd"
+    }
+
+    return ".qci"
+  }
+
+  pub deliveryExtension(kind: DeliveryArtifactKind) -> string {
+    if kind == DeliveryArtifactKind.NativeLibrary {
+      return ".a"
+    }
+
+    if kind == DeliveryArtifactKind.QuantumCapsule {
+      return ".qcap"
+    }
+
+    if kind == DeliveryArtifactKind.QuantumIndex {
+      return ".qidx"
+    }
+
+    if kind == DeliveryArtifactKind.QuantumNativeArchive {
+      return ".qna"
+    }
+
+    if kind == DeliveryArtifactKind.QuantumPackage {
+      return ".qpkg"
+    }
+
+    if kind == DeliveryArtifactKind.BootstrapPackage {
+      return ".qnpkg"
+    }
+
+    return ""
+  }
+}
+
+impl view GlobalCacheContract {
+  pub globalNormalProjectCache =>
+    normalProjectRoot == "~/.cache/qtlc" &&
+    contentAddressed &&
+    actionIndexed
+
+  pub hashedWorkspaceIdentity => projectNameInIdentity == false
+
+  pub cleanProjectOutput =>
+    projectInternalsVisible == false &&
+    projectBuildStampAllowed == false
+
+  pub qtlc1StageBoundary =>
+    qtlc1UsesNormalProjectCache &&
+    qtlc1UsesToolchainStore == false
+
+  pub qstoreDeferredUntilQtlc2 => qtlc1UsesToolchainStore == false
+
+  pub completeSafetyLayout =>
+    actionRoot != "" &&
+    temporaryRoot != "" &&
+    leaseRoot != "" &&
+    quarantineRoot != ""
+
+  pub valid =>
+    globalNormalProjectCache &&
+    hashedWorkspaceIdentity &&
+    cleanProjectOutput &&
+    qtlc1StageBoundary &&
+    contentBucketCount == 256 &&
+    completeSafetyLayout
+}

@@ -1,0 +1,27 @@
+pub StringLexer {
+  quote: string
+  allowsEscapes: bool
+  defaultType: string
+}
+
+impl StringLexer {
+  pub StringLexer(quote: string) =
+    This {
+      quote
+      allowsEscapes: true
+      defaultType: "string"
+    }
+
+  pub literalForText(text: string) =
+    Literal(LiteralTokenKind.String, text, "string", text != "")
+
+  pub bytesForText(text: string) =
+    Literal(LiteralTokenKind.Bytes, text, "bytes", text != "")
+}
+
+impl view StringLexer {
+  pub quotedByDouble => quote == "\""
+  pub escapeAware => allowsEscapes
+  pub valid => quote != "" && defaultType != ""
+  pub emitsString => defaultType == "string"
+}

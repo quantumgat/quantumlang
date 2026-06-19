@@ -1,0 +1,61 @@
+import compiler::quantum::{*}
+pub QuantumResourceProof {
+  ownershipLinear: bool
+  cloneRejected: bool
+  lifetimeLeakRejected: bool
+  resetRequiredBeforeRelease: bool
+  releaseRequiresReset: bool
+  allocationTracked: bool
+  valid: bool
+}
+
+pub quantumResourceProof() -> QuantumResourceProof {
+  let ownership = QuantumOwnership(true, true, true)
+  let ownershipBad = QuantumOwnership.violation()
+  let cloneBad = QuantumNoCloneRule.rejected()
+  let lifetimeOk = QuantumLifetime(true, true, false)
+  let lifetimeBad = QuantumLifetime.leak()
+  let resetBad = QuantumReset(true, false)
+  let releaseBad = QuantumRelease(true, false)
+  let allocation = QuantumAllocation(4, true)
+
+  let ownershipLinear = ownership.valid &&
+    ownership.noClone &&
+    ownership.linearMoveRequired &&
+    ownershipBad.diagnosticCode == "QTQUANTUM0001"
+
+  let cloneRejected = cloneBad.enforced &&
+    cloneBad.duplicateRejected &&
+    cloneBad.diagnosticCode == "QTQUANTUM0002"
+
+  let lifetimeLeakRejected = lifetimeOk.valid &&
+    !lifetimeBad.valid &&
+    lifetimeBad.diagnosticCode == "QTQUANTUM0003"
+
+  let resetRequiredBeforeRelease = !resetBad.valid &&
+    resetBad.diagnosticCode == "QTQUANTUM0004"
+
+  let releaseRequiresReset = !releaseBad.valid &&
+    releaseBad.diagnosticCode == "QTQUANTUM0005"
+
+  let allocationTracked = allocation.valid &&
+    allocation.resourceTracked &&
+    allocation.qregSized
+
+  let valid = ownershipLinear &&
+    cloneRejected &&
+    lifetimeLeakRejected &&
+    resetRequiredBeforeRelease &&
+    releaseRequiresReset &&
+    allocationTracked
+
+  return QuantumResourceProof {
+    ownershipLinear: ownershipLinear,
+    cloneRejected: cloneRejected,
+    lifetimeLeakRejected: lifetimeLeakRejected,
+    resetRequiredBeforeRelease: resetRequiredBeforeRelease,
+    releaseRequiresReset: releaseRequiresReset,
+    allocationTracked: allocationTracked,
+    valid: valid,
+  }
+}

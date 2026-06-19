@@ -1,0 +1,6 @@
+[module]
+name = "machine"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/machine"
+role = "target-machine-model"

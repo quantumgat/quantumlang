@@ -1,0 +1,43 @@
+import syntax::{*}
+pub TokenModelProof {
+  importForms: bool
+  importRejections: bool
+  operatorRoles: bool
+  valid: bool
+}
+
+pub tokenModelProof() -> TokenModelProof {
+  let selected = ImportTokenRule.fromImport("::", true, "", "io", false)
+  let moduleDefault = ImportTokenRule.fromImport("::", false, "", "io", false)
+  let moduleAlias = ImportTokenRule.fromImport("::", false, "console", "io", false)
+  let dotImport = ImportTokenRule.fromImport(".", false, "", "io", false)
+  let callPath = ImportTokenRule.fromImport("::", false, "", "println", true)
+
+  let modulePath = OperatorTokenFact.fromText("::")
+  let access = OperatorTokenFact.fromText(".")
+  let option = OperatorTokenFact.fromText("?")
+  let expressionBody = OperatorTokenFact.fromText("=>")
+  let assignment = OperatorTokenFact.fromText("=")
+
+  let importForms = selected.formKind == ImportFormKind.SelectedSymbols &&
+    moduleDefault.localName == "io" &&
+    moduleAlias.localName == "console"
+
+  let importRejections = dotImport.diagnosticCode == "QTIMPORT0001" &&
+    callPath.diagnosticCode == "QTIMPORT0002"
+
+  let operatorRoles = modulePath.modulePathOperator &&
+    access.accessOperator &&
+    option.optionMarker &&
+    expressionBody.expressionBodyOperator &&
+    assignment.assignmentOperator
+
+  let valid = importForms && importRejections && operatorRoles
+
+  return TokenModelProof {
+    importForms: importForms,
+    importRejections: importRejections,
+    operatorRoles: operatorRoles,
+    valid: valid,
+  }
+}

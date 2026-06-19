@@ -1,0 +1,21 @@
+pub BoardProfile {
+  name: string
+  deviceName: string
+  hasClockConfig: bool
+  valid: bool
+}
+
+impl BoardProfile {
+  pub BoardProfile(name: string, deviceName: string, hasClockConfig: bool) =
+    This {
+      name
+      deviceName
+      hasClockConfig
+      valid: name != "" && deviceName != "" && hasClockConfig
+    }
+}
+
+impl view BoardProfile {
+  pub clockReady => hasClockConfig
+  pub deviceBound => deviceName != ""
+}

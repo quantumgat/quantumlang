@@ -1,0 +1,34 @@
+module ast
+
+mod {
+  node
+  callArgument
+  callableParameter
+  genericParameter
+  roleConformance
+  declaration
+  item
+  expr
+  stmt
+  pattern
+  typeRef
+  astArena
+  astProduct
+  stableSyntaxHash
+}
+
+export {
+  node.{AstNodeKind, AstNodeId, AstNode}
+  callArgument.{AstCallArgument}
+  callableParameter.{AstCallableParameter}
+  genericParameter.{AstGenericParameter}
+  roleConformance.{AstRoleVisibility, AstRoleConformance}
+  declaration.{AstDeclarationKind, AstDeclarationVisibility, AstDeclaration}
+  item.{AstItemKind, AstItem}
+  expr.{AstExprKind, AstExpr}
+  stmt.{AstStmtKind, AstStmt}
+  pattern.{AstPatternKind, AstPattern}
+  typeRef.{AstTypeRefKind, AstTypeRef}
+  astArena.AstArena
+  astProduct.{AstProduct, PackageAstProduct}
+}

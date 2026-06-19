@@ -1,0 +1,32 @@
+pub DefiniteReturnFact {
+  bodyId: i64
+  allPathsReturn: bool
+  missingReturnCount: usize
+  expectedTypeName: string
+  diagnosticCode: string
+}
+
+impl DefiniteReturnFact {
+  pub DefiniteReturnFact(bodyId: i64, allPathsReturn: bool, missingReturnCount: usize, expectedTypeName: string) -> This {
+    if allPathsReturn {
+      return This {
+        bodyId
+        allPathsReturn
+        missingReturnCount
+        expectedTypeName
+        diagnosticCode: ""
+      }
+    }
+    This {
+      bodyId
+      allPathsReturn
+      missingReturnCount
+      expectedTypeName
+      diagnosticCode: "QTCFLOW0004"
+    }
+  }
+
+  isComplete() = allPathsReturn
+
+  reportsDiagnostic() = diagnosticCode != ""
+}

@@ -1,0 +1,37 @@
+pub QuantumArtifact {
+  path: string
+  format: string
+  artifactHash: string
+  providerName: string
+  diagnosticCode: string = ""
+}
+
+impl QuantumArtifact {
+  pub QuantumArtifact(path: string, format: string, artifactHash: string, providerName: string) =
+    This { path, format, artifactHash, providerName }
+
+  pub qir(path: string, artifactHash: string, providerName: string) =
+    This {
+      path
+      format: "qir"
+      artifactHash
+      providerName
+    }
+
+  pub openQasm(path: string, artifactHash: string, providerName: string) =
+    This {
+      path
+      format: "openqasm3"
+      artifactHash
+      providerName
+    }
+}
+
+impl view QuantumArtifact {
+  pub valid => diagnosticCode == "" && path != "" && format != "" && artifactHash != "" && providerName != ""
+  pub qirArtifact => format == "qir"
+  pub openQasmArtifact => format == "openqasm3"
+  pub cacheKey => "{providerName}:{format}:{artifactHash}"
+  pub lowerable => valid
+  pub debugName => "quantum.artifact.{format}.{path}"
+}

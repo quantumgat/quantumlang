@@ -1,0 +1,75 @@
+import frontend::{FrontendProduct}
+
+pub TypecheckProduct {
+  fileCount: i64
+  moduleCount: i64
+  typedNodeCount: i64
+  typeContextCount: i64
+  typeFactCount: i64
+  diagnosticCount: i64 = 0
+  firstDiagnosticMessage: string = ""
+  deterministic: bool = true
+}
+
+impl TypecheckProduct {
+  pub forFrontend(frontend: FrontendProduct) -> This {
+    let state = TypecheckState.forFrontend(frontend)
+    return This.fromState(state)
+  }
+
+  pub forEnvironment(environment: TypeEnvironment) =
+    This {
+      fileCount: environment.fileScopeCount
+      moduleCount: environment.moduleScopeCount
+      typedNodeCount: environment.typedNodeCount
+      typeContextCount: environment.typeContextCount
+      typeFactCount: environment.typeFactCount + environment.symbolCount
+      diagnosticCount: environment.diagnosticCount
+      firstDiagnosticMessage: environment.firstDiagnosticMessage
+      deterministic: environment.deterministic
+    }
+
+  pub fromState(state: TypecheckState) =
+    This {
+      fileCount: state.fileCount
+      moduleCount: state.moduleCount
+      typedNodeCount: state.typedNodeCount
+      typeContextCount: state.typeContextCount
+      typeFactCount: state.typeFactCount
+      diagnosticCount: state.diagnosticCount
+      firstDiagnosticMessage: state.firstDiagnosticMessage
+      deterministic: state.deterministic
+    }
+
+}
+
+impl view TypecheckProduct {
+  pub hasFiles => fileCount > 0
+
+  pub hasModules => moduleCount > 0
+
+  pub hasTypedNodes => typedNodeCount > 0
+
+  pub hasTypeContexts => typeContextCount > 0
+
+  pub hasTypeFacts => typeFactCount > 0
+
+  pub clean => diagnosticCount == 0
+
+  pub valid =>
+    deterministic &&
+    clean &&
+    hasFiles &&
+    hasModules &&
+    hasTypedNodes &&
+    hasTypeContexts &&
+    hasTypeFacts
+
+  pub statusValue => match true {
+    deterministic == false => "failed:qtlc1-typecheck-nondeterministic"
+    clean == false => "failed:qtlc1-typecheck-diagnostics"
+    hasTypedNodes == false => "failed:qtlc1-typecheck-no-typed-nodes"
+    valid => "checked:qtlc1-typecheck"
+    _ => "failed:qtlc1-typecheck"
+  }
+}

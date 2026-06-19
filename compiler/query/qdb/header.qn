@@ -1,0 +1,46 @@
+pub QdbHeader {
+  magic: string = "QDB1"
+  schemaVersion: u64 = 1
+  endianMarker: u64 = 0x01020304
+  pointerWidthIndependent: bool = true
+  relativeOffsets: bool = true
+  sectionCount: u64 = 0
+  fileLength: u64 = 0
+  revision: u64 = 0
+  contentHash: Fingerprint = {}
+  checksum: Fingerprint = {}
+}
+
+impl QdbHeader {
+  pub QdbHeader(
+    sectionCount: u64,
+    fileLength: u64,
+    revision: u64,
+    contentHash: Fingerprint,
+    checksum: Fingerprint
+  ) =
+    This {
+      sectionCount
+      fileLength
+      revision
+      contentHash
+      checksum
+    }
+}
+
+impl view QdbHeader {
+  pub magicValid: bool => magic == "QDB1"
+  pub schemaValid: bool => schemaVersion > 0
+  pub endianValid: bool => endianMarker == 0x01020304
+  pub portable: bool => pointerWidthIndependent && relativeOffsets
+  pub integrityProtected: bool => contentHash.nonzero && checksum.nonzero
+  pub valid: bool =>
+    magicValid &&
+    schemaValid &&
+    endianValid &&
+    portable &&
+    sectionCount > 0 &&
+    fileLength > 0 &&
+    revision > 0 &&
+    integrityProtected
+}

@@ -1,0 +1,22 @@
+pub StartupPlan {
+  entry: string
+  initializesData: bool
+  zerosBss: bool
+  callsMain: bool
+  valid: bool
+}
+
+impl StartupPlan {
+  pub StartupPlan(entry: string, initializesData: bool, zerosBss: bool, callsMain: bool) =
+    This {
+      entry
+      initializesData
+      zerosBss
+      callsMain
+      valid: entry != "" && initializesData && zerosBss && callsMain
+    }
+}
+
+impl view StartupPlan {
+  pub bootReady => valid && callsMain
+}

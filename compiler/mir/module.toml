@@ -1,0 +1,9 @@
+[module]
+name = "mir"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/mir"
+role = "mid-level-ir"
+
+[dependencies]
+modules = ["core", "hir", "semantic", "source", "typeSystem"]

@@ -1,0 +1,75 @@
+import core::{SymbolId, TypeId}
+
+pub HirExpr {
+  id: i64
+  kind: string
+  typeName: string
+  constantFoldable: bool
+  typeId: TypeId = {}
+  symbolId: SymbolId = {}
+  operatorSymbol: string = ""
+  receiverTypeName: string = ""
+  argumentCount: i64 = 0
+  genericArgumentCount: i64 = 0
+  diagnosticCode: string = ""
+}
+
+impl HirExpr {
+  pub HirExpr(id: i64, kind: string, typeName: string, constantFoldable: bool) =
+    This { id, kind, typeName, constantFoldable }
+
+  pub unknown(id: i64, kind: string) =
+    This {
+      id
+      kind
+      typeName: "Unknown"
+      constantFoldable: false
+    }
+
+  pub literal(id: i64, typeName: string) =
+    This {
+      id
+      kind: "literal"
+      typeName
+      constantFoldable: true
+    }
+
+  pub call(id: i64, typeName: string) =
+    This {
+      id
+      kind: "call"
+      typeName
+      constantFoldable: false
+    }
+
+  pub methodCall(id: i64, typeName: string) =
+    This {
+      id
+      kind: "methodCall"
+      typeName
+      constantFoldable: false
+    }
+
+  withType(typeName: string) =
+    this {
+      typeName
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QHIR0401"
+    }
+}
+
+impl view HirExpr {
+  pub valid => diagnosticCode == "" && validShape
+  pub validShape => id >= 0 && kind != "" && typeName != ""
+  pub typed => typeName != "" && typeName != "Unknown"
+  pub untyped => typed == false
+  pub callLike => kind == "call" || kind == "methodCall"
+  pub literalLike => kind == "literal" || constantFoldable
+  pub resultCarrier => typeName.startsWith("Result<")
+  pub optionCarrier => typeName.startsWith("Option<") || typeName.contains("?")
+  pub lowerable => valid && typed
+  pub debugName => "hir.expr.{id}.{kind}.{typeName}"
+}

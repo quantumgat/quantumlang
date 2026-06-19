@@ -1,0 +1,5 @@
+import driver::{HostArgs, Session}
+
+main() -> i64 {
+  return Session(HostArgs()).run()
+}

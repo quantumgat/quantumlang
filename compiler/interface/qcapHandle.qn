@@ -1,0 +1,57 @@
+pub enum QcapLoadMode {
+  MemoryMapped
+  Buffered
+  Rejected
+}
+
+pub QcapHandle {
+  packageName: string
+  capsulePath: string
+  loadMode: QcapLoadMode
+  contentHashHigh: u64
+  contentHashLow: u64
+  moduleCount: usize
+  symbolCount: usize
+  typeFactCount: usize
+  genericFactCount: usize
+  abiFactCount: usize
+  loaded: bool
+}
+
+impl QcapHandle {
+  pub QcapHandle(
+    packageName: string,
+    capsulePath: string,
+    loadMode: QcapLoadMode,
+    contentHashHigh: u64,
+    contentHashLow: u64,
+    moduleCount: usize,
+    symbolCount: usize,
+    typeFactCount: usize,
+    genericFactCount: usize,
+    abiFactCount: usize,
+    loaded: bool
+  ) =
+    This {
+      packageName
+      capsulePath
+      loadMode
+      contentHashHigh
+      contentHashLow
+      moduleCount
+      symbolCount
+      typeFactCount
+      genericFactCount
+      abiFactCount
+      loaded
+    }
+}
+
+impl view QcapHandle {
+  pub rejected => loadMode == QcapLoadMode.Rejected
+  pub memoryMapped => loadMode == QcapLoadMode.MemoryMapped
+  pub buffered => loadMode == QcapLoadMode.Buffered
+  pub hashed => contentHashHigh != 0 || contentHashLow != 0
+  pub hasFacts => typeFactCount > 0 || genericFactCount > 0 || abiFactCount > 0
+  pub valid => loaded && rejected == false && packageName != "" && capsulePath != "" && hashed && moduleCount > 0 && symbolCount > 0 && hasFacts
+}

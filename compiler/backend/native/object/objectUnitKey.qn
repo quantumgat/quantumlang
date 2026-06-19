@@ -1,0 +1,52 @@
+pub NativeObjectUnitKey {
+  stableUnitId: string
+  targetTriple: string
+  profile: string
+  abiHash: string
+  mirHash: string
+  backendHash: string
+  diagnosticCode: string = ""
+}
+
+impl NativeObjectUnitKey {
+  pub NativeObjectUnitKey(
+    stableUnitId: string,
+    targetTriple: string,
+    profile: string,
+    abiHash: string,
+    mirHash: string,
+    backendHash: string
+  ) =
+    This { stableUnitId, targetTriple, profile, abiHash, mirHash, backendHash }
+
+  withMirHash(mirHash: string) =
+    this {
+      mirHash
+    }
+
+  withBackendHash(backendHash: string) =
+    this {
+      backendHash
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QNATIVE0501"
+    }
+}
+
+impl view NativeObjectUnitKey {
+  pub valid => diagnosticCode == "" &&
+    stableUnitId != "" &&
+    targetTriple != "" &&
+    profile != "" &&
+    abiHash != "" &&
+    mirHash != "" &&
+    backendHash != ""
+
+  pub cacheKey => "{stableUnitId}:{targetTriple}:{profile}:{abiHash}:{mirHash}:{backendHash}"
+  pub sameAbiBackend => abiHash != "" && backendHash != ""
+  pub sameMirInput => mirHash != ""
+  pub lowerable => valid
+  pub debugName => "native.object.key.{stableUnitId}.{profile}"
+}

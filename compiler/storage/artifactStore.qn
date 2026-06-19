@@ -1,0 +1,3 @@
+pub ArtifactStore {
+  root: string
+}

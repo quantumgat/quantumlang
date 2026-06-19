@@ -1,0 +1,22 @@
+pub QdbDependencyRow {
+  fromQueryRow: u64 = 0
+  toQueryRow: u64 = 0
+  fingerprint: Fingerprint = {}
+  reasonOffset: u64 = 0
+  reasonLength: u64 = 0
+}
+
+impl view QdbDependencyRow {
+  pub directed: bool =>
+    fromQueryRow > 0 &&
+    toQueryRow > 0
+
+  pub reasonBounded: bool =>
+    reasonLength == 0 ||
+    reasonOffset > 0
+
+  pub valid: bool =>
+    directed &&
+    fingerprint.nonzero &&
+    reasonBounded
+}

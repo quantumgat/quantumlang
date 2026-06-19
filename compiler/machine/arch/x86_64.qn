@@ -1,0 +1,3 @@
+pub X86_64Arch {
+  pointerBits: i64
+}

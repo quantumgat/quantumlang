@@ -1,0 +1,188 @@
+// design-only: compile-fail fixture catalog.
+//
+// The invalid source lives under `compileFail/` as real `.qn` files. This file
+// is the positive registry that future test tooling can build into commands.
+
+pub NegativeProofCatalog {
+  surfaceCaseCount: i64 = 0
+  visibilityCaseCount: i64 = 0
+  packCaseCount: i64 = 0
+  associatedCaseCount: i64 = 0
+  callResolutionCaseCount: i64 = 0
+  nativeCaseCount: i64 = 0
+  moduleCaseCount: i64 = 0
+  totalCaseCount: i64 = 0
+
+  missingRequiredRoleMethod: string = ""
+  wrongReturnType: string = ""
+  asyncExtractorHiddenAllocation: string = ""
+
+  publicConformanceLeaksPrivateRole: string = ""
+  internalConformanceOutsidePackage: string = ""
+  privateConformanceOutsideOwner: string = ""
+
+  packBoundViolation: string = ""
+  duplicateCapabilityPack: string = ""
+  missingCapabilityRole: string = ""
+
+  missingAssociatedType: string = ""
+  wrongAssociatedConstType: string = ""
+  publicAssociatedTypeLeak: string = ""
+  wrongAssociatedSurfaceAccess: string = ""
+
+  ambiguousUnqualifiedRoleMember: string = ""
+  implicitRoleObjectConversion: string = ""
+  namedArgumentAsPositional: string = ""
+  defaultArgumentDuplicateSymbol: string = ""
+  immutableBuilderMutation: string = ""
+  middlewareNextMismatch: string = ""
+  sameSurfaceDuplicateSignature: string = ""
+  sameSurfaceVisibilityWeaken: string = ""
+
+  directCallUsesRoleTable: string = ""
+
+  importNonExportedSymbol: string = ""
+  reExportPrivateType: string = ""
+  importAliasIdentityWrong: string = ""
+  conformanceNotExported: string = ""
+  surfaceQualifierBypassesVisibility: string = ""
+}
+
+impl view NegativeProofCatalog {
+  pub countValid: bool =>
+    surfaceCaseCount == 3 &&
+    visibilityCaseCount == 3 &&
+    packCaseCount == 3 &&
+    associatedCaseCount == 4 &&
+    callResolutionCaseCount == 8 &&
+    nativeCaseCount == 1 &&
+    moduleCaseCount == 5 &&
+    totalCaseCount == 27
+
+  pub pathsValid: bool => {
+    missingRequiredRoleMethod != "" &&
+    wrongReturnType != "" &&
+    asyncExtractorHiddenAllocation != "" &&
+    publicConformanceLeaksPrivateRole != "" &&
+    internalConformanceOutsidePackage != "" &&
+    privateConformanceOutsideOwner != "" &&
+    packBoundViolation != "" &&
+    duplicateCapabilityPack != "" &&
+    missingCapabilityRole != "" &&
+    missingAssociatedType != "" &&
+    wrongAssociatedConstType != "" &&
+    publicAssociatedTypeLeak != "" &&
+    wrongAssociatedSurfaceAccess != "" &&
+    ambiguousUnqualifiedRoleMember != "" &&
+    implicitRoleObjectConversion != "" &&
+    namedArgumentAsPositional != "" &&
+    defaultArgumentDuplicateSymbol != "" &&
+    immutableBuilderMutation != "" &&
+    middlewareNextMismatch != "" &&
+    sameSurfaceDuplicateSignature != "" &&
+    sameSurfaceVisibilityWeaken != "" &&
+    directCallUsesRoleTable != "" &&
+    importNonExportedSymbol != "" &&
+    reExportPrivateType != "" &&
+    importAliasIdentityWrong != "" &&
+    conformanceNotExported != "" &&
+    surfaceQualifierBypassesVisibility != ""
+  }
+
+  pub complete: bool =>
+    countValid && pathsValid
+}
+
+pub negativeProofCatalog() -> NegativeProofCatalog {
+  return NegativeProofCatalog {
+    surfaceCaseCount: 3
+    visibilityCaseCount: 3
+    packCaseCount: 3
+    associatedCaseCount: 4
+    callResolutionCaseCount: 8
+    nativeCaseCount: 1
+    moduleCaseCount: 5
+    totalCaseCount: 27
+
+    missingRequiredRoleMethod:
+      "compileFail/surface/missingRequiredRoleMethod.qn"
+
+    wrongReturnType:
+      "compileFail/surface/wrongReturnType.qn"
+
+    asyncExtractorHiddenAllocation:
+      "compileFail/surface/asyncExtractorHiddenAllocation.qn"
+
+    publicConformanceLeaksPrivateRole:
+      "compileFail/visibility/publicConformanceLeaksPrivateRole.qn"
+
+    internalConformanceOutsidePackage:
+      "compileFail/visibility/internalConformanceOutsidePackage.qn"
+
+    privateConformanceOutsideOwner:
+      "compileFail/visibility/privateConformanceOutsideOwner.qn"
+
+    packBoundViolation:
+      "compileFail/pack/packBoundViolation.qn"
+
+    duplicateCapabilityPack:
+      "compileFail/pack/duplicateCapabilityPack.qn"
+
+    missingCapabilityRole:
+      "compileFail/pack/missingCapabilityRole.qn"
+
+    missingAssociatedType:
+      "compileFail/associated/missingAssociatedType.qn"
+
+    wrongAssociatedConstType:
+      "compileFail/associated/wrongAssociatedConstType.qn"
+
+    publicAssociatedTypeLeak:
+      "compileFail/associated/publicAssociatedTypeLeak.qn"
+
+    wrongAssociatedSurfaceAccess:
+      "compileFail/associated/wrongAssociatedSurfaceAccess.qn"
+
+    ambiguousUnqualifiedRoleMember:
+      "compileFail/callResolution/ambiguousUnqualifiedRoleMember.qn"
+
+    implicitRoleObjectConversion:
+      "compileFail/callResolution/implicitRoleObjectConversion.qn"
+
+    namedArgumentAsPositional:
+      "compileFail/callResolution/namedArgumentAsPositional.qn"
+
+    defaultArgumentDuplicateSymbol:
+      "compileFail/callResolution/defaultArgumentDuplicateSymbol.qn"
+
+    immutableBuilderMutation:
+      "compileFail/callResolution/immutableBuilderMutation.qn"
+
+    middlewareNextMismatch:
+      "compileFail/callResolution/middlewareNextMismatch.qn"
+
+    sameSurfaceDuplicateSignature:
+      "compileFail/callResolution/sameSurfaceDuplicateSignature.qn"
+
+    sameSurfaceVisibilityWeaken:
+      "compileFail/callResolution/sameSurfaceVisibilityWeaken.qn"
+
+    directCallUsesRoleTable:
+      "compileFail/native/directCallUsesRoleTable.qn"
+
+    importNonExportedSymbol:
+      "compileFail/module/importNonExportedSymbol.qn"
+
+    reExportPrivateType:
+      "compileFail/module/reExportPrivateType.qn"
+
+    importAliasIdentityWrong:
+      "compileFail/module/importAliasIdentityWrong.qn"
+
+    conformanceNotExported:
+      "compileFail/module/conformanceNotExported.qn"
+
+    surfaceQualifierBypassesVisibility:
+      "compileFail/module/surfaceQualifierBypassesVisibility.qn"
+  }
+}

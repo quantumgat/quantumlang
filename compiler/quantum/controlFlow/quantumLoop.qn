@@ -1,0 +1,21 @@
+pub QuantumLoop {
+  profile: string
+  bounded: bool
+  targetSupported: bool
+  valid: bool
+}
+
+impl QuantumLoop {
+  pub QuantumLoop(profile: string, bounded: bool, targetSupported: bool) =
+    This {
+      profile
+      bounded
+      targetSupported
+      valid: profile != "" && bounded && targetSupported
+    }
+}
+
+impl view QuantumLoop {
+  pub supported => targetSupported
+  pub boundedLoop => bounded
+}

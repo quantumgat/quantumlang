@@ -1,0 +1,61 @@
+pub HirModule {
+  name: string
+  itemCount: i64
+  functionCount: i64
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl HirModule {
+  pub HirModule(name: string, itemCount: i64, functionCount: i64) =
+    This { name, itemCount, functionCount }
+
+  pub empty(name: string) =
+    This {
+      name
+      itemCount: 0
+      functionCount: 0
+    }
+
+  pub invalid(name: string) =
+    This {
+      name
+      itemCount: 0
+      functionCount: 0
+      diagnosticCode: "QHIR0201"
+    }
+
+  withItemCount(itemCount: i64) =
+    this {
+      itemCount
+    }
+
+  withFunctionCount(functionCount: i64) =
+    this {
+      functionCount
+    }
+
+  addItem() =
+    this {
+      itemCount: itemCount + 1
+    }
+
+  addFunction() =
+    this {
+      itemCount: itemCount + 1
+      functionCount: functionCount + 1
+    }
+}
+
+impl view HirModule {
+  pub valid => diagnosticCode == "" && validShape
+  pub validShape => name != "" && itemCount >= functionCount && functionCount >= 0
+  pub empty => itemCount == 0
+  pub hasFunctions => functionCount > 0
+  pub hasItems => itemCount > 0
+  pub typeItemCount => itemCount - functionCount
+  pub deterministicReady => deterministic && diagnosticCode == ""
+  pub readyForMir => deterministic && valid
+  pub lowerable => readyForMir
+  pub debugName => "hir.module.{name}"
+}

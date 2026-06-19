@@ -1,0 +1,26 @@
+module parser
+
+mod {
+  parser
+  itemParser
+  expressionParser
+  stmtParser
+  typeParser
+  recovery
+  precedence
+  hostParserCheck
+  sourceAnalysis
+  sourceParser
+}
+
+export {
+  parser.{Parser, ParseResult}
+  itemParser.ItemParser
+  expressionParser.ExprParser
+  stmtParser.StmtParser
+  typeParser.TypeParser
+  recovery.{ParseRecovery, RecoverySyncSet, ParserReplayDiagnostic, MissingTokenPlaceholder}
+  precedence.Precedence
+  hostParserCheck.{HostParserCheck}
+  sourceParser.SourceParser
+}

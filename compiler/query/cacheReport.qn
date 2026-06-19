@@ -1,0 +1,48 @@
+pub CacheReport {
+  revision: u64
+  queriesTotal: usize = 0
+  queriesGreen: usize = 0
+  queriesRed: usize = 0
+  cacheHits: usize = 0
+  cacheMisses: usize = 0
+  rejectReasons: usize = 0
+  workersRequested: usize = 1
+  workersUsedPeak: usize = 1
+}
+
+impl CacheReport {
+  pub empty(revision: u64) =
+    This { revision }
+
+  pub recordHit() -> This =
+    this {
+      queriesTotal: queriesTotal + 1
+      queriesGreen: queriesGreen + 1
+      cacheHits: cacheHits + 1
+    }
+
+  pub recordMiss() -> This =
+    this {
+      queriesTotal: queriesTotal + 1
+      queriesRed: queriesRed + 1
+      cacheMisses: cacheMisses + 1
+    }
+
+  pub recordReject() -> This =
+    this {
+      queriesTotal: queriesTotal + 1
+      queriesRed: queriesRed + 1
+      rejectReasons: rejectReasons + 1
+    }
+
+  pub withWorkers(requested: usize, usedPeak: usize) -> This =
+    this { workersRequested: requested, workersUsedPeak: usedPeak }
+}
+
+impl view CacheReport {
+  pub greenRatioKnown => queriesTotal > 0
+  pub allGreen => queriesTotal > 0 && queriesGreen == queriesTotal
+  pub anyRed => queriesRed > 0
+  pub cacheEffective => cacheHits > cacheMisses
+  pub parallelProof => workersRequested > 1 && workersUsedPeak > 1
+}

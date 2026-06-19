@@ -1,0 +1,19 @@
+pub MirBuilder {
+  nextId: i64
+}
+
+impl MirBuilder {
+  pub MirBuilder(nextId: i64) =
+    This { nextId }
+
+  pub empty() =
+    This { nextId: 0 }
+
+  allocateId() =
+    this { nextId: nextId + 1 }
+}
+
+impl view MirBuilder {
+  pub valid => validShape
+  pub validShape => nextId >= 0
+}

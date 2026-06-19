@@ -1,0 +1,71 @@
+pub enum BuildResultStatus {
+  Succeeded
+  Failed
+  Cancelled
+}
+
+pub GlobalBuildResult {
+  action: CacheHash256
+  metadata: CacheHash256
+  output: CacheHash256
+  diagnostics: CacheHash256
+  status: BuildResultStatus
+  packageIdentity: CacheHash256
+  targetIdentity: CacheHash256
+  profileIdentity: CacheHash256
+  workspaceHint: string = ""
+  outputHint: string = ""
+  schemaVersion: u64 = 1
+  projectBuildStampWritten: bool = false
+}
+
+impl view GlobalBuildResult {
+  pub identitiesValid: bool =>
+    action.valid &&
+    action.actionHash &&
+    metadata.valid &&
+    metadata.contentHash &&
+    output.valid &&
+    output.contentHash &&
+    diagnostics.valid &&
+    diagnostics.contentHash &&
+    packageIdentity.valid &&
+    packageIdentity.contentHash &&
+    targetIdentity.valid &&
+    targetIdentity.contentHash &&
+    profileIdentity.valid &&
+    profileIdentity.contentHash
+
+  pub globallyStored: bool =>
+    projectBuildStampWritten == false &&
+    schemaVersion > 0
+
+  pub successful: bool => status == BuildResultStatus.Succeeded
+
+  pub valid: bool =>
+    identitiesValid &&
+    globallyStored
+}
+
+pub GlobalBuildResultIndex {
+  actionIndex: CacheActionContentLink
+  result: GlobalBuildResult
+}
+
+impl view GlobalBuildResultIndex {
+  pub actionMatches: bool =>
+    actionIndex.action.digest == result.action.digest
+
+  pub metadataMatches: bool =>
+    actionIndex.content.digest == result.metadata.digest
+
+  pub globallyIndexed: bool =>
+    actionIndex.productKind == CacheProductKind.Metadata &&
+    actionMatches &&
+    metadataMatches
+
+  pub valid: bool =>
+    actionIndex.valid &&
+    result.valid &&
+    globallyIndexed
+}

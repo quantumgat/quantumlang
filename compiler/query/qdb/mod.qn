@@ -1,0 +1,39 @@
+module query::qdb
+
+mod {
+  sectionKind
+  section
+  header
+  queryRow
+  productRow
+  dependencyRow
+  commitState
+  commitRow
+  revisionState
+  revisionRow
+  journalEntryKind
+  journalEntry
+  recovery
+  journal
+  snapshot
+  handle
+}
+
+export {
+  sectionKind.{QdbSectionKind}
+  section.{QdbSection}
+  header.{QdbHeader}
+  queryRow.{QdbQueryRow}
+  productRow.{QdbProductRow}
+  dependencyRow.{QdbDependencyRow}
+  commitState.{QdbCommitState}
+  commitRow.{QdbCommitRow}
+  revisionState.{QdbRevisionState}
+  revisionRow.{QdbRevisionRow}
+  journalEntryKind.{QdbJournalEntryKind}
+  journalEntry.{QdbJournalEntry}
+  recovery.{QdbRecoveryAction, QdbRecoveryPlan}
+  journal.{QdbJournal}
+  snapshot.{QdbSnapshot}
+  handle.{QdbLoadMode, QdbHandle}
+}

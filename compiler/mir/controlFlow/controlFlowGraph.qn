@@ -1,0 +1,47 @@
+pub ControlFlowGraph {
+  bodyId: i64
+  regionCount: usize
+  edgeCount: usize
+  fingerprint: u64
+  entryNodeId: i64
+  exitNodeId: i64
+  deterministic: bool
+}
+
+pub ControlFlowEdge {
+  fromNodeId: i64
+  toNodeId: i64
+  reason: string
+  reachable: bool
+}
+
+impl ControlFlowGraph {
+  pub ControlFlowGraph(
+    bodyId: i64,
+    regionCount: usize,
+    edgeCount: usize,
+    fingerprint: u64,
+    entryNodeId: i64,
+    exitNodeId: i64
+  ) =
+    This {
+      bodyId
+      regionCount
+      edgeCount
+      fingerprint
+      entryNodeId
+      exitNodeId
+      deterministic: true
+    }
+
+  isDeterministic() = deterministic
+
+  hasEdges() = edgeCount > 0
+}
+
+impl ControlFlowEdge {
+  pub ControlFlowEdge(fromNodeId: i64, toNodeId: i64, reason: string, reachable: bool) =
+    This { fromNodeId, toNodeId, reason, reachable }
+
+  isReachable() = reachable
+}

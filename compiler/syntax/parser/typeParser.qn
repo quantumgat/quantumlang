@@ -1,0 +1,33 @@
+import core::{FileId}
+import source::{SourceSpan}
+
+pub TypeParser {
+  cursor: i64
+  fileId: FileId = {}
+}
+
+impl TypeParser {
+  pub TypeParser(fileId: FileId) =
+    This {
+      cursor: 0
+      fileId
+    }
+
+  pub TypeParser(fileId: u64) =
+    This(FileId(0, 0, fileId))
+
+  pub parseName() -> AstTypeRef {
+    let node = AstNode(40, AstNodeKind.TypeRef, SourceSpan(fileId, cursor, cursor + 1), 1)
+    return AstTypeRef(40, AstTypeRefKind.Name, node)
+  }
+
+  pub parseOptional() -> AstTypeRef {
+    let node = AstNode(41, AstNodeKind.TypeRef, SourceSpan(fileId, cursor, cursor + 1), 2)
+    return AstTypeRef(41, AstTypeRefKind.Optional, node)
+  }
+
+  pub parseGeneric() -> AstTypeRef {
+    let node = AstNode(42, AstNodeKind.TypeRef, SourceSpan(fileId, cursor, cursor + 1), 2)
+    return AstTypeRef(42, AstTypeRefKind.Generic, node)
+  }
+}

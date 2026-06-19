@@ -1,0 +1,21 @@
+pub QuantumCircuitBuilder {
+  operationCount: i64
+  qubitCount: i64
+  deterministicOrder: bool
+  valid: bool
+}
+
+impl QuantumCircuitBuilder {
+  pub QuantumCircuitBuilder(qubitCount: i64, operationCount: i64) =
+    This {
+      operationCount
+      qubitCount
+      deterministicOrder: true
+      valid: qubitCount >= 0 && operationCount >= 0
+    }
+}
+
+impl view QuantumCircuitBuilder {
+  pub deterministic => deterministicOrder
+  pub buildable => valid && deterministicOrder
+}

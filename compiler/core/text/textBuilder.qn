@@ -1,0 +1,32 @@
+pub TextBuilder {
+  value: string = ""
+  length: i64 = 0
+}
+
+impl TextBuilder {
+  pub TextBuilder() =
+    This {}
+
+  pub withCapacity(capacity: usize) =
+    This {}
+
+  pub append(value: string) -> Result<void, ByteError> {
+    this.value = "{this.value}{value}"
+    this.length = this.value.length()
+    return Ok(0)
+  }
+
+  pub append(value: TextView) -> Result<void, ByteError> {
+    return this.append(value.toText())
+  }
+
+  pub finish() -> string {
+    return this.value
+  }
+}
+
+impl view TextBuilder {
+  pub empty => this.length == 0
+  pub nonEmpty => this.length > 0
+  pub valid => this.length == this.value.length()
+}

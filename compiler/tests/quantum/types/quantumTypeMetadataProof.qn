@@ -1,0 +1,67 @@
+import compiler::quantum::{*}
+pub QuantumTypeMetadataProof {
+  qubitLinearNoClone: bool
+  qregCarriesQubits: bool
+  qresultIsClassicalMeasurement: bool
+  qfuncTargetGated: bool
+  qanyPreservesOwnership: bool
+  genericQuantumTypeValid: bool
+  valid: bool
+}
+
+pub quantumTypeMetadataProof() -> QuantumTypeMetadataProof {
+  let qubit = QubitType()
+  let qreg = QregType(true)
+  let qresult = QresultType()
+  let qfunc = QfuncType(true, false)
+  let qany = QanyType()
+  let qtype = QuantumType("qubit", true, true, "")
+
+  let qubitLinearNoClone = qubit.valid &&
+    qubit.linear &&
+    qubit.noClone &&
+    qubit.mustResetBeforeRelease
+
+  let qregCarriesQubits = qreg.valid &&
+    qreg.sizeKnown &&
+    qreg.elementType == "qubit" &&
+    qreg.noCloneElements &&
+    qreg.iterableByQfor
+
+  let qresultIsClassicalMeasurement = qresult.valid &&
+    qresult.classicalCarrier == "bool" &&
+    qresult.producedByMeasurement &&
+    qresult.collapsesState
+
+  let qfuncTargetGated = qfunc.valid &&
+    qfunc.pure &&
+    !qfunc.mayMeasure &&
+    qfunc.targetGated
+
+  let qanyPreservesOwnership = qany.valid &&
+    qany.preservesOwnership &&
+    qany.typeErased &&
+    qany.noClonePreserved
+
+  let genericQuantumTypeValid = qtype.valid &&
+    qtype.name == "qubit" &&
+    qtype.linear &&
+    qtype.resourceManaged
+
+  let valid = qubitLinearNoClone &&
+    qregCarriesQubits &&
+    qresultIsClassicalMeasurement &&
+    qfuncTargetGated &&
+    qanyPreservesOwnership &&
+    genericQuantumTypeValid
+
+  return QuantumTypeMetadataProof {
+    qubitLinearNoClone: qubitLinearNoClone,
+    qregCarriesQubits: qregCarriesQubits,
+    qresultIsClassicalMeasurement: qresultIsClassicalMeasurement,
+    qfuncTargetGated: qfuncTargetGated,
+    qanyPreservesOwnership: qanyPreservesOwnership,
+    genericQuantumTypeValid: genericQuantumTypeValid,
+    valid: valid,
+  }
+}

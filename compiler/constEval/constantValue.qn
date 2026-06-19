@@ -1,0 +1,38 @@
+import core::{TypeId}
+
+pub enum ConstantValueKind {
+  Integer
+  Boolean
+  Text
+  Unit
+}
+
+pub ConstantValue {
+  kind: ConstantValueKind
+  typeId: TypeId
+  integerValue: i64 = 0
+  booleanValue: bool = false
+  textValue: string = ""
+  deterministic: bool = true
+}
+
+impl ConstantValue {
+  pub integer(typeId: TypeId, value: i64) =
+    This { kind: ConstantValueKind.Integer, typeId, integerValue: value }
+
+  pub boolean(typeId: TypeId, value: bool) =
+    This { kind: ConstantValueKind.Boolean, typeId, booleanValue: value }
+
+  pub text(typeId: TypeId, value: string) =
+    This { kind: ConstantValueKind.Text, typeId, textValue: value }
+
+  pub unit(typeId: TypeId) =
+    This { kind: ConstantValueKind.Unit, typeId }
+}
+
+impl view ConstantValue {
+  pub valid: bool =>
+    typeId.id.valid &&
+    deterministic &&
+    (kind != ConstantValueKind.Text || textValue != "")
+}

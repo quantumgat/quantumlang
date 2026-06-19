@@ -1,0 +1,45 @@
+import core::{FileId}
+import source::{SourceSpan}
+
+pub Trivia {
+  kind: TriviaKind
+  text: string
+  span: SourceSpan = {}
+  preservesLineBreak: bool
+}
+
+pub enum TriviaKind {
+  Whitespace
+  LineComment
+  BlockComment
+  Newline
+  Unknown
+}
+
+impl Trivia {
+  pub Trivia(kind: TriviaKind, text: string, span: SourceSpan) =
+    This {
+      kind
+      text
+      span
+      preservesLineBreak: kind == TriviaKind.Newline || kind == TriviaKind.LineComment
+    }
+
+  pub Trivia(kind: TriviaKind, text: string, fileId: u64, start: i64, end: i64) =
+    This(kind, text, SourceSpan(FileId(0, 0, fileId), start, end))
+
+  pub none() =
+    This(TriviaKind.Unknown, "", 0, 0, 0)
+}
+
+impl view Trivia {
+  pub fileId => span.fileId.id.value
+  pub start => span.start
+  pub end => span.end
+  pub hasText => text != ""
+  pub isComment => kind == TriviaKind.LineComment || kind == TriviaKind.BlockComment
+  pub isWhitespace => kind == TriviaKind.Whitespace || kind == TriviaKind.Newline
+  pub valid => kind == TriviaKind.Unknown || span.rows.valid
+  pub length => span.rows.count
+  pub linePreserving => preservesLineBreak
+}

@@ -1,0 +1,32 @@
+pub MirTerminator {
+  kind: string
+  targetCount: i64
+  returns: bool
+  diagnosticCode: string = ""
+}
+
+impl MirTerminator {
+  pub MirTerminator(kind: string, targetCount: i64, returns: bool) =
+    This {
+      kind
+      targetCount
+      returns
+    }
+
+  pub isKnownKind(kind: string) -> bool {
+    kind == "return" || kind == "branch" || kind == "jump" || kind == "requireFail" || kind == "unreachable"
+  }
+}
+
+impl view MirTerminator {
+  pub valid => diagnosticCode == "" && validShape
+  pub isReturn => kind == "return"
+  pub isBranch => kind == "branch"
+  pub isJump => kind == "jump"
+  pub isRequireFail => kind == "requireFail"
+  pub isUnreachable => kind == "unreachable"
+  pub validShape => MirTerminator.isKnownKind(kind) && targetCount >= 0
+  pub exitsFunction => returns || isUnreachable || isRequireFail
+  pub hasTargets => targetCount > 0
+  pub lowerable => valid
+}

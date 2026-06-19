@@ -1,0 +1,37 @@
+pub sink<T> {
+  policy: CommunicationPolicy = {}
+  state: CommunicationState = CommunicationState.Open
+  acceptedCount: i64 = 0
+  rejectedCount: i64 = 0
+  closed: bool = false
+}
+
+impl sink<T> {
+  pub write(value: T) -> Result<void, CommunicationError>
+
+  pub tryWrite(value: T) -> Result<bool, CommunicationError>
+
+  pub close() -> Result<void, CommunicationError>
+
+  pub cancel() -> Result<void, CommunicationError>
+}
+
+impl view sink<T> {
+  pub writable: bool =>
+    state == CommunicationState.Open &&
+    closed == false
+
+  pub readable: bool => false
+
+  pub terminal: bool =>
+    closed ||
+    state == CommunicationState.Closed ||
+    state == CommunicationState.Cancelled ||
+    state == CommunicationState.Failed
+
+  pub valid: bool =>
+    policy.valid &&
+    acceptedCount >= 0 &&
+    rejectedCount >= 0 &&
+    (state == CommunicationState.Open || terminal)
+}

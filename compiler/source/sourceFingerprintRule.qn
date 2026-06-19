@@ -1,0 +1,20 @@
+pub SourceFingerprintRule {
+  fileIdStable: bool
+  contentHashRequired: bool
+  usedForCacheKeys: bool
+}
+
+impl SourceFingerprintRule {
+  pub SourceFingerprintRule() =
+    This {
+      fileIdStable: true,
+      contentHashRequired: true,
+      usedForCacheKeys: true,
+    }
+}
+
+impl view SourceFingerprintRule {
+  pub valid => fileIdStable &&
+    contentHashRequired &&
+    usedForCacheKeys
+}

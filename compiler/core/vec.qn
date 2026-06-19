@@ -1,0 +1,90 @@
+pub Vec<T> {
+  rows: Range<T> = {}
+  capacity: i64 = 0
+  owner: CompilerId = {}
+  generation: u64 = 0
+  mutable: bool = true
+}
+
+impl Vec<T> {
+  pub Vec(rows: Range<T>) -> This {
+    return This {
+      rows
+      capacity: rows.count
+    }
+  }
+
+  pub Vec(start: i64, count: i64) =
+    This {
+      rows: Range<T>(start, count)
+      capacity: count
+    }
+
+  pub Vec(count: i64) =
+    This {
+      rows: Range<T>(0, count)
+      capacity: count
+    }
+
+  pub fromRows(rows: Range<T>, capacity: i64, owner: CompilerId, generation: u64) -> This {
+    return This {
+      rows
+      capacity
+      owner
+      generation
+    }
+  }
+
+  pub Vec(start: i64, count: i64, owner: CompilerId, generation: u64) =
+    This {
+      rows: Range<T>(start, count)
+      capacity: count
+      owner
+      generation
+    }
+
+  pub Vec(count: i64, owner: CompilerId, generation: u64) =
+    This {
+      rows: Range<T>(0, count)
+      capacity: count
+      owner
+      generation
+    }
+
+  pub asSlice() -> Slice<T> {
+    return Slice<T>.borrowed(rows, owner, generation)
+  }
+
+  pub withRows(rows: Range<T>) -> This {
+    return this {
+      rows
+      capacity: rows.count
+    }
+  }
+
+  pub reserve(extra: i64) -> This {
+    return this {
+      capacity: capacity + extra
+    }
+  }
+}
+
+impl view Vec<T> {
+  pub start => rows.start
+
+  pub count => rows.count
+
+  pub end => rows.end
+
+  pub empty => rows.empty
+
+  pub nonEmpty => rows.nonEmpty
+
+  pub hasCapacity => capacity >= rows.count
+
+  pub hasOwner => owner.valid
+
+  pub appendSafe => mutable && hasCapacity
+
+  pub valid => rows.valid && capacity >= 0 && hasCapacity
+}

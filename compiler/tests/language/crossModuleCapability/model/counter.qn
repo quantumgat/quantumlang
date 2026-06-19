@@ -1,0 +1,32 @@
+pub CrossModuleCounter {
+  value: i64 = 0
+  label: string = ""
+}
+
+pub CrossModuleBox<T> {
+  value: T
+}
+
+pub role CounterReadable<T> {
+  current() -> i64
+}
+
+pub role CounterNamed<T> {
+  name() -> string
+}
+
+pub role CounterInternal<T> {
+  internalValue() -> i64
+}
+
+pub role CounterAuditable<T> {
+  auditValue() -> i64
+}
+
+pub role CounterDefaultPrivate<T> {
+  defaultPrivateValue() -> i64
+}
+
+pub role BoxReadable<T> {
+  boxCurrent() -> i64
+}

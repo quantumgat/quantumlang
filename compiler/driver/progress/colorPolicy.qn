@@ -1,0 +1,33 @@
+pub enum ColorMode {
+  Auto
+  Always
+  Never
+}
+
+pub ColorPolicy {
+  mode: ColorMode = ColorMode.Auto
+  capability: TerminalCapability = {}
+}
+
+impl ColorPolicy {
+  pub automatic(capability: TerminalCapability) =
+    This { capability }
+
+  pub always(capability: TerminalCapability) =
+    This { mode: ColorMode.Always, capability }
+
+  pub never(capability: TerminalCapability) =
+    This { mode: ColorMode.Never, capability }
+}
+
+impl view ColorPolicy {
+  pub enabled: bool => {
+    if mode == ColorMode.Always {
+      return true
+    }
+    if mode == ColorMode.Never {
+      return false
+    }
+    return capability.supportsColor
+  }
+}

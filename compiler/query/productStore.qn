@@ -1,0 +1,144 @@
+import storage::{CacheHash256, CacheProductKind}
+
+pub ProductStore {
+  root: string
+  products: Vec<StoredProduct> = []
+  hotProducts: Vec<HotProduct> = []
+  durableWrites: bool = true
+  lookups: usize = 0
+  writes: usize = 0
+  rejects: usize = 0
+}
+
+impl ProductStore {
+  pub init(root: string) =
+    This { root }
+
+  pub addProduct(product: StoredProduct) {
+    if product.valid {
+      products.push(product)
+    }
+  }
+
+  pub addHot(product: HotProduct) {
+    if product.usable {
+      hotProducts.push(product)
+    }
+  }
+
+  pub findProduct(content: CacheHash256) -> Option<StoredProduct> {
+    let row: i64 = 0
+    while row < products.count {
+      if products[row].address.content.digest == content.digest {
+        return Some(products[row])
+      }
+      row = row + 1
+    }
+    return None
+  }
+
+  pub findHot(content: CacheHash256) -> Option<HotProduct> {
+    let row: i64 = 0
+    while row < hotProducts.count {
+      if hotProducts[row].content.digest == content.digest {
+        return Some(hotProducts[row])
+      }
+      row = row + 1
+    }
+    return None
+  }
+
+  pub lookup(
+    key: QueryKey,
+    content: CacheHash256,
+    fingerprint: ProductFingerprint
+  ) -> ProductLookup {
+    let hotRow: i64 = 0
+    while hotRow < hotProducts.count {
+      let product = hotProducts[hotRow]
+      if product.content.digest == content.digest && product.usable {
+        return ProductLookup.hot(
+          key,
+          fingerprint.output,
+          ProductValidation.valid(fingerprint)
+        )
+      }
+      hotRow = hotRow + 1
+    }
+
+    let storedRow: i64 = 0
+    while storedRow < products.count {
+      let product = products[storedRow]
+      if product.address.content.digest == content.digest {
+        if product.valid {
+          return ProductLookup.global(
+            key,
+            product.address.globalPath,
+            fingerprint.output,
+            ProductValidation.valid(fingerprint)
+          )
+        }
+
+        return ProductLookup {
+          key
+          path: product.address.globalPath
+          source: ProductLookupSource.Rejected
+          content: fingerprint.output
+          found: true
+          validation: ProductValidation.reject(
+            ProductValidationState.Rejected,
+            fingerprint,
+            "stored-product-validation-failed"
+          )
+        }
+      }
+      storedRow = storedRow + 1
+    }
+
+    return ProductLookup.miss(
+      key,
+      "{root}/missing",
+      fingerprint
+    )
+  }
+
+  pub writeBack(
+    product: StoredProduct,
+    hot: HotProduct,
+    plan: ProductWriteBack
+  ) -> This {
+    if plan.durable == false || product.valid == false {
+      return this { rejects: rejects + 1 }
+    }
+
+    let next = this
+    next.products.push(product)
+    if hot.usable {
+      next.hotProducts.push(hot)
+    }
+    next.writes = writes + 1
+    return next
+  }
+
+  pub recordLookup() -> This =
+    this { lookups: lookups + 1 }
+
+  pub recordWrite() -> This =
+    this { writes: writes + 1 }
+
+  pub lookupPath(
+    content: CacheHash256,
+    kind: CacheProductKind,
+    bucket: string
+  ) =
+    ProductAddress.global(root, bucket, content, kind).globalPath
+}
+
+impl view ProductStore {
+  pub productsIndexed: usize => products.count
+  pub hotProductCount: usize => hotProducts.count
+  pub empty => products.count == 0
+  pub active => lookups > 0 || writes > 0
+  pub writeBackEnabled => durableWrites
+  pub hasHotProducts => hotProducts.count > 0
+}

@@ -1,0 +1,22 @@
+pub MirControlFlowGraph {
+  edgeCount: i64
+  blockCount: i64
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl MirControlFlowGraph {
+  pub MirControlFlowGraph(edgeCount: i64, blockCount: i64) =
+    This {
+      edgeCount
+      blockCount
+    }
+}
+
+impl view MirControlFlowGraph {
+  pub valid => diagnosticCode == "" && validGraph
+  pub validGraph => edgeCount >= 0 && blockCount >= 0 && deterministic
+  pub empty => edgeCount == 0 && blockCount == 0
+  pub connectedCandidate => blockCount <= 1 || edgeCount > 0
+  pub lowerable => valid && connectedCandidate
+}

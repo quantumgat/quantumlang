@@ -1,0 +1,21 @@
+module nameResolve
+
+mod {
+  symbol
+  symbolIndex
+  scope
+  scopeEntry
+  scopeArena
+  resolver
+  overloadSet
+}
+
+export {
+  symbol.{Symbol}
+  symbolIndex.{SymbolIndex}
+  scope.{Scope}
+  scopeEntry.{ScopeEntry}
+  scopeArena.{ScopeArena}
+  resolver.{Resolver}
+  overloadSet.{OverloadSet}
+}

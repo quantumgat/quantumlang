@@ -1,0 +1,37 @@
+pub enum ByteErrorKind {
+  EndOfInput
+  OutOfBounds
+  BufferOverflow
+  InvalidAlignment
+  InvalidEncoding
+  InvalidVarint
+  IntegerOverflow
+  UnsupportedOrder
+}
+
+pub ByteError {
+  kind: ByteErrorKind
+  offset: usize = 0
+  requested: usize = 0
+  available: usize = 0
+}
+
+impl ByteError {
+  pub ByteError(
+    kind: ByteErrorKind,
+    offset: usize,
+    requested: usize,
+    available: usize
+  ) =
+    This { kind, offset, requested, available }
+
+  pub ByteError(kind: ByteErrorKind) =
+    This { kind }
+}
+
+impl view ByteError {
+  pub eof => kind == ByteErrorKind.EndOfInput
+  pub bounds => kind == ByteErrorKind.OutOfBounds
+  pub overflow => kind == ByteErrorKind.BufferOverflow ||
+    kind == ByteErrorKind.IntegerOverflow
+}
