@@ -98,36 +98,37 @@ first, then become declared submodules only when the public API is ready.
 
 ```text
 quantumlang/
-  backend/         backend planning and native/quantum backend ownership
-  bootstrap/       compiler stage product records
-  buildSystem/     package build graph, cache, output, self-host flow
-  constEval/       compile-time evaluation
-  controlFlow/     control-flow facts and analysis
-  core/            bytes, text, hash, communication, common primitives
-  declaration/     declaration rows and stable identities
-  diagnostics/     diagnostic codes, reports, and contracts
-  driver/          command entry and compiler orchestration
-  frontend/        package frontend product construction
-  hir/             high-level IR
-  host/            host filesystem/process/native bridge
-  interface/       public compiler interface and qcap/qi/qidx APIs
-  layout/          layout and ABI planning
-  machine/         target, ABI, arch, object, capability models
-  mir/             middle IR
-  moduleSystem/    modules, imports, visibility, re-exports
-  monomorphize/    generic specialization ownership
-  nameResolve/     symbol and name lookup
-  optimize/        optimization ownership
-  package/         package resolution
-  platform/        host, OS, embedded, quantum platform models
-  quantum/         quantum types, IR, effects, resources, lowering, verify
-  query/           query engine and product replay
-  semantic/        semantic facts and checked source bridge
-  source/          source files, line maps, spans, fingerprints
-  storage/         persistent/cache storage
-  syntax/          lexer, token, parser, AST
-  tests/           compiler and language proof packages
-  typeSystem/      type catalog, checking, generic, inference, ownership
+    compiler/
+      backend/         backend planning and native/quantum backend ownership
+      bootstrap/       compiler stage product records
+      buildSystem/     package build graph, cache, output, self-host flow
+      constEval/       compile-time evaluation
+      controlFlow/     control-flow facts and analysis
+      core/            bytes, text, hash, communication, common primitives
+      declaration/     declaration rows and stable identities
+      diagnostics/     diagnostic codes, reports, and contracts
+      driver/          command entry and compiler orchestration
+      frontend/        package frontend product construction
+      hir/             high-level IR
+      host/            host filesystem/process/native bridge
+      interface/       public compiler interface and qcap/qi/qidx APIs
+      layout/          layout and ABI planning
+      machine/         target, ABI, arch, object, capability models
+      mir/             middle IR
+      moduleSystem/    modules, imports, visibility, re-exports
+      monomorphize/    generic specialization ownership
+      nameResolve/     symbol and name lookup
+      optimize/        optimization ownership
+      package/         package resolution
+      platform/        host, OS, embedded, quantum platform models
+      quantum/         quantum types, IR, effects, resources, lowering, verify
+      query/           query engine and product replay
+      semantic/        semantic facts and checked source bridge
+      source/          source files, line maps, spans, fingerprints
+      storage/         persistent/cache storage
+      syntax/          lexer, token, parser, AST
+      tests/           compiler and language proof packages
+      typeSystem/      type catalog, checking, generic, inference, ownership
 ```
 
 ## Compiler Pipeline
