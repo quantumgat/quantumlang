@@ -1,0 +1,142 @@
+import host::{CompilerIo}
+
+pub ExecutablePayload {
+  outputPath: string
+  payload: bytes = b""
+  payloadHash: string = ""
+  byteCount: usize = 0
+  executable: bool = false
+  commandMaterialization: bool = false
+  linkCommand: LinkCommand = {}
+  materializationReason: string = ""
+  diagnosticCode: string = ""
+}
+
+impl ExecutablePayload {
+  pub ExecutablePayload(
+    outputPath: string,
+    payload: bytes,
+    payloadHash: string,
+    byteCount: usize,
+    executable: bool
+  ) =
+    This {
+      outputPath
+      payload
+      payloadHash
+      byteCount
+      executable
+    }
+
+  pub pending(entry: LinkCacheEntry) =
+    This {
+      outputPath: entry.executablePath
+      payloadHash: entry.checksum
+      byteCount: 0
+      executable: false
+      materializationReason: "qtlc1-executable-payload-writer-missing"
+      diagnosticCode: match entry.valid {
+        true => ""
+        false => "QNATIVE0852"
+      }
+    }
+
+  pub fromPlan(plan: ExecutablePayloadPlan) =
+    This {
+      outputPath: plan.outputPath
+      payloadHash: plan.executableHash
+      byteCount: 0
+      executable: false
+      materializationReason: plan.blockReason
+      diagnosticCode: match plan.valid {
+        true => ""
+        false => "QNATIVE0854"
+      }
+    }
+
+  pub fromLinkCommand(
+    plan: ExecutablePayloadPlan,
+    command: LinkCommand
+  ) =
+    This {
+      outputPath: plan.outputPath
+      payloadHash: plan.executableHash
+      byteCount: 0
+      executable: true
+      commandMaterialization: true
+      linkCommand: command
+      materializationReason: ""
+      diagnosticCode: match plan.valid && command.valid {
+        true => ""
+        false => "QNATIVE0855"
+      }
+    }
+
+  pub fromBytes(outputPath: string, payload: bytes, payloadHash: string) =
+    This {
+      outputPath
+      payload
+      payloadHash
+      byteCount: payload.length()
+      executable: true
+      commandMaterialization: false
+      materializationReason: ""
+      diagnosticCode: match outputPath != "" && payloadHash != "" && payload.length() > 0 {
+        true => ""
+        false => "QNATIVE0853"
+      }
+    }
+}
+
+context ExecutablePayload {
+  pub writeStatus(io: CompilerIo) -> i64 {
+    if valid == false {
+      return -250
+    }
+    if payloadReady == false {
+      return -251
+    }
+    if commandMaterialization {
+      let linkStatus = io.run(linkCommand.commandLine)
+      if linkStatus != 0 {
+        return -253
+      }
+      return 0
+    }
+    if io.atomicWriteBytes(outputPath, payload) != 0 {
+      return -252
+    }
+    return 0
+  }
+
+  pub write(io: CompilerIo) -> bool {
+    return writeStatus(io) == 0
+  }
+}
+
+impl view ExecutablePayload {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    outputPath != "" &&
+    payloadHash != ""
+
+  pub payloadReady: bool =>
+    valid &&
+    executable &&
+    (byteCount > 0 || commandMaterialization)
+
+  pub runnable: bool => payloadReady
+
+  pub payloadId: string =>
+    "executable-payload:{outputPath}:{payloadHash}:{byteCount}:{executable}:{commandMaterialization}:{linkCommand.commandHash}"
+
+  pub statusText: string => match true {
+    valid == false => diagnosticCode
+    payloadReady && commandMaterialization => "link-command-ready"
+    payloadReady => "payload-ready"
+    materializationReason != "" => materializationReason
+    _ => "payload-not-ready"
+  }
+
+  pub debugName: string => "executable.payload.{outputPath}.{byteCount}"
+}

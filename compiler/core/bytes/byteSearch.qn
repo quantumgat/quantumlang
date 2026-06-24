@@ -1,0 +1,23 @@
+pub extend ByteView {
+  pub find(value: byte) -> i64
+
+  pub findFrom(value: byte, start: usize) -> i64
+
+  pub findAny(a: byte, b: byte) -> i64
+
+  pub findAny(a: byte, b: byte, c: byte) -> i64
+
+  pub rfind(value: byte) -> i64
+
+  pub contains(value: byte) -> bool
+
+  pub startsWith(prefix: ByteView) -> bool
+
+  pub endsWith(suffix: ByteView) -> bool
+}
+
+pub extend ByteCursor {
+  pub readUntil(value: byte) -> Result<ByteView, ByteError>
+
+  pub takeWhile(value: byte) -> Result<ByteView, ByteError>
+}

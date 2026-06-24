@@ -1,0 +1,40 @@
+pub SymbolEmitter {
+  symbolName: string
+  sectionName: string
+  offset: i64
+  byteCount: i64
+  global: bool = true
+  diagnosticCode: string = ""
+}
+
+impl SymbolEmitter {
+  pub SymbolEmitter(symbolName: string, sectionName: string, offset: i64, byteCount: i64) =
+    This {
+      symbolName
+      sectionName
+      offset
+      byteCount
+    }
+
+  pub entry(symbolName: string, byteCount: i64) =
+    This(symbolName, ".text", 0, byteCount)
+
+  pub symbol() -> ObjectSymbol {
+    if global {
+      return ObjectSymbol.function(symbolName, sectionName, offset, byteCount)
+    }
+    return ObjectSymbol.localFunction(symbolName, sectionName, offset, byteCount)
+  }
+}
+
+impl view SymbolEmitter {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    symbolName != "" &&
+    sectionName != "" &&
+    offset >= 0 &&
+    byteCount >= 0
+
+  pub linkVisible: bool => valid && global
+  pub debugName: string => "emit.symbol.{symbolName}.{sectionName}"
+}

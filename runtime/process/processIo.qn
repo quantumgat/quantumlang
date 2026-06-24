@@ -1,0 +1,16 @@
+pub ProcessIo {
+  stdoutName: string = "stdout"
+  stderrName: string = "stderr"
+  stdinName: string = "stdin"
+  textOutput: bool = true
+}
+
+impl ProcessIo {
+  pub standard() =
+    This {}
+}
+
+impl view ProcessIo {
+  pub valid: bool => stdoutName != "" && stderrName != "" && stdinName != ""
+  pub writable: bool => valid && textOutput
+}

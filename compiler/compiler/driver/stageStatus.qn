@@ -1,0 +1,73 @@
+pub StageStatus {
+  pub value: string
+}
+
+impl StageStatus {
+  pub StageStatus(value: string) =
+    This {
+      value
+    }
+
+  pub skipped() = This("skipped")
+
+  pub checked() = This("checked")
+
+  pub failed() = This("failed")
+
+  pub ok() = This("ok")
+
+  pub manifestMissing() = This("failed:manifest-missing")
+
+  pub sourceRootMissing() = This("failed:source-root-missing")
+
+  pub appMainMissing() = This("failed:app-main-missing")
+
+  pub manifestInvalid() = This("failed:manifest-invalid")
+
+  pub mainSourceMissingMain() = This("failed:main-source-missing-main")
+
+  pub mainSourceImportStyle() = This("failed:main-source-import-style")
+
+  pub mainSourceHostCheck() = This("failed:main-source-host-check")
+
+  pub sourceChecked() = This("checked:real-main-source")
+
+  pub sourceFrontendChecked() = This("checked:qtlc1-all-source")
+
+  pub sourceFrontendFailed() = This("failed:qtlc1-all-source")
+
+  pub lexerChecked() = This("checked:real-main-lexer")
+
+  pub lexerFrontendChecked() = This("checked:qtlc1-all-lexer")
+
+  pub lexerFrontendFailed() = This("failed:qtlc1-all-lexer")
+
+  pub lexerFailed() = This("failed:real-main-lexer")
+
+  pub parserChecked() = This("checked:real-main-parser")
+
+  pub parserFrontendChecked() = This("checked:qtlc1-all-parser")
+
+  pub parserFrontendFailed() = This("failed:qtlc1-all-parser")
+
+  pub parserFailed() = This("failed:real-main-parser")
+
+  pub typecheckFrontendChecked() = This("checked:qtlc1-typecheck")
+
+  pub typecheckFrontendFailed() = This("failed:qtlc1-typecheck")
+}
+
+impl view StageStatus {
+  pub checkedStatus => value == "checked" ||
+    value == "checked:real-main-source" ||
+    value == "checked:real-main-lexer" ||
+    value == "checked:real-main-parser" ||
+    value == "checked:qtlc1-all-source" ||
+    value == "checked:qtlc1-all-lexer" ||
+    value == "checked:qtlc1-all-parser" ||
+    value == "checked:qtlc1-typecheck"
+
+  pub failedStatus => value == "failed" || value.startsWith("failed:")
+
+  pub okStatus => value == "ok"
+}

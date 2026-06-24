@@ -1,0 +1,15 @@
+impl HttpCtx<...Caps> : pub HealthSignal<HttpCtx<...Caps>> {
+  healthy() -> bool {
+    return request.valid
+  }
+}
+
+context HttpCtx<...Caps> : pub HealthSignal<HttpCtx<...Caps>> {
+  healthy() -> bool {
+    return request.valid && slots.valid
+  }
+}
+
+pub ambiguous(ctx: HttpCtx<AuthUser>) -> bool {
+  return ctx.healthy()
+}

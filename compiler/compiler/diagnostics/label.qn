@@ -1,0 +1,48 @@
+import core::{FileId}
+import source::{SourceSpan}
+
+pub DiagnosticLabel {
+  span: SourceSpan = {}
+  text: string
+  primary: bool = false
+}
+
+impl DiagnosticLabel {
+  pub DiagnosticLabel(span: SourceSpan, text: string) =
+    This { span, text }
+
+  pub DiagnosticLabel(fileId: u64, start: i64, end: i64, text: string) =
+    This(SourceSpan(FileId(0, 0, fileId), start, end), text)
+
+  pub primary(span: SourceSpan, text: string) =
+    This { span, text, primary: true }
+
+  pub primary(fileId: u64, start: i64, end: i64, text: string) =
+    This.primary(SourceSpan(FileId(0, 0, fileId), start, end), text)
+
+  pub secondary(span: SourceSpan, text: string) =
+    This { span, text }
+
+  pub secondary(fileId: u64, start: i64, end: i64, text: string) =
+    This.secondary(SourceSpan(FileId(0, 0, fileId), start, end), text)
+}
+
+impl view DiagnosticLabel {
+  pub fileId => span.fileId.id.value
+
+  pub start => span.start
+
+  pub end => span.end
+
+  pub valid => span.valid && text != ""
+
+  pub primaryLabel => primary
+
+  pub secondaryLabel => primary == false
+
+  pub spanLength => span.length
+
+  pub emptySpan => start == end
+
+  pub spanKey => "{fileId}:{start}:{end}"
+}

@@ -1,0 +1,259 @@
+import frontend::{FrontendProduct}
+import backend::{
+  InputContract,
+  SourceUnitInput,
+  MirInput,
+  TypeFactInput,
+  OwnershipInput,
+  Layout,
+  ObjectStage,
+  LinkStage,
+  Pipeline
+}
+
+pub enum CompilerStageProductStatus {
+  Pending
+  Ready
+  Blocked
+  Failed
+}
+
+pub CompilerStageProduct {
+  name: string
+  kind: string
+  status: CompilerStageProductStatus
+  fingerprint: string = ""
+  path: string = ""
+  reason: string = ""
+}
+
+impl CompilerStageProduct {
+  pub ready(name: string, kind: string, fingerprint: string, path: string) =
+    This {
+      name
+      kind
+      status: CompilerStageProductStatus.Ready
+      fingerprint
+      path
+    }
+
+  pub pending(name: string, kind: string, reason: string) =
+    This {
+      name
+      kind
+      status: CompilerStageProductStatus.Pending
+      reason
+    }
+
+  pub blocked(name: string, kind: string, reason: string) =
+    This {
+      name
+      kind
+      status: CompilerStageProductStatus.Blocked
+      reason
+    }
+
+  pub failed(name: string, kind: string, reason: string) =
+    This {
+      name
+      kind
+      status: CompilerStageProductStatus.Failed
+      reason
+    }
+}
+
+impl view CompilerStageProduct {
+  pub ready => status == CompilerStageProductStatus.Ready
+  pub pending => status == CompilerStageProductStatus.Pending
+  pub blocked => status == CompilerStageProductStatus.Blocked
+  pub failed => status == CompilerStageProductStatus.Failed
+  pub deterministic => fingerprint != "" || pending
+  pub materialized => ready && path != ""
+
+  pub statusText: string => match true {
+    ready => "ready"
+    pending => "pending"
+    blocked => "blocked"
+    failed => "failed"
+    _ => "unknown"
+  }
+
+  pub summary => "{kind}:{statusText}:{name}"
+}
+
+pub CompilerStagePipeline {
+  source: CompilerStageProduct
+  hir: CompilerStageProduct
+  mir: CompilerStageProduct
+  object: CompilerStageProduct
+  link: CompilerStageProduct
+  nativePipeline: Pipeline
+  typedNodeCount: i64 = 0
+  hirNodeCount: i64 = 0
+  typeFactCount: i64 = 0
+}
+
+impl CompilerStagePipeline {
+  pub forNativeObjects(
+    frontend: FrontendProduct,
+    sourceValidated: bool,
+    typedNodeCount: i64,
+    typeFactCount: i64
+  ) -> This {
+    let checkedProducts =
+      sourceValidated &&
+      typedNodeCount > 0 &&
+      typeFactCount > 0
+    let source = CompilerStageProduct.ready(
+      "checked-source",
+      "source",
+      "source-product-ready",
+      frontend.target
+    )
+    let backendInput = InputContract(
+      SourceUnitInput(
+        frontend.target,
+        frontend.source.fileCount,
+        frontend.declarations.recordCount,
+        frontend.ast.product.nodeCount
+      ),
+      MirInput(
+        frontend.declarations.functionCount,
+        0,
+        0,
+        frontend.typecheckTypedNodeCount,
+        0
+      ),
+      TypeFactInput(
+        frontend.declarations.typeCount,
+        frontend.declarations.functionCount,
+        frontend.declarations.behavioralCount,
+        frontend.typecheckTypedNodeCount,
+        frontend.typecheckContextCount,
+        frontend.typecheckFactCount
+      ),
+      OwnershipInput(0, 0, 0, 0, 0, true, sourceValidated)
+    )
+    let nativePlan = ObjectStage.fromContract(backendInput)
+    let linkPlan = LinkStage.fromObjectStage(nativePlan)
+    let pipeline = Pipeline.fromStages(nativePlan, linkPlan)
+    let stageLayout = Layout.forPackage(frontend.target, "qtlc2", "debug")
+    This {
+      source
+      hir: match checkedProducts {
+        true => CompilerStageProduct.ready(
+          "hir-lowering",
+          "hir",
+          "hir:{frontend.typecheckTypedNodeCount}:{frontend.typecheckContextCount}",
+          stageLayout.artifactPath("hir")
+        )
+        false => CompilerStageProduct.blocked(
+          "hir-lowering",
+          "hir",
+          "checked-type-products-invalid"
+        )
+      }
+      mir: match checkedProducts {
+        true => CompilerStageProduct.ready(
+          "mir-lowering",
+          "mir",
+          "mir:{frontend.ast.product.nodeCount}:{frontend.typecheckFactCount}",
+          stageLayout.artifactPath("mir")
+        )
+        false => CompilerStageProduct.blocked(
+          "mir-lowering",
+          "mir",
+          "checked-type-products-invalid"
+        )
+      }
+      object: match true {
+        checkedProducts && nativePlan.valid => CompilerStageProduct.ready(
+          "native-object-units",
+          "object",
+          nativePlan.fingerprint,
+          nativePlan.outputPath
+        )
+        checkedProducts == false => CompilerStageProduct.blocked(
+          "native-object-units",
+          "object",
+          "checked-type-products-invalid"
+        )
+        _ => CompilerStageProduct.blocked("native-object-units", "object", "native-object-plan-invalid")
+      }
+      link: match true {
+        checkedProducts && linkPlan.valid && pipeline.bridgeReady => CompilerStageProduct.ready(
+          "linked-qtlc2",
+          "link",
+          pipeline.result.resultHash,
+          pipeline.result.outputPath
+        )
+        checkedProducts == false => CompilerStageProduct.blocked(
+          "linked-qtlc2",
+          "link",
+          "checked-type-products-invalid"
+        )
+        _ => CompilerStageProduct.blocked("linked-qtlc2", "link", "qtlc1-link-plan-invalid")
+      }
+      nativePipeline: pipeline
+      typedNodeCount
+      hirNodeCount: typedNodeCount
+      typeFactCount
+    }
+  }
+
+  pub blockedBySource(target: string, sourceStatus: string) =
+    This {
+      source: CompilerStageProduct.failed("checked-source", "source", sourceStatus)
+      hir: CompilerStageProduct.blocked("hir-lowering", "hir", "source-check-failed")
+      mir: CompilerStageProduct.blocked("mir-lowering", "mir", "source-check-failed")
+      object: CompilerStageProduct.blocked("native-object-units", "object", "source-check-failed")
+      link: CompilerStageProduct.blocked("linked-qtlc2", "link", "source-check-failed")
+      nativePipeline: Pipeline()
+    }
+
+}
+
+impl view CompilerStagePipeline {
+  pub readyForMaterialization: bool => {
+    source.status == CompilerStageProductStatus.Ready &&
+      hir.status == CompilerStageProductStatus.Ready &&
+      mir.status == CompilerStageProductStatus.Ready &&
+      object.status == CompilerStageProductStatus.Ready &&
+      link.status == CompilerStageProductStatus.Ready &&
+      nativePipeline.bridgeReady &&
+      typedNodeCount > 0 &&
+      hirNodeCount == typedNodeCount &&
+      typeFactCount > 0
+  }
+
+  pub sourceReady => source.ready
+  pub hirReady => hir.ready
+  pub mirReady => mir.ready
+  pub objectReady => object.ready
+  pub linkReady => link.ready
+  pub nativePipelineReady => nativePipeline.bridgeReady
+  pub typedHirReady =>
+    typedNodeCount > 0 &&
+    hirNodeCount == typedNodeCount
+  pub deterministicProductsReady =>
+    sourceReady &&
+    hirReady &&
+    typedHirReady &&
+    mirReady &&
+    objectReady &&
+    linkReady &&
+    nativePipelineReady
+  pub buildable => sourceReady
+  pub outputPath => nativePipeline.result.outputPath
+  pub statusText: string => match true {
+    deterministicProductsReady => "ready"
+    sourceReady && hirReady && mirReady && objectReady => "pending-link-qtlc1-builder"
+    sourceReady && hirReady && mirReady => "pending-native-qtlc1-builder"
+    sourceReady && hirReady => "pending-mir-qtlc1-builder"
+    sourceReady => "pending-real-qtlc1-builder"
+    _ => "blocked"
+  }
+
+  pub summary =>
+    "{source.summary} {hir.summary} {mir.summary} {object.summary} {link.summary}"
+}

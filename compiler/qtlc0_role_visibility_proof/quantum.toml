@@ -1,0 +1,12 @@
+[package]
+name = "qtlc0_role_visibility_proof"
+version = "0.1.0"
+edition = "2026"
+
+[source]
+root = "src"
+
+[targets.app]
+kind = "bin"
+main = "src/main.qn"
+backend = "native"

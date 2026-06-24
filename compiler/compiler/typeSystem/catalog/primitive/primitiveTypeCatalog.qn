@@ -1,0 +1,200 @@
+pub primitiveTypeCount() -> usize {
+  return 22
+}
+
+pub isPrimitiveTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "void" ||
+    canonical == "bool" ||
+    canonical == "char" ||
+    canonical == "byte" ||
+    isPrimitiveSignedIntegerTypeName(canonical) ||
+    isPrimitiveUnsignedIntegerTypeName(canonical) ||
+    isPrimitiveFloatTypeName(canonical)
+}
+
+pub isPrimitiveScalarTypeName(name: string) -> bool {
+  return isPrimitiveTypeName(name)
+}
+
+pub primitiveTypeFamily(name: string) -> PrimitiveTypeFamily {
+  let canonical = canonicalTypeAliasName(name)
+  if canonical == "void" {
+    return PrimitiveTypeFamily.Void
+  }
+  if canonical == "bool" {
+    return PrimitiveTypeFamily.Bool
+  }
+  if canonical == "char" {
+    return PrimitiveTypeFamily.Char
+  }
+  if canonical == "byte" {
+    return PrimitiveTypeFamily.Byte
+  }
+  if isPrimitiveSignedIntegerTypeName(canonical) {
+    return PrimitiveTypeFamily.SignedInteger
+  }
+  if isPrimitiveUnsignedIntegerTypeName(canonical) {
+    return PrimitiveTypeFamily.UnsignedInteger
+  }
+  if isPrimitiveFloatTypeName(canonical) {
+    return PrimitiveTypeFamily.Float
+  }
+  return PrimitiveTypeFamily.Unknown
+}
+
+pub isPrimitiveIntegerTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return isPrimitiveSignedIntegerTypeName(canonical) ||
+    isPrimitiveUnsignedIntegerTypeName(canonical)
+}
+
+pub isPrimitiveSignedIntegerTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "i8" || canonical == "i16" || canonical == "i32" ||
+    canonical == "i64" || canonical == "i128" || canonical == "i256" ||
+    canonical == "isize"
+}
+
+pub isPrimitiveUnsignedIntegerTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "u8" || canonical == "u16" || canonical == "u32" ||
+    canonical == "u64" || canonical == "u128" || canonical == "u256" ||
+    canonical == "usize"
+}
+
+pub isPrimitiveWideIntegerTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "i128" || canonical == "u128" ||
+    canonical == "i256" || canonical == "u256"
+}
+
+pub isPrimitivePointerWidthIntegerTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "isize" || canonical == "usize"
+}
+
+pub primitiveIntegerBitWidth(name: string) -> usize {
+  let canonical = canonicalTypeAliasName(name)
+  if canonical == "i8" || canonical == "u8" {
+    return 8
+  }
+  if canonical == "i16" || canonical == "u16" {
+    return 16
+  }
+  if canonical == "i32" || canonical == "u32" {
+    return 32
+  }
+  if canonical == "i64" || canonical == "u64" {
+    return 64
+  }
+  if canonical == "i128" || canonical == "u128" {
+    return 128
+  }
+  if canonical == "i256" || canonical == "u256" {
+    return 256
+  }
+  return 0
+}
+
+pub isPrimitiveFloatTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "f16" || canonical == "f32" ||
+    canonical == "f64" || canonical == "f128"
+}
+
+pub primitiveFloatBitWidth(name: string) -> usize {
+  let canonical = canonicalTypeAliasName(name)
+  if canonical == "f16" {
+    return 16
+  }
+  if canonical == "f32" {
+    return 32
+  }
+  if canonical == "f64" {
+    return 64
+  }
+  if canonical == "f128" {
+    return 128
+  }
+  return 0
+}
+
+pub primitiveNumericBitWidth(name: string) -> usize {
+  let integerWidth = primitiveIntegerBitWidth(name)
+  if integerWidth != 0 {
+    return integerWidth
+  }
+  return primitiveFloatBitWidth(name)
+}
+
+pub primitiveTypeFact(name: string) -> PrimitiveTypeFact {
+  let canonical = canonicalTypeAliasName(name)
+  if canonical == "void" {
+    return PrimitiveTypeFact { name: canonical, family: Void, alignBytes: 1, abiReturn: Void, valid: true }
+  }
+  if canonical == "bool" {
+    return PrimitiveTypeFact { name: canonical, family: Bool, bitCount: 1, sizeBytes: 1, alignBytes: 1, abiReturn: Register, valid: true }
+  }
+  if canonical == "char" {
+    return PrimitiveTypeFact { name: canonical, family: Char, bitCount: 32, sizeBytes: 4, alignBytes: 4, abiReturn: Register, valid: true }
+  }
+  if canonical == "byte" {
+    return PrimitiveTypeFact { name: canonical, family: Byte, bitCount: 8, sizeBytes: 1, alignBytes: 1, abiReturn: Register, valid: true }
+  }
+  if canonical == "i8" {
+    return PrimitiveTypeFact { name: canonical, family: SignedInteger, bitCount: 8, signed: true, sizeBytes: 1, alignBytes: 1, abiReturn: Register, valid: true }
+  }
+  if canonical == "i16" {
+    return PrimitiveTypeFact { name: canonical, family: SignedInteger, bitCount: 16, signed: true, sizeBytes: 2, alignBytes: 2, abiReturn: Register, valid: true }
+  }
+  if canonical == "i32" {
+    return PrimitiveTypeFact { name: canonical, family: SignedInteger, bitCount: 32, signed: true, sizeBytes: 4, alignBytes: 4, abiReturn: Register, valid: true }
+  }
+  if canonical == "i64" {
+    return PrimitiveTypeFact { name: canonical, family: SignedInteger, bitCount: 64, signed: true, sizeBytes: 8, alignBytes: 8, abiReturn: Register, valid: true }
+  }
+  if canonical == "i128" {
+    return PrimitiveTypeFact { name: canonical, family: SignedInteger, bitCount: 128, signed: true, sizeBytes: 16, alignBytes: 16, abiReturn: Sret, valid: true }
+  }
+  if canonical == "i256" {
+    return PrimitiveTypeFact { name: canonical, family: SignedInteger, bitCount: 256, signed: true, sizeBytes: 32, alignBytes: 16, abiReturn: Sret, targetGated: true, valid: true }
+  }
+  if canonical == "isize" {
+    return PrimitiveTypeFact { name: canonical, family: SignedInteger, signed: true, pointerSized: true, abiReturn: PointerSized, valid: true }
+  }
+  if canonical == "u8" {
+    return PrimitiveTypeFact { name: canonical, family: UnsignedInteger, bitCount: 8, sizeBytes: 1, alignBytes: 1, abiReturn: Register, valid: true }
+  }
+  if canonical == "u16" {
+    return PrimitiveTypeFact { name: canonical, family: UnsignedInteger, bitCount: 16, sizeBytes: 2, alignBytes: 2, abiReturn: Register, valid: true }
+  }
+  if canonical == "u32" {
+    return PrimitiveTypeFact { name: canonical, family: UnsignedInteger, bitCount: 32, sizeBytes: 4, alignBytes: 4, abiReturn: Register, valid: true }
+  }
+  if canonical == "u64" {
+    return PrimitiveTypeFact { name: canonical, family: UnsignedInteger, bitCount: 64, sizeBytes: 8, alignBytes: 8, abiReturn: Register, valid: true }
+  }
+  if canonical == "u128" {
+    return PrimitiveTypeFact { name: canonical, family: UnsignedInteger, bitCount: 128, sizeBytes: 16, alignBytes: 16, abiReturn: Sret, valid: true }
+  }
+  if canonical == "u256" {
+    return PrimitiveTypeFact { name: canonical, family: UnsignedInteger, bitCount: 256, sizeBytes: 32, alignBytes: 16, abiReturn: Sret, targetGated: true, valid: true }
+  }
+  if canonical == "usize" {
+    return PrimitiveTypeFact { name: canonical, family: UnsignedInteger, pointerSized: true, abiReturn: PointerSized, valid: true }
+  }
+  if canonical == "f16" {
+    return PrimitiveTypeFact { name: canonical, family: Float, bitCount: 16, sizeBytes: 2, alignBytes: 2, abiReturn: Sret, targetGated: true, valid: true }
+  }
+  if canonical == "f32" {
+    return PrimitiveTypeFact { name: canonical, family: Float, bitCount: 32, sizeBytes: 4, alignBytes: 4, abiReturn: Register, valid: true }
+  }
+  if canonical == "f64" {
+    return PrimitiveTypeFact { name: canonical, family: Float, bitCount: 64, sizeBytes: 8, alignBytes: 8, abiReturn: Register, valid: true }
+  }
+  if canonical == "f128" {
+    return PrimitiveTypeFact { name: canonical, family: Float, bitCount: 128, sizeBytes: 16, alignBytes: 16, abiReturn: Sret, targetGated: true, valid: true }
+  }
+  return PrimitiveTypeFact {}
+}

@@ -1,0 +1,49 @@
+pub RuntimeModel {
+  name: string
+  libcName: string = ""
+  dynamicLoader: string = ""
+  hosted: bool
+  valid: bool
+}
+
+impl RuntimeModel {
+  pub RuntimeModel(name: string, libcName: string, dynamicLoader: string, hosted: bool) =
+    This {
+      name
+      libcName
+      dynamicLoader
+      hosted
+      valid: name != ""
+    }
+
+  pub glibc() =
+    This("glibc", "glibc", "ld-linux", true)
+
+  pub musl() =
+    This("musl", "musl", "ld-musl", true)
+
+  pub msvc() =
+    This("msvc", "msvcrt", "windows-loader", true)
+
+  pub mingw() =
+    This("mingw", "mingw", "windows-loader", true)
+
+  pub darwin() =
+    This("darwin", "libSystem", "dyld", true)
+
+  pub bsdLibc() =
+    This("bsd-libc", "libc", "rtld", true)
+
+  pub bareMetal() =
+    This("bare-metal", "", "", false)
+
+  pub wasm() =
+    This("wasm", "", "", false)
+}
+
+impl view RuntimeModel {
+  pub freestanding => hosted == false
+  pub hasLibc => libcName != ""
+  pub hasDynamicLoader => dynamicLoader != ""
+  pub linkable => valid
+}

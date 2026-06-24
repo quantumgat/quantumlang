@@ -1,0 +1,9 @@
+pub proof_string() -> i64 {
+  let text: string = "Quantum"
+  if text == "" { return 11 }
+  if text.length() == 0 { return 12 }
+  if text.startsWith("Qua") == false { return 13 }
+  if text.contains("tum") == false { return 14 }
+  println("string ok: {text}")
+  return 0
+}

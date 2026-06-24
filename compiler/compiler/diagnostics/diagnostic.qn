@@ -1,0 +1,34 @@
+pub Diagnostic {
+  code: DiagnosticCode
+  primaryLabel: DiagnosticLabel
+  message: string
+  severity: DiagnosticSeverity
+}
+
+impl Diagnostic {
+  pub Diagnostic(
+    code: DiagnosticCode,
+    primaryLabel: DiagnosticLabel,
+    message: string,
+    severity: DiagnosticSeverity
+  ) =
+    This { code, primaryLabel, message, severity }
+}
+
+impl view Diagnostic {
+  pub hasCode => code.valid
+
+  pub hasPrimaryLabel => primaryLabel.primary && primaryLabel.valid
+
+  pub hasMessage => message != ""
+
+  pub error => severity == DiagnosticSeverity.Error || severity == DiagnosticSeverity.Fatal
+
+  pub warning => severity == DiagnosticSeverity.Warning
+
+  pub blocking => error
+
+  pub renderable => hasPrimaryLabel && hasMessage
+
+  pub valid => renderable
+}

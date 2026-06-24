@@ -1,0 +1,172 @@
+pub Buffer<T> {
+  value: T
+  len: i64 = 0
+  cap: i64 = 0
+  generation: u64 = 0
+  released: bool = false
+}
+
+impl Buffer<T> {
+  pub Buffer(value: T, cap: i64) =
+    This {
+      value
+      len: 1
+      cap
+    }
+
+  pub ptr() -> *T {
+    if live == false {
+      return null
+    }
+    return &value
+  }
+
+  pub cptr() -> const *T {
+    if live == false {
+      return null
+    }
+    return const *value
+  }
+
+  pub ref() -> &T {
+    return &value
+  }
+
+  pub cref() -> const &T {
+    return const &value
+  }
+
+  pub borrow() -> Borrow<T> {
+    return Borrow<T>(cptr(), {}, generation)
+  }
+
+  pub borrowMut() -> BorrowMut<T> {
+    return BorrowMut<T>(ptr(), {}, generation)
+  }
+
+  pub set(value: T) -> This {
+    return this {
+      value
+      len: match len == 0 {
+        true => 1
+        false => len
+      }
+      generation: generation + 1
+    }
+  }
+
+  pub push(value: T) -> This {
+    if canPush == false {
+      return this
+    }
+    return this {
+      value
+      len: len + 1
+      generation: generation + 1
+    }
+  }
+
+  pub pop() -> This {
+    if len <= 0 {
+      return this
+    }
+    return this {
+      len: len - 1
+      generation: generation + 1
+    }
+  }
+
+  pub reserve(extra: i64) -> This {
+    if extra <= 0 {
+      return this
+    }
+    return this {
+      cap: cap + extra
+      generation: generation + 1
+    }
+  }
+
+  pub grow(nextCap: i64) -> This {
+    if nextCap <= cap {
+      return this
+    }
+    return this {
+      cap: nextCap
+      generation: generation + 1
+    }
+  }
+
+  pub shrink(nextCap: i64) -> This {
+    if nextCap < len {
+      return this
+    }
+    return this {
+      cap: nextCap
+      generation: generation + 1
+    }
+  }
+
+  pub clear() -> This {
+    return this {
+      len: 0
+      generation: generation + 1
+    }
+  }
+
+  pub reset(value: T) -> This {
+    return this {
+      value
+      len: 1
+      generation: generation + 1
+    }
+  }
+
+  pub release() -> This {
+    return this {
+      released: true
+      len: 0
+      generation: generation + 1
+    }
+  }
+}
+
+impl view Buffer<T> {
+  pub live => released == false
+
+  pub empty => len == 0
+
+  pub full => cap > 0 && len >= cap
+
+  pub bounded => cap > 0
+
+  pub unbounded => cap <= 0
+
+  pub remaining: i64 => match cap > len {
+    true => cap - len
+    false => 0
+  }
+
+  pub readable => live && len > 0
+
+  pub writable => live
+
+  pub canPush => live && (unbounded || len < cap)
+
+  pub canPop => live && len > 0
+
+  pub tracked => len > 0 || cap > 0
+
+  pub ownsStorage => live
+
+  pub hasCap => cap >= len
+
+  pub fits(count: i64) -> bool {
+    return count >= 0 && (unbounded || count <= remaining)
+  }
+
+  pub exceeds(count: i64) -> bool {
+    return fits(count) == false
+  }
+
+  pub valid => len >= 0 && cap >= 0 && hasCap
+}

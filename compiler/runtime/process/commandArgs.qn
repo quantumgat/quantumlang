@@ -1,0 +1,43 @@
+pub CommandArgs {
+  program: string = ""
+  command: string = ""
+  args: ArgSpan = {}
+  options: OptionSet = {}
+  valid: bool = true
+}
+
+impl CommandArgs {
+  pub CommandArgs(program: string, command: string, args: ArgSpan, options: OptionSet) =
+    This {
+      program
+      command
+      args
+      options
+      valid: program != "" && options.valid
+    }
+
+  pub fromCount(program: string, command: string, count: i64) =
+    This {
+      program
+      command
+      args: ArgSpan.afterCommand(count)
+      options: OptionSet.empty()
+      valid: program != "" && count >= 0
+    }
+}
+
+impl view CommandArgs {
+  pub hasCommand: bool => command != ""
+  pub help: bool => command == "" || command == "help" || command == "--help"
+  pub version: bool => command == "version" || command == "--version" || command == "-V"
+  pub check: bool => command == "check"
+  pub build: bool => command == "build"
+  pub knownCommand: bool => help || version || check || build
+  pub boundaryCommand: bool => check || build
+  pub checkPackageReady: bool => check && args.count > 0
+  pub normalizedOptionsReady: bool => valid && options.valid
+  pub firstPositionalPackageReady: bool => check && args.count > 0
+  pub argumentNormalizationReady: bool =>
+    knownCommand &&
+    normalizedOptionsReady
+}

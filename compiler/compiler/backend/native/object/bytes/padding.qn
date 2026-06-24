@@ -1,0 +1,43 @@
+pub ObjectPadding {
+  offset: i64
+  nextOffset: i64
+  sizeBytes: i64
+  fillByte: i64 = 0
+  diagnosticCode: string = ""
+}
+
+impl ObjectPadding {
+  pub ObjectPadding(offset: i64, nextOffset: i64, sizeBytes: i64, fillByte: i64) =
+    This {
+      offset
+      nextOffset
+      sizeBytes
+      fillByte
+    }
+
+  pub none(offset: i64) =
+    This(offset, offset, 0, 0)
+
+  pub fromAlignment(offset: i64, alignment: ObjectAlignment) =
+    This {
+      offset
+      nextOffset: alignment.align(offset)
+      sizeBytes: alignment.padding(offset)
+      fillByte: 0
+      diagnosticCode: match alignment.valid {
+        true => ""
+        false => "QNATIVE0750"
+      }
+    }
+}
+
+impl view ObjectPadding {
+  pub valid: bool => diagnosticCode == "" &&
+    offset >= 0 &&
+    nextOffset >= offset &&
+    sizeBytes == nextOffset - offset &&
+    fillByte >= 0 &&
+    fillByte <= 255
+  pub empty: bool => sizeBytes == 0
+  pub debugName: string => "object.padding.{offset}.{nextOffset}.{sizeBytes}"
+}

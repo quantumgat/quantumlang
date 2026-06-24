@@ -1,0 +1,79 @@
+terminalProgressStart(
+  command: string,
+  target: string,
+  phase: string,
+  total: i64,
+  jobs: i64,
+  animated: bool,
+  color: bool,
+  quiet: bool,
+  verbose: bool
+) -> i64
+
+terminalProgressUpdate(
+  phase: string,
+  completed: i64,
+  total: i64,
+  detail: string
+) -> i64
+
+terminalProgressFinish(
+  status: string,
+  diagnostics: i64
+) -> i64
+
+terminalProgressCancelled() -> bool
+
+pub TerminalRenderer {
+  capability: TerminalCapability = {}
+  colors: ColorPolicy = {}
+  mode: ProgressMode = {}
+}
+
+impl TerminalRenderer {
+  pub detect(mode: ProgressMode) -> This {
+    let capability = TerminalCapability.detect()
+    let colors = match mode.color {
+      ColorMode.Always => ColorPolicy.always(capability)
+      ColorMode.Never => ColorPolicy.never(capability)
+      _ => ColorPolicy.automatic(capability)
+    }
+    return This { capability, colors, mode }
+  }
+
+  pub start(event: ProgressEvent) -> i64 {
+    return terminalProgressStart(
+      event.command,
+      event.target,
+      event.phase.label,
+      event.total,
+      event.jobsRequested,
+      capability.animated,
+      colors.enabled,
+      mode.quiet,
+      mode.verbose
+    )
+  }
+
+  pub render(event: ProgressEvent) -> i64 {
+    return terminalProgressUpdate(
+      event.phase.label,
+      event.completed,
+      event.total,
+      event.detail
+    )
+  }
+
+  pub finish(event: ProgressEvent) -> i64 {
+    let status = match event.status {
+      ProgressStatus.Completed => "completed"
+      ProgressStatus.Cancelled => "cancelled"
+      _ => "failed"
+    }
+    return terminalProgressFinish(status, event.diagnosticCount)
+  }
+
+  pub cancelled() -> bool {
+    return terminalProgressCancelled()
+  }
+}

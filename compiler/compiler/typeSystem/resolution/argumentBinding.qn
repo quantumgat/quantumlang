@@ -1,0 +1,18 @@
+pub ArgumentBinding {
+  argumentPosition: i64 = -1
+  parameterPosition: usize = 0
+  parameterName: string = ""
+  argumentType: string = ""
+  parameterType: string = ""
+  conversion: ConversionFact = {}
+  defaulted: bool = false
+  variadic: bool = false
+}
+
+impl view ArgumentBinding {
+  pub supplied: bool => argumentPosition >= 0
+
+  pub valid: bool =>
+    parameterName != "" &&
+    (defaulted || conversion.valid)
+}

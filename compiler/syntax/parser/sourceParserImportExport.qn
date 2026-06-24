@@ -1,0 +1,73 @@
+import source::{SourceSpan}
+import syntax::{TokenRole}
+import syntax::parser::sourceParserSignature::{SourceParserSignature}
+import syntax::parser::sourceParserSurface::{SourceParserSurface}
+
+pub SourceParserImportExport {
+  input: LexProduct = {}
+  modulePath: string = "<source>"
+}
+
+impl SourceParserImportExport {
+  pub SourceParserImportExport(input: LexProduct, modulePath: string) =
+    This { input, modulePath }
+
+  pub importDeclarationAt(index: i64) -> AstDeclaration {
+    let nameToken = SourceParserSignature(input).declarationNameToken(index)
+    let alias = this.importAliasAt(index)
+    return AstDeclaration.fromImport(
+      modulePath,
+      nameToken.text,
+      alias,
+      "",
+      false,
+      nameToken.span
+    )
+  }
+
+  importAliasAt(index: i64) -> string {
+    let cursor = index + 1
+    let limit = index + 16
+    let surface = SourceParserSurface(input)
+    while cursor < input.tokenCount && cursor < limit {
+      let token = input.tokenAt(cursor)
+      if token.kind.keyword == KeywordKind.As &&
+         cursor + 1 < input.tokenCount {
+        let alias = input.tokenAt(cursor + 1)
+        if alias.kind.identifierToken {
+          return alias.text
+        }
+        return ""
+      }
+      if cursor > index + 1 && surface.declarationStart(token) {
+        return ""
+      }
+      cursor = cursor + 1
+    }
+    return ""
+  }
+
+  pub exportPathSegmentToken(token: SyntaxToken) -> bool {
+    return token.kind.identifierToken ||
+      token.kind.role == TokenRole.PrimitiveType
+  }
+
+  pub exportDeclaration(
+    targetPath: string,
+    selectedSymbol: string,
+    alias: string,
+    wildcard: bool,
+    span: SourceSpan
+  ) -> AstDeclaration {
+    let declaration = AstDeclaration.fromImport(
+      modulePath,
+      targetPath,
+      alias,
+      selectedSymbol,
+      wildcard,
+      span
+    )
+    declaration.visibility = AstDeclarationVisibility.Exported
+    return declaration
+  }
+}

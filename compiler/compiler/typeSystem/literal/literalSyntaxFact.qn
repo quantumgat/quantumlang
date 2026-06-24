@@ -1,0 +1,83 @@
+pub LiteralSyntaxFact {
+  syntaxKind: LiteralSyntaxKind = Unknown
+  literalKind: TypeLiteralKind = Unknown
+  requiresTarget: bool = false
+  valid: bool = false
+}
+
+impl LiteralSyntaxFact {
+  pub fromSyntax(syntaxKind: LiteralSyntaxKind) -> This {
+    if syntaxKind == LiteralSyntaxKind.BoolToken {
+      return This { syntaxKind, literalKind: Bool, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.IntegerToken {
+      return This { syntaxKind, literalKind: Integer, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.FloatToken {
+      return This { syntaxKind, literalKind: Float, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.StringToken {
+      return This { syntaxKind, literalKind: String, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.BytesToken {
+      return This { syntaxKind, literalKind: Bytes, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.ByteToken {
+      return This { syntaxKind, literalKind: Byte, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.NoneExpr {
+      return This { syntaxKind, literalKind: None, requiresTarget: true, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.VecExpr {
+      return This { syntaxKind, literalKind: Vec, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.EmptyVecExpr {
+      return This { syntaxKind, literalKind: Vec, requiresTarget: true, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.FixedArrayExpr {
+      return This { syntaxKind, literalKind: FixedArray, requiresTarget: true, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.EmptyFixedArrayExpr {
+      return This { syntaxKind, literalKind: FixedArray, requiresTarget: true, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.MapExpr {
+      return This { syntaxKind, literalKind: Map, requiresTarget: true, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.RecordExpr {
+      return This { syntaxKind, literalKind: Record, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.SetExpr {
+      return This { syntaxKind, literalKind: Set, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.EmptySetExpr {
+      return This { syntaxKind, literalKind: Set, requiresTarget: true, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.TupleExpr {
+      return This { syntaxKind, literalKind: Tuple, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.RangeExpr {
+      return This { syntaxKind, literalKind: Range, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.HalfOpenRangeExpr {
+      return This { syntaxKind, literalKind: HalfOpenRange, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.RangeFromExpr {
+      return This { syntaxKind, literalKind: RangeFrom, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.RangeToExpr {
+      return This { syntaxKind, literalKind: RangeTo, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.RangeToInclusiveExpr {
+      return This { syntaxKind, literalKind: RangeToInclusive, valid: true }
+    }
+    if syntaxKind == LiteralSyntaxKind.RangeFullExpr {
+      return This { syntaxKind, literalKind: RangeFull, valid: true }
+    }
+    return This { syntaxKind }
+  }
+}
+
+impl view LiteralSyntaxFact {
+  pub needsTarget => requiresTarget
+  pub known => valid
+}

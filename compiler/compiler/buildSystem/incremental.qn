@@ -1,0 +1,3 @@
+pub IncrementalState {
+  enabled: bool
+}

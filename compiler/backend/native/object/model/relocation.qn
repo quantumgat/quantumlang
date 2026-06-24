@@ -1,0 +1,43 @@
+pub ObjectRelocation {
+  sectionName: string
+  offset: i64
+  symbolName: string
+  relocationKind: string
+  addend: i64
+  diagnosticCode: string = ""
+}
+
+impl ObjectRelocation {
+  pub ObjectRelocation(
+    sectionName: string,
+    offset: i64,
+    symbolName: string,
+    relocationKind: string,
+    addend: i64
+  ) =
+    This {
+      sectionName
+      offset
+      symbolName
+      relocationKind
+      addend
+    }
+
+  pub pcRelative(sectionName: string, offset: i64, symbolName: string, addend: i64) =
+    This(sectionName, offset, symbolName, "pc-relative", addend)
+
+  pub absolute(sectionName: string, offset: i64, symbolName: string, addend: i64) =
+    This(sectionName, offset, symbolName, "absolute", addend)
+}
+
+impl view ObjectRelocation {
+  pub valid => diagnosticCode == "" &&
+    sectionName != "" &&
+    offset >= 0 &&
+    symbolName != "" &&
+    relocationKind != ""
+  pub pcRelativeRelocation => relocationKind == "pc-relative"
+  pub absoluteRelocation => relocationKind == "absolute"
+  pub relocationHash => "reloc:{sectionName}:{offset}:{symbolName}:{relocationKind}:{addend}"
+  pub debugName => "reloc.{sectionName}.{symbolName}.{relocationKind}"
+}

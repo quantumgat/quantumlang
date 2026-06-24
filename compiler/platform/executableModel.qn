@@ -1,0 +1,49 @@
+pub ExecutableModel {
+  executableSuffix: string
+  sharedLibrarySuffix: string
+  staticLibrarySuffix: string
+  importLibrarySuffix: string = ""
+  dynamicLinkingAllowed: bool
+  staticLinkingAllowed: bool
+  appBundle: bool = false
+}
+
+impl ExecutableModel {
+  pub ExecutableModel(
+    executableSuffix: string,
+    sharedLibrarySuffix: string,
+    staticLibrarySuffix: string,
+    importLibrarySuffix: string,
+    dynamicLinkingAllowed: bool,
+    staticLinkingAllowed: bool,
+    appBundle: bool
+  ) =
+    This {
+      executableSuffix
+      sharedLibrarySuffix
+      staticLibrarySuffix
+      importLibrarySuffix
+      dynamicLinkingAllowed
+      staticLinkingAllowed
+      appBundle
+    }
+
+  pub linux() =
+    This("", ".so", ".a", "", true, true, false)
+
+  pub windows() =
+    This(".exe", ".dll", ".lib", ".lib", true, true, false)
+
+  pub macos() =
+    This("", ".dylib", ".a", "", true, true, true)
+
+  pub staticOnly() =
+    This("", "", ".a", "", false, true, false)
+}
+
+impl view ExecutableModel {
+  pub dynamicCapable => dynamicLinkingAllowed && sharedLibrarySuffix != ""
+  pub staticCapable => staticLinkingAllowed && staticLibrarySuffix != ""
+  pub importLibraryCapable => importLibrarySuffix != ""
+  pub valid => staticCapable || dynamicCapable || executableSuffix != ""
+}

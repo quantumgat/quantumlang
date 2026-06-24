@@ -1,0 +1,15 @@
+pub QcapWriter {
+  emitted: i64
+  capsulePath: string
+}
+
+impl QcapWriter {
+  pub QcapWriter(emitted: i64, capsulePath: string) =
+    This { emitted, capsulePath }
+}
+
+impl view QcapWriter {
+  pub deterministic => true
+  pub wroteAny => emitted > 0
+  pub valid => emitted >= 0 && capsulePath != ""
+}

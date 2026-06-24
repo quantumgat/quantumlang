@@ -1,0 +1,28 @@
+pub SourceFingerprintProduct {
+  fileId: StableId
+  key: QueryKey
+  sourceFingerprint: Fingerprint
+  byteLength: usize
+  lineCount: usize
+  schemaVersion: u64 = 1
+}
+
+impl SourceFingerprintProduct {
+  pub init(fileId: StableId, fingerprint: Fingerprint, byteLength: usize, lineCount: usize) =
+    This {
+      fileId
+      key: QueryKey.sourceFingerprint(fileId)
+      sourceFingerprint: fingerprint
+      byteLength
+      lineCount
+    }
+
+  pub productFingerprint() =
+    ProductFingerprint(sourceFingerprint, sourceFingerprint)
+}
+
+impl view SourceFingerprintProduct {
+  pub replayable => sourceFingerprint.nonzero
+  pub emptySource => byteLength == 0
+  pub multiline => lineCount > 1
+}

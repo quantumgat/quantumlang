@@ -1,0 +1,94 @@
+pub OwnershipLeaf<T> {
+  value: T
+  revision: i64 = 1
+}
+
+pub OwnershipBox<T> {
+  leaf: OwnershipLeaf<T>
+  active: bool = true
+}
+
+pub OwnershipEnvelope<T> {
+  box: OwnershipBox<T>
+  generation: i64 = 1
+}
+
+impl view OwnershipLeaf<T> {
+  pub current => value
+  pub stable: bool => revision > 0
+}
+
+impl view OwnershipBox<T> {
+  pub current => leaf.current
+  pub ready: bool => active && leaf.stable
+}
+
+impl view OwnershipEnvelope<T> {
+  pub current => box.current
+  pub ready: bool => generation > 0 && box.ready
+}
+
+pub defaultReadNumber(value: OwnershipEnvelope<i64>) -> i64 {
+  return value.current
+}
+
+pub sharedReadNumber(value: const &OwnershipEnvelope<i64>) -> i64 {
+  return value.current
+}
+
+pub sharedReadNestedValue(
+  value: const &OwnershipEnvelope<OwnershipLeaf<i64>>
+) -> i64 {
+  return value.box.leaf.revision
+}
+
+pub mutateNumber(value: &OwnershipEnvelope<i64>, next: i64) -> i64 {
+  value.box.leaf.value = next
+  value.box.leaf.revision = value.box.leaf.revision + 1
+  return value.current
+}
+
+pub consumeNumber(
+  value: OwnershipEnvelope<i64>
+) -> OwnershipEnvelope<i64> {
+  return ^value
+}
+
+pub consumeNested(
+  value: OwnershipEnvelope<OwnershipLeaf<i64>>
+) -> OwnershipEnvelope<OwnershipLeaf<i64>> {
+  return ^value
+}
+
+pub ownershipLiteralMatrixStatus() -> i64 {
+  let number: OwnershipEnvelope<i64> = {
+    box: {
+      leaf: { value: 41 }
+    }
+  }
+
+  if defaultReadNumber(number) != 41 { return 1 }
+  if number.current != 41 { return 2 }
+  if sharedReadNumber(const &number) != 41 { return 3 }
+  if number.current != 41 { return 4 }
+  if mutateNumber(&number, 42) != 42 { return 5 }
+  if number.current != 42 { return 6 }
+
+  let movedNumber = consumeNumber(^number)
+  if movedNumber.current != 42 { return 7 }
+  if movedNumber.ready != true { return 8 }
+
+  let nested: OwnershipEnvelope<OwnershipLeaf<i64>> = {
+    box: {
+      leaf: {
+        value: { value: 77 }
+      }
+    }
+  }
+  if sharedReadNestedValue(const &nested) != 1 { return 9 }
+
+  let movedNested = consumeNested(^nested)
+  if movedNested.ready != true { return 10 }
+
+  return 0
+}

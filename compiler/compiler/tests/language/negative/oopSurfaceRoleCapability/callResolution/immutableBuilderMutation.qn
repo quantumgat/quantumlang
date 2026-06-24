@@ -1,0 +1,6 @@
+impl HttpCtx<...Caps> : pub MutableHttpBuilder<HttpCtx<...Caps>> {
+  withHeader(name: TextView, value: TextView) -> HttpCtx<...Caps> {
+    this.headers = this.headers.add(Header(name, value))
+    return this
+  }
+}

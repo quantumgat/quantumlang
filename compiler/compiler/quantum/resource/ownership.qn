@@ -1,0 +1,32 @@
+pub QuantumOwnership {
+  noClone: bool
+  linearMoveRequired: bool
+  borrowedAllowed: bool
+  diagnosticCode: string
+  valid: bool
+}
+
+impl QuantumOwnership {
+  pub QuantumOwnership(noClone: bool, linearMoveRequired: bool, borrowedAllowed: bool) =
+    This {
+      noClone
+      linearMoveRequired
+      borrowedAllowed
+      diagnosticCode: ""
+      valid: true
+    }
+
+  pub violation() =
+    This {
+      noClone: true
+      linearMoveRequired: true
+      borrowedAllowed: false
+      diagnosticCode: "QTQUANTUM0001"
+      valid: false
+    }
+}
+
+impl view QuantumOwnership {
+  pub linear => linearMoveRequired
+  pub cloneSafe => noClone
+}

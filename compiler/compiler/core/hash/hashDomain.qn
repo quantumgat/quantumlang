@@ -1,0 +1,38 @@
+pub enum HashDomain {
+  Unknown
+  Value
+  Source
+  Syntax
+  Semantic
+  Action
+  Content
+  Query
+  Product
+  Object
+  Link
+  Abi
+  Package
+  Toolchain
+  Quantum
+  Security
+}
+
+impl view HashDomain {
+  pub cacheIdentity: bool =>
+    this == HashDomain.Action ||
+    this == HashDomain.Content ||
+    this == HashDomain.Query ||
+    this == HashDomain.Product ||
+    this == HashDomain.Object ||
+    this == HashDomain.Link
+
+  pub compilerIdentity: bool =>
+    this == HashDomain.Source ||
+    this == HashDomain.Syntax ||
+    this == HashDomain.Semantic ||
+    this == HashDomain.Abi ||
+    this == HashDomain.Package ||
+    this == HashDomain.Toolchain
+
+  pub valid: bool => this != HashDomain.Unknown
+}

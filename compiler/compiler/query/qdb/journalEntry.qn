@@ -1,0 +1,56 @@
+pub QdbJournalEntry {
+  kind: QdbJournalEntryKind = QdbJournalEntryKind.Unknown
+  revision: u64 = 0
+  sequence: u64 = 0
+  payloadRow: u64 = 0
+  payloadHash: Fingerprint = {}
+  previousEntryHash: Fingerprint = {}
+  entryHash: Fingerprint = {}
+}
+
+impl QdbJournalEntry {
+  pub fromCommit(row: QdbCommitRow) =
+    This {
+      kind: QdbJournalEntryKind.Commit
+      revision: row.revision
+      sequence: row.sequence
+      payloadRow: row.productRow
+      payloadHash: row.productHash
+      previousEntryHash: row.previousCommitHash
+      entryHash: row.commitHash
+    }
+
+  pub fromRevision(
+    row: QdbRevisionRow,
+    sequence: u64,
+    previousEntryHash: Fingerprint
+  ) =
+    This {
+      kind: QdbJournalEntryKind.Revision
+      revision: row.revision
+      sequence
+      payloadRow: row.firstCommitRow
+      payloadHash: row.snapshotHash
+      previousEntryHash
+      entryHash: row.journalHash
+    }
+}
+
+impl view QdbJournalEntry {
+  pub known: bool => kind != QdbJournalEntryKind.Unknown
+  pub productCommit: bool => kind == QdbJournalEntryKind.Commit
+  pub revisionSeal: bool => kind == QdbJournalEntryKind.Revision
+  pub hashChained: bool =>
+    entryHash.nonzero &&
+    (
+      sequence == 1 ||
+      previousEntryHash.nonzero
+    )
+
+  pub valid: bool =>
+    known &&
+    revision > 0 &&
+    sequence > 0 &&
+    payloadHash.nonzero &&
+    hashChained
+}

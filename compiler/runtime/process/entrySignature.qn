@@ -1,0 +1,41 @@
+pub ProcessEntrySignature {
+  name: string = "main"
+  argsTypeName: string = "Args"
+  envTypeName: string = ""
+  contextTypeName: string = ""
+  returnTypeName: string = "i32"
+}
+
+impl ProcessEntrySignature {
+  pub args() =
+    This {
+      argsTypeName: "Args"
+    }
+
+  pub argsEnv() =
+    This {
+      argsTypeName: "Args"
+      envTypeName: "ProcessEnv"
+    }
+
+  pub context() =
+    This {
+      argsTypeName: ""
+      contextTypeName: "ProcessContext"
+    }
+
+  pub abi() =
+    This {
+      argsTypeName: "i32, const *const *u8"
+    }
+}
+
+impl view ProcessEntrySignature {
+  pub valid: bool => name != "" && returnTypeName != ""
+  pub highLevel: bool => argsTypeName == "Args" || contextTypeName == "ProcessContext"
+  pub abiLevel: bool => argsTypeName == "i32, const *const *u8"
+  pub signatureText: string => match contextTypeName != "" {
+    true => "{name}({contextTypeName}) -> {returnTypeName}"
+    false => "{name}({argsTypeName}) -> {returnTypeName}"
+  }
+}

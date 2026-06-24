@@ -1,0 +1,44 @@
+pub RuntimeLinkSet {
+  manifest: RuntimeManifest
+  startup: RuntimeStartup
+  artifact: RuntimeArtifact
+  symbols: RuntimeSymbolSet
+}
+
+impl RuntimeLinkSet {
+  pub RuntimeLinkSet(
+    manifest: RuntimeManifest,
+    startup: RuntimeStartup,
+    artifact: RuntimeArtifact,
+    symbols: RuntimeSymbolSet
+  ) =
+    This {
+      manifest
+      startup
+      artifact
+      symbols
+    }
+
+  pub core(objectPath: string) =
+    This {
+      manifest: RuntimeManifest.core()
+      startup: RuntimeStartup.entry()
+      artifact: RuntimeArtifact.forObject(objectPath)
+      symbols: RuntimeSymbolSet.core()
+    }
+}
+
+impl view RuntimeLinkSet {
+  pub valid: bool =>
+    manifest.valid &&
+    startup.valid &&
+    artifact.valid &&
+    symbols.valid &&
+    manifest.startupSymbol == startup.symbolName &&
+    symbols.exportsStartup
+
+  pub startupSymbol: string => startup.symbolName
+  pub objectPath: string => artifact.objectPath
+  pub linkSetHash: string =>
+    "runtime.linkset:{manifest.runtimeHash}:{startup.contractHash}:{artifact.artifactHash}:{symbols.symbolHash}"
+}

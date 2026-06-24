@@ -1,0 +1,57 @@
+import frontend::{FrontendProduct, frontendProductForPackage}
+
+pub CheckReport {
+  target: string
+  sourceFileCount: i64
+  lexemeCount: i64 = 0
+  astNodeCount: i64 = 0
+  typedNodeCount: i64 = 0
+  typeFactCount: i64 = 0
+  sourceStatus: StageStatus = StageStatus.skipped()
+  lexerStatus: StageStatus = StageStatus.skipped()
+  parserStatus: StageStatus = StageStatus.skipped()
+  typecheckStatus: StageStatus = StageStatus.skipped()
+  moduleBoundaryStatus: StageStatus = StageStatus.skipped()
+  firstDiagnosticMessage: string = ""
+  status: StageStatus = StageStatus.failed()
+  exitCode: i64 = 1
+}
+
+impl CheckReport {
+  pub forTarget(target: string) -> This =
+    frontendProductForPackage(target).toReport()
+}
+
+impl view CheckReport {
+  ok => exitCode == 0
+
+  failed => exitCode != 0
+
+  sourceChecked => sourceStatus.value == StageStatus.checked().value ||
+    sourceStatus.value == StageStatus.sourceChecked().value
+
+  lexerChecked => lexerStatus.value == StageStatus.checked().value ||
+    lexerStatus.value == StageStatus.lexerChecked().value
+
+  parserChecked => parserStatus.value == StageStatus.checked().value ||
+    parserStatus.value == StageStatus.parserChecked().value
+
+  typecheckChecked => typecheckStatus.value == StageStatus.typecheckFrontendChecked().value
+
+  moduleBoundaryChecked => moduleBoundaryStatus.value == StageStatus.checked().value
+}
+
+pub role DriverExitStatus {
+  exitStatus() -> i64
+  succeeded() -> bool
+}
+
+extend CheckReport : internal DriverExitStatus {
+  exitStatus() -> i64 {
+    exitCode
+  }
+
+  succeeded() -> bool {
+    ok
+  }
+}

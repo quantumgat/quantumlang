@@ -1,0 +1,60 @@
+pub enum TypeSignatureKind {
+  Function
+  Method
+  Constructor
+  TypeShape
+  Field
+  Constant
+  Effect
+  QuantumResource
+}
+
+pub TypeSignatureProduct {
+  symbolId: StableId
+  key: QueryKey
+  surfaceFingerprint: Fingerprint
+  signatureFingerprint: Fingerprint
+  kind: TypeSignatureKind
+  parameterCount: usize
+  genericParameterCount: usize
+  effectCount: usize
+  capabilityCount: usize
+  diagnosticCount: usize = 0
+  schemaVersion: u64 = 1
+}
+
+impl TypeSignatureProduct {
+  pub init(
+    symbolId: StableId,
+    surfaceFingerprint: Fingerprint,
+    signatureFingerprint: Fingerprint,
+    kind: TypeSignatureKind,
+    parameterCount: usize,
+    genericParameterCount: usize,
+    effectCount: usize,
+    capabilityCount: usize,
+    diagnosticCount: usize
+  ) =
+    This {
+      symbolId
+      key: QueryKey.typeSignature(symbolId)
+      surfaceFingerprint
+      signatureFingerprint
+      kind
+      parameterCount
+      genericParameterCount
+      effectCount
+      capabilityCount
+      diagnosticCount
+    }
+
+  pub productFingerprint() =
+    ProductFingerprint(surfaceFingerprint, signatureFingerprint)
+}
+
+impl view TypeSignatureProduct {
+  pub replayable => diagnosticCount == 0
+  pub generic => genericParameterCount > 0
+  pub effectful => effectCount > 0 || capabilityCount > 0
+  pub publicApiClean => replayable && signatureFingerprint.nonzero
+}

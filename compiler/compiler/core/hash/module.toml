@@ -1,0 +1,9 @@
+[module]
+name = "hash"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/core/hash"
+role = "stable-hash-and-digest-core"
+
+[dependencies]
+modules = ["core.bytes", "core.id", "core.map", "core.vec"]

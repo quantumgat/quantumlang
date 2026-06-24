@@ -1,0 +1,30 @@
+pub TargetAbiFact {
+  triple: TargetTriple
+  dataLayout: DataLayout
+  callingConvention: CallingConvention
+  objectFormat: string
+  linkFamily: string
+  valid: bool
+}
+
+impl TargetAbiFact {
+  pub TargetAbiFact(
+    triple: TargetTriple,
+    dataLayout: DataLayout,
+    callingConvention: CallingConvention,
+    objectFormat: string,
+    linkFamily: string,
+  ) =
+    This {
+      triple,
+      dataLayout,
+      callingConvention,
+      objectFormat,
+      linkFamily,
+      valid: triple.valid &&
+        dataLayout.valid &&
+        callingConvention.valid &&
+        objectFormat != "" &&
+        linkFamily != "",
+    }
+}

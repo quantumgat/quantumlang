@@ -1,0 +1,11 @@
+extend HttpCtx<...Caps> : pub Authenticated<HttpCtx<...Caps>> {
+  pub user() -> Result<AuthUser, IntoHttpError> {
+    return require<AuthUser>()
+  }
+}
+
+extend HttpCtx<...Caps> : private Authenticated<HttpCtx<...Caps>> {
+  private user() -> Result<AuthUser, IntoHttpError> {
+    return require<AuthUser>()
+  }
+}

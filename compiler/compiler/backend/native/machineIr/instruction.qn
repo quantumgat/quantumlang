@@ -1,0 +1,37 @@
+pub MachineInstruction {
+  id: i64
+  opcode: string
+  operandCount: i64
+  resultCount: i64
+  sideEffect: bool
+  legal: bool = true
+}
+
+impl MachineInstruction {
+  pub MachineInstruction(id: i64, opcode: string, operandCount: i64, resultCount: i64, sideEffect: bool) =
+    This {
+      id
+      opcode
+      operandCount
+      resultCount
+      sideEffect
+    }
+
+  pub illegal(id: i64, opcode: string) =
+    This {
+      id
+      opcode
+      operandCount: 0
+      resultCount: 0
+      sideEffect: false
+      legal: false
+    }
+}
+
+impl view MachineInstruction {
+  pub valid => id >= 0 && opcode != "" && operandCount >= 0 && resultCount >= 0 && legal
+  pub terminator => opcode == "ret" || opcode == "br" || opcode == "jmp"
+  pub pure => sideEffect == false
+  pub schedulable => valid && terminator == false
+  pub debugName => "mi.{id}.{opcode}"
+}

@@ -1,0 +1,106 @@
+import backend::native::{*}
+import mir::{MirBody, MirControlFlowGraph}
+import typeSystem::{OwnershipAuthorityTable}
+
+pub NativeInputProof {
+  sourceInputValid: bool
+  mirInputValid: bool
+  typeInputValid: bool
+  ownershipInputValid: bool
+  summaryBridgeValid: bool
+  objectPlanUsesContract: bool
+  linkPlanUsesContract: bool
+  authorityPlanValid: bool
+  valid: bool
+}
+
+pub nativeInputProof() -> NativeInputProof {
+  let body = MirBody("compileModule", 4, 8, 12)
+  let cfg = MirControlFlowGraph(5, body.blockCount)
+  let source = SourceUnitInput("qtlang/compiler", 725, 1052, 143000)
+  let mir = MirInput.fromBody(body, cfg)
+  let types = TypeFactInput(47031, 188, 14, 113287, 47031, 31900)
+  let authorities = OwnershipAuthorityTable()
+  let ownership = OwnershipInput.fromAuthorityTable(authorities)
+  let contract = InputContract(source, mir, types, ownership)
+  let summary = contract.summary()
+  let target = TargetIdentity("x86_64-unknown-linux-gnu", "debug", "elf", "sysv")
+  let objects = ObjectSetPlan.fromContractForTarget(contract, target)
+  let link = LinkTargetPlan.fromContractForTarget(contract, target, "qtlc2")
+  let authority = contract.authorityPlan()
+
+  let sourceInputValid =
+    source.valid &&
+    source.stableUnitPrefix == "source-unit:qtlang/compiler:725" &&
+    source.objectSetHash != ""
+
+  let mirInputValid =
+    mir.valid &&
+    mir.lowerable &&
+    mir.blockCount == body.blockCount &&
+    mir.instructionCount == body.instructionCount &&
+    mir.mirHash != ""
+
+  let typeInputValid =
+    types.valid &&
+    types.abiHash != "" &&
+    types.typeHash != ""
+
+  let ownershipInputValid =
+    ownership.valid &&
+    ownership.backendAuthorityReady &&
+    ownership.ownershipHash != ""
+
+  let summaryBridgeValid =
+    contract.valid &&
+    summary.valid &&
+    summary.packageRoot == source.packageRoot &&
+    summary.sourceFileCount == source.sourceFileCount &&
+    summary.declarationRecordCount == source.declarationRecordCount &&
+    summary.astNodeCount == source.astNodeCount &&
+    summary.typedNodeCount == types.typedNodeCount &&
+    summary.typeFactCount == types.typeFactCount
+
+  let objectPlanUsesContract =
+    objects.valid &&
+    objects.packageRoot == source.packageRoot &&
+    objects.unitCount == source.sourceFileCount &&
+    objects.stableUnitPrefix == contract.stableUnitPrefix &&
+    objects.abiHash == contract.abiHash &&
+    objects.mirHash == contract.mirHash &&
+    objects.objectSetHash == contract.objectSetHash
+
+  let linkPlanUsesContract =
+    link.valid &&
+    link.objectUnitCount == objects.unitCount &&
+    link.sortedObjectHash == objects.objectSetHash &&
+    link.targetOptionsHash == target.targetOptionsHash &&
+    link.inputSetHash != ""
+
+  let authorityPlanValid =
+    authority.valid &&
+    authority.objectEmissionAuthorized &&
+    authority.linkAuthorized
+
+  let valid =
+    sourceInputValid &&
+    mirInputValid &&
+    typeInputValid &&
+    ownershipInputValid &&
+    summaryBridgeValid &&
+    objectPlanUsesContract &&
+    linkPlanUsesContract &&
+    authorityPlanValid
+
+  return NativeInputProof {
+    sourceInputValid
+    mirInputValid
+    typeInputValid
+    ownershipInputValid
+    summaryBridgeValid
+    objectPlanUsesContract
+    linkPlanUsesContract
+    authorityPlanValid
+    valid
+  }
+}

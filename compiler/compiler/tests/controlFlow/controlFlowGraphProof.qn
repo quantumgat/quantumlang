@@ -1,0 +1,65 @@
+import controlFlow::{*}
+import mir::{ControlFlowEdge, ControlFlowGraph}
+pub ControlFlowGraphProof {
+  graphHasDeterministicIdentity: bool
+  regionsHaveEntryExit: bool
+  edgesTrackReachability: bool
+  unreachableNodeDiagnosed: bool
+  definiteReturnDiagnosed: bool
+  loopResultCompatible: bool
+  valid: bool
+}
+
+pub controlFlowGraphProof() -> ControlFlowGraphProof {
+  let graph = ControlFlowGraph(100, 3, 4, 9001, 1, 9)
+  let functionRegion = ControlFlowRegion(1, ControlFlowRegionKind.Function, 100, 1, 9)
+  let branchRegion = ControlFlowRegion(2, ControlFlowRegionKind.Branch, 100, 2, 5)
+  let reachableEdge = ControlFlowEdge(1, 2, "entry-to-branch", true)
+  let deadEdge = ControlFlowEdge(6, 7, "after-return", false)
+  let reachable = ReachabilityFact.reachable(2, "entry")
+  let unreachable = ReachabilityFact.unreachable(7, "after return")
+  let missingReturn = DefiniteReturnFact(100, false, 1, "string")
+  let allReturn = DefiniteReturnFact(101, true, 0, "string")
+  let loopResult = LoopResultFact(5, true, "i64", 2)
+
+  let graphHasDeterministicIdentity = graph.bodyId == 100 &&
+    graph.deterministic &&
+    graph.fingerprint == 9001
+
+  let regionsHaveEntryExit = functionRegion.entryNodeId == 1 &&
+    functionRegion.exitNodeId == 9 &&
+    branchRegion.kind == ControlFlowRegionKind.Branch
+
+  let edgesTrackReachability = reachableEdge.reachable &&
+    !deadEdge.reachable &&
+    reachable.reachable
+
+  let unreachableNodeDiagnosed = !unreachable.reachable &&
+    unreachable.diagnosticCode == "QTCFLOW0003"
+
+  let definiteReturnDiagnosed = !missingReturn.allPathsReturn &&
+    missingReturn.diagnosticCode == "QTCFLOW0004" &&
+    allReturn.allPathsReturn &&
+    allReturn.diagnosticCode == ""
+
+  let loopResultCompatible = loopResult.hasValue &&
+    loopResult.allBreakValuesCompatible &&
+    loopResult.resultTypeName == "i64"
+
+  let valid = graphHasDeterministicIdentity &&
+    regionsHaveEntryExit &&
+    edgesTrackReachability &&
+    unreachableNodeDiagnosed &&
+    definiteReturnDiagnosed &&
+    loopResultCompatible
+
+  return ControlFlowGraphProof {
+    graphHasDeterministicIdentity: graphHasDeterministicIdentity,
+    regionsHaveEntryExit: regionsHaveEntryExit,
+    edgesTrackReachability: edgesTrackReachability,
+    unreachableNodeDiagnosed: unreachableNodeDiagnosed,
+    definiteReturnDiagnosed: definiteReturnDiagnosed,
+    loopResultCompatible: loopResultCompatible,
+    valid: valid,
+  }
+}

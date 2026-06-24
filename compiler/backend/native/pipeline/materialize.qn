@@ -1,0 +1,49 @@
+pub Materialize {
+  planHash: string
+  objectCacheHash: string
+  linkCacheHash: string
+  outputPath: string
+  materialized: bool
+  diagnosticCode: string = ""
+}
+
+impl Materialize {
+  pub Materialize(
+    planHash: string,
+    objectCacheHash: string,
+    linkCacheHash: string,
+    outputPath: string,
+    materialized: bool
+  ) =
+    This {
+      planHash
+      objectCacheHash
+      linkCacheHash
+      outputPath
+      materialized
+    }
+
+  pub fromPlan(plan: PipelinePlan) =
+    This {
+      planHash: plan.planHash
+      objectCacheHash: plan.objectCacheReplay.replayHash
+      linkCacheHash: plan.linkCacheReplay.replayHash
+      outputPath: plan.linkStage.outputPath
+      materialized: plan.valid && plan.objectReady && plan.linkReady
+      diagnosticCode: match plan.valid {
+        true => ""
+        false => "QNATIVE0860"
+      }
+    }
+}
+
+impl view Materialize {
+  pub valid: bool => diagnosticCode == "" &&
+    planHash != "" &&
+    objectCacheHash != "" &&
+    linkCacheHash != "" &&
+    outputPath != ""
+  pub ready: bool => valid && materialized
+  pub materializeHash: string => "materialize:{planHash}:{objectCacheHash}:{linkCacheHash}:{outputPath}:{materialized}"
+  pub debugName: string => "native.materialize.{materialized}"
+}

@@ -1,0 +1,88 @@
+pub ReceiverInput {
+  bias: i64
+}
+
+pub NameProvider {
+  input: ReceiverInput
+}
+
+pub ProofRange<T> {
+  start: i64 = 0
+  count: i64 = 0
+}
+
+impl ProofRange<T> {
+  pub ProofRange(start: i64, count: i64) =
+    This { start, count }
+
+  pub fromBounds(start: i64, end: i64) -> This {
+    return This(start, end - start)
+  }
+}
+
+impl NameProvider {
+  pub NameProvider(input: ReceiverInput) =
+    This { input }
+
+  pub namesAt(index: i64) -> Vec<string> {
+    let base: i64 = input.bias + index
+    return Vec<string>(base, 3)
+  }
+}
+
+pub NameBatch {
+  names: Vec<string> = []
+  fallback: Vec<string> = []
+  rows: ProofRange<string> = {}
+}
+
+impl NameBatch {
+  pub fromTemporary(input: ReceiverInput, index: i64) -> This {
+    return This {
+      names: NameProvider(input).namesAt(index)
+      fallback: Vec<string>(1, 2)
+      rows: ProofRange<string>.fromBounds(4, 9)
+    }
+  }
+
+  pub fromLocal(input: ReceiverInput, index: i64) -> This {
+    let provider = NameProvider(input)
+    return This {
+      names: provider.namesAt(index)
+      fallback: Vec<string>(2)
+      rows: ProofRange<string>.fromBounds(5, 8)
+    }
+  }
+}
+
+impl view NameBatch {
+  pub validTemporary: bool =>
+    names.start == 17 &&
+    names.count == 3 &&
+    fallback.start == 1 &&
+    fallback.count == 2 &&
+    rows.start == 4 &&
+    rows.count == 5
+
+  pub validLocal: bool =>
+    names.start == 23 &&
+    names.count == 3 &&
+    fallback.start == 0 &&
+    fallback.count == 2 &&
+    rows.start == 5 &&
+    rows.count == 3
+}
+
+main() -> i64 {
+  let temporary = NameBatch.fromTemporary(ReceiverInput { bias: 10 }, 7)
+  if temporary.validTemporary == false {
+    return 1
+  }
+
+  let local = NameBatch.fromLocal(ReceiverInput { bias: 20 }, 3)
+  if local.validLocal == false {
+    return 2
+  }
+
+  return 0
+}

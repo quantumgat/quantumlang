@@ -1,0 +1,44 @@
+pub InstructionEmitter {
+  mnemonic: string
+  operandCount: i64
+  byteCount: i64
+  relocationCount: i64 = 0
+  diagnosticCode: string = ""
+}
+
+impl InstructionEmitter {
+  pub InstructionEmitter(mnemonic: string, operandCount: i64, byteCount: i64) =
+    This {
+      mnemonic
+      operandCount
+      byteCount
+    }
+
+  pub ret() =
+    This("ret", 0, 1)
+
+  pub call(symbolName: string) =
+    This {
+      mnemonic: "call"
+      operandCount: 1
+      byteCount: 5
+      relocationCount: 1
+      diagnosticCode: match symbolName != "" {
+        true => ""
+        false => "QNATIVE0910"
+      }
+    }
+}
+
+impl view InstructionEmitter {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    mnemonic != "" &&
+    operandCount >= 0 &&
+    byteCount > 0 &&
+    relocationCount >= 0
+
+  pub emitsBytes: bool => valid
+  pub needsRelocation: bool => relocationCount > 0
+  pub debugName: string => "emit.instruction.{mnemonic}.{byteCount}"
+}

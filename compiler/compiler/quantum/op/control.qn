@@ -1,0 +1,21 @@
+pub QuantumControl {
+  controlCount: i64
+  targetCount: i64
+  entangles: bool
+  valid: bool
+}
+
+impl QuantumControl {
+  pub QuantumControl(controlCount: i64, targetCount: i64) =
+    This {
+      controlCount
+      targetCount
+      entangles: controlCount > 0 && targetCount > 0
+      valid: controlCount > 0 && targetCount > 0
+    }
+}
+
+impl view QuantumControl {
+  pub hasControl => controlCount > 0
+  pub hasTarget => targetCount > 0
+}

@@ -1,0 +1,52 @@
+pub SelectionResult {
+  plan: SelectionPlan
+  selectedInstructionCount: i64
+  selectedOperandCount: i64
+  relocationRequestCount: i64
+  resultHash: string
+  diagnosticCode: string = ""
+}
+
+impl SelectionResult {
+  pub SelectionResult(
+    plan: SelectionPlan,
+    selectedInstructionCount: i64,
+    selectedOperandCount: i64,
+    relocationRequestCount: i64,
+    resultHash: string
+  ) =
+    This {
+      plan
+      selectedInstructionCount
+      selectedOperandCount
+      relocationRequestCount
+      resultHash
+    }
+
+  pub fromPlan(plan: SelectionPlan, selectedInstructionCount: i64, selectedOperandCount: i64) =
+    This {
+      plan
+      selectedInstructionCount
+      selectedOperandCount
+      relocationRequestCount: 0
+      resultHash: "isel-result:{plan.planHash}:{selectedInstructionCount}:{selectedOperandCount}"
+      diagnosticCode: match plan.valid && selectedInstructionCount >= 0 && selectedOperandCount >= 0 {
+        true => ""
+        false => "QNATIVE0301"
+      }
+    }
+}
+
+impl view SelectionResult {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    plan.valid &&
+    selectedInstructionCount >= 0 &&
+    selectedOperandCount >= 0 &&
+    relocationRequestCount >= 0 &&
+    resultHash != ""
+
+  pub emittedInstructionsReady: bool => valid
+  pub needsRelocationRows: bool => relocationRequestCount > 0
+  pub debugName: string => "isel.result.{plan.functionName}.{selectedInstructionCount}"
+}

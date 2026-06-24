@@ -1,0 +1,91 @@
+pub ObjectByteSegmentSet {
+  header: ObjectByteSegment
+  sectionNames: ObjectByteSegment
+  padding: ObjectPadding
+  nullSection: ObjectByteSegment
+  textSection: ObjectByteSegment
+  stringSection: ObjectByteSegment
+  byteCount: i64
+  segmentCount: i64 = 6
+  diagnosticCode: string = ""
+}
+
+impl ObjectByteSegmentSet {
+  pub ObjectByteSegmentSet(
+    header: ObjectByteSegment,
+    sectionNames: ObjectByteSegment,
+    padding: ObjectPadding,
+    nullSection: ObjectByteSegment,
+    textSection: ObjectByteSegment,
+    stringSection: ObjectByteSegment,
+    byteCount: i64
+  ) =
+    This {
+      header
+      sectionNames
+      padding
+      nullSection
+      textSection
+      stringSection
+      byteCount
+    }
+
+  pub minimalElf64(
+    header: ObjectByteSegment,
+    sectionNames: ObjectByteSegment,
+    padding: ObjectPadding,
+    nullSection: ObjectByteSegment,
+    textSection: ObjectByteSegment,
+    stringSection: ObjectByteSegment
+  ) =
+    This {
+      header
+      sectionNames
+      padding
+      nullSection
+      textSection
+      stringSection
+      byteCount: header.byteCount +
+        sectionNames.byteCount +
+        padding.sizeBytes +
+        nullSection.byteCount +
+        textSection.byteCount +
+        stringSection.byteCount
+      segmentCount: 6
+      diagnosticCode: match header.valid &&
+        sectionNames.valid &&
+        padding.valid &&
+        nullSection.valid &&
+        textSection.valid &&
+        stringSection.valid {
+        true => ""
+        false => "QNATIVE0757"
+      }
+    }
+}
+
+impl view ObjectByteSegmentSet {
+  pub segmentBytes: i64 => header.byteCount +
+    sectionNames.byteCount +
+    padding.sizeBytes +
+    nullSection.byteCount +
+    textSection.byteCount +
+    stringSection.byteCount
+  pub ordered: bool => header.offset == 0 &&
+    sectionNames.offset == header.endOffset &&
+    padding.offset == sectionNames.endOffset &&
+    nullSection.offset == padding.nextOffset &&
+    textSection.offset == nullSection.endOffset &&
+    stringSection.offset == textSection.endOffset
+  pub valid: bool => diagnosticCode == "" &&
+    header.valid &&
+    sectionNames.valid &&
+    padding.valid &&
+    nullSection.valid &&
+    textSection.valid &&
+    stringSection.valid &&
+    ordered &&
+    segmentCount == 6 &&
+    byteCount == segmentBytes
+  pub debugName: string => "object.segments.{segmentCount}.{byteCount}"
+}

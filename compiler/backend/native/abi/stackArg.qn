@@ -1,0 +1,53 @@
+pub StackArgAbi {
+  argumentCount: i64
+  stackArgumentCount: i64
+  stackBytes: i64
+  stackAlignBytes: i64
+  diagnosticCode: string = ""
+}
+
+impl StackArgAbi {
+  pub StackArgAbi(argumentCount: i64, stackArgumentCount: i64, stackBytes: i64, stackAlignBytes: i64) =
+    This {
+      argumentCount
+      stackArgumentCount
+      stackBytes
+      stackAlignBytes
+    }
+
+  pub fromCall(callAbi: CallAbi, argumentCount: i64) -> This {
+    if callAbi.valid == false || argumentCount < 0 {
+      return This {
+        argumentCount
+        stackArgumentCount: 0
+        stackBytes: 0
+        stackAlignBytes: callAbi.stackAlignBytes
+        diagnosticCode: "QNATIVE0630"
+      }
+    }
+
+    let overflow = match argumentCount > callAbi.integerRegisterCount {
+      true => argumentCount - callAbi.integerRegisterCount
+      false => 0
+    }
+
+    return This {
+      argumentCount
+      stackArgumentCount: overflow
+      stackBytes: callAbi.shadowSpaceBytes + overflow * 8
+      stackAlignBytes: callAbi.stackAlignBytes
+    }
+  }
+}
+
+impl view StackArgAbi {
+  pub valid => diagnosticCode == "" &&
+    argumentCount >= 0 &&
+    stackArgumentCount >= 0 &&
+    stackBytes >= 0 &&
+    stackAlignBytes > 0
+  pub spillsToStack => stackArgumentCount > 0
+  pub aligned => stackAlignBytes == 16
+  pub abiHash => "stackarg:{argumentCount}:{stackArgumentCount}:{stackBytes}:{stackAlignBytes}"
+  pub debugName => "stackarg.{argumentCount}.{stackArgumentCount}.{stackBytes}"
+}

@@ -1,0 +1,36 @@
+pub StringInterner {
+  names: Vec<NameId> = []
+  bytes: Vec<u8> = []
+  lookup: Index<NameId, Range<u8>> = {}
+  deterministic: bool = true
+}
+
+impl StringInterner {
+  pub StringInterner() -> This {
+    return This {
+      names: []
+      bytes: []
+      lookup: Index<NameId, Range<u8>>(0)
+    }
+  }
+
+  pub fromRows(names: Vec<NameId>, bytes: Vec<u8>, lookup: Index<NameId, Range<u8>>) -> This {
+    return This {
+      names
+      bytes
+      lookup
+    }
+  }
+}
+
+impl view StringInterner {
+  pub nameCount => names.count
+
+  pub byteCount => bytes.count
+
+  pub indexed => lookup.valid
+
+  pub empty => nameCount == 0 && byteCount == 0
+
+  pub valid => deterministic && names.valid && bytes.valid && indexed
+}

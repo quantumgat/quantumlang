@@ -1,0 +1,38 @@
+pub SemanticIdContract {
+  pathNormalized: bool = true
+  declarationSignatureBased: bool = true
+  bodyOwnerScoped: bool = true
+  nodeStructural: bool = true
+  genericArgumentsOrdered: bool = true
+  objectUnitContentBased: bool = true
+  linkInputsOrdered: bool = true
+  rowOrderExcluded: bool = true
+  arenaOffsetExcluded: bool = true
+  absoluteSourceOffsetExcluded: bool = true
+  targetExcludedFromFrontend: bool = true
+  profileExcludedFromFrontend: bool = true
+  schemaVersion: u64 = 1
+}
+
+impl view SemanticIdContract {
+  pub frontendStable =>
+    pathNormalized &&
+    declarationSignatureBased &&
+    bodyOwnerScoped &&
+    nodeStructural &&
+    genericArgumentsOrdered &&
+    rowOrderExcluded &&
+    arenaOffsetExcluded &&
+    absoluteSourceOffsetExcluded &&
+    targetExcludedFromFrontend &&
+    profileExcludedFromFrontend
+
+  pub backendStable =>
+    objectUnitContentBased &&
+    linkInputsOrdered
+
+  pub valid =>
+    frontendStable &&
+    backendStable &&
+    schemaVersion > 0
+}

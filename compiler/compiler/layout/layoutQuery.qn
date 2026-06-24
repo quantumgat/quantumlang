@@ -1,0 +1,27 @@
+import core::{TypeId}
+
+pub LayoutQuery {
+  context: TargetLayoutContext
+}
+
+context LayoutQuery {
+  pub scalarLayout(typeId: TypeId, size: u64, alignment: u64) -> TypeLayout =
+    TypeLayout(typeId, size, alignment)
+
+  pub classify(typeLayout: TypeLayout) -> LayoutClass {
+    if typeLayout.size == 0 {
+      return LayoutClass { kind: LayoutClassKind.ZeroSized, registerCount: 0 }
+    }
+    if typeLayout.size <= context.pointerSize {
+      return LayoutClass { kind: LayoutClassKind.Scalar, registerCount: 1 }
+    }
+    if typeLayout.size <= context.pointerSize * 2 {
+      return LayoutClass { kind: LayoutClassKind.ScalarPair, registerCount: 2 }
+    }
+    return LayoutClass {
+      kind: LayoutClassKind.Memory
+      registerCount: 0
+      indirect: true
+    }
+  }
+}

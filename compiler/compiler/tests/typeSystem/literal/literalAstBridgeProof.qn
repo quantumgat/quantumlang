@@ -1,0 +1,61 @@
+import typeSystem::{*}
+pub LiteralAstBridgeProof {
+  tokenKindsMap: bool
+  optionSyntaxMaps: bool
+  aggregateSyntaxMaps: bool
+  targetDiagnosticsFlow: bool
+  valid: bool
+}
+
+pub literalAstBridgeProof() -> LiteralAstBridgeProof {
+  let empty = LiteralTargetContext("", false, false)
+  let optionString = LiteralTargetContext("Option<string>", true, false)
+  let quotedMap = LiteralTargetContext("", false, true)
+
+  let integerBridge = LiteralAstBridge.fromSyntax(LiteralSyntaxKind.IntegerToken, empty)
+  let floatBridge = LiteralAstBridge.fromSyntax(LiteralSyntaxKind.FloatToken, empty)
+  let stringBridge = LiteralAstBridge.fromSyntax(LiteralSyntaxKind.StringToken, empty)
+  let bytesBridge = LiteralAstBridge.fromSyntax(LiteralSyntaxKind.BytesToken, empty)
+  let byteBridge = LiteralAstBridge.fromSyntax(LiteralSyntaxKind.ByteToken, empty)
+
+  let noneBridge = LiteralAstBridge.fromSyntax(LiteralSyntaxKind.NoneExpr, optionString)
+  let stringLiftBridge = LiteralAstBridge.fromSyntax(LiteralSyntaxKind.StringToken, optionString)
+
+  let emptyArrayBridge = LiteralAstBridge.fromSyntax(LiteralSyntaxKind.EmptyVecExpr, empty)
+  let recordBridge = LiteralAstBridge.fromSyntax(LiteralSyntaxKind.RecordExpr, empty)
+  let mapBridge = LiteralAstBridge.fromSyntax(LiteralSyntaxKind.MapExpr, quotedMap)
+
+  let tokenKindsMap = integerBridge.literalKind == TypeLiteralKind.Integer &&
+    floatBridge.literalKind == TypeLiteralKind.Float &&
+    stringBridge.literalKind == TypeLiteralKind.String &&
+    bytesBridge.literalKind == TypeLiteralKind.Bytes &&
+    byteBridge.literalKind == TypeLiteralKind.Byte &&
+    byteBridge.targetResolution.resolvedType == "byte"
+
+  let optionSyntaxMaps = noneBridge.literalKind == TypeLiteralKind.None &&
+    noneBridge.targetResolution.resolvedType == "Option<string>" &&
+    stringLiftBridge.literalKind == TypeLiteralKind.String &&
+    stringLiftBridge.targetResolution.resolvedType == "Option<string>"
+
+  let aggregateSyntaxMaps = emptyArrayBridge.literalKind == TypeLiteralKind.Vec &&
+    emptyArrayBridge.diagnostic.code == "QTLIT0002" &&
+    recordBridge.literalKind == TypeLiteralKind.Record &&
+    recordBridge.targetResolution.resolvedType == "record" &&
+    mapBridge.literalKind == TypeLiteralKind.Map &&
+    mapBridge.targetResolution.resolvedType == "Map<string,T>"
+
+  let targetDiagnosticsFlow = emptyArrayBridge.diagnostic.code == "QTLIT0002"
+
+  let valid = tokenKindsMap &&
+    optionSyntaxMaps &&
+    aggregateSyntaxMaps &&
+    targetDiagnosticsFlow
+
+  return LiteralAstBridgeProof {
+    tokenKindsMap: tokenKindsMap,
+    optionSyntaxMaps: optionSyntaxMaps,
+    aggregateSyntaxMaps: aggregateSyntaxMaps,
+    targetDiagnosticsFlow: targetDiagnosticsFlow,
+    valid: valid,
+  }
+}

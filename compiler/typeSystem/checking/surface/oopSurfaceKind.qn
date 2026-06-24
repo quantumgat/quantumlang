@@ -1,0 +1,32 @@
+import declaration::{DeclarationKind}
+
+pub enum OopSurfaceKind {
+  Impl
+  ImplView
+  Context
+  Extract
+  Extend
+  Unknown
+}
+
+pub oopSurfaceKindForDeclaration(kind: DeclarationKind) -> OopSurfaceKind {
+  if kind == DeclarationKind.Impl { return OopSurfaceKind.Impl }
+  if kind == DeclarationKind.View { return OopSurfaceKind.ImplView }
+  if kind == DeclarationKind.Context { return OopSurfaceKind.Context }
+  if kind == DeclarationKind.Extract { return OopSurfaceKind.Extract }
+  if kind == DeclarationKind.Extend { return OopSurfaceKind.Extend }
+  return OopSurfaceKind.Unknown
+}
+
+pub oopSurfaceKindName(kind: OopSurfaceKind) -> string {
+  if kind == OopSurfaceKind.Impl { return "impl" }
+  if kind == OopSurfaceKind.ImplView { return "impl view" }
+  if kind == OopSurfaceKind.Context { return "context" }
+  if kind == OopSurfaceKind.Extract { return "extract" }
+  if kind == OopSurfaceKind.Extend { return "extend" }
+  return "unknown"
+}
+
+pub oopSurfaceKindValid(kind: OopSurfaceKind) -> bool {
+  return kind != OopSurfaceKind.Unknown
+}

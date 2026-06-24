@@ -1,0 +1,43 @@
+pub QuantumIfBranchFact {
+  branchName: string
+  ownershipPreserved: bool
+  cloneRejected: bool
+  resetReleaseBalanced: bool
+  measurementRecorded: bool
+  valid: bool
+}
+
+impl QuantumIfBranchFact {
+  pub QuantumIfBranchFact(
+    branchName: string,
+    ownership: QuantumOwnership,
+    noClone: QuantumNoCloneRule,
+    reset: QuantumReset,
+    release: QuantumRelease,
+    measurement: MeasurementEffect,
+  ) {
+    let resetReleaseBalanced = reset.valid && release.valid && reset.performed && release.resetVerified
+    let valid = branchName != "" &&
+      ownership.valid &&
+      ownership.noClone &&
+      noClone.enforced &&
+      noClone.duplicateRejected &&
+      resetReleaseBalanced &&
+      measurement.valid &&
+      measurement.collapsesState
+
+    This {
+      branchName
+      ownershipPreserved: ownership.valid && ownership.noClone
+      cloneRejected: noClone.enforced && noClone.duplicateRejected
+      resetReleaseBalanced
+      measurementRecorded: measurement.valid && measurement.collapsesState
+      valid
+    }
+  }
+}
+
+impl view QuantumIfBranchFact {
+  pub balanced => ownershipPreserved && resetReleaseBalanced
+  pub measured => measurementRecorded
+}

@@ -1,0 +1,24 @@
+pub RuntimeObject {
+  startupObject: RuntimeStartupObject
+  artifact: RuntimeArtifact
+}
+
+impl RuntimeObject {
+  pub RuntimeObject(startupObject: RuntimeStartupObject, artifact: RuntimeArtifact) =
+    This {
+      startupObject
+      artifact
+    }
+
+  pub core(objectPath: string) =
+    This {
+      startupObject: RuntimeStartupObject.core(objectPath)
+      artifact: RuntimeArtifact.forObject(objectPath)
+    }
+}
+
+impl view RuntimeObject {
+  pub valid: bool => startupObject.valid && artifact.valid
+  pub objectPath: string => artifact.objectPath
+  pub objectHash: string => "runtime.object:{startupObject.objectHash}:{artifact.artifactHash}"
+}

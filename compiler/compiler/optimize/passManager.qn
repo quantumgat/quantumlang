@@ -1,0 +1,23 @@
+pub PassManager {
+  profile: string
+  passCount: i64
+  deterministic: bool
+  debugSafe: bool
+  valid: bool
+}
+
+impl PassManager {
+  pub PassManager(profile: string, passCount: i64, debugSafe: bool) =
+    This {
+      profile
+      passCount
+      deterministic: true
+      debugSafe
+      valid: profile != "" && passCount >= 0 && debugSafe
+    }
+}
+
+impl view PassManager {
+  pub stable => deterministic && valid
+  pub hasPasses => passCount > 0
+}

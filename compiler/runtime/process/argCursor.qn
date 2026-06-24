@@ -1,0 +1,26 @@
+pub ArgCursor {
+  span: ArgSpan = {}
+  index: i64 = 0
+}
+
+impl ArgCursor {
+  pub ArgCursor(span: ArgSpan) =
+    This {
+      span
+      index: span.start
+    }
+
+  pub advance() =
+    this {
+      index: index + 1
+    }
+}
+
+impl view ArgCursor {
+  pub valid: bool => span.valid && index >= span.start && index <= span.end
+  pub done: bool => index >= span.end
+  pub remaining: i64 => match valid && index < span.end {
+    true => span.end - index
+    false => 0
+  }
+}

@@ -1,0 +1,105 @@
+import diagnostics::{DiagnosticRegistry, DiagnosticSpec, FunctionDiagnosticCode}
+
+pub FunctionReturnRule {
+  bodyKind: FunctionBodyKind
+  declaredReturnType: string
+  inferredReturnType: string
+  diagnostic: DiagnosticSpec = {}
+  valid: bool
+}
+
+impl FunctionReturnRule {
+  pub FunctionReturnRule(
+    bodyKind: FunctionBodyKind,
+    declaredReturnType: string,
+    inferredReturnType: string,
+    diagnostic: DiagnosticSpec,
+    valid: bool
+  ) =
+    This { bodyKind, declaredReturnType, inferredReturnType, diagnostic, valid }
+
+  pub fromBody(
+    bodyKind: FunctionBodyKind,
+    declaredReturnType: string,
+    expressionType: string,
+    currentType: string,
+    hasExplicitReturn: bool
+  ) -> This {
+    if bodyKind == FunctionBodyKind.ConstructorBody {
+      return This(bodyKind, declaredReturnType, currentType, {}, currentType != "")
+    }
+
+    if bodyKind == FunctionBodyKind.ExpressionBody {
+      if declaredReturnType != "" {
+        return This(bodyKind, declaredReturnType, declaredReturnType, {}, true)
+      }
+      if expressionType != "" {
+        return This(bodyKind, declaredReturnType, expressionType, {}, true)
+      }
+      return This(
+        bodyKind,
+        declaredReturnType,
+        "",
+        DiagnosticRegistry.function(FunctionDiagnosticCode.MissingExpressionType),
+        false
+      )
+    }
+
+    if bodyKind == FunctionBodyKind.EmptyBlockBody {
+      if declaredReturnType == "" || declaredReturnType == "void" {
+        return This(bodyKind, declaredReturnType, "void", {}, true)
+      }
+      return This(
+        bodyKind,
+        declaredReturnType,
+        "",
+        DiagnosticRegistry.function(FunctionDiagnosticCode.MissingReturn),
+        false
+      )
+    }
+
+    if bodyKind == FunctionBodyKind.BlockBody {
+      if declaredReturnType == "" {
+        if hasExplicitReturn {
+          return This(
+            bodyKind,
+            declaredReturnType,
+            "",
+            DiagnosticRegistry.function(FunctionDiagnosticCode.BlockReturnInferenceRequiresType),
+            false
+          )
+        }
+        return This(bodyKind, declaredReturnType, "void", {}, true)
+      }
+      if declaredReturnType == "void" {
+        return This(bodyKind, declaredReturnType, "void", {}, true)
+      }
+      if hasExplicitReturn {
+        return This(bodyKind, declaredReturnType, declaredReturnType, {}, true)
+      }
+      return This(
+        bodyKind,
+        declaredReturnType,
+        "",
+        DiagnosticRegistry.function(FunctionDiagnosticCode.MissingReturn),
+        false
+      )
+    }
+
+    return This(
+      bodyKind,
+      declaredReturnType,
+      "",
+      DiagnosticRegistry.function(FunctionDiagnosticCode.Unknown),
+      false
+    )
+  }
+}
+
+impl view FunctionReturnRule {
+  pub diagnosticCode: string => this.diagnostic.code.display
+  pub diagnosticMessage: string => this.diagnostic.format("")
+  pub hasDiagnostic => this.diagnostic.present
+  pub inferred => inferredReturnType != ""
+  pub returnsVoid => inferredReturnType == "void"
+}

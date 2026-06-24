@@ -1,0 +1,46 @@
+pub Literal {
+  kind: LiteralTokenKind
+  text: string
+  defaultType: string
+  valid: bool
+}
+
+pub enum LiteralTokenKind {
+  Integer
+  Float
+  String
+  Bytes
+  Byte
+  Bool
+  None
+  Unknown
+}
+
+impl Literal {
+  pub Literal(kind: LiteralTokenKind, text: string, defaultType: string, valid: bool) =
+    This { kind, text, defaultType, valid }
+
+  pub unknown() =
+    This(LiteralTokenKind.Unknown, "", "", false)
+
+  pub integer(text: string) =
+    This(LiteralTokenKind.Integer, text, "i32", true)
+
+  pub string(text: string) =
+    This(LiteralTokenKind.String, text, "string", true)
+
+  pub none() =
+    This(LiteralTokenKind.None, "none", "Option<T>", true)
+}
+
+impl view Literal {
+  pub isKnown => valid
+  pub isString => kind == LiteralTokenKind.String
+  pub isBytes => kind == LiteralTokenKind.Bytes
+  pub isByte => kind == LiteralTokenKind.Byte
+  pub isBool => kind == LiteralTokenKind.Bool
+  pub isNone => kind == LiteralTokenKind.None
+  pub isNumeric => kind == LiteralTokenKind.Integer || kind == LiteralTokenKind.Float
+  pub hasDefaultType => defaultType != ""
+  pub typed => valid && hasDefaultType
+}

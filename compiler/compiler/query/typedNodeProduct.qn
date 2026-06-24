@@ -1,0 +1,32 @@
+pub TypedNodeProduct {
+  nodeId: StableId
+  ownerBodyId: StableId
+  typeId: StableId
+  inputFingerprint: Fingerprint
+  typeFingerprint: Fingerprint
+  effectCount: usize
+  capabilityCount: usize
+  schemaVersion: u64 = 1
+}
+
+impl TypedNodeProduct {
+  pub init(
+    nodeId: StableId,
+    ownerBodyId: StableId,
+    typeId: StableId,
+    inputFingerprint: Fingerprint,
+    typeFingerprint: Fingerprint,
+    effectCount: usize,
+    capabilityCount: usize
+  ) =
+    This { nodeId, ownerBodyId, typeId, inputFingerprint, typeFingerprint, effectCount, capabilityCount }
+
+  pub productFingerprint() =
+    ProductFingerprint(inputFingerprint, typeFingerprint)
+}
+
+impl view TypedNodeProduct {
+  pub replayable => typeFingerprint.nonzero
+  pub effectful => effectCount > 0
+  pub capabilityBound => capabilityCount > 0
+}

@@ -1,0 +1,8 @@
+pub proof_f32() -> i64 {
+  let a: f32 = 1.5
+  let b: f32 = 2.5
+  let c: f32 = a + b
+  if c == a { return 11 }
+  println("f32 ok: {c}")
+  return 0
+}

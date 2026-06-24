@@ -1,0 +1,31 @@
+pub Aarch64Encoder {
+  targetTriple: string = "aarch64-unknown-linux-gnu"
+  objectFormat: string = "elf"
+  instructionCount: i64 = 0
+  byteCount: i64 = 0
+  relocationCount: i64 = 0
+  diagnosticCode: string = ""
+}
+
+impl Aarch64Encoder {
+  pub Aarch64Encoder(instructionCount: i64, byteCount: i64, relocationCount: i64) =
+    This {
+      instructionCount
+      byteCount
+      relocationCount
+    }
+}
+
+impl view Aarch64Encoder {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetTriple != "" &&
+    objectFormat != "" &&
+    instructionCount >= 0 &&
+    byteCount >= 0 &&
+    relocationCount >= 0
+
+  pub emitsCode: bool => valid && byteCount > 0
+  pub encoderHash: string => "aarch64-encoder:{instructionCount}:{byteCount}:{relocationCount}"
+  pub debugName: string => "aarch64.encoder.{byteCount}"
+}

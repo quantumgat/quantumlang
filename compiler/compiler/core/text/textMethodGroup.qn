@@ -1,0 +1,13 @@
+pub enum TextMethodGroup {
+  Measure
+  Validate
+  Compare
+  Search
+  Slice
+  Transform
+  Convert
+  Unicode
+  Security
+  Codec
+  Unknown
+}

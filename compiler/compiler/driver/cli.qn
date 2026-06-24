@@ -1,0 +1,26 @@
+import driver::{Command}
+
+pub Cli {
+  programName: string
+  defaultCommand: Command
+  supportsCheck: bool
+  supportsBuild: bool
+  supportsMagicFast: bool
+}
+
+impl Cli {
+  pub Cli() =
+    This {
+      programName: "qtlc1",
+      defaultCommand: Command.help(),
+      supportsCheck: true,
+      supportsBuild: true,
+      supportsMagicFast: true,
+    }
+}
+
+impl view Cli {
+  supportsCoreCommands => supportsCheck && supportsBuild
+
+  magicFastEnabled => supportsMagicFast
+}

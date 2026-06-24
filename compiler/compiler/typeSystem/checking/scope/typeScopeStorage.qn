@@ -1,0 +1,12 @@
+import core::{ScopeId}
+import source::{SourceSpan}
+
+pub TypeNodeScope {
+  nodeId: i64
+  scope: ScopeId
+  span: SourceSpan
+}
+
+impl view TypeNodeScope {
+  pub valid: bool => nodeId > 0 && scope.valid && span.valid
+}

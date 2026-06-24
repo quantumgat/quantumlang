@@ -1,0 +1,9 @@
+[module]
+name = "bytes"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/core/bytes"
+role = "byte-values-and-binary-io"
+
+[dependencies]
+modules = ["core.hash"]

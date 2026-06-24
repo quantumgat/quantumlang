@@ -1,0 +1,36 @@
+pub Fingerprint {
+  high: u64 = 0
+  low: u64 = 0
+}
+
+pub ProductFingerprint {
+  input: Fingerprint
+  output: Fingerprint
+  algorithmVersion: u64 = 1
+  schemaVersion: u64 = 1
+}
+
+impl Fingerprint {
+  pub zero() =
+    This {}
+
+  pub fromParts(high: u64, low: u64) =
+    This { high, low }
+}
+
+impl view Fingerprint {
+  pub zeroValue => high == 0 && low == 0
+  pub nonzero => zeroValue == false
+  pub stableKey => "{high}:{low}"
+}
+
+impl ProductFingerprint {
+  pub ProductFingerprint(input: Fingerprint, output: Fingerprint) =
+    This { input, output }
+}
+
+impl view ProductFingerprint {
+  pub cacheable => input.nonzero || output.nonzero
+  pub identityChanged => input.high != output.high || input.low != output.low
+  pub algorithmKey => "a{algorithmVersion}.s{schemaVersion}"
+}

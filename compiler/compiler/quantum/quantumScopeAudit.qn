@@ -1,0 +1,74 @@
+pub QuantumScopeAudit {
+  coreTypesCovered: bool
+  resourcesCovered: bool
+  effectsCovered: bool
+  quantumControlSeparated: bool
+  verifiersCovered: bool
+  loweringCovered: bool
+  valid: bool
+}
+
+impl QuantumScopeAudit {
+  pub QuantumScopeAudit() {
+    let qubitFact = QuantumScopeFact(QuantumScopeKind.CoreType, "qubit")
+    let qregFact = QuantumScopeFact(QuantumScopeKind.CoreType, "qreg")
+    let qresultFact = QuantumScopeFact(QuantumScopeKind.CoreType, "qresult")
+    let qfuncFact = QuantumScopeFact(QuantumScopeKind.CoreType, "qfunc")
+    let qanyFact = QuantumScopeFact(QuantumScopeKind.CoreType, "qany")
+    let ownership = QuantumScopeFact(QuantumScopeKind.Resource, "ownership")
+    let noClone = QuantumScopeFact(QuantumScopeKind.Resource, "noClone")
+    let lifetime = QuantumScopeFact(QuantumScopeKind.Resource, "lifetime")
+    let effect = QuantumScopeFact(QuantumScopeKind.Effect, "measurement")
+    let qifFact = QuantumScopeFact(QuantumScopeKind.ControlFlow, "qif")
+    let qforFact = QuantumScopeFact(QuantumScopeKind.ControlFlow, "qfor")
+    let qwhileFact = QuantumScopeFact(QuantumScopeKind.ControlFlow, "qwhile")
+    let qloopFact = QuantumScopeFact(QuantumScopeKind.ControlFlow, "qloop")
+    let verifier = QuantumScopeFact(QuantumScopeKind.Verification, "resource/effect/target")
+    let lowering = QuantumScopeFact(QuantumScopeKind.Lowering, "qmir/qtir")
+
+    let coreTypesCovered = qubitFact.valid &&
+      qregFact.valid &&
+      qresultFact.valid &&
+      qfuncFact.valid &&
+      qanyFact.valid
+
+    let resourcesCovered = ownership.valid &&
+      noClone.valid &&
+      lifetime.valid
+
+    let effectsCovered = effect.valid
+
+    let quantumControlSeparated = qifFact.valid &&
+      qforFact.valid &&
+      qwhileFact.valid &&
+      qloopFact.valid &&
+      !qifFact.normalControlFlow &&
+      !qforFact.normalControlFlow &&
+      !qwhileFact.normalControlFlow &&
+      !qloopFact.normalControlFlow
+
+    let verifiersCovered = verifier.valid
+    let loweringCovered = lowering.valid
+
+    let valid = coreTypesCovered &&
+      resourcesCovered &&
+      effectsCovered &&
+      quantumControlSeparated &&
+      verifiersCovered &&
+      loweringCovered
+
+    This {
+      coreTypesCovered
+      resourcesCovered
+      effectsCovered
+      quantumControlSeparated
+      verifiersCovered
+      loweringCovered
+      valid
+    }
+  }
+}
+
+impl view QuantumScopeAudit {
+  pub complete => valid
+}

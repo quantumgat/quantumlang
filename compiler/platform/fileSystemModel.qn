@@ -1,0 +1,40 @@
+pub FileSystemModel {
+  pathSeparator: string
+  caseSensitive: bool
+  executableBit: bool
+  symlinkSupport: bool
+  maxPathPolicy: string
+}
+
+impl FileSystemModel {
+  pub FileSystemModel(
+    pathSeparator: string,
+    caseSensitive: bool,
+    executableBit: bool,
+    symlinkSupport: bool,
+    maxPathPolicy: string
+  ) =
+    This {
+      pathSeparator
+      caseSensitive
+      executableBit
+      symlinkSupport
+      maxPathPolicy
+    }
+
+  pub posix() =
+    This("/", true, true, true, "posix")
+
+  pub windows() =
+    This("\\", false, false, true, "windows-long-path")
+
+  pub none() =
+    This("/", true, false, false, "none")
+}
+
+impl view FileSystemModel {
+  pub posixStyle => pathSeparator == "/"
+  pub windowsStyle => pathSeparator == "\\"
+  pub executablePermissionMode => executableBit
+  pub valid => pathSeparator != "" && maxPathPolicy != ""
+}

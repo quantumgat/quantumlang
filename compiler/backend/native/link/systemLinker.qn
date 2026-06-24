@@ -1,0 +1,57 @@
+pub SystemLinker {
+  toolName: string
+  targetTriple: string
+  objectFormat: string
+  commandHash: string
+  available: bool
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl SystemLinker {
+  pub SystemLinker(
+    toolName: string,
+    targetTriple: string,
+    objectFormat: string,
+    commandHash: string,
+    available: bool
+  ) =
+    This {
+      toolName
+      targetTriple
+      objectFormat
+      commandHash
+      available
+    }
+
+  pub forTarget(target: TargetIdentity) =
+    This {
+      toolName: match target.objectFormat == "elf" {
+        true => "cc"
+        false => "system-linker"
+      }
+      targetTriple: target.targetTriple
+      objectFormat: target.objectFormat
+      commandHash: "system-linker:{target.targetTriple}:{target.objectFormat}:{target.abi}"
+      available: target.valid
+      deterministic: target.valid
+      diagnosticCode: match target.valid {
+        true => ""
+        false => "QNATIVE0810"
+      }
+    }
+}
+
+impl view SystemLinker {
+  pub valid => diagnosticCode == "" &&
+    toolName != "" &&
+    targetTriple != "" &&
+    objectFormat != "" &&
+    commandHash != "" &&
+    available &&
+    deterministic
+  pub bridge => valid
+  pub elfBridge => valid && objectFormat == "elf"
+  pub linkerHash => "system-linker:{toolName}:{targetTriple}:{objectFormat}:{commandHash}"
+  pub debugName => "system.linker.{toolName}.{targetTriple}"
+}

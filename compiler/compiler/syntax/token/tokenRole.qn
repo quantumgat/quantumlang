@@ -1,0 +1,14 @@
+pub enum TokenRole {
+  Keyword
+  Identifier
+  PrimitiveType
+  IntegerLiteral
+  FloatLiteral
+  StringLiteral
+  BytesLiteral
+  ByteLiteral
+  Operator
+  Delimiter
+  Trivia
+  Unknown
+}

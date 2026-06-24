@@ -1,0 +1,21 @@
+pub enum CoreTypeFamily {
+  TextBytes
+  Decimal
+  Fixed
+  BigInteger
+  Complex
+  Rational
+  Simd
+  Vector
+  Matrix
+  Tensor
+  Field
+  Overflow
+  Carrier
+  Collection
+  Communication
+  Concurrency
+  Quantum
+  Dynamic
+  Unknown
+}

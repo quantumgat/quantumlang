@@ -1,0 +1,30 @@
+import source::{SourceSpan}
+
+pub enum AstRoleVisibility {
+  Public
+  Internal
+  Protected
+  Private
+  Unknown
+}
+
+pub AstRoleConformance {
+  roleName: string = ""
+  visibility: AstRoleVisibility = AstRoleVisibility.Private
+  span: SourceSpan = {}
+}
+
+impl view AstRoleConformance {
+  pub publicVisible: bool => visibility == AstRoleVisibility.Public
+
+  pub internalVisible: bool => visibility == AstRoleVisibility.Internal
+
+  pub protectedVisible: bool => visibility == AstRoleVisibility.Protected
+
+  pub privateVisible: bool => visibility == AstRoleVisibility.Private
+
+  pub valid: bool =>
+    roleName != "" &&
+    visibility != AstRoleVisibility.Unknown &&
+    span.valid
+}

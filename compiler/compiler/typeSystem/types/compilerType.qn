@@ -1,0 +1,23 @@
+import core::{SymbolId, TypeId}
+
+pub Type {
+  id: TypeId = {}
+  symbol: SymbolId = {}
+  name: string = ""
+  deterministic: bool = true
+}
+
+impl Type {
+  pub Type(id: TypeId, name: string) =
+    This { id, name }
+
+  pub forSymbol(id: TypeId, symbol: SymbolId, name: string) =
+    This { id, symbol, name }
+}
+
+impl view Type {
+  pub valid: bool =>
+    id.valid &&
+    name != "" &&
+    deterministic
+}

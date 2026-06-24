@@ -1,0 +1,3 @@
+pub CoffObject {
+  format: string
+}

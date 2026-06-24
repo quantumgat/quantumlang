@@ -1,0 +1,35 @@
+pub DeploymentModel {
+  kind: string
+  requiresBundle: bool
+  flashable: bool
+  bootable: bool
+}
+
+impl DeploymentModel {
+  pub DeploymentModel(kind: string, requiresBundle: bool, flashable: bool, bootable: bool) =
+    This {
+      kind
+      requiresBundle
+      flashable
+      bootable
+    }
+
+  pub nativeExecutable() =
+    This("native-executable", false, false, false)
+
+  pub appBundle() =
+    This("app-bundle", true, false, false)
+
+  pub firmwareImage() =
+    This("firmware-image", false, true, true)
+
+  pub wasmModule() =
+    This("wasm-module", false, false, false)
+}
+
+impl view DeploymentModel {
+  pub native => kind == "native-executable"
+  pub bundle => requiresBundle
+  pub firmware => flashable && bootable
+  pub valid => kind != ""
+}

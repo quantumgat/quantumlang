@@ -1,0 +1,76 @@
+pub enum RangeBoundKind {
+  Unbounded
+  Included
+  Excluded
+}
+
+pub RangeBound<T> {
+  kind: RangeBoundKind = RangeBoundKind.Unbounded
+  value: Option<i64> = None
+}
+
+impl RangeBound<T> {
+  pub unbounded() =
+    This()
+
+  pub included(value: i64) =
+    This {
+      kind: RangeBoundKind.Included
+      value: Some(value)
+    }
+
+  pub excluded(value: i64) =
+    This {
+      kind: RangeBoundKind.Excluded
+      value: Some(value)
+    }
+}
+
+impl view RangeBound<T> {
+  pub isBounded: bool => kind != RangeBoundKind.Unbounded
+
+  pub isUnbounded: bool => kind == RangeBoundKind.Unbounded
+
+  pub isInclusive: bool => kind == RangeBoundKind.Included
+
+  pub isExclusive: bool => kind == RangeBoundKind.Excluded
+}
+
+pub RangeFull {
+}
+
+pub RangeFrom<T> {
+  start: i64 = 0
+}
+
+pub RangeTo<T> {
+  end: i64 = 0
+}
+
+pub RangeToInclusive<T> {
+  end: i64 = 0
+}
+
+impl view RangeFrom<T> {
+  pub boundedStart: bool => true
+  pub boundedEnd: bool => false
+  pub isFinite: bool => false
+}
+
+impl view RangeTo<T> {
+  pub boundedStart: bool => false
+  pub boundedEnd: bool => true
+  pub isFinite: bool => false
+}
+
+impl view RangeToInclusive<T> {
+  pub boundedStart: bool => false
+  pub boundedEnd: bool => true
+  pub isFinite: bool => false
+}
+
+impl view RangeFull {
+  pub boundedStart: bool => false
+  pub boundedEnd: bool => false
+  pub isFinite: bool => false
+}

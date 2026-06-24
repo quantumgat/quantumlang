@@ -1,0 +1,15 @@
+pub Owner {
+  value: i64
+}
+
+global leaked: *Owner = null
+
+pub escapeLocalPointer() -> i64 {
+  let owner: Owner = { value: 1 }
+  leaked = &owner
+  return 0
+}
+
+pub main() -> i64 {
+  return escapeLocalPointer()
+}

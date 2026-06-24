@@ -1,0 +1,21 @@
+pub StartupObject {
+  objectPath: string
+  entrySymbol: string
+  includesVectorTable: bool
+  includesReset: bool
+}
+
+impl StartupObject {
+  pub StartupObject(objectPath: string, entrySymbol: string, includesVectorTable: bool, includesReset: bool) =
+    This {
+      objectPath
+      entrySymbol
+      includesVectorTable
+      includesReset
+    }
+}
+
+impl view StartupObject {
+  pub valid => objectPath != "" && entrySymbol != "" && includesVectorTable && includesReset
+  pub linkable => valid
+}

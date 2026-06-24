@@ -1,0 +1,32 @@
+pub BlockEmitter {
+  blockName: string
+  instructionCount: i64
+  byteCount: i64
+  relocationCount: i64 = 0
+  diagnosticCode: string = ""
+}
+
+impl BlockEmitter {
+  pub BlockEmitter(blockName: string, instructionCount: i64, byteCount: i64, relocationCount: i64) =
+    This {
+      blockName
+      instructionCount
+      byteCount
+      relocationCount
+    }
+
+  pub entry(byteCount: i64) =
+    This("entry", 1, byteCount, 0)
+}
+
+impl view BlockEmitter {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    blockName != "" &&
+    instructionCount >= 0 &&
+    byteCount >= 0 &&
+    relocationCount >= 0
+
+  pub hasCode: bool => byteCount > 0
+  pub debugName: string => "emit.block.{blockName}.{byteCount}"
+}

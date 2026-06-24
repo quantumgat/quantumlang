@@ -1,0 +1,8 @@
+pub proof_isize() -> i64 {
+  let a: isize = 9
+  let b: isize = 4
+  let c: isize = a + b
+  if c != 13 { return 11 }
+  println("isize ok: {c}")
+  return 0
+}

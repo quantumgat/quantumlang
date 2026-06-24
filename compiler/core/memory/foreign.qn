@@ -1,0 +1,128 @@
+pub Foreign<T> {
+  value: T
+  allocator: Allocator = {}
+  owner: CompilerId = {}
+  generation: u64 = 0
+  external: bool = true
+  writable: bool = false
+  released: bool = false
+  label: string = ""
+}
+
+impl Foreign<T> {
+  pub Foreign(value: T, allocator: Allocator) =
+    This {
+      value
+      allocator
+    }
+
+  pub ptr() -> *T {
+    if writable == false || live == false {
+      return null
+    }
+    return &value
+  }
+
+  pub cptr() -> const *T {
+    if live == false {
+      return null
+    }
+    return const *value
+  }
+
+  pub ref() -> &T {
+    return &value
+  }
+
+  pub cref() -> const &T {
+    return const &value
+  }
+
+  pub borrow() -> Borrow<T> {
+    return Borrow<T>(cptr(), owner, generation)
+  }
+
+  pub borrowMut() -> BorrowMut<T> {
+    return BorrowMut<T>(ptr(), owner, generation)
+  }
+
+  pub withAllocator(allocator: Allocator) -> This {
+    return this {
+      allocator
+    }
+  }
+
+  pub withWrite(enabled: bool) -> This {
+    return this {
+      writable: enabled
+      generation: generation + 1
+    }
+  }
+
+  pub reset(value: T) -> This {
+    return this {
+      value
+      released: false
+      generation: generation + 1
+    }
+  }
+
+  pub tag(value: string) -> This {
+    return this {
+      label: value
+    }
+  }
+
+  pub clear() -> This {
+    return release()
+  }
+
+  pub release() -> This {
+    return this {
+      released: true
+      generation: generation + 1
+    }
+  }
+}
+
+impl view Foreign<T> {
+  pub live => released == false
+
+  pub owned => external == false
+
+  pub readOnly => writable == false
+
+  pub readable => live
+
+  pub mutable => live && writable
+
+  pub hasAllocator => allocator.valid
+
+  pub hasOwner => owner.valid
+
+  pub ownsStorage => owned && live
+
+  pub tagged => label != ""
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return live && generation == currentGeneration
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub expired(currentGeneration: u64) -> bool {
+    return stale(currentGeneration)
+  }
+
+  pub sameOwner(value: CompilerId) -> bool {
+    return owner == value
+  }
+
+  pub sameGen(value: u64) -> bool {
+    return generation == value
+  }
+
+  pub valid => live && allocator.valid && external
+}

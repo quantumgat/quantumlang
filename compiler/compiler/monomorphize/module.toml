@@ -1,0 +1,9 @@
+[module]
+name = "monomorphize"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/monomorphize"
+role = "generic-instance-materialization"
+
+[dependencies]
+modules = ["core", "declaration", "diagnostics", "hir", "semantic", "typeSystem"]

@@ -1,0 +1,20 @@
+pub SourcePositionRule {
+  byteOffsetsStable: bool
+  displayColumnsLate: bool
+  diagnosticLabelsUseSourceSpan: bool
+}
+
+impl SourcePositionRule {
+  pub SourcePositionRule() =
+    This {
+      byteOffsetsStable: true,
+      displayColumnsLate: true,
+      diagnosticLabelsUseSourceSpan: true,
+    }
+}
+
+impl view SourcePositionRule {
+  pub valid => byteOffsetsStable &&
+    displayColumnsLate &&
+    diagnosticLabelsUseSourceSpan
+}

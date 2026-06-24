@@ -1,0 +1,9 @@
+[module]
+name = "host"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/host"
+role = "compiler-host-capabilities"
+
+[dependencies]
+modules = ["core"]

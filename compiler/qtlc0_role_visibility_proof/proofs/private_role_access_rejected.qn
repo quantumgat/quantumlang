@@ -1,0 +1,18 @@
+pub PrivateUser {
+  id: i64
+}
+
+role PrivateRole {
+  secret() -> i64
+}
+
+extend PrivateUser : private PrivateRole {
+  secret() -> i64 {
+    id
+  }
+}
+
+main() -> i64 {
+  let user = PrivateUser(7)
+  return user.secret()
+}

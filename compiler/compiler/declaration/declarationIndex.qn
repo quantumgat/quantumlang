@@ -1,0 +1,345 @@
+import core::{DeclarationId, Index, Slice}
+
+pub DeclarationIndex {
+  index: Index<DeclarationKey, DeclarationId> = {}
+  keys: Slice<DeclarationKey> = []
+  ids: Slice<DeclarationId> = []
+  moduleIds: Slice<DeclarationId> = []
+  typeIds: Slice<DeclarationId> = []
+  implIds: Slice<DeclarationId> = []
+  viewIds: Slice<DeclarationId> = []
+  roleIds: Slice<DeclarationId> = []
+  functionIds: Slice<DeclarationId> = []
+  importIds: Slice<DeclarationId> = []
+  contextIds: Slice<DeclarationId> = []
+  extractIds: Slice<DeclarationId> = []
+  extendIds: Slice<DeclarationId> = []
+  moduleKeys: Slice<string> = []
+  moduleValues: Slice<Slice<DeclarationId>> = []
+  publicSurface: Slice<DeclarationId> = []
+  unresolved: Slice<DeclarationId> = []
+  moduleKey: DeclarationKey = {}
+  typeKey: DeclarationKey = {}
+  implKey: DeclarationKey = {}
+  viewKey: DeclarationKey = {}
+  roleKey: DeclarationKey = {}
+  functionKey: DeclarationKey = {}
+  importKey: DeclarationKey = {}
+  contextKey: DeclarationKey = {}
+  extractKey: DeclarationKey = {}
+  extendKey: DeclarationKey = {}
+  moduleId: DeclarationId = {}
+  typeId: DeclarationId = {}
+  implId: DeclarationId = {}
+  viewId: DeclarationId = {}
+  roleId: DeclarationId = {}
+  functionId: DeclarationId = {}
+  importId: DeclarationId = {}
+  contextId: DeclarationId = {}
+  extractId: DeclarationId = {}
+  extendId: DeclarationId = {}
+  parserRowsBacked: bool = false
+  parserSamplesReady: bool = false
+  deterministic: bool = true
+}
+
+impl DeclarationIndex {
+  pub DeclarationIndex(totalCount: i64, publicCount: i64) =
+    This {
+      index: Index(totalCount)
+      keys: Slice(totalCount)
+      ids: Slice(totalCount)
+      publicSurface: Slice(publicCount)
+      unresolved: Slice<DeclarationId>()
+    }
+
+  pub parser(totalCount: i64, publicCount: i64) =
+    This {
+      index: Index(totalCount)
+      keys: Slice(totalCount)
+      ids: Slice(1, totalCount)
+      moduleKeys: Slice()
+      moduleValues: Slice()
+      publicSurface: Slice(1, publicCount)
+      unresolved: Slice<DeclarationId>()
+      parserRowsBacked: true
+      parserSamplesReady: true
+    }
+
+  pub fromParserRows(rows: DeclarationParserRows) -> This {
+    let moduleIds = rows.modules.declarationIds()
+    let typeIds = rows.types.declarationIds()
+    let implIds = rows.impls.declarationIds()
+    let viewIds = rows.views.declarationIds()
+    let roleIds = rows.roles.declarationIds()
+    let functionIds = rows.functions.declarationIds()
+    let importIds = rows.imports.declarationIds()
+    let contextIds = rows.contexts.declarationIds()
+    let extractIds = rows.extracts.declarationIds()
+    let extendIds = rows.extends.declarationIds()
+
+    return This {
+      index: Index(rows.totalCount)
+      keys: Slice(rows.totalCount)
+      ids: Slice(1, rows.totalCount)
+      moduleIds
+      typeIds
+      implIds
+      viewIds
+      roleIds
+      functionIds
+      importIds
+      contextIds
+      extractIds
+      extendIds
+      moduleKeys: Slice(rows.modules.count)
+      moduleValues: Slice(rows.modules.count)
+      publicSurface: Slice(1, rows.totalCount)
+      unresolved: Slice()
+      moduleKey: DeclarationKey(DeclarationKind.Module, rows.modules.modulePath, rows.modules.firstName)
+      typeKey: DeclarationKey(DeclarationKind.Type, rows.types.modulePath, rows.types.firstName)
+      implKey: DeclarationKey(DeclarationKind.Impl, rows.impls.modulePath, rows.impls.firstName)
+      viewKey: DeclarationKey(DeclarationKind.View, rows.views.modulePath, rows.views.firstName)
+      roleKey: DeclarationKey(DeclarationKind.Role, rows.roles.modulePath, rows.roles.firstName)
+      functionKey: DeclarationKey(DeclarationKind.Function, rows.functions.modulePath, rows.functions.firstName)
+      importKey: DeclarationKey(DeclarationKind.Import, rows.imports.modulePath, rows.imports.firstName)
+      contextKey: DeclarationKey(DeclarationKind.Context, rows.contexts.modulePath, rows.contexts.firstName)
+      extractKey: DeclarationKey(DeclarationKind.Extract, rows.extracts.modulePath, rows.extracts.firstName)
+      extendKey: DeclarationKey(DeclarationKind.Extend, rows.extends.modulePath, rows.extends.firstName)
+      moduleId: DeclarationId(1, 1, 1, 0)
+      typeId: DeclarationId(1, 1, 2, 0)
+      implId: DeclarationId(1, 1, 3, 0)
+      viewId: DeclarationId(1, 1, 4, 0)
+      roleId: DeclarationId(1, 1, 5, 0)
+      functionId: DeclarationId(1, 1, 6, 0)
+      importId: DeclarationId(1, 1, 7, 0)
+      contextId: DeclarationId(1, 1, 8, 0)
+      extractId: DeclarationId(1, 1, 9, 0)
+      extendId: DeclarationId(1, 1, 10, 0)
+      parserRowsBacked: rows.valid
+      parserSamplesReady: true
+    }
+  }
+
+  pub fromParserRows(rows: DeclarationParserRows, samples: DeclarationParserRecordSamples) -> This {
+    return This.fromParserRows(rows)
+  }
+
+  pub declarationsFor(kind: DeclarationKind) -> Slice<DeclarationId> {
+    if kind == DeclarationKind.Module {
+      return moduleIds
+    }
+
+    if kind == DeclarationKind.Type {
+      return typeIds
+    }
+
+    if kind == DeclarationKind.Impl {
+      return implIds
+    }
+
+    if kind == DeclarationKind.View {
+      return viewIds
+    }
+
+    if kind == DeclarationKind.Role {
+      return roleIds
+    }
+
+    if kind == DeclarationKind.Function {
+      return functionIds
+    }
+
+    if kind == DeclarationKind.Import {
+      return importIds
+    }
+
+    if kind == DeclarationKind.Context {
+      return contextIds
+    }
+
+    if kind == DeclarationKind.Extract {
+      return extractIds
+    }
+
+    if kind == DeclarationKind.Extend {
+      return extendIds
+    }
+
+    return Slice()
+  }
+
+  pub publicDeclarations() -> Slice<DeclarationId> {
+    return publicSurface
+  }
+
+  pub unresolvedDeclarations() -> Slice<DeclarationId> {
+    return unresolved
+  }
+
+  pub lookupByParts(
+    kind: DeclarationKind,
+    modulePath: string,
+    name: string
+  ) -> Option<DeclarationId> {
+    return lookup(DeclarationKey(kind, modulePath, name))
+  }
+
+  pub lookup(key: DeclarationKey) -> Option<DeclarationId> {
+    if !lookupReady || !key.valid {
+      return None
+    }
+
+    if key.kind == moduleKey.kind && key.modulePath == moduleKey.modulePath && key.name == moduleKey.name {
+      return Some(moduleId)
+    }
+
+    if key.kind == typeKey.kind && key.modulePath == typeKey.modulePath && key.name == typeKey.name {
+      return Some(typeId)
+    }
+
+    if key.kind == implKey.kind && key.modulePath == implKey.modulePath && key.name == implKey.name {
+      return Some(implId)
+    }
+
+    if key.kind == viewKey.kind && key.modulePath == viewKey.modulePath && key.name == viewKey.name {
+      return Some(viewId)
+    }
+
+    if key.kind == roleKey.kind && key.modulePath == roleKey.modulePath && key.name == roleKey.name {
+      return Some(roleId)
+    }
+
+    if key.kind == functionKey.kind && key.modulePath == functionKey.modulePath && key.name == functionKey.name {
+      return Some(functionId)
+    }
+
+    if key.kind == importKey.kind && key.modulePath == importKey.modulePath && key.name == importKey.name {
+      return Some(importId)
+    }
+
+    if key.kind == contextKey.kind && key.modulePath == contextKey.modulePath && key.name == contextKey.name {
+      return Some(contextId)
+    }
+
+    if key.kind == extractKey.kind && key.modulePath == extractKey.modulePath && key.name == extractKey.name {
+      return Some(extractId)
+    }
+
+    if key.kind == extendKey.kind && key.modulePath == extendKey.modulePath && key.name == extendKey.name {
+      return Some(extendId)
+    }
+
+    return None
+  }
+}
+
+impl view DeclarationIndex {
+  pub count: i64 => index.count
+
+  pub publicCount: i64 => publicSurface.count
+
+  pub unresolvedCount: i64 => unresolved.count
+
+  pub categoryCount: i64 =>
+    moduleIds.count +
+    typeIds.count +
+    implIds.count +
+    viewIds.count +
+    roleIds.count +
+    functionIds.count +
+    importIds.count +
+    contextIds.count +
+    extractIds.count +
+    extendIds.count
+
+  pub resolved: bool => unresolvedCount == 0
+
+  pub publicWithinIndex: bool => publicCount >= 0 && publicCount <= count
+
+  pub parserBacked: bool => parserRowsBacked && parserSamplesReady
+
+  pub sampleKeysReady: bool =>
+    moduleKey.valid &&
+    typeKey.valid &&
+    implKey.valid &&
+    viewKey.valid &&
+    roleKey.valid &&
+    functionKey.valid &&
+    importKey.valid &&
+    contextKey.valid &&
+    extractKey.valid &&
+    extendKey.valid
+
+  pub sampleIdsReady: bool =>
+    moduleId.valid &&
+    typeId.valid &&
+    implId.valid &&
+    viewId.valid &&
+    roleId.valid &&
+    functionId.valid &&
+    importId.valid &&
+    contextId.valid &&
+    extractId.valid &&
+    extendId.valid
+
+  pub keyIndexAligned: bool =>
+    index.valid &&
+    index.count == count &&
+    keys.count == ids.count &&
+    ids.count == count
+
+  pub categorySlicesCoverIndex: bool =>
+    categoryCount == count
+
+  pub moduleIndexAligned: bool =>
+    moduleKeys.count == moduleValues.count
+
+  pub lookupReady: bool =>
+    parserBacked &&
+    keyIndexAligned &&
+    categorySlicesCoverIndex &&
+    moduleIndexAligned &&
+    sampleKeysReady &&
+    sampleIdsReady
+
+  pub rangesValid: bool =>
+    keys.start >= 0 &&
+    keys.count >= 0 &&
+    ids.start >= 0 &&
+    ids.count >= 0 &&
+    moduleIds.start >= 0 &&
+    moduleIds.count >= 0 &&
+    typeIds.start >= 0 &&
+    typeIds.count >= 0 &&
+    implIds.start >= 0 &&
+    implIds.count >= 0 &&
+    viewIds.start >= 0 &&
+    viewIds.count >= 0 &&
+    roleIds.start >= 0 &&
+    roleIds.count >= 0 &&
+    functionIds.start >= 0 &&
+    functionIds.count >= 0 &&
+    importIds.start >= 0 &&
+    importIds.count >= 0 &&
+    contextIds.start >= 0 &&
+    contextIds.count >= 0 &&
+    extractIds.start >= 0 &&
+    extractIds.count >= 0 &&
+    extendIds.start >= 0 &&
+    extendIds.count >= 0 &&
+    moduleKeys.start >= 0 &&
+    moduleKeys.count >= 0 &&
+    moduleValues.start >= 0 &&
+    moduleValues.count >= 0 &&
+    publicSurface.start >= 0 &&
+    publicSurface.count >= 0 &&
+    unresolved.start >= 0 &&
+    unresolved.count >= 0
+
+  pub valid: bool =>
+    deterministic &&
+    rangesValid &&
+    lookupReady &&
+    publicWithinIndex
+}

@@ -1,0 +1,144 @@
+import syntax::{AstDeclarationKind, PackageAstProduct}
+
+pub DeclarationParserRows {
+  modules: DeclarationRecordRange
+  types: DeclarationRecordRange
+  impls: DeclarationRecordRange
+  views: DeclarationRecordRange
+  roles: DeclarationRecordRange
+  functions: DeclarationRecordRange
+  imports: DeclarationRecordRange
+  contexts: DeclarationRecordRange
+  extracts: DeclarationRecordRange
+  extends: DeclarationRecordRange
+  deterministic: bool = true
+}
+
+impl DeclarationParserRows {
+  pub fromCounts(
+    moduleCount: i64,
+    typeCount: i64,
+    implCount: i64,
+    viewCount: i64,
+    roleCount: i64,
+    functionCount: i64,
+    importCount: i64,
+    contextCount: i64,
+    extractCount: i64,
+    extendCount: i64
+  ) -> This {
+    let moduleStart = 1
+    let typeStart = moduleStart + moduleCount
+    let implStart = typeStart + typeCount
+    let viewStart = implStart + implCount
+    let roleStart = viewStart + viewCount
+    let functionStart = roleStart + roleCount
+    let importStart = functionStart + functionCount
+    let contextStart = importStart + importCount
+    let extractStart = contextStart + contextCount
+    let extendStart = extractStart + extractCount
+
+    return This {
+      modules: DeclarationRecordRange(DeclarationKind.Module, moduleStart, moduleCount, "<parser>", "module")
+      types: DeclarationRecordRange(DeclarationKind.Type, typeStart, typeCount, "<parser>", "type")
+      impls: DeclarationRecordRange(DeclarationKind.Impl, implStart, implCount, "<parser>", "impl")
+      views: DeclarationRecordRange(DeclarationKind.View, viewStart, viewCount, "<parser>", "view")
+      roles: DeclarationRecordRange(DeclarationKind.Role, roleStart, roleCount, "<parser>", "role")
+      functions: DeclarationRecordRange(DeclarationKind.Function, functionStart, functionCount, "<parser>", "function")
+      imports: DeclarationRecordRange(DeclarationKind.Import, importStart, importCount, "<parser>", "import")
+      contexts: DeclarationRecordRange(DeclarationKind.Context, contextStart, contextCount, "<parser>", "context")
+      extracts: DeclarationRecordRange(DeclarationKind.Extract, extractStart, extractCount, "<parser>", "extract")
+      extends: DeclarationRecordRange(DeclarationKind.Extend, extendStart, extendCount, "<parser>", "extend")
+    }
+  }
+
+  pub fromTable(table: DeclarationTable) -> This {
+    return This.fromCounts(
+      table.moduleCount,
+      table.typeCount,
+      table.implCount,
+      table.viewCount,
+      table.roleCount,
+      table.functionCount,
+      table.importCount,
+      table.contextCount,
+      table.extractCount,
+      table.extendCount
+    )
+  }
+
+  pub fromAst(product: PackageAstProduct) -> This {
+    let rows = This.fromCounts(
+      product.declarationCountFor(AstDeclarationKind.Module),
+      product.declarationCountFor(AstDeclarationKind.Type),
+      product.declarationCountFor(AstDeclarationKind.Impl),
+      product.declarationCountFor(AstDeclarationKind.View),
+      product.declarationCountFor(AstDeclarationKind.Role),
+      product.declarationCountFor(AstDeclarationKind.Function),
+      product.declarationCountFor(AstDeclarationKind.Import),
+      product.declarationCountFor(AstDeclarationKind.Context),
+      product.declarationCountFor(AstDeclarationKind.Extract),
+      product.declarationCountFor(AstDeclarationKind.Extend)
+    )
+
+    return This {
+      modules: rows.modules.sampled(product.firstDeclarationModulePath(AstDeclarationKind.Module), product.firstDeclarationName(AstDeclarationKind.Module))
+      types: rows.types.sampled(product.firstDeclarationModulePath(AstDeclarationKind.Type), product.firstDeclarationName(AstDeclarationKind.Type))
+      impls: rows.impls.sampled(product.firstDeclarationModulePath(AstDeclarationKind.Impl), product.firstDeclarationName(AstDeclarationKind.Impl))
+      views: rows.views.sampled(product.firstDeclarationModulePath(AstDeclarationKind.View), product.firstDeclarationName(AstDeclarationKind.View))
+      roles: rows.roles.sampled(product.firstDeclarationModulePath(AstDeclarationKind.Role), product.firstDeclarationName(AstDeclarationKind.Role))
+      functions: rows.functions.sampled(product.firstDeclarationModulePath(AstDeclarationKind.Function), product.firstDeclarationName(AstDeclarationKind.Function))
+      imports: rows.imports.sampled(product.firstDeclarationModulePath(AstDeclarationKind.Import), product.firstDeclarationName(AstDeclarationKind.Import))
+      contexts: rows.contexts.sampled(product.firstDeclarationModulePath(AstDeclarationKind.Context), product.firstDeclarationName(AstDeclarationKind.Context))
+      extracts: rows.extracts.sampled(product.firstDeclarationModulePath(AstDeclarationKind.Extract), product.firstDeclarationName(AstDeclarationKind.Extract))
+      extends: rows.extends.sampled(product.firstDeclarationModulePath(AstDeclarationKind.Extend), product.firstDeclarationName(AstDeclarationKind.Extend))
+    }
+  }
+
+  pub countsMatch(table: DeclarationTable) -> bool {
+    return totalCount == table.symbolCount &&
+      modules.count == table.moduleCount &&
+      types.count == table.typeCount &&
+      impls.count == table.implCount &&
+      views.count == table.viewCount &&
+      roles.count == table.roleCount &&
+      functions.count == table.functionCount &&
+      imports.count == table.importCount &&
+      contexts.count == table.contextCount &&
+      extracts.count == table.extractCount &&
+      extends.count == table.extendCount
+  }
+}
+
+impl view DeclarationParserRows {
+  pub totalCount =>
+    modules.count +
+    types.count +
+    impls.count +
+    views.count +
+    roles.count +
+    functions.count +
+    imports.count +
+    contexts.count +
+    extracts.count +
+    extends.count
+
+  pub hasRows => totalCount > 0
+
+  pub rangesValid =>
+    modules.valid &&
+    types.valid &&
+    impls.valid &&
+    views.valid &&
+    roles.valid &&
+    functions.valid &&
+    imports.valid &&
+    contexts.valid &&
+    extracts.valid &&
+    extends.valid
+
+  pub valid =>
+    deterministic &&
+    hasRows &&
+    rangesValid
+}

@@ -1,0 +1,21 @@
+pub ObjectStringLayout {
+  stringCount: i64
+  range: ObjectRange
+  diagnosticCode: string = ""
+}
+
+impl ObjectStringLayout {
+  pub ObjectStringLayout(stringCount: i64, range: ObjectRange) =
+    This { stringCount, range }
+
+  pub fromStringTable(stringTable: ObjectStringTable, offset: i64) =
+    This(stringTable.stringCount, ObjectRange(offset, stringTable.byteCount, 1))
+}
+
+impl view ObjectStringLayout {
+  pub valid: bool => diagnosticCode == "" &&
+    stringCount >= 0 &&
+    range.valid
+  pub byteCount: i64 => range.sizeBytes
+  pub debugName: string => "object.string.layout.{stringCount}.{byteCount}"
+}

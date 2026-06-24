@@ -1,0 +1,27 @@
+module ownership
+
+mod {
+  ownershipAddressKind
+  ownershipAuthorityKind
+  ownershipRuleDiagnosticRow
+  ownershipAuthorityRow
+  ownershipAuthorityTable
+  ownershipUseKind
+  ownershipArgumentRow
+  ownershipArgumentTable
+  ownershipUseRow
+  ownershipUseTable
+}
+
+export {
+  ownershipAddressKind.*
+  ownershipAuthorityKind.*
+  ownershipRuleDiagnosticRow.*
+  ownershipAuthorityRow.*
+  ownershipAuthorityTable.*
+  ownershipUseKind.*
+  ownershipArgumentRow.*
+  ownershipArgumentTable.*
+  ownershipUseRow.*
+  ownershipUseTable.*
+}

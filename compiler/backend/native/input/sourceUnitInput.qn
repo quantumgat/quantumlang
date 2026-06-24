@@ -1,0 +1,40 @@
+pub SourceUnitInput {
+  packageRoot: string
+  sourceFileCount: i64
+  declarationRecordCount: i64
+  astNodeCount: i64
+  diagnosticCode: string = ""
+}
+
+impl SourceUnitInput {
+  pub SourceUnitInput(
+    packageRoot: string,
+    sourceFileCount: i64,
+    declarationRecordCount: i64,
+    astNodeCount: i64
+  ) =
+    This {
+      packageRoot
+      sourceFileCount
+      declarationRecordCount
+      astNodeCount
+    }
+}
+
+impl view SourceUnitInput {
+  pub countsValid: bool => {
+    sourceFileCount >= 0 &&
+      declarationRecordCount >= 0 &&
+      astNodeCount >= 0
+  }
+
+  pub valid: bool => {
+    diagnosticCode == "" &&
+      packageRoot != "" &&
+      countsValid
+  }
+
+  pub stableUnitPrefix => "source-unit:{packageRoot}:{sourceFileCount}"
+  pub sourceHash => "source:{packageRoot}:{sourceFileCount}:{declarationRecordCount}:{astNodeCount}"
+  pub objectSetHash => "objects-source:{sourceFileCount}:{declarationRecordCount}:{astNodeCount}"
+}

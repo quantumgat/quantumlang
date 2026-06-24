@@ -1,0 +1,52 @@
+pub QcapProduct {
+  packageName: string
+  capsulePath: string
+  contentHashHigh: u64
+  contentHashLow: u64
+  moduleCount: usize
+  symbolCount: usize
+  typeFactCount: usize
+  genericFactCount: usize
+  abiFactCount: usize
+}
+
+impl QcapProduct {
+  pub QcapProduct(
+    packageName: string,
+    capsulePath: string,
+    contentHashHigh: u64,
+    contentHashLow: u64,
+    moduleCount: usize,
+    symbolCount: usize,
+    typeFactCount: usize,
+    genericFactCount: usize,
+    abiFactCount: usize,
+  ) =
+    This {
+      packageName
+      capsulePath
+      contentHashHigh
+      contentHashLow
+      moduleCount
+      symbolCount
+      typeFactCount
+      genericFactCount
+      abiFactCount
+    }
+}
+
+impl view QcapProduct {
+  pub deterministic => true
+  pub hashed => contentHashHigh != 0 || contentHashLow != 0
+  pub hasModules => moduleCount > 0
+  pub hasSymbols => symbolCount > 0
+  pub hasTypeFacts => typeFactCount > 0
+  pub hasAbiFacts => abiFactCount > 0
+  pub valid =>
+    packageName != "" &&
+    capsulePath != "" &&
+    hasModules &&
+    hasSymbols &&
+    hasTypeFacts &&
+    hasAbiFacts
+}

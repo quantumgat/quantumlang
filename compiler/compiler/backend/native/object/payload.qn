@@ -1,0 +1,84 @@
+import host::{CompilerIo}
+
+pub ObjectPayload {
+  objectPath: string
+  payload: bytes = b""
+  payloadHash: string = ""
+  byteCount: usize = 0
+  diagnosticCode: string = ""
+}
+
+impl ObjectPayload {
+  pub ObjectPayload(
+    objectPath: string,
+    payload: bytes,
+    payloadHash: string,
+    byteCount: usize
+  ) =
+    This {
+      objectPath
+      payload
+      payloadHash
+      byteCount
+    }
+
+  pub pending(entry: ObjectCacheEntry) =
+    This {
+      objectPath: entry.objectPath
+      payloadHash: entry.checksum
+      byteCount: 0
+      diagnosticCode: match entry.valid {
+        true => ""
+        false => "QNATIVE0742"
+      }
+    }
+
+  pub fromBytes(objectPath: string, payload: bytes, payloadHash: string) =
+    This {
+      objectPath
+      payload
+      payloadHash
+      byteCount: payload.length()
+      diagnosticCode: match objectPath != "" && payloadHash != "" && payload.length() > 0 {
+        true => ""
+        false => "QNATIVE0743"
+      }
+    }
+}
+
+context ObjectPayload {
+  pub writeStatus(io: CompilerIo) -> i64 {
+    if valid == false {
+      return -240
+    }
+    if payloadReady == false {
+      return -241
+    }
+    if io.atomicWriteBytes(objectPath, payload) != 0 {
+      return -242
+    }
+    return 0
+  }
+
+  pub write(io: CompilerIo) -> bool {
+    return writeStatus(io) == 0
+  }
+}
+
+impl view ObjectPayload {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    objectPath != "" &&
+    payloadHash != ""
+
+  pub payloadReady: bool =>
+    valid &&
+    byteCount > 0
+
+  pub materialized: bool => payloadReady
+
+  pub payloadId: string =>
+    "object-payload:{objectPath}:{payloadHash}:{byteCount}"
+
+  pub debugName: string => "object.payload.{objectPath}.{byteCount}"
+}

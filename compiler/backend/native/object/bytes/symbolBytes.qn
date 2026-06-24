@@ -1,0 +1,38 @@
+pub SymbolTableBytes {
+  symbolCount: i64
+  byteCount: i64
+  byteHash: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl SymbolTableBytes {
+  pub SymbolTableBytes(symbolCount: i64, byteCount: i64, byteHash: string) =
+    This {
+      symbolCount
+      byteCount
+      byteHash
+    }
+
+  pub fromSymbol(symbol: ObjectSymbol) =
+    This {
+      symbolCount: 1
+      byteCount: 24 + symbol.name.length()
+      byteHash: "symtab-bytes:{symbol.symbolHash}"
+      deterministic: true
+      diagnosticCode: match symbol.valid {
+        true => ""
+        false => "QNATIVE0731"
+      }
+    }
+}
+
+impl view SymbolTableBytes {
+  pub valid => diagnosticCode == "" &&
+    symbolCount >= 0 &&
+    byteCount >= 0 &&
+    byteHash != "" &&
+    deterministic
+  pub hasSymbols => symbolCount > 0
+  pub debugName => "symtab.bytes.{symbolCount}.{byteCount}"
+}

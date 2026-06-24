@@ -1,0 +1,7 @@
+module app.badSurfaceVisibility
+
+import http.core.{PublicRouteCarrier}
+
+pub bypass(route: PublicRouteCarrier) -> i64 {
+  return route.context.internalRouteValue()
+}

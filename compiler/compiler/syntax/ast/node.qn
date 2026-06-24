@@ -1,0 +1,117 @@
+import core::{FileId, Vec}
+import source::{SourceSpan}
+
+pub enum AstNodeKind {
+  Module
+  Import
+  Export
+  TypeDecl
+  ImplDecl
+  FunctionDecl
+  Parameter
+  Block
+  Statement
+  Expression
+  Pattern
+  TypeRef
+  Token
+  Unknown
+}
+
+pub AstNodeId {
+  span: SourceSpan = {}
+  kind: AstNodeKind
+}
+
+pub AstNode {
+  id: i64
+  stableId: AstNodeId
+  kind: AstNodeKind
+  span: SourceSpan = {}
+  childCount: i64
+  green: bool
+  text: string = ""
+  semanticKind: string = ""
+  inferredTypeName: string = ""
+  receiverName: string = ""
+  receiverPath: Vec<string> = []
+  argumentCount: i64 = 0
+  genericArgumentCount: i64 = 0
+  genericArguments: Vec<string> = []
+  callArguments: Vec<AstCallArgument> = []
+}
+
+impl AstNodeId {
+  pub AstNodeId(span: SourceSpan, kind: AstNodeKind) =
+    This { span, kind }
+
+  pub AstNodeId(fileId: u64, start: i64, end: i64, kind: AstNodeKind) =
+    This {
+      span: SourceSpan(FileId(0, 0, fileId), start, end)
+      kind
+    }
+}
+
+impl AstNode {
+  pub AstNode(id: i64, kind: AstNodeKind, span: SourceSpan, childCount: i64) =
+    This {
+      id
+      stableId: AstNodeId(span, kind)
+      kind
+      span
+      childCount
+      green: true
+    }
+
+  pub AstNode(id: i64, kind: AstNodeKind, fileId: u64, start: i64, end: i64, childCount: i64) =
+    This(id, kind, SourceSpan(FileId(0, 0, fileId), start, end), childCount)
+
+  pub token(
+    id: i64,
+    kind: AstNodeKind,
+    span: SourceSpan,
+    text: string,
+    semanticKind: string,
+    inferredTypeName: string
+  ) =
+    This {
+      id
+      stableId: AstNodeId(span, kind)
+      kind
+      span
+      childCount: 0
+      green: true
+      text
+      semanticKind
+      inferredTypeName
+    }
+}
+
+impl view AstNodeId {
+  pub fileId => span.fileId.id.value
+  pub start => span.start
+  pub end => span.end
+  pub valid => span.valid
+  pub spanKey => "{fileId}:{start}:{end}"
+}
+
+impl view AstNode {
+  pub fileId => span.fileId.id.value
+  pub start => span.start
+  pub end => span.end
+  pub valid => id > 0 && stableId.valid && span.valid && span.start == stableId.start && span.end == stableId.end && kind == stableId.kind
+  pub empty => start == end
+  pub hasChildren => childCount > 0
+  pub greenNode => green
+  pub semantic => semanticKind != ""
+  pub hasInferredType => inferredTypeName != ""
+  pub callArity => argumentCount
+  pub genericArity => genericArgumentCount
+  pub structuredGenericArguments =>
+    genericArguments.count == genericArgumentCount
+  pub structuredCallArguments => callArguments.count == argumentCount
+  pub memberCall => receiverName != ""
+
+  pub memberAccess => receiverPath.count > 0
+  pub syntaxRange => "{fileId}:{start}:{end}"
+}

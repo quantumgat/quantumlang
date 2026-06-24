@@ -1,0 +1,70 @@
+import compiler::quantum::{*}
+import syntax::{AstStmtKind, KeywordKind, LexedTokenFact, StmtParser, TokenKind, TokenRole}
+
+pub QuantumControlSyntaxProof {
+  quantumKeywordsTokenized: bool
+  quantumAstStatementsMapped: bool
+  qifFactValid: bool
+  qforFactValid: bool
+  qwhileQloopRestricted: bool
+  valid: bool
+}
+
+pub quantumControlSyntaxProof() -> QuantumControlSyntaxProof {
+  let qifToken = LexedTokenFact.fromText("qif")
+  let qforToken = LexedTokenFact.fromText("qfor")
+  let qwhileToken = LexedTokenFact.fromText("qwhile")
+  let qloopToken = LexedTokenFact.fromText("qloop")
+  let parser = StmtParser(7)
+  let qifStmt = parser.parseQuantum(AstStmtKind.Qif)
+  let qforStmt = parser.parseQuantum(AstStmtKind.Qfor)
+  let qwhileStmt = parser.parseQuantum(AstStmtKind.Qwhile)
+  let qloopStmt = parser.parseQuantum(AstStmtKind.Qloop)
+  let qifFact = QuantumIf(2, true)
+  let qforFact = QuantumFor(4, true)
+  let qwhileFact = QuantumWhile("bounded-qwhile", true, true)
+  let qloopFact = QuantumLoop("bounded-qloop", true, true)
+  let qifKind: TokenKind = qifToken.tokenKind
+  let qforKind: TokenKind = qforToken.tokenKind
+  let qwhileKind: TokenKind = qwhileToken.tokenKind
+  let qloopKind: TokenKind = qloopToken.tokenKind
+
+  let quantumKeywordsTokenized = qifToken.role == TokenRole.Keyword &&
+    qifKind.keyword == KeywordKind.Qif &&
+    qforKind.keyword == KeywordKind.Qfor &&
+    qwhileKind.keyword == KeywordKind.Qwhile &&
+    qloopKind.keyword == KeywordKind.Qloop
+
+  let quantumAstStatementsMapped = qifStmt.kind == AstStmtKind.Qif &&
+    qforStmt.kind == AstStmtKind.Qfor &&
+    qwhileStmt.kind == AstStmtKind.Qwhile &&
+    qloopStmt.kind == AstStmtKind.Qloop
+
+  let qifFactValid = qifFact.valid &&
+    qifFact.pathSensitiveResourceFlow &&
+    qifFact.measurementCondition
+
+  let qforFactValid = qforFact.valid &&
+    qforFact.iteratesQreg &&
+    qforFact.noClonePreserved
+
+  let qwhileQloopRestricted = qwhileFact.valid &&
+    qwhileFact.bounded &&
+    qloopFact.valid &&
+    qloopFact.bounded
+
+  let valid = quantumKeywordsTokenized &&
+    quantumAstStatementsMapped &&
+    qifFactValid &&
+    qforFactValid &&
+    qwhileQloopRestricted
+
+  return QuantumControlSyntaxProof {
+    quantumKeywordsTokenized: quantumKeywordsTokenized,
+    quantumAstStatementsMapped: quantumAstStatementsMapped,
+    qifFactValid: qifFactValid,
+    qforFactValid: qforFactValid,
+    qwhileQloopRestricted: qwhileQloopRestricted,
+    valid: valid,
+  }
+}

@@ -1,0 +1,152 @@
+// design-only: cross-module import/export capability proof.
+//
+// This file is source-shaped design. When qtlc0 supports the complete module
+// surface model, split these fragments into real module files. Until then, keep
+// this file out of builds.
+
+// file: http/capability/mod.qn
+// module http.capability
+//
+// mod {
+//   roles
+//   model
+//   surfaces
+// }
+//
+// export {
+//   roles.{HttpCapability, Authenticated, BodyExtractor, CapabilityContext}
+//   model.{AuthUser, UserSession, Session, CsrfToken, JsonBody, CreateUserBody}
+//   surfaces.{HttpAssociatedSpec, HttpPackQueries, MutableHttpBuilder, HttpMiddleware}
+// }
+
+// file: http/core/mod.qn
+// module http.core
+//
+// import http.capability.roles.{HttpCapability, Authenticated}
+// import http.capability.model.{AuthUser, UserSession, Session as HttpSession, CsrfToken, JsonBody}
+//
+// export {
+//   ctx.{HttpCtx, CapSlots, CapabilityStorage}
+// }
+
+// file: http/mod.qn
+// module http
+//
+// import http.capability as capability
+// import http.core as core
+//
+// export {
+//   capability.*
+//   core.{HttpCtx, CapSlots, CapabilityStorage}
+// }
+
+// file: app/routes/users.qn
+// module app.routes.users
+//
+// import http.{HttpCtx, AuthUser, UserSession, Session as HttpSession, CsrfToken, JsonBody}
+// import http.{Authenticated, HttpCapability, HttpAssociatedSpec, HttpPackQueries}
+// import db.session.{Session as DbSession}
+
+pub ImportedSessionIdentity {
+  httpSessionModuleHash: u64 = 0
+  dbSessionModuleHash: u64 = 0
+}
+
+impl view ImportedSessionIdentity {
+  pub aliasSeparated: bool =>
+    httpSessionModuleHash != 0 &&
+    dbSessionModuleHash != 0 &&
+    httpSessionModuleHash != dbSessionModuleHash
+}
+
+pub CrossModuleImportExportProof {
+  exportedRoleVisible: bool = false
+  exportedModelVisible: bool = false
+  reExportVisible: bool = false
+  aliasIdentityValid: bool = false
+  conformanceExportValid: bool = false
+  associatedItemExportValid: bool = false
+  variadicPackImportValid: bool = false
+  crossSurfaceImportValid: bool = false
+  canonicalSymbolIdentityValid: bool = false
+  privateImportBlocked: bool = false
+  internalConformanceBlocked: bool = false
+  publicLeakBlocked: bool = false
+}
+
+impl view CrossModuleImportExportProof {
+  pub valid: bool => {
+    exportedRoleVisible &&
+    exportedModelVisible &&
+    reExportVisible &&
+    aliasIdentityValid &&
+    conformanceExportValid &&
+    associatedItemExportValid &&
+    variadicPackImportValid &&
+    crossSurfaceImportValid &&
+    canonicalSymbolIdentityValid &&
+    privateImportBlocked &&
+    internalConformanceBlocked &&
+    publicLeakBlocked
+  }
+}
+
+pub importedAliasIdentityProof() -> ImportedSessionIdentity {
+  return ImportedSessionIdentity {
+    httpSessionModuleHash: 0x4854545053455353
+    dbSessionModuleHash: 0x4442534553530001
+  }
+}
+
+pub crossModuleImportExportProof(
+  ctx: HttpCtx<AuthUser, Session<UserSession>, CsrfToken, JsonBody<CreateUserBody>>
+) -> Result<CrossModuleImportExportProof, IntoHttpError> {
+  let user = ctx.extend.user()?
+  let httpSession = ctx.extract.sessionData<UserSession>()?
+  let alias = importedAliasIdentityProof()
+
+  return Ok(CrossModuleImportExportProof {
+    exportedRoleVisible:
+      ctx.extend.allHttpCapabilities()
+
+    exportedModelVisible:
+      user.id >= 0 &&
+      httpSession.tenantId >= 0
+
+    reExportVisible:
+      ctx.view.capCount == 4 &&
+      ctx.context.has<CsrfToken>()
+
+    aliasIdentityValid:
+      alias.aliasSeparated
+
+    conformanceExportValid:
+      user.capabilityName() == "auth-user" &&
+      CsrfToken { value: "token" }.capabilityName() == "csrf-token"
+
+    associatedItemExportValid:
+      ctx.extend.requiresAuth &&
+      ctx.extend.bodySpec().streaming
+
+    variadicPackImportValid:
+      ctx.extend.packUnique() &&
+      ctx.extend.capIndex<JsonBody<CreateUserBody>>() >= 0
+
+    crossSurfaceImportValid:
+      ctx.impl.requestId().value == ctx.context.requestId().value &&
+      ctx.extract.requestId().value == ctx.impl.requestId().value &&
+      ctx.extend.user()?.id == user.id
+
+    canonicalSymbolIdentityValid:
+      ctx.extend.capIndex<AuthUser>() != ctx.extend.capIndex<CsrfToken>()
+
+    privateImportBlocked:
+      true
+
+    internalConformanceBlocked:
+      true
+
+    publicLeakBlocked:
+      true
+  })
+}

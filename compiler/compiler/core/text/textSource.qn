@@ -1,0 +1,77 @@
+pub TextSource {
+  fileId: FileId = {}
+  text: string = ""
+  lines: LineMap = {}
+}
+
+impl TextSource {
+  pub TextSource(fileId: FileId, text: string) =
+    This {
+      fileId
+      text
+      lines: LineMap.fromText(text)
+    }
+
+  pub view() -> TextView {
+    return TextView(text)
+  }
+
+  pub span(start: i64, end: i64) -> TextSpan {
+    return TextSpan(start, end).clamp(this.byteLength())
+  }
+
+  pub spanText(span: TextSpan) -> TextView {
+    return span.toView(text)
+  }
+
+  pub lineMap() -> LineMap {
+    return lines
+  }
+
+  pub lineView(line: i64) -> TextView {
+    return lines.lineView(line)
+  }
+
+  pub byteLength() -> i64 {
+    return text.byteLength() as i64
+  }
+
+  pub uncheckedByteAt(index: i64) -> i64 {
+    return text.uncheckedByteAt(index)
+  }
+
+  pub checkedByteAt(index: i64) -> i64 {
+    return text.checkedByteAt(index)
+  }
+
+  pub asciiByteAt(index: i64) -> AsciiByte {
+    return AsciiByte(this.uncheckedByteAt(index))
+  }
+
+  pub startsLower() -> bool {
+    return this.startsAsciiLower()
+  }
+
+  pub startsAsciiLower() -> bool {
+    return text.startsAsciiLower()
+  }
+
+  pub isLower() -> bool {
+    return this.isAsciiLower()
+  }
+
+  pub isAsciiLower() -> bool {
+    return text.isAsciiLower()
+  }
+
+  pub isAsciiLowerAt(index: i64) -> bool {
+    return this.asciiByteAt(index).isLower()
+  }
+}
+
+impl view TextSource {
+  pub valid: bool => fileId.valid && lines.valid
+  pub lineCount: i64 => lines.count
+  pub empty: bool => text.byteLength() == 0
+  pub nonEmpty: bool => text.byteLength() > 0
+}

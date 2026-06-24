@@ -1,0 +1,9 @@
+[module]
+name = "token"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/syntax/token"
+role = "syntax-token-model"
+
+[dependencies]
+modules = ["core", "source"]

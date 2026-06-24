@@ -1,0 +1,25 @@
+pub enum LiteralSyntaxKind {
+  BoolToken
+  IntegerToken
+  FloatToken
+  StringToken
+  BytesToken
+  ByteToken
+  NoneExpr
+  VecExpr
+  EmptyVecExpr
+  FixedArrayExpr
+  EmptyFixedArrayExpr
+  MapExpr
+  RecordExpr
+  SetExpr
+  EmptySetExpr
+  TupleExpr
+  RangeExpr
+  HalfOpenRangeExpr
+  RangeFromExpr
+  RangeToExpr
+  RangeToInclusiveExpr
+  RangeFullExpr
+  Unknown
+}

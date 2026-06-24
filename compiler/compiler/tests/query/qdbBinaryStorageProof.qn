@@ -1,0 +1,81 @@
+import query::{Fingerprint, QdbDependencyRow, QdbHandle, QdbProductRow, QdbQueryRow, QdbSnapshot, QueryComponent, QueryKind}
+
+pub QdbBinaryStorageProof {
+  compactRows: bool
+  relativeSections: bool
+  memoryMapped: bool
+  globalMetadata: bool
+  noExternalDatabase: bool
+  valid: bool
+}
+
+pub qdbBinaryStorageProof() -> QdbBinaryStorageProof {
+  let keyHash = Fingerprint.fromParts(11, 12)
+  let subjectHash = Fingerprint.fromParts(21, 22)
+  let inputHash = Fingerprint.fromParts(31, 32)
+  let outputHash = Fingerprint.fromParts(41, 42)
+  let contentHash = Fingerprint.fromParts(51, 52)
+  let checksum = Fingerprint.fromParts(61, 62)
+  let queryRow = QdbQueryRow {
+    keyHash
+    subjectHash
+    kind: QueryKind.TypeBody
+    component: QueryComponent.Type
+    epoch: 1
+    productRow: 1
+    firstDependencyRow: 1
+    dependencyCount: 1
+  }
+  let productRow = QdbProductRow {
+    queryRow: 1
+    inputHash
+    outputHash
+    contentHash
+  }
+  let dependencyRow = QdbDependencyRow {
+    fromQueryRow: 1
+    toQueryRow: 2
+    fingerprint: inputHash
+  }
+  let snapshot = QdbSnapshot(
+    7,
+    2,
+    1,
+    1,
+    64,
+    32,
+    contentHash,
+    checksum
+  )
+  let handle = QdbHandle.memoryMapped(
+    "/home/user/.cache/qtlc/51/content.qcm",
+    snapshot
+  )
+
+  let compactRows =
+    queryRow.valid &&
+    productRow.valid &&
+    dependencyRow.valid
+  let relativeSections =
+    snapshot.header.relativeOffsets &&
+    snapshot.orderedSections
+  let memoryMapped = handle.valid && handle.zeroCopyReadable
+  let globalMetadata = snapshot.globalMetadataProduct
+  let noExternalDatabase = snapshot.externalDatabaseRequired == false
+  let valid =
+    snapshot.valid &&
+    compactRows &&
+    relativeSections &&
+    memoryMapped &&
+    globalMetadata &&
+    noExternalDatabase
+
+  return QdbBinaryStorageProof {
+    compactRows
+    relativeSections
+    memoryMapped
+    globalMetadata
+    noExternalDatabase
+    valid
+  }
+}

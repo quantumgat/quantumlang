@@ -1,0 +1,33 @@
+import core::{FileId}
+
+pub TriviaStream {
+  fileId: FileId = {}
+  rows: Vec<Trivia> = []
+  rowCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl TriviaStream {
+  pub TriviaStream(fileId: FileId) =
+    This { fileId }
+
+  pub add(row: Trivia) {
+    rows.push(row)
+    rowCount = rowCount + 1
+  }
+}
+
+impl view TriviaStream {
+  pub count: i64 => rowCount
+
+  pub empty: bool => count == 0
+
+  pub triviaAt(index: i64) -> Trivia {
+    rows[index]
+  }
+
+  pub valid: bool =>
+    fileId.valid &&
+    count >= 0 &&
+    deterministic
+}

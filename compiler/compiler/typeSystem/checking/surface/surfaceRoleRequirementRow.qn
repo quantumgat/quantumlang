@@ -1,0 +1,54 @@
+import source::{SourceSpan}
+import syntax::{AstRoleConformance, AstRoleVisibility}
+
+pub SurfaceRoleRequirementRow {
+  surfaceRow: i64 = 0
+  modulePath: string = ""
+  targetTypeName: string = ""
+  roleName: string = ""
+  visibility: AstRoleVisibility = AstRoleVisibility.Private
+  span: SourceSpan = {}
+}
+
+impl SurfaceRoleRequirementRow {
+  pub fromConformance(
+    surfaceRow: i64,
+    modulePath: string,
+    targetTypeName: string,
+    conformance: AstRoleConformance
+  ) =
+    This {
+      surfaceRow
+      modulePath
+      targetTypeName
+      roleName: conformance.roleName
+      visibility: conformance.visibility
+      span: conformance.span
+    }
+}
+
+impl view SurfaceRoleRequirementRow {
+  pub publicVisible => visibility == AstRoleVisibility.Public
+
+  pub internalVisible => visibility == AstRoleVisibility.Internal
+
+  pub privateVisible => visibility == AstRoleVisibility.Private
+
+  pub visibilityName => match true {
+    publicVisible => "pub"
+    internalVisible => "internal"
+    visibility == AstRoleVisibility.Protected => "protected"
+    privateVisible => "private"
+    _ => "unknown"
+  }
+
+  pub key => "{modulePath}:{targetTypeName}:{visibilityName}:{roleName}"
+
+  pub valid =>
+    surfaceRow >= 0 &&
+    modulePath != "" &&
+    targetTypeName != "" &&
+    roleName != "" &&
+    visibility != AstRoleVisibility.Unknown &&
+    span.valid
+}

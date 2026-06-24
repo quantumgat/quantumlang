@@ -1,0 +1,29 @@
+module moduleSystem
+
+mod {
+  manifest
+  moduleNode
+  moduleEdge
+  moduleArena
+  moduleGraph
+  importIndex
+  importPath
+  exportSurface
+  visibility
+  packageGraph
+  moduleResolutionDiagnostic
+}
+
+export {
+  manifest.{Manifest}
+  moduleNode.{ModuleNode}
+  moduleEdge.{ModuleEdge, ModuleEdgeKind}
+  moduleArena.{ModuleArena}
+  moduleGraph.{ModuleGraph}
+  importIndex.{ImportIndex}
+  importPath.{ImportPath}
+  exportSurface.{ExportSurface}
+  visibility.{Visibility, VisibilityKind}
+  packageGraph.{PackageGraph}
+  moduleResolutionDiagnostic.*
+}

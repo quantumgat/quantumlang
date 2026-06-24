@@ -1,0 +1,47 @@
+pub HostArch {
+  name: string
+  pointerBits: i64
+  endian: string
+  known: bool = true
+}
+
+impl HostArch {
+  pub HostArch(name: string, pointerBits: i64, endian: string) =
+    This {
+      name
+      pointerBits
+      endian
+      known: name != "" && pointerBits > 0 && endian != ""
+    }
+
+  pub x86_64() =
+    This("x86_64", 64, "little")
+
+  pub aarch64() =
+    This("aarch64", 64, "little")
+
+  pub riscv64() =
+    This("riscv64", 64, "little")
+
+  pub armv7m() =
+    This("armv7m", 32, "little")
+
+  pub armv8m() =
+    This("armv8m", 32, "little")
+
+  pub unknown() =
+    This {
+      name: "unknown"
+      pointerBits: 0
+      endian: ""
+      known: false
+    }
+}
+
+impl view HostArch {
+  pub bit64 => pointerBits == 64
+  pub bit32 => pointerBits == 32
+  pub littleEndian => endian == "little"
+  pub nativeRegisterWidth => pointerBits
+  pub valid => known && name != "" && (bit64 || bit32) && endian != ""
+}

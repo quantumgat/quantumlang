@@ -1,0 +1,25 @@
+pub EncodeError {
+  byteError: ByteError = {}
+  code: string = ""
+}
+
+impl EncodeError {
+  pub EncodeError(byteError: ByteError, code: string) =
+    This {
+      byteError
+      code
+    }
+
+  pub fromByte(byteError: ByteError) =
+    This {
+      byteError
+      code: "QENCODE0001"
+    }
+}
+
+impl view EncodeError {
+  pub valid: bool => code != ""
+  pub bounds: bool => byteError.bounds
+  pub overflow: bool => byteError.overflow
+  pub debugName: string => "encode.error.{code}"
+}

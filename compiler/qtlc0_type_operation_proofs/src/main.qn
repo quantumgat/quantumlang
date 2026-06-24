@@ -1,0 +1,116 @@
+
+pub main() -> i64 {
+  let boolResult = proof_bool()
+  if boolResult != 0 { return 1000 + boolResult }
+
+  let i8Result = proof_i8()
+  if i8Result != 0 { return 1100 + i8Result }
+
+  let u8Result = proof_u8()
+  if u8Result != 0 { return 1200 + u8Result }
+
+  let i16Result = proof_i16()
+  if i16Result != 0 { return 1300 + i16Result }
+
+  let u16Result = proof_u16()
+  if u16Result != 0 { return 1400 + u16Result }
+
+  let i32Result = proof_i32()
+  if i32Result != 0 { return 1500 + i32Result }
+
+  let u32Result = proof_u32()
+  if u32Result != 0 { return 1600 + u32Result }
+
+  let i64Result = proof_i64()
+  if i64Result != 0 { return 1700 + i64Result }
+
+  let u64Result = proof_u64()
+  if u64Result != 0 { return 1800 + u64Result }
+
+  let isizeResult = proof_isize()
+  if isizeResult != 0 { return 1900 + isizeResult }
+
+  let usizeResult = proof_usize()
+  if usizeResult != 0 { return 2000 + usizeResult }
+
+  let intResult = proof_int()
+  if intResult != 0 { return 2100 + intResult }
+
+  let uintResult = proof_uint()
+  if uintResult != 0 { return 2200 + uintResult }
+
+  let byteResult = proof_byte()
+  if byteResult != 0 { return 2300 + byteResult }
+
+  let f32Result = proof_f32()
+  if f32Result != 0 { return 2400 + f32Result }
+
+  let f64Result = proof_f64()
+  if f64Result != 0 { return 2500 + f64Result }
+
+  let stringResult = proof_string()
+  if stringResult != 0 { return 2600 + stringResult }
+
+  let optionResult = proof_option()
+  if optionResult != 0 { return 2700 + optionResult }
+
+  let resultResult = proof_result()
+  if resultResult != 0 { return 2800 + resultResult }
+
+  let vecResult = proof_vec()
+  if vecResult != 0 { return 2900 + vecResult }
+
+  let arrayResult = proof_array()
+  if arrayResult != 0 { return 3000 + arrayResult }
+
+  let mapResult = proof_map()
+  if mapResult != 0 { return 3100 + mapResult }
+
+  let setResult = proof_set()
+  if setResult != 0 { return 3200 + setResult }
+
+  let rangeResult = proof_range()
+  if rangeResult != 0 { return 3300 + rangeResult }
+
+  let sliceResult = proof_slice()
+  if sliceResult != 0 { return 3400 + sliceResult }
+
+  let indexResult = proof_index()
+  if indexResult != 0 { return 3500 + indexResult }
+
+  let wideI128Result = proof_wide_i128()
+  if wideI128Result != 0 { return 3600 + wideI128Result }
+
+  let wideU128Result = proof_wide_u128()
+  if wideU128Result != 0 { return 3700 + wideU128Result }
+
+  let wideI256Result = proof_wide_i256()
+  if wideI256Result != 0 { return 3800 + wideI256Result }
+
+  let wideU256Result = proof_wide_u256()
+  if wideU256Result != 0 { return 3900 + wideU256Result }
+
+  let f16Result = proof_float_f16()
+  if f16Result != 0 { return 4000 + f16Result }
+
+  let f128Result = proof_float_f128()
+  if f128Result != 0 { return 4100 + f128Result }
+
+  let decimalResult = proof_decimal()
+  if decimalResult != 0 { return 4200 + decimalResult }
+
+  let complexResult = proof_complex()
+  if complexResult != 0 { return 4300 + complexResult }
+
+  let vectorMatrixTensorResult = proof_vector_matrix_tensor()
+  if vectorMatrixTensorResult != 0 { return 4400 + vectorMatrixTensorResult }
+
+  let quantumResult = proof_quantum()
+  if quantumResult != 0 { return 4500 + quantumResult }
+
+  let dynamicResult = proof_dynamic()
+  if dynamicResult != 0 { return 4600 + dynamicResult }
+
+  println("qtlc0 type operation proofs ok")
+  return 0
+}

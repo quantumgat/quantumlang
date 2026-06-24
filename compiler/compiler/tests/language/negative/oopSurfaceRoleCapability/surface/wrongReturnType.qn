@@ -1,0 +1,5 @@
+extract HttpCtx<...Caps> : pub BodyExtractor<...Caps> {
+  body<T>() -> T {
+    return T()
+  }
+}

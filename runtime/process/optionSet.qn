@@ -1,0 +1,26 @@
+pub OptionSet {
+  optionCount: i64 = 0
+  flagCount: i64 = 0
+  repeatedCount: i64 = 0
+  valid: bool = true
+}
+
+impl OptionSet {
+  pub empty() =
+    This {}
+
+  pub summary(optionCount: i64, flagCount: i64, repeatedCount: i64) =
+    This {
+      optionCount
+      flagCount
+      repeatedCount
+      valid: optionCount >= 0 && flagCount >= 0 && repeatedCount >= 0
+    }
+}
+
+impl view OptionSet {
+  pub readable: bool => valid
+  pub hasOptions: bool => optionCount > 0
+  pub hasFlags: bool => flagCount > 0
+  pub deterministic: bool => valid && repeatedCount >= 0
+}

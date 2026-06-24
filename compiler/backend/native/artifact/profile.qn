@@ -1,0 +1,44 @@
+pub ArtifactProfile {
+  name: string
+  outputDir: string
+  debug: bool
+  optimized: bool
+}
+
+impl ArtifactProfile {
+  pub ArtifactProfile(name: string, outputDir: string, debug: bool, optimized: bool) =
+    This {
+      name
+      outputDir
+      debug
+      optimized
+    }
+
+  pub debug() =
+    This {
+      name: "debug"
+      outputDir: "build/debug"
+      debug: true
+      optimized: false
+    }
+
+  pub release() =
+    This {
+      name: "release"
+      outputDir: "build/release"
+      debug: false
+      optimized: true
+    }
+
+  pub named(name: string) -> This {
+    if name == "release" {
+      return This.release()
+    }
+    return This.debug()
+  }
+}
+
+impl view ArtifactProfile {
+  pub valid: bool => name != "" && outputDir != ""
+  pub profileHash: string => "artifact.profile:{name}:{outputDir}:{debug}:{optimized}"
+}

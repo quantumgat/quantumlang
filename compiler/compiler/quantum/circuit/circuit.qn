@@ -1,0 +1,23 @@
+pub QuantumCircuit {
+  qubitCount: i64
+  operationCount: i64
+  measured: bool
+  valid: bool
+}
+
+impl QuantumCircuit {
+  pub QuantumCircuit(qubitCount: i64, operationCount: i64, measured: bool) =
+    This {
+      qubitCount
+      operationCount
+      measured
+      valid: qubitCount >= 0 && operationCount >= 0
+    }
+}
+
+impl view QuantumCircuit {
+  pub hasOperations => operationCount > 0
+  pub empty => operationCount == 0
+  pub measuredCircuit => measured
+  pub usable => valid
+}

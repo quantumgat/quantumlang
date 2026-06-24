@@ -1,0 +1,38 @@
+import syntax::{*}
+pub PreludeSymbolProof {
+  printFamilyNoImport: bool
+  advancedIoRequiresImport: bool
+  valid: bool
+}
+
+pub preludeSymbolProof() -> PreludeSymbolProof {
+  let printFact = PreludeSymbolFact.fromName("print")
+  let printlnFact = PreludeSymbolFact.fromName("println")
+  let eprintFact = PreludeSymbolFact.fromName("eprint")
+  let eprintlnFact = PreludeSymbolFact.fromName("eprintln")
+  let debugFact = PreludeSymbolFact.fromName("debug")
+
+  let printFamilyNoImport = printFact.valid &&
+    printlnFact.valid &&
+    eprintFact.valid &&
+    eprintlnFact.valid &&
+    debugFact.valid &&
+    !printFact.importRequired &&
+    !printlnFact.importRequired &&
+    !eprintFact.importRequired &&
+    !eprintlnFact.importRequired &&
+    !debugFact.importRequired
+
+  let advancedIoRequiresImport = PreludeSymbolFact.advancedIoRequiresImport("readLine") &&
+    PreludeSymbolFact.advancedIoRequiresImport("writeFile") &&
+    PreludeSymbolFact.advancedIoRequiresImport("stdout") &&
+    PreludeSymbolFact.advancedIoRequiresImport("stderr")
+
+  let valid = printFamilyNoImport && advancedIoRequiresImport
+
+  return PreludeSymbolProof {
+    printFamilyNoImport: printFamilyNoImport,
+    advancedIoRequiresImport: advancedIoRequiresImport,
+    valid: valid,
+  }
+}

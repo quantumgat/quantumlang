@@ -1,0 +1,34 @@
+pub OwnershipArgumentRow {
+  rowId: i64 = 0
+  callSubject: string = ""
+  position: i64 = 0
+  typeName: string = ""
+  authority: OwnershipAuthorityRow = {}
+}
+
+impl OwnershipArgumentRow {
+  pub OwnershipArgumentRow(
+    rowId: i64,
+    callSubject: string,
+    position: i64,
+    typeName: string,
+    authority: OwnershipAuthorityRow
+  ) =
+    This {
+      rowId
+      callSubject
+      position
+      typeName
+      authority
+    }
+}
+
+impl view OwnershipArgumentRow {
+  pub hasAuthority => authority.valid
+
+  pub valid =>
+    rowId >= 0 &&
+    callSubject != "" &&
+    position >= 0 &&
+    typeName != ""
+}

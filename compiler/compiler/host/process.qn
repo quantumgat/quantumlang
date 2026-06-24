@@ -1,0 +1,24 @@
+import core::{Vec}
+
+pub HostProcess {
+  executable: string
+  arguments: Vec<string> = []
+  workingDirectory: string = "."
+  inheritEnvironment: bool = true
+  captureOutput: bool = false
+}
+
+impl HostProcess {
+  pub HostProcess(executable: string, arguments: Vec<string>) =
+    This { executable, arguments }
+}
+
+impl view HostProcess {
+  pub argumentCount: i64 => arguments.count
+
+  pub valid: bool =>
+    executable != "" &&
+    arguments.valid &&
+    workingDirectory != "" &&
+    inheritEnvironment
+}

@@ -1,0 +1,22 @@
+pub X86JumpEncoding {
+  targetLabel: string
+  opcode: i64 = 0xe9
+  byteCount: i64 = 5
+  diagnosticCode: string = ""
+}
+
+impl X86JumpEncoding {
+  pub X86JumpEncoding(targetLabel: string) =
+    This { targetLabel }
+}
+
+impl view X86JumpEncoding {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetLabel != "" &&
+    opcode == 0xe9 &&
+    byteCount == 5
+
+  pub needsPatch: bool => valid
+  pub debugName: string => "x86.jump.{targetLabel}"
+}

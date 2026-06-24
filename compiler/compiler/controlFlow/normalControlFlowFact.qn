@@ -1,0 +1,39 @@
+pub NormalControlFlowFact {
+  nodeId: i64
+  kind: NormalControlFlowKind
+  createsRegion: bool = false
+  terminatesPath: bool = false
+  requiresCondition: bool = false
+  valid: bool = false
+}
+
+impl NormalControlFlowFact {
+  pub NormalControlFlowFact(nodeId: i64, kind: NormalControlFlowKind) -> This {
+    if kind == NormalControlFlowKind.If {
+      return This { nodeId, kind, createsRegion: true, requiresCondition: true, valid: true }
+    }
+    if kind == NormalControlFlowKind.IfElse {
+      return This { nodeId, kind, createsRegion: true, requiresCondition: true, valid: true }
+    }
+    if kind == NormalControlFlowKind.Match {
+      return This { nodeId, kind, createsRegion: true, requiresCondition: true, valid: true }
+    }
+    if kind == NormalControlFlowKind.Return {
+      return This { nodeId, kind, terminatesPath: true, valid: true }
+    }
+    if kind == NormalControlFlowKind.Require {
+      return This { nodeId, kind, createsRegion: true, requiresCondition: true, valid: true }
+    }
+    if kind == NormalControlFlowKind.Block {
+      return This { nodeId, kind, createsRegion: true, valid: true }
+    }
+    if kind == NormalControlFlowKind.Expr {
+      return This { nodeId, kind, valid: true }
+    }
+    This { nodeId, kind }
+  }
+
+  isValid() = valid
+
+  terminates() = terminatesPath
+}

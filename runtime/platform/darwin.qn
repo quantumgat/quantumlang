@@ -1,0 +1,29 @@
+pub DarwinRuntimePlatform {
+  targetTriple: string
+  objectFormat: string
+  abi: string
+  enabled: bool
+}
+
+impl DarwinRuntimePlatform {
+  pub DarwinRuntimePlatform(targetTriple: string, objectFormat: string, abi: string, enabled: bool) =
+    This {
+      targetTriple
+      objectFormat
+      abi
+      enabled
+    }
+
+  pub arm64() =
+    This {
+      targetTriple: "aarch64-apple-darwin"
+      objectFormat: "macho"
+      abi: "darwin"
+      enabled: false
+    }
+}
+
+impl view DarwinRuntimePlatform {
+  pub valid: bool => targetTriple != "" && objectFormat == "macho" && abi != ""
+  pub supported: bool => valid && enabled
+}

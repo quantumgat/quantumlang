@@ -1,0 +1,8 @@
+pub proof_uint() -> i64 {
+  let a: uint = 30
+  let b: uint = 12
+  let c: uint = a - b
+  if c != 18 { return 11 }
+  println("uint ok: {c}")
+  return 0
+}

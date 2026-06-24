@@ -1,0 +1,28 @@
+pub enum HashAlgorithm {
+  Unknown
+  Xxh3
+  SipHash24
+  Blake3
+  Sha2
+  Sha3
+  Keccak
+  Shake
+}
+
+impl view HashAlgorithm {
+  pub cryptographic: bool =>
+    this == HashAlgorithm.Blake3 ||
+    this == HashAlgorithm.Sha2 ||
+    this == HashAlgorithm.Sha3 ||
+    this == HashAlgorithm.Keccak ||
+    this == HashAlgorithm.Shake
+
+  pub keyed: bool =>
+    this == HashAlgorithm.SipHash24 ||
+    this == HashAlgorithm.Blake3
+
+  pub extendableOutput: bool =>
+    this == HashAlgorithm.Shake
+
+  pub valid: bool => this != HashAlgorithm.Unknown
+}

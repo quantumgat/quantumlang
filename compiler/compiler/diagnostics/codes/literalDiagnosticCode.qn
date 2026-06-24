@@ -1,0 +1,11 @@
+pub enum LiteralDiagnosticCode {
+  Unknown
+  NoneWithoutOptionTarget
+  UnclearEmptyArray
+  UnclearMapLiteral
+  DuplicateRecordField
+  MapKeyMismatch
+  ByteLiteralOverflow
+  IntegerLiteralOverflow
+  InvalidLiteralTarget
+}

@@ -1,0 +1,215 @@
+pub enum BuiltinOperatorKind {
+  Arithmetic
+  Increment
+  Comparison
+  Logical
+  Bitwise
+  Shift
+  Assignment
+  Range
+  Access
+  Call
+  Index
+  Cast
+  Propagate
+  Unary
+  SyntaxBody
+  Address
+  Move
+  Dereference
+  Path
+  OptionalType
+  Spread
+  Unknown
+}
+
+pub enum BuiltinOperatorForm {
+  Binary
+  Prefix
+  Postfix
+  Assignment
+  Reference
+  Move
+  Dereference
+  Call
+  Index
+  Path
+  Propagation
+  OptionalType
+  Spread
+  Syntax
+  Unknown
+}
+
+pub BuiltinOperatorFact {
+  symbol: string
+  kind: BuiltinOperatorKind = Unknown
+  form: BuiltinOperatorForm = Unknown
+  precedenceName: string = "unknown"
+  resultTypeName: string = ""
+  targetGated: bool = false
+  mutates: bool = false
+  precedence: i64 = 0
+  rightAssociative: bool = false
+  arity: string = ""
+  assignmentBase: string = ""
+  valid: bool = false
+}
+
+impl BuiltinOperatorFact {
+  pub fromForm(symbol: string, form: BuiltinOperatorForm) -> This {
+    if form == BuiltinOperatorForm.Reference &&
+       (symbol == "&" || symbol == "&!" || symbol == "&mut") {
+      return This { symbol, kind: Address, form, precedenceName: "prefix", precedence: 14, arity: "prefix", targetGated: true, valid: true }
+    }
+    if form == BuiltinOperatorForm.Move && symbol == "^" {
+      return This { symbol, kind: Move, form, precedenceName: "prefix", precedence: 14, arity: "prefix", targetGated: true, valid: true }
+    }
+    if form == BuiltinOperatorForm.Dereference && symbol == "*" {
+      return This { symbol, kind: Dereference, form, precedenceName: "prefix", precedence: 14, arity: "prefix", targetGated: true, valid: true }
+    }
+    if form == BuiltinOperatorForm.Call && symbol == "()" {
+      return This { symbol, kind: Call, form, precedenceName: "postfix", precedence: 15, arity: "postfix", targetGated: true, valid: true }
+    }
+    if form == BuiltinOperatorForm.Index && symbol == "[]" {
+      return This { symbol, kind: Index, form, precedenceName: "postfix", precedence: 15, arity: "postfix", targetGated: true, valid: true }
+    }
+    if form == BuiltinOperatorForm.Path && symbol == "::" {
+      return This { symbol, kind: Path, form, precedenceName: "path", precedence: 15, arity: "binary", targetGated: true, valid: true }
+    }
+    if form == BuiltinOperatorForm.Propagation && symbol == "?" {
+      return This { symbol, kind: Propagate, form, precedenceName: "propagate", precedence: 14, arity: "postfix", targetGated: true, valid: true }
+    }
+    if form == BuiltinOperatorForm.OptionalType && symbol == "?" {
+      return This { symbol, kind: OptionalType, form, precedenceName: "optionalType", precedence: 14, arity: "postfix", targetGated: true, valid: true }
+    }
+    if form == BuiltinOperatorForm.Spread && symbol == "..." {
+      return This { symbol, kind: Spread, form, precedenceName: "spread", precedence: 14, arity: "prefix", targetGated: true, valid: true }
+    }
+    if form == BuiltinOperatorForm.Prefix && (symbol == "+" || symbol == "-") {
+      return This { symbol, kind: Unary, form, precedenceName: "prefix", precedence: 14, arity: "prefix", targetGated: true, valid: true }
+    }
+    let fact = This.fromSymbol(symbol)
+    return This {
+      symbol: fact.symbol
+      kind: fact.kind
+      form
+      precedenceName: fact.precedenceName
+      resultTypeName: fact.resultTypeName
+      targetGated: fact.targetGated
+      mutates: fact.mutates
+      precedence: fact.precedence
+      rightAssociative: fact.rightAssociative
+      arity: fact.arity
+      assignmentBase: fact.assignmentBase
+      valid: fact.valid
+    }
+  }
+
+  pub fromSymbol(symbol: string) -> This {
+    if symbol == "+" || symbol == "-" {
+      return This { symbol, kind: Arithmetic, precedenceName: "additive", precedence: 10, arity: "prefix-or-binary", targetGated: true, valid: true }
+    }
+    if symbol == "*" || symbol == "/" || symbol == "%" {
+      return This { symbol, kind: Arithmetic, precedenceName: "multiplicative", precedence: 11, arity: "binary", targetGated: true, valid: true }
+    }
+    if symbol == "**" {
+      return This { symbol, kind: Arithmetic, precedenceName: "power", precedence: 13, rightAssociative: true, arity: "binary", targetGated: true, valid: true }
+    }
+    if symbol == "++" || symbol == "--" {
+      return This { symbol, kind: Increment, precedenceName: "postfix", precedence: 14, arity: "prefix-or-postfix", targetGated: true, mutates: true, valid: true }
+    }
+    if symbol == "==" || symbol == "!=" {
+      return This { symbol, kind: Comparison, precedenceName: "equality", resultTypeName: "bool", valid: true }
+    }
+    if symbol == "<" || symbol == "<=" || symbol == ">" || symbol == ">=" {
+      return This { symbol, kind: Comparison, precedenceName: "ordering", resultTypeName: "bool", valid: true }
+    }
+    if symbol == "&&" || symbol == "||" || symbol == "!" {
+      return This { symbol, kind: Logical, precedenceName: "logical", resultTypeName: "bool", valid: true }
+    }
+    if symbol == "&" || symbol == "|" || symbol == "^" || symbol == "~" {
+      return This { symbol, kind: Bitwise, precedenceName: "bitwise", targetGated: true, valid: true }
+    }
+    if symbol == "<<" || symbol == ">>" {
+      return This { symbol, kind: Shift, precedenceName: "shift", targetGated: true, valid: true }
+    }
+    if symbol == "=" {
+      return This { symbol, kind: Assignment, precedenceName: "assignment", targetGated: true, mutates: true, valid: true }
+    }
+    if symbol == "+=" || symbol == "-=" || symbol == "*=" || symbol == "/=" || symbol == "%=" || symbol == "**=" {
+      let base = match symbol {
+        "+=" => "+"
+        "-=" => "-"
+        "*=" => "*"
+        "/=" => "/"
+        "%=" => "%"
+        _ => "**"
+      }
+      return This { symbol, kind: Assignment, precedenceName: "assignment", precedence: 1, rightAssociative: true, arity: "binary", assignmentBase: base, targetGated: true, mutates: true, valid: true }
+    }
+    if symbol == "&=" || symbol == "|=" || symbol == "^=" || symbol == "<<=" || symbol == ">>=" {
+      let base = match symbol {
+        "&=" => "&"
+        "|=" => "|"
+        "^=" => "^"
+        "<<=" => "<<"
+        _ => ">>"
+      }
+      return This { symbol, kind: Assignment, precedenceName: "assignment", precedence: 1, rightAssociative: true, arity: "binary", assignmentBase: base, targetGated: true, mutates: true, valid: true }
+    }
+    if symbol == "." {
+      return This { symbol, kind: Access, precedenceName: "access", targetGated: true, valid: true }
+    }
+    if symbol == "()" {
+      return This { symbol, kind: Call, precedenceName: "postfix", targetGated: true, valid: true }
+    }
+    if symbol == "[]" {
+      return This { symbol, kind: Index, precedenceName: "postfix", targetGated: true, valid: true }
+    }
+    if symbol == "as" {
+      return This { symbol, kind: Cast, precedenceName: "cast", targetGated: true, valid: true }
+    }
+    if symbol == "?" {
+      return This { symbol, kind: Propagate, precedenceName: "propagate", targetGated: true, valid: true }
+    }
+    if symbol == ".." || symbol == "..<" || symbol == "..=" {
+      return This { symbol, kind: Range, precedenceName: "range", precedence: 1, arity: "binary", targetGated: true, valid: true }
+    }
+    if symbol == "=>" {
+      return This { symbol, kind: SyntaxBody, precedenceName: "syntaxBody", valid: true }
+    }
+    if symbol == "::" {
+      return This { symbol, kind: Path, precedenceName: "path", precedence: 15, arity: "binary", targetGated: true, valid: true }
+    }
+    if symbol == "..." {
+      return This { symbol, kind: Spread, precedenceName: "spread", precedence: 14, arity: "prefix", targetGated: true, valid: true }
+    }
+    return This { symbol }
+  }
+}
+
+impl view BuiltinOperatorFact {
+  pub hasFixedResult => resultTypeName != ""
+  pub requiresTarget => targetGated && resultTypeName == ""
+  pub comparison => kind == BuiltinOperatorKind.Comparison
+  pub logical => kind == BuiltinOperatorKind.Logical
+  pub arithmetic => kind == BuiltinOperatorKind.Arithmetic
+  pub increment => kind == BuiltinOperatorKind.Increment
+  pub bitwise => kind == BuiltinOperatorKind.Bitwise
+  pub shift => kind == BuiltinOperatorKind.Shift
+  pub assignment => kind == BuiltinOperatorKind.Assignment
+  pub range => kind == BuiltinOperatorKind.Range
+  pub access => kind == BuiltinOperatorKind.Access
+  pub call => kind == BuiltinOperatorKind.Call
+  pub index => kind == BuiltinOperatorKind.Index
+  pub cast => kind == BuiltinOperatorKind.Cast
+  pub propagate => kind == BuiltinOperatorKind.Propagate
+  pub address => kind == BuiltinOperatorKind.Address
+  pub move => kind == BuiltinOperatorKind.Move
+  pub dereference => kind == BuiltinOperatorKind.Dereference
+  pub path => kind == BuiltinOperatorKind.Path
+  pub optionalType => kind == BuiltinOperatorKind.OptionalType
+  pub spread => kind == BuiltinOperatorKind.Spread
+  pub syntaxBody => kind == BuiltinOperatorKind.SyntaxBody
+}

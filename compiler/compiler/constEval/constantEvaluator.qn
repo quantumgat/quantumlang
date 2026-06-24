@@ -1,0 +1,43 @@
+pub ConstantEvaluation {
+  value: ConstantValue
+  error: ConstantError
+  succeeded: bool = false
+}
+
+impl ConstantEvaluation {
+  pub success(value: ConstantValue) =
+    This { value, error: {}, succeeded: true }
+
+  pub failure(error: ConstantError) =
+    This { value: {}, error }
+}
+
+impl view ConstantEvaluation {
+  pub valid: bool =>
+    (succeeded && value.valid) ||
+    (succeeded == false && error.valid)
+}
+
+pub ConstantEvaluator {
+  deterministic: bool = true
+}
+
+context ConstantEvaluator {
+  pub add(left: ConstantValue, right: ConstantValue) -> ConstantEvaluation {
+    if left.kind != ConstantValueKind.Integer ||
+       right.kind != ConstantValueKind.Integer ||
+       left.typeId.id.same(right.typeId.id) == false {
+      return ConstantEvaluation.failure(
+        ConstantError {
+          kind: ConstantErrorKind.InvalidOperation
+          message: "constant integer addition requires matching integer types"
+          nodeId: 1
+        }
+      )
+    }
+
+    return ConstantEvaluation.success(
+      ConstantValue.integer(left.typeId, left.integerValue + right.integerValue)
+    )
+  }
+}

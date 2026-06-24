@@ -1,0 +1,21 @@
+pub QfuncType {
+  pure: bool
+  mayMeasure: bool
+  targetGated: bool
+  valid: bool
+}
+
+impl QfuncType {
+  pub QfuncType(pure: bool, mayMeasure: bool) =
+    This {
+      pure
+      mayMeasure
+      targetGated: true
+      valid: true
+    }
+}
+
+impl view QfuncType {
+  pub pureFunction => pure && mayMeasure == false
+  pub requiresTarget => targetGated
+}

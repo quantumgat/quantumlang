@@ -1,0 +1,26 @@
+pub RuntimeTrap {
+  panicSymbol: string
+  trapSymbol: string
+  aborts: bool
+}
+
+impl RuntimeTrap {
+  pub RuntimeTrap(panicSymbol: string, trapSymbol: string, aborts: bool) =
+    This {
+      panicSymbol
+      trapSymbol
+      aborts
+    }
+
+  pub core() =
+    This {
+      panicSymbol: "qtlc_runtime_panic"
+      trapSymbol: "qtlc_runtime_trap"
+      aborts: true
+    }
+}
+
+impl view RuntimeTrap {
+  pub valid: bool => panicSymbol != "" && trapSymbol != ""
+  pub trapHash: string => "runtime.trap:{panicSymbol}:{trapSymbol}:{aborts}"
+}

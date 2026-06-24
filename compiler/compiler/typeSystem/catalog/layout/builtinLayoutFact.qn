@@ -1,0 +1,7 @@
+pub BuiltinLayoutFact {
+  typeName: string
+  sizeBytes: usize
+  alignBytes: usize
+  pointerSized: bool
+  sret: bool
+}

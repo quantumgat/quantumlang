@@ -1,0 +1,28 @@
+import core::{NameId, ScopeId, SymbolId}
+
+pub ScopeEntry {
+  name: NameId = {}
+  symbol: SymbolId = {}
+  scope: ScopeId = {}
+  public: bool = false
+  deterministic: bool = true
+}
+
+impl ScopeEntry {
+  pub ScopeEntry(name: NameId, symbol: SymbolId, scope: ScopeId) =
+    This { name, symbol, scope }
+}
+
+impl view ScopeEntry {
+  pub named: bool => name.valid
+
+  pub resolved: bool => symbol.valid
+
+  pub scoped: bool => scope.valid
+
+  pub valid: bool =>
+    deterministic &&
+    named &&
+    resolved &&
+    scoped
+}

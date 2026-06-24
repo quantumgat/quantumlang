@@ -1,0 +1,22 @@
+pub RangeProof<T> {
+  start: i64 = 0
+  count: i64 = 0
+}
+
+impl RangeProof<T> {
+  pub RangeProof(start: i64, count: i64) =
+    This { start, count }
+}
+
+impl view RangeProof<T> {
+  pub end: i64 => start + count
+  pub valid: bool => start >= 0 && count >= 0
+}
+
+pub proof_range() -> i64 {
+  let rows: RangeProof<i64> = RangeProof(2, 5)
+  if rows.end != 7 { return 11 }
+  if rows.valid == false { return 12 }
+  println("range ok: {rows.start} {rows.count} {rows.end}")
+  return 0
+}

@@ -1,0 +1,33 @@
+pub QuantumPurity {
+  pure: bool
+  mayMeasure: bool
+  mayAllocate: bool
+  diagnosticCode: string
+  valid: bool
+}
+
+impl QuantumPurity {
+  pub QuantumPurity(pure: bool, mayMeasure: bool, mayAllocate: bool) =
+    if pure && (mayMeasure || mayAllocate) {
+      This {
+        pure
+        mayMeasure
+        mayAllocate
+        diagnosticCode: "QTQUANTUM0006"
+        valid: false
+      }
+    } else {
+      This {
+        pure
+        mayMeasure
+        mayAllocate
+        diagnosticCode: ""
+        valid: true
+      }
+    }
+}
+
+impl view QuantumPurity {
+  pub strict => pure && mayMeasure == false && mayAllocate == false
+  pub effectSafe => valid
+}

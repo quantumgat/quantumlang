@@ -1,0 +1,45 @@
+pub CheckedModule {
+  name: string
+  fileCount: i64 = 0
+  publicSymbolCount: i64 = 0
+  privateSymbolCount: i64 = 0
+  dependencyCount: i64 = 0
+  diagnosticCount: i64 = 0
+}
+
+impl CheckedModule {
+  pub CheckedModule(name: string) =
+    This { name }
+}
+
+impl view CheckedModule {
+  pub exists => name != ""
+
+  pub clean => diagnosticCount == 0
+
+  pub failed => diagnosticCount > 0
+
+  pub hasFiles => fileCount > 0
+
+  pub hasPublicApi => publicSymbolCount > 0
+
+  pub hasDependencies => dependencyCount > 0
+
+  pub symbolCount => publicSymbolCount + privateSymbolCount
+
+  pub countsConsistent => fileCount >= 0 &&
+    publicSymbolCount >= 0 &&
+    privateSymbolCount >= 0 &&
+    dependencyCount >= 0 &&
+    diagnosticCount >= 0
+
+  pub readyForLowering => exists && clean
+
+  pub valid => exists && countsConsistent
+
+  pub status => match true {
+    valid == false => SemanticStatus.InvalidCounts
+    clean == false => SemanticStatus.Dirty
+    _ => SemanticStatus.Ready
+  }
+}

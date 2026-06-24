@@ -1,0 +1,59 @@
+pub ReturnValueAbi {
+  typeName: string
+  sizeBytes: i64
+  registerCount: i64
+  usesSret: bool
+  diagnosticCode: string = ""
+}
+
+impl ReturnValueAbi {
+  pub ReturnValueAbi(typeName: string, sizeBytes: i64, registerCount: i64, usesSret: bool) =
+    This {
+      typeName
+      sizeBytes
+      registerCount
+      usesSret
+    }
+
+  pub fromAggregate(aggregate: AggregateAbi, sretAbi: SretAbi) -> This {
+    if aggregate.valid == false || sretAbi.valid == false {
+      return This {
+        typeName: aggregate.typeName
+        sizeBytes: aggregate.sizeBytes
+        registerCount: 0
+        usesSret: false
+        diagnosticCode: "QNATIVE0640"
+      }
+    }
+
+    if sretAbi.usesSret {
+      return This {
+        typeName: aggregate.typeName
+        sizeBytes: aggregate.sizeBytes
+        registerCount: 0
+        usesSret: true
+      }
+    }
+
+    return This {
+      typeName: aggregate.typeName
+      sizeBytes: aggregate.sizeBytes
+      registerCount: match aggregate.sizeBytes > 8 {
+        true => 2
+        false => 1
+      }
+      usesSret: false
+    }
+  }
+}
+
+impl view ReturnValueAbi {
+  pub valid => diagnosticCode == "" &&
+    typeName != "" &&
+    sizeBytes >= 0 &&
+    registerCount >= 0
+  pub registerReturn => valid && usesSret == false && registerCount > 0
+  pub memoryReturn => valid && usesSret
+  pub abiHash => "retabi:{typeName}:{sizeBytes}:{registerCount}:{usesSret}"
+  pub debugName => "retabi.{typeName}.{registerCount}.{usesSret}"
+}

@@ -1,0 +1,55 @@
+pub LayoutPair {
+  left: i64
+  right: i64
+}
+
+pub LayoutCell<T> {
+  value: T
+  sentinel: i64 = 91
+}
+
+pub LayoutEnvelope<T> {
+  cell: LayoutCell<T>
+  tail: i64 = 73
+}
+
+impl view LayoutCell<T> {
+  pub current => value
+  pub intact: bool => sentinel == 91
+}
+
+impl view LayoutEnvelope<T> {
+  pub current => cell.current
+  pub intact: bool => cell.intact && tail == 73
+}
+
+pub genericAggregateLayoutStatus() -> i64 {
+  // Concrete generic return values use the receiver's type binding.
+  let text: LayoutCell<string> = {
+    value: "quantum"
+  }
+  if text.value != "quantum" { return 1 }
+  if text.current != "quantum" { return 2 }
+  if text.sentinel != 91 { return 3 }
+
+  let pair: LayoutCell<LayoutPair> = {
+    value: {
+      left: 11
+      right: 29
+    }
+  }
+  if pair.value.left != 11 { return 4 }
+  let currentPair: LayoutPair = pair.current
+  if currentPair.right != 29 { return 5 }
+  if pair.sentinel != 91 { return 6 }
+
+  let nested: LayoutEnvelope<string> = {
+    cell: {
+      value: "nested"
+    }
+  }
+  if nested.current != "nested" { return 7 }
+  if nested.intact != true { return 8 }
+
+  return 0
+}

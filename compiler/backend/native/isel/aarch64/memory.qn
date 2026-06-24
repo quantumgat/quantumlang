@@ -1,0 +1,33 @@
+pub Aarch64MemorySelect {
+  operation: string
+  widthBits: i64
+  addressingMode: string = "base-offset"
+  selectedOpcode: string
+  diagnosticCode: string = ""
+}
+
+impl Aarch64MemorySelect {
+  pub Aarch64MemorySelect(operation: string, widthBits: i64, selectedOpcode: string) =
+    This {
+      operation
+      widthBits
+      selectedOpcode
+    }
+
+  pub load(widthBits: i64) =
+    This("load", widthBits, "ldr")
+
+  pub store(widthBits: i64) =
+    This("store", widthBits, "str")
+}
+
+impl view Aarch64MemorySelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    operation != "" &&
+    widthBits > 0 &&
+    addressingMode != "" &&
+    selectedOpcode != ""
+
+  pub debugName: string => "isel.aarch64.memory.{operation}.{widthBits}"
+}

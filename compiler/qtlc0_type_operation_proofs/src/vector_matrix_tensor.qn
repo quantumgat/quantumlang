@@ -1,0 +1,7 @@
+pub proof_vector_matrix_tensor() -> i64 {
+  let v: vector<3,f64> = vector<3,f64>(1.0, 2.0, 3.0)
+  let m: matrix<2,f64> = matrix<2,f64>(1.0, 0.0, 0.0, 1.0)
+  let t: tensor<2,2,2,f64> = tensor<2,2,2,f64>(1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0)
+  println("vector/matrix/tensor ok")
+  return 0
+}

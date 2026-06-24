@@ -1,0 +1,12 @@
+[package]
+name = "qtlc0_build_object_rule"
+version = "0.1.0"
+edition = "2026"
+
+[source]
+root = "."
+
+[targets.app]
+kind = "bin"
+main = "src/main.qn"
+backend = "native"

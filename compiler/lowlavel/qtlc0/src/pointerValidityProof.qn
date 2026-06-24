@@ -1,0 +1,78 @@
+pub PointerUser {
+  id: i64
+  active: bool
+}
+
+pub pointerValidityProof() -> bool {
+  let user: PointerUser = { id: 7, active: false }
+  let pointer: *PointerUser = &user
+
+  if pointer.valid {
+    pointer.id = 9
+    pointer.active = true
+    return pointer.id == 9 && pointer.active
+  }
+
+  return false
+}
+
+pub nestedPointerValidityProof() -> bool {
+  let user: PointerUser = { id: 13, active: true }
+  let pointer: *PointerUser = &user
+  let ready = true
+
+  if pointer.valid && ready {
+    pointer.id = 14
+    return pointer.id == 14
+  }
+
+  return false
+}
+
+pub loopPointerValidityProof() -> bool {
+  let user: PointerUser = { id: 17, active: true }
+  let pointer: *PointerUser = &user
+  let visited = false
+
+  while pointer.valid && visited == false {
+    visited = pointer.id == 17
+  }
+
+  return visited
+}
+
+pub constPointerProof() -> bool {
+  let user: PointerUser = { id: 11, active: true }
+  let pointer: const *PointerUser = const *user
+
+  if pointer.valid {
+    return pointer.id == 11 && pointer.active
+  }
+
+  return false
+}
+
+pub constPointerAliasProof() -> bool {
+  let user: PointerUser = { id: 19, active: true }
+  let pointer: const *PointerUser = const *user
+  let alias: const *PointerUser = pointer
+
+  if alias.valid {
+    return alias.id == 19 && alias.active
+  }
+
+  return false
+}
+
+pub mutablePointerTransferProof() -> bool {
+  let user: PointerUser = { id: 23, active: false }
+  let pointer: *PointerUser = &user
+  let moved: *PointerUser = ^pointer
+
+  if moved.valid {
+    moved.id = 24
+    return moved.id == 24
+  }
+
+  return false
+}

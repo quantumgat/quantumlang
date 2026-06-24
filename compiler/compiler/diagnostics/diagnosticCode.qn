@@ -1,0 +1,22 @@
+pub DiagnosticCode {
+  code: string = ""
+  category: string = ""
+  numeric: i64 = 0
+}
+
+impl DiagnosticCode {
+  pub DiagnosticCode(code: string, category: string, numeric: i64) =
+    This { code, category, numeric }
+}
+
+impl view DiagnosticCode {
+  pub valid => code != "" && category != "" && numeric > 0
+
+  pub literal => category == "literal"
+
+  pub parser => category == "parser"
+
+  pub typeSystem => category == "type"
+
+  pub display => "{code}"
+}

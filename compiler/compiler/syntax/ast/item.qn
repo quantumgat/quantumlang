@@ -1,0 +1,27 @@
+pub enum AstItemKind {
+  ModuleDecl
+  ImportDecl
+  ExportDecl
+  TypeDecl
+  ImplDecl
+  FunctionDecl
+  Unknown
+}
+
+pub AstItem {
+  id: i64
+  node: AstNode
+  kind: AstItemKind
+}
+
+impl AstItem {
+  pub AstItem(id: i64, kind: AstItemKind, node: AstNode) =
+    This { id, node, kind }
+}
+
+impl view AstItem {
+  pub valid => id > 0 && node.valid && kind != AstItemKind.Unknown
+  pub moduleDecl => kind == AstItemKind.ModuleDecl
+  pub functionDecl => kind == AstItemKind.FunctionDecl
+  pub typeDecl => kind == AstItemKind.TypeDecl
+}

@@ -1,0 +1,57 @@
+pub enum MagicFastStatus {
+  Passed
+  Failed
+  Explained
+}
+
+pub MagicFastResult {
+  scenario: MagicFastScenario
+  status: MagicFastStatus
+  elapsedMicros: u64
+  changedBodyCount: usize
+  affectedDependentCount: usize
+  sourceFilesRead: usize
+  linkSkipped: bool
+  dependencySourceAvoided: bool
+  unaffectedModulesReused: bool
+  workersUsed: usize
+  reason: string
+}
+
+impl MagicFastResult {
+  pub MagicFastResult(
+    scenario: MagicFastScenario,
+    status: MagicFastStatus,
+    elapsedMicros: u64,
+    changedBodyCount: usize,
+    affectedDependentCount: usize,
+    sourceFilesRead: usize,
+    linkSkipped: bool,
+    dependencySourceAvoided: bool,
+    unaffectedModulesReused: bool,
+    workersUsed: usize,
+    reason: string
+  ) =
+    This {
+      scenario
+      status
+      elapsedMicros
+      changedBodyCount
+      affectedDependentCount
+      sourceFilesRead
+      linkSkipped
+      dependencySourceAvoided
+      unaffectedModulesReused
+      workersUsed
+      reason
+    }
+}
+
+impl view MagicFastResult {
+  pub passed => status == MagicFastStatus.Passed
+  pub failed => status == MagicFastStatus.Failed
+  pub explained => status == MagicFastStatus.Explained
+  pub noDependencySourceRead => dependencySourceAvoided
+  pub hotReuseProven => unaffectedModulesReused && workersUsed > 0
+  pub valid => elapsedMicros > 0 && reason != ""
+}

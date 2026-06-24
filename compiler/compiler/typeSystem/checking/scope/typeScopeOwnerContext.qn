@@ -1,0 +1,15 @@
+import core::{ModuleId, SymbolId}
+
+pub TypeScopeOwnerContext {
+  typeOwner: SymbolId = {}
+  owner: SymbolId = {}
+  moduleId: ModuleId = {}
+}
+
+impl view TypeScopeOwnerContext {
+  pub hasTypeOwner: bool => typeOwner.valid
+
+  pub hasOwner: bool => owner.valid
+
+  pub valid: bool => typeOwner.valid || owner.valid || moduleId.valid
+}

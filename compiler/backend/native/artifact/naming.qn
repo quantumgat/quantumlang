@@ -1,0 +1,29 @@
+pub ArtifactNaming {
+  packageName: string
+  objectExtension: string
+  buildPlanExtension: string
+}
+
+impl ArtifactNaming {
+  pub ArtifactNaming(packageName: string, objectExtension: string, buildPlanExtension: string) =
+    This {
+      packageName
+      objectExtension
+      buildPlanExtension
+    }
+
+  pub forPackage(packageName: string) =
+    This {
+      packageName
+      objectExtension: "objects"
+      buildPlanExtension: "build-plan"
+    }
+}
+
+impl view ArtifactNaming {
+  pub valid: bool => packageName != "" && objectExtension != "" && buildPlanExtension != ""
+  pub executableName: string => packageName
+  pub objectSetName: string => "{packageName}.{objectExtension}"
+  pub buildPlanName: string => "{packageName}.{buildPlanExtension}"
+  pub namingHash: string => "artifact.naming:{packageName}:{objectExtension}:{buildPlanExtension}"
+}

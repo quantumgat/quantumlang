@@ -1,0 +1,9 @@
+[module]
+name = "query"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/query"
+role = "incremental-query-core"
+
+[dependencies]
+modules = ["core", "storage"]

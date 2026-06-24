@@ -1,0 +1,16 @@
+pub StableInstanceHash {
+  high: u64
+  low: u64
+}
+
+impl StableInstanceHash {
+  pub fromKey(key: InstanceKey) =
+    This {
+      high: key.origin.id.packageHash + key.argumentHash
+      low: key.origin.id.moduleHash + key.targetHash + key.disambiguator
+    }
+}
+
+impl view StableInstanceHash {
+  pub valid: bool => high != 0 || low != 0
+}

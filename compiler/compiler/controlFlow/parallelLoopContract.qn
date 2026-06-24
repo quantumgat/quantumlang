@@ -1,0 +1,106 @@
+pub enum ParallelLoopKind {
+  ParFor
+  ShardFor
+}
+
+pub enum ParallelCaptureKind {
+  Read
+  Move
+  ShardLocal
+  SharedMutable
+}
+
+pub enum ParallelReductionKind {
+  None
+  Ordered
+  Associative
+}
+
+pub ParallelLoopContract {
+  regionId: i64
+  bodyId: i64
+  partitionId: i64
+  joinId: i64
+  kind: ParallelLoopKind
+  captureKind: ParallelCaptureKind = ParallelCaptureKind.Read
+  reductionKind: ParallelReductionKind = ParallelReductionKind.None
+  deterministic: bool = true
+  implicitJoin: bool = true
+  cancellable: bool = true
+  backpressured: bool = true
+  partitionCount: i64 = 0
+  diagnosticCode: string = ""
+}
+
+impl ParallelLoopContract {
+  pub parFor(regionId: i64, bodyId: i64, partitionId: i64, joinId: i64) =
+    This {
+      regionId
+      bodyId
+      partitionId
+      joinId
+      kind: ParallelLoopKind.ParFor
+    }
+
+  pub shardFor(
+    regionId: i64,
+    bodyId: i64,
+    partitionId: i64,
+    joinId: i64,
+    partitionCount: i64
+  ) =
+    This {
+      regionId
+      bodyId
+      partitionId
+      joinId
+      kind: ParallelLoopKind.ShardFor
+      captureKind: ParallelCaptureKind.ShardLocal
+      partitionCount
+    }
+
+  pub withCapture(captureKind: ParallelCaptureKind) =
+    this {
+      captureKind
+      diagnosticCode: match captureKind {
+        ParallelCaptureKind.SharedMutable => "QTCFLOW0006"
+        _ => ""
+      }
+    }
+
+  pub withReduction(reductionKind: ParallelReductionKind) =
+    this {
+      reductionKind
+      deterministic: reductionKind != ParallelReductionKind.Associative
+    }
+}
+
+impl view ParallelLoopContract {
+  pub stableIds: bool =>
+    regionId >= 0 &&
+    bodyId >= 0 &&
+    partitionId >= 0 &&
+    joinId >= 0
+
+  pub captureValid: bool =>
+    captureKind != ParallelCaptureKind.SharedMutable
+
+  pub partitionValid: bool =>
+    kind == ParallelLoopKind.ParFor ||
+    partitionCount > 0
+
+  pub reductionValid: bool =>
+    reductionKind == ParallelReductionKind.None ||
+    reductionKind == ParallelReductionKind.Ordered ||
+    deterministic == false
+
+  pub valid: bool =>
+    stableIds &&
+    captureValid &&
+    partitionValid &&
+    reductionValid &&
+    implicitJoin &&
+    cancellable &&
+    backpressured &&
+    diagnosticCode == ""
+}

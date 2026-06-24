@@ -1,0 +1,45 @@
+pub ElfHeader {
+  types: ElfTypes
+  layout: ObjectHeaderLayout
+  sectionNameIndex: i64
+  byteCount: i64
+  diagnosticCode: string = ""
+}
+
+impl ElfHeader {
+  pub ElfHeader(
+    types: ElfTypes,
+    layout: ObjectHeaderLayout,
+    sectionNameIndex: i64,
+    byteCount: i64
+  ) =
+    This {
+      types
+      layout
+      sectionNameIndex
+      byteCount
+    }
+
+  pub relocatableX86_64(layout: ObjectHeaderLayout) =
+    This {
+      types: ElfTypes.defaults()
+      layout
+      sectionNameIndex: 2
+      byteCount: 64
+      diagnosticCode: match layout.valid {
+        true => ""
+        false => "QNATIVE0753"
+      }
+    }
+}
+
+impl view ElfHeader {
+  pub valid: bool => diagnosticCode == "" &&
+    types.valid &&
+    layout.valid &&
+    sectionNameIndex > 0 &&
+    byteCount == 64
+  pub sectionHeaderOffset: i64 => layout.sectionHeaderOffset
+  pub sectionHeaderCount: i64 => layout.sectionHeaderCount
+  pub debugName: string => "elf.header.{sectionHeaderOffset}.{sectionHeaderCount}"
+}

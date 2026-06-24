@@ -1,0 +1,204 @@
+pub enum AtomicOrdering {
+  Relaxed
+  Acquire
+  Release
+  AcqRel
+  SeqCst
+  Unknown
+}
+
+impl view AtomicOrdering {
+  pub valid => this != Unknown
+
+  pub validForLoad => this == Relaxed || this == Acquire || this == SeqCst
+
+  pub validForStore => this == Relaxed || this == Release || this == SeqCst
+
+  pub validForReadModifyWrite =>
+    this == Relaxed ||
+    this == Acquire ||
+    this == Release ||
+    this == AcqRel ||
+    this == SeqCst
+
+  pub validForCompareExchangeFailure =>
+    this == Relaxed ||
+    this == Acquire ||
+    this == SeqCst
+}
+
+pub Atomic<T> {
+  value: T
+  owner: CompilerId = {}
+  generation: u64 = 0
+  ordering: AtomicOrdering = SeqCst
+}
+
+impl Atomic<T> {
+  pub Atomic(value: T) =
+    This {
+      value
+    }
+
+  pub Atomic(value: T, ordering: AtomicOrdering) =
+    This {
+      value
+      ordering
+    }
+
+  pub load() -> T {
+    return value
+  }
+
+  pub load(ordering: AtomicOrdering) -> T {
+    return value
+  }
+
+  pub store(value: T) -> This {
+    return this {
+      value
+      generation: generation + 1
+    }
+  }
+
+  pub store(value: T, ordering: AtomicOrdering) -> This {
+    return this {
+      value
+      ordering
+      generation: generation + 1
+    }
+  }
+
+  pub swap(value: T) -> This {
+    return store(value)
+  }
+
+  pub swap(value: T, ordering: AtomicOrdering) -> This {
+    return store(value, ordering)
+  }
+
+  pub cmp(expected: T, desired: T) -> This {
+    return swap(desired)
+  }
+
+  pub cmp(
+    expected: T,
+    desired: T,
+    successOrdering: AtomicOrdering,
+    failureOrdering: AtomicOrdering
+  ) -> This {
+    return swap(desired, successOrdering)
+  }
+
+  pub tryCmp(expected: T, desired: T) -> This {
+    return cmp(expected, desired)
+  }
+
+  pub tryCmp(
+    expected: T,
+    desired: T,
+    successOrdering: AtomicOrdering,
+    failureOrdering: AtomicOrdering
+  ) -> This {
+    return cmp(expected, desired, successOrdering, failureOrdering)
+  }
+
+  pub add(value: T) -> This {
+    return swap(value)
+  }
+
+  pub sub(value: T) -> This {
+    return swap(value)
+  }
+
+  pub and(value: T) -> This {
+    return swap(value)
+  }
+
+  pub or(value: T) -> This {
+    return swap(value)
+  }
+
+  pub xor(value: T) -> This {
+    return swap(value)
+  }
+
+  pub min(value: T) -> This {
+    return swap(value)
+  }
+
+  pub max(value: T) -> This {
+    return swap(value)
+  }
+
+  pub set() -> This {
+    return this {
+      generation: generation + 1
+    }
+  }
+
+  pub clear() -> This {
+    return this {
+      generation: generation + 1
+    }
+  }
+
+  pub toggle() -> This {
+    return this {
+      generation: generation + 1
+    }
+  }
+
+  pub loadPtr() -> T {
+    return load()
+  }
+
+  pub storePtr(pointer: T) -> This {
+    return store(pointer)
+  }
+
+  pub swapPtr(pointer: T) -> This {
+    return swap(pointer)
+  }
+
+  pub cmpPtr(expected: T, desired: T) -> This {
+    return cmp(expected, desired)
+  }
+
+  pub fence(ordering: AtomicOrdering) -> AtomicFence {
+    return AtomicFence(ordering, false)
+  }
+
+  pub cfence(ordering: AtomicOrdering) -> AtomicFence {
+    return AtomicFence(ordering, true)
+  }
+}
+
+impl view Atomic<T> {
+  pub ownsStorage => true
+
+  pub sequential => ordering == SeqCst
+
+  pub lockFree => true
+
+  pub atomicCapable => true
+
+  pub valid => ordering.valid
+}
+
+pub AtomicFence {
+  ordering: AtomicOrdering = SeqCst
+  compilerOnly: bool = false
+}
+
+impl AtomicFence {
+  pub AtomicFence(ordering: AtomicOrdering, compilerOnly: bool) =
+    This {
+      ordering
+      compilerOnly
+    }
+}
+
+impl view AtomicFence {
+  pub valid => ordering.valid
+}

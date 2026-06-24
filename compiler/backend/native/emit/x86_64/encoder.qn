@@ -1,0 +1,34 @@
+pub X86Encoder {
+  targetTriple: string = "x86_64-unknown-linux-gnu"
+  objectFormat: string = "elf"
+  instructionCount: i64 = 0
+  byteCount: i64 = 0
+  relocationCount: i64 = 0
+  diagnosticCode: string = ""
+}
+
+impl X86Encoder {
+  pub X86Encoder(instructionCount: i64, byteCount: i64, relocationCount: i64) =
+    This {
+      instructionCount
+      byteCount
+      relocationCount
+    }
+
+  pub entryStub() =
+    This(1, 1, 0)
+}
+
+impl view X86Encoder {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetTriple != "" &&
+    objectFormat != "" &&
+    instructionCount >= 0 &&
+    byteCount >= 0 &&
+    relocationCount >= 0
+
+  pub emitsCode: bool => valid && byteCount > 0
+  pub encoderHash: string => "x86-encoder:{instructionCount}:{byteCount}:{relocationCount}"
+  pub debugName: string => "x86.encoder.{byteCount}"
+}

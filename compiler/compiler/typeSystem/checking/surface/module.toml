@@ -1,0 +1,9 @@
+[module]
+name = "surface"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/typeSystem/checking/surface"
+role = "oop-surface-conformance"
+
+[dependencies]
+modules = ["core", "declaration", "frontend", "source", "syntax"]

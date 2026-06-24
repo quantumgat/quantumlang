@@ -1,0 +1,10 @@
+pub enum PrimitiveTypeFamily {
+  Void
+  Bool
+  Char
+  Byte
+  SignedInteger
+  UnsignedInteger
+  Float
+  Unknown
+}

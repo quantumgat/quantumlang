@@ -1,0 +1,31 @@
+pub Riscv64BranchSelect {
+  conditionKind: string
+  targetLabel: string
+  selectedOpcode: string
+  diagnosticCode: string = ""
+}
+
+impl Riscv64BranchSelect {
+  pub Riscv64BranchSelect(conditionKind: string, targetLabel: string, selectedOpcode: string) =
+    This {
+      conditionKind
+      targetLabel
+      selectedOpcode
+    }
+
+  pub jump(targetLabel: string) =
+    This("always", targetLabel, "jal")
+
+  pub conditional(conditionKind: string, targetLabel: string) =
+    This(conditionKind, targetLabel, "branch")
+}
+
+impl view Riscv64BranchSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    conditionKind != "" &&
+    targetLabel != "" &&
+    selectedOpcode != ""
+
+  pub debugName: string => "isel.riscv64.branch.{conditionKind}.{targetLabel}"
+}

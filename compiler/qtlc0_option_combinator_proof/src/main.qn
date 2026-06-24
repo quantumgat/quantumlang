@@ -1,0 +1,36 @@
+doubleValue(value: i64) -> i64 =
+  value * 2
+
+nextValue(value: i64) -> Option<i64> =
+  Some(value + 1)
+
+positive(value: i64) -> bool =
+  value > 0
+
+createFallback() -> i64 =
+  41
+
+main() -> i64 {
+  let value: Option<i64> = Some(7)
+  let missingValue: Option<i64> = None
+
+  if value.map(doubleValue).valueOr(0) != 14 { return 1 }
+  if missingValue.map(doubleValue).missing == false { return 2 }
+  if value.then(nextValue).valueOr(0) != 8 { return 3 }
+  if missingValue.then(nextValue).missing == false { return 4 }
+  if value.filter(positive).valueOr(0) != 7 { return 5 }
+  if value.filter(item => item < 0).missing == false { return 6 }
+  if missingValue.or(value).valueOr(0) != 7 { return 7 }
+  if value.or(missingValue).valueOr(0) != 7 { return 8 }
+  if missingValue.orCreate(createFallback).valueOr(0) != 41 { return 9 }
+  if value.orCreate(() => 99).valueOr(0) != 7 { return 10 }
+  if value.matches(item => item == 7) == false { return 11 }
+  if missingValue.matches(positive) { return 12 }
+
+  let required: Result<i64, i64> = value.require(404)
+  let rejected: Result<i64, i64> = missingValue.require(404)
+  if required.isOk() == false { return 13 }
+  if rejected.isErr() == false { return 14 }
+
+  return 0
+}

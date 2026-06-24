@@ -1,0 +1,157 @@
+import core::{Hash256, HashDomain, HashError, StableHash, StableHashWriter}
+
+impl AstNode {
+  pub stableHash() -> Result<Hash256, HashError> {
+    let out = StableHashWriter(HashDomain.Syntax)
+    this.stableHashInto(out)?
+    return out.finish()
+  }
+
+  stableHashInto(out: StableHashWriter) -> Result<void, HashError> {
+    out.begin("syntax.AstNode", 2)?
+    out.writeI64("kind", astNodeKindOrdinal(kind))?
+    out.writeCompilerId("fileId", span.fileId.id)?
+    out.writeRange("rows", span.rows.start, span.rows.count)?
+    out.writeI64("childCount", childCount)?
+    out.writeBool("green", green)?
+    out.writeString("text", text)?
+    out.writeString("semanticKind", semanticKind)?
+    out.beginList("genericArguments", genericArguments.count)?
+    let genericArgumentRow: i64 = 0
+    while genericArgumentRow < genericArguments.count {
+      out.writeItemString(genericArguments[genericArgumentRow])?
+      genericArgumentRow = genericArgumentRow + 1
+    }
+    out.endList()?
+    out.beginList("callArguments", callArguments.count)?
+    let argumentRow: i64 = 0
+    while argumentRow < callArguments.count {
+      let argument = callArguments[argumentRow]
+      out.writeItemString(
+        "{argument.position}:{argument.name}:{argument.expressionText}:{argument.inferredTypeName}:{argument.named}:{argument.spread}"
+      )?
+      argumentRow = argumentRow + 1
+    }
+    out.endList()?
+    return out.end()
+  }
+}
+
+impl AstDeclaration {
+  pub stableHash() -> Result<Hash256, HashError> {
+    let out = StableHashWriter(HashDomain.Syntax)
+    this.stableHashInto(out)?
+    return out.finish()
+  }
+
+  stableHashInto(out: StableHashWriter) -> Result<void, HashError> {
+    out.begin("syntax.AstDeclaration", 2)?
+    out.writeI64("kind", astDeclarationKindOrdinal(kind))?
+    out.writeString("modulePath", modulePath)?
+    out.writeString("name", name)?
+    out.writeString("importAlias", importAlias)?
+    out.writeString("selectedSymbol", selectedSymbol)?
+    out.writeBool("wildcardImport", wildcardImport)?
+    out.beginList("excludedSymbols", excludedSymbols.count)?
+    let excludedSymbolRow: i64 = 0
+    while excludedSymbolRow < excludedSymbols.count {
+      out.writeItemString(excludedSymbols[excludedSymbolRow])?
+      excludedSymbolRow = excludedSymbolRow + 1
+    }
+    out.endList()?
+    out.beginList("genericParameters", genericParameters.count)?
+    let genericRow: i64 = 0
+    while genericRow < genericParameters.count {
+      out.writeItemString(genericParameters[genericRow])?
+      genericRow = genericRow + 1
+    }
+    out.endList()?
+    out.beginList("roleConformances", this.roleConformances.count)?
+    let conformanceRow: i64 = 0
+    while conformanceRow < this.roleConformances.count {
+      let conformance = this.roleConformances[conformanceRow]
+      out.writeItemString(
+        "{conformance.roleName}:{astRoleVisibilityOrdinal(conformance.visibility)}"
+      )?
+      conformanceRow = conformanceRow + 1
+    }
+    out.endList()?
+    out.beginList("genericParameterRows", genericParameterRows.count)?
+    let genericFactRow: i64 = 0
+    while genericFactRow < genericParameterRows.count {
+      let parameter = genericParameterRows[genericFactRow]
+      out.writeItemString(
+        "{parameter.position}:{parameter.name}:{parameter.bounds.count}:{parameter.defaultTypeName}:{parameter.variadic}"
+      )?
+      genericFactRow = genericFactRow + 1
+    }
+    out.endList()?
+    out.beginList("parameters", parameters.count)?
+    let parameterRow: i64 = 0
+    while parameterRow < parameters.count {
+      out.writeItemString(parameters[parameterRow])?
+      parameterRow = parameterRow + 1
+    }
+    out.endList()?
+    out.beginList("parameterRows", parameterRows.count)?
+    let parameterFactRow: i64 = 0
+    while parameterFactRow < parameterRows.count {
+      let parameter = parameterRows[parameterFactRow]
+      out.writeItemString(
+        "{parameter.position}:{parameter.name}:{parameter.typeName}:{parameter.defaultValueText}:{parameter.defaulted}:{parameter.variadic}"
+      )?
+      parameterFactRow = parameterFactRow + 1
+    }
+    out.endList()?
+    out.writeCompilerId("fileId", span.fileId.id)?
+    out.writeRange("rows", span.rows.start, span.rows.count)?
+    out.writeI64("visibility", astVisibilityOrdinal(visibility))?
+    return out.end()
+  }
+}
+
+astNodeKindOrdinal(kind: AstNodeKind) -> i64 {
+  if kind == AstNodeKind.Module { return 1 }
+  if kind == AstNodeKind.Import { return 2 }
+  if kind == AstNodeKind.Export { return 3 }
+  if kind == AstNodeKind.TypeDecl { return 4 }
+  if kind == AstNodeKind.ImplDecl { return 5 }
+  if kind == AstNodeKind.FunctionDecl { return 6 }
+  if kind == AstNodeKind.Parameter { return 7 }
+  if kind == AstNodeKind.Block { return 8 }
+  if kind == AstNodeKind.Statement { return 9 }
+  if kind == AstNodeKind.Expression { return 10 }
+  if kind == AstNodeKind.Pattern { return 11 }
+  if kind == AstNodeKind.TypeRef { return 12 }
+  if kind == AstNodeKind.Token { return 13 }
+  return 0
+}
+
+astDeclarationKindOrdinal(kind: AstDeclarationKind) -> i64 {
+  if kind == AstDeclarationKind.Module { return 1 }
+  if kind == AstDeclarationKind.Type { return 2 }
+  if kind == AstDeclarationKind.Impl { return 3 }
+  if kind == AstDeclarationKind.View { return 4 }
+  if kind == AstDeclarationKind.Role { return 5 }
+  if kind == AstDeclarationKind.Function { return 6 }
+  if kind == AstDeclarationKind.Import { return 7 }
+  if kind == AstDeclarationKind.Context { return 8 }
+  if kind == AstDeclarationKind.Extract { return 9 }
+  if kind == AstDeclarationKind.Extend { return 10 }
+  return 0
+}
+
+astVisibilityOrdinal(visibility: AstDeclarationVisibility) -> i64 {
+  if visibility == AstDeclarationVisibility.Public { return 1 }
+  if visibility == AstDeclarationVisibility.Private { return 2 }
+  if visibility == AstDeclarationVisibility.Exported { return 3 }
+  return 0
+}
+
+astRoleVisibilityOrdinal(visibility: AstRoleVisibility) -> i64 {
+  if visibility == AstRoleVisibility.Public { return 1 }
+  if visibility == AstRoleVisibility.Internal { return 2 }
+  if visibility == AstRoleVisibility.Protected { return 3 }
+  if visibility == AstRoleVisibility.Private { return 4 }
+  return 0
+}

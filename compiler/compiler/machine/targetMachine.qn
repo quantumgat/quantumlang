@@ -1,0 +1,30 @@
+pub TargetMachine {
+  triple: string
+  featureCount: i64
+  dataLayout: DataLayout
+  callingConvention: CallingConvention
+  nativeObjectFormat: string
+  valid: bool
+}
+
+impl TargetMachine {
+  pub TargetMachine(
+    triple: string,
+    featureCount: i64,
+    dataLayout: DataLayout,
+    callingConvention: CallingConvention,
+    nativeObjectFormat: string,
+  ) =
+    This {
+      triple,
+      featureCount,
+      dataLayout,
+      callingConvention,
+      nativeObjectFormat,
+      valid: triple != "" &&
+        featureCount >= 0 &&
+        dataLayout.valid &&
+        callingConvention.valid &&
+        nativeObjectFormat != "",
+    }
+}

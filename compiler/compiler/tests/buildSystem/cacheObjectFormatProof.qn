@@ -1,0 +1,65 @@
+import storage::{CacheObjectContract, CacheObjectFormat, CacheObjectRole}
+
+pub CacheObjectFormatProof {
+  actionIndexValid: bool
+  contentFormatsValid: bool
+  headersValidated: bool
+  rolesSeparated: bool
+  valid: bool
+}
+
+pub cacheObjectFormatProof() -> CacheObjectFormatProof {
+  let action = CacheObjectFormat.actionIndex()
+  let metadata = CacheObjectFormat.metadata()
+  let object = CacheObjectFormat.nativeObject()
+  let archive = CacheObjectFormat.nativeArchive()
+  let executable = CacheObjectFormat.executable()
+  let diagnostic = CacheObjectFormat.diagnostic()
+
+  let actionIndexValid =
+    action.valid &&
+    action.extension == ".qci" &&
+    action.magic == "QCI1"
+
+  let contentFormatsValid =
+    metadata.valid &&
+    object.valid &&
+    archive.valid &&
+    executable.valid &&
+    diagnostic.valid &&
+    metadata.extension == ".qcm" &&
+    object.extension == ".qco" &&
+    archive.extension == ".qca" &&
+    executable.extension == ".qcx" &&
+    diagnostic.extension == ".qcd"
+
+  let contract = CacheObjectContract.forPayload(
+    object,
+    4096,
+    "content-hash",
+    "payload-checksum"
+  )
+  let headersValidated = contract.valid
+
+  let rolesSeparated =
+    action.role == CacheObjectRole.ActionMapping &&
+    action.actionIndexed &&
+    action.contentAddressed == false &&
+    metadata.role == CacheObjectRole.ContentProduct &&
+    metadata.contentAddressed &&
+    metadata.actionIndexed == false
+
+  let valid =
+    actionIndexValid &&
+    contentFormatsValid &&
+    headersValidated &&
+    rolesSeparated
+
+  return CacheObjectFormatProof {
+    actionIndexValid
+    contentFormatsValid
+    headersValidated
+    rolesSeparated
+    valid
+  }
+}

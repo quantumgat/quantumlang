@@ -1,0 +1,27 @@
+pub ObjectSectionLayout {
+  sectionName: string
+  range: ObjectRange
+  fileIndex: i64
+  diagnosticCode: string = ""
+}
+
+impl ObjectSectionLayout {
+  pub ObjectSectionLayout(sectionName: string, range: ObjectRange, fileIndex: i64) =
+    This { sectionName, range, fileIndex }
+
+  pub fromSection(section: ObjectSection, fileIndex: i64) =
+    This(section.name, ObjectRange.fromSection(section), fileIndex)
+
+  pub shstrtab(offset: i64, sizeBytes: i64, fileIndex: i64) =
+    This(".shstrtab", ObjectRange(offset, sizeBytes, 1), fileIndex)
+}
+
+impl view ObjectSectionLayout {
+  pub valid: bool => diagnosticCode == "" &&
+    sectionName != "" &&
+    range.valid &&
+    range.aligned &&
+    fileIndex >= 0
+  pub endOffset: i64 => range.endOffset
+  pub debugName: string => "object.section.layout.{sectionName}.{fileIndex}"
+}

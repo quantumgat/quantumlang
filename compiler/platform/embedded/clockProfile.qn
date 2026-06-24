@@ -1,0 +1,28 @@
+pub ClockProfile {
+  source: string
+  hertz: i64
+  stable: bool
+  configured: bool
+}
+
+impl ClockProfile {
+  pub ClockProfile(source: string, hertz: i64, stable: bool, configured: bool) =
+    This {
+      source
+      hertz
+      stable
+      configured
+    }
+
+  pub internal(hertz: i64) =
+    This("internal", hertz, true, true)
+
+  pub externalCrystal(hertz: i64) =
+    This("external-crystal", hertz, true, true)
+}
+
+impl view ClockProfile {
+  pub valid => source != "" && hertz > 0
+  pub ready => valid && stable && configured
+  pub deterministic => ready
+}

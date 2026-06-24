@@ -1,0 +1,128 @@
+import core::{ModuleId, ScopeId, SymbolId}
+
+pub enum TypeScopeLane {
+  GenericOwner
+  Owner
+  Unknown
+}
+
+pub TypeScopeIdentity {
+  moduleId: ModuleId = {}
+  symbolId: SymbolId = {}
+  lane: TypeScopeLane = TypeScopeLane.Unknown
+}
+
+impl TypeScopeIdentity {
+  pub forGenericOwner(symbol: TypeSymbol) =
+    This {
+      moduleId: symbol.moduleId
+      symbolId: symbol.id
+      lane: TypeScopeLane.GenericOwner
+    }
+
+  pub forOwner(symbol: TypeSymbol) =
+    This {
+      moduleId: symbol.moduleId
+      symbolId: symbol.id
+      lane: TypeScopeLane.Owner
+    }
+
+  pub same(left: ScopeId, right: ScopeId) -> bool {
+    return left.valid &&
+      right.valid &&
+      left.id.same(right.id)
+  }
+
+  pub genericOwnerScopeFor(symbol: TypeSymbol) -> ScopeId {
+    return This.scopeIdFor(symbol.moduleId, symbol.id, TypeScopeLane.GenericOwner)
+  }
+
+  pub ownerScopeFor(symbol: TypeSymbol) -> ScopeId {
+    return This.scopeIdFor(symbol.moduleId, symbol.id, TypeScopeLane.Owner)
+  }
+
+  pub toScopeId() -> ScopeId {
+    return This.scopeIdFor(moduleId, symbolId, lane)
+  }
+
+  pub scopeIdFor(
+    moduleId: ModuleId,
+    symbolId: SymbolId,
+    lane: TypeScopeLane
+  ) -> ScopeId {
+    let laneDisambiguator: u64 = 0
+    if lane == TypeScopeLane.GenericOwner {
+      laneDisambiguator = 1
+    } else if lane == TypeScopeLane.Owner {
+      laneDisambiguator = 2
+    }
+    return ScopeId(
+      moduleId.id.packageHash,
+      moduleId.id.moduleHash,
+      symbolId.id.localHash,
+      symbolId.id.disambiguator * 4 + laneDisambiguator
+    )
+  }
+}
+
+impl view TypeScopeIdentity {
+  pub genericOwner: bool => lane == TypeScopeLane.GenericOwner
+
+  pub owner: bool => lane == TypeScopeLane.Owner
+
+  pub laneValue: u64 => {
+    if lane == TypeScopeLane.GenericOwner {
+      return 1
+    }
+    if lane == TypeScopeLane.Owner {
+      return 2
+    }
+    return 0
+  }
+
+  pub scopeId: ScopeId => TypeScopeIdentity.scopeIdFor(moduleId, symbolId, lane)
+
+  pub valid: bool =>
+    moduleId.valid &&
+    symbolId.valid &&
+    lane != TypeScopeLane.Unknown &&
+    laneValue != 0
+}
+
+pub TypeScopeRules {
+}
+
+impl TypeScopeRules {
+  pub ownerKindFor(symbol: TypeSymbol) -> TypeScopeKind {
+    let kind = ownerKindForSymbolKind(symbol.kind)
+    if callableValueOwner(symbol) {
+      return TypeScopeKind.Function
+    }
+    return kind
+  }
+
+  callableValueOwner(symbol: TypeSymbol) -> bool {
+    return symbol.kind == TypeSymbolKind.Value &&
+      ((symbol.memberKind == "" && symbol.callableParameterCount > 0) ||
+       symbol.memberKind == "method" ||
+       symbol.memberKind == "property")
+  }
+
+  ownerKindForSymbolKind(kind: TypeSymbolKind) -> TypeScopeKind {
+    if kind == TypeSymbolKind.Module { return TypeScopeKind.Module }
+    if kind == TypeSymbolKind.Type ||
+       kind == TypeSymbolKind.Enum ||
+       kind == TypeSymbolKind.Role {
+      return TypeScopeKind.Type
+    }
+    if kind == TypeSymbolKind.Function ||
+       kind == TypeSymbolKind.Impl ||
+       kind == TypeSymbolKind.View ||
+       kind == TypeSymbolKind.Context ||
+       kind == TypeSymbolKind.Extract ||
+       kind == TypeSymbolKind.Extend {
+      return TypeScopeKind.Function
+    }
+    return TypeScopeKind.Unknown
+  }
+}

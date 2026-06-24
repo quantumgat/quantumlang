@@ -1,0 +1,60 @@
+import storage::{BuildResultStatus, CacheActionContentLink, CacheHash256, CacheProductKind, GlobalBuildResult, GlobalBuildResultIndex}
+
+pub GlobalBuildResultProof {
+  actionIndexed: bool
+  metadataGlobal: bool
+  outputContentAddressed: bool
+  projectStampAbsent: bool
+  valid: bool
+}
+
+pub globalBuildResultProof() -> GlobalBuildResultProof {
+  let action = CacheHash256.action("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+  let metadata = CacheHash256.content("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+  let output = CacheHash256.content("cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc")
+  let diagnostics = CacheHash256.content("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
+  let packageIdentity = CacheHash256.content("1111111111111111111111111111111111111111111111111111111111111111")
+  let targetIdentity = CacheHash256.content("2222222222222222222222222222222222222222222222222222222222222222")
+  let profileIdentity = CacheHash256.content("3333333333333333333333333333333333333333333333333333333333333333")
+  let result = GlobalBuildResult {
+    action
+    metadata
+    output
+    diagnostics
+    status: BuildResultStatus.Succeeded
+    packageIdentity
+    targetIdentity
+    profileIdentity
+    workspaceHint: "/workspace/project"
+    outputHint: "build/debug/app"
+  }
+  let actionIndex = CacheActionContentLink {
+    action
+    content: metadata
+    productKind: CacheProductKind.Metadata
+  }
+  let indexed = GlobalBuildResultIndex {
+    actionIndex
+    result
+  }
+
+  let actionIndexed = indexed.globallyIndexed
+  let metadataGlobal = indexed.metadataMatches
+  let outputContentAddressed = result.output.contentHash
+  let projectStampAbsent = result.projectBuildStampWritten == false
+  let valid =
+    indexed.valid &&
+    result.successful &&
+    actionIndexed &&
+    metadataGlobal &&
+    outputContentAddressed &&
+    projectStampAbsent
+
+  return GlobalBuildResultProof {
+    actionIndexed
+    metadataGlobal
+    outputContentAddressed
+    projectStampAbsent
+    valid
+  }
+}

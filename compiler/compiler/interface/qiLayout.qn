@@ -1,0 +1,16 @@
+pub QiLayout {
+  packageName: string
+  importRoot: string
+  interfaceRoot: string
+}
+
+impl QiLayout {
+  pub QiLayout(packageName: string, importRoot: string, interfaceRoot: string) =
+    This { packageName, importRoot, interfaceRoot }
+}
+
+impl view QiLayout {
+  pub packageScoped => packageName != ""
+  pub importScoped => importRoot != ""
+  pub valid => packageScoped && importScoped && interfaceRoot != ""
+}

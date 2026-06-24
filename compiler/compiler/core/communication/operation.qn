@@ -1,0 +1,41 @@
+pub operation<T, R> {
+  policy: CommunicationPolicy = {}
+  state: CommunicationState = CommunicationState.Open
+  invocationCount: i64 = 0
+  completedCount: i64 = 0
+  failedCount: i64 = 0
+}
+
+impl operation<T, R> {
+  pub bind(handler: (T) -> R) -> Result<void, CommunicationError>
+
+  pub call(input: T) -> Result<R, CommunicationError>
+
+  pub cancel() -> Result<void, CommunicationError>
+
+  pub close() -> Result<void, CommunicationError>
+}
+
+impl view operation<T, R> {
+  pub pendingCount: i64 =>
+    invocationCount - completedCount - failedCount
+
+  pub oneInputOneResult: bool => true
+
+  pub transportIndependent: bool => true
+
+  pub open: bool => state == CommunicationState.Open
+
+  pub terminal: bool =>
+    state == CommunicationState.Closed ||
+    state == CommunicationState.Cancelled ||
+    state == CommunicationState.Failed
+
+  pub valid: bool =>
+    policy.valid &&
+    invocationCount >= 0 &&
+    completedCount >= 0 &&
+    failedCount >= 0 &&
+    pendingCount >= 0 &&
+    (open || terminal)
+}

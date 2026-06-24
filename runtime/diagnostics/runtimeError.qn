@@ -1,0 +1,26 @@
+pub RuntimeError {
+  code: string
+  message: string
+  fatal: bool
+}
+
+impl RuntimeError {
+  pub RuntimeError(code: string, message: string, fatal: bool) =
+    This {
+      code
+      message
+      fatal
+    }
+
+  pub startupMissing() =
+    This {
+      code: "QRT0001"
+      message: "runtime startup symbol missing"
+      fatal: true
+    }
+}
+
+impl view RuntimeError {
+  pub valid: bool => code != "" && message != ""
+  pub debugName: string => "runtime.error.{code}.{fatal}"
+}

@@ -1,0 +1,9 @@
+[module]
+name = "constEval"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/constEval"
+role = "constant-evaluation"
+
+[dependencies]
+modules = ["core", "declaration", "diagnostics", "source", "typeSystem"]

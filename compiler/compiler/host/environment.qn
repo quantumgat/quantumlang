@@ -1,0 +1,19 @@
+pub HostEnvironment {
+  key: string
+  value: string
+  present: bool = false
+}
+
+impl HostEnvironment {
+  pub missing(key: string) =
+    This { key, value: "" }
+
+  pub present(key: string, value: string) =
+    This { key, value, present: true }
+}
+
+impl view HostEnvironment {
+  pub valid: bool =>
+    key != "" &&
+    (present == false || value != "")
+}

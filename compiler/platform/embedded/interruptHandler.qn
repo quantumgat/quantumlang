@@ -1,0 +1,28 @@
+pub InterruptHandler {
+  name: string
+  vectorIndex: i64
+  priority: i64
+  weakDefault: bool
+}
+
+impl InterruptHandler {
+  pub InterruptHandler(name: string, vectorIndex: i64, priority: i64, weakDefault: bool) =
+    This {
+      name
+      vectorIndex
+      priority
+      weakDefault
+    }
+
+  pub reset(name: string) =
+    This(name, 1, 0, false)
+
+  pub defaulted(name: string, vectorIndex: i64) =
+    This(name, vectorIndex, 255, true)
+}
+
+impl view InterruptHandler {
+  pub valid => name != "" && vectorIndex >= 0 && priority >= 0
+  pub required => weakDefault == false
+  pub deterministic => valid
+}

@@ -1,0 +1,19 @@
+pub HostClock {
+  monotonicNanoseconds: u64 = 0
+  reproducible: bool = false
+}
+
+impl HostClock {
+  pub monotonic(nanoseconds: u64) =
+    This { monotonicNanoseconds: nanoseconds }
+
+  pub fixed(nanoseconds: u64) =
+    This {
+      monotonicNanoseconds: nanoseconds
+      reproducible: true
+    }
+}
+
+impl view HostClock {
+  pub valid: bool => monotonicNanoseconds > 0
+}

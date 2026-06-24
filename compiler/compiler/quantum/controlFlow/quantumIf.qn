@@ -1,0 +1,21 @@
+pub QuantumIf {
+  branchCount: i64
+  pathSensitiveResourceFlow: bool
+  measurementCondition: bool
+  valid: bool
+}
+
+impl QuantumIf {
+  pub QuantumIf(branchCount: i64, measurementCondition: bool) =
+    This {
+      branchCount
+      pathSensitiveResourceFlow: true
+      measurementCondition
+      valid: branchCount > 0
+    }
+}
+
+impl view QuantumIf {
+  pub pathSensitive => pathSensitiveResourceFlow
+  pub measuredCondition => measurementCondition
+}

@@ -1,0 +1,7 @@
+module app.badImport
+
+import http.core.privateModel.{PrivateRouteCarrier}
+
+pub usePrivateCarrier(value: PrivateRouteCarrier) -> i64 {
+  return value.value
+}

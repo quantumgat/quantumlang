@@ -1,0 +1,32 @@
+pub BackendDiagnosticCode {
+  code: string
+  stage: string
+  severity: string
+  docsKey: string
+}
+
+impl BackendDiagnosticCode {
+  pub BackendDiagnosticCode(code: string, stage: string, severity: string, docsKey: string) =
+    This {
+      code
+      stage
+      severity
+      docsKey
+    }
+
+  pub objectWriter(code: string) =
+    This(code, "object", "error", "backend.native.object")
+
+  pub linker(code: string) =
+    This(code, "link", "error", "backend.native.link")
+
+  pub abi(code: string) =
+    This(code, "abi", "error", "backend.native.abi")
+}
+
+impl view BackendDiagnosticCode {
+  pub valid => code != "" && stage != "" && severity != "" && docsKey != ""
+  pub error => severity == "error"
+  pub warning => severity == "warning"
+  pub debugName => "diag.code.{code}.{stage}.{severity}"
+}

@@ -1,0 +1,34 @@
+pub Aarch64LoadStoreEncoding {
+  base: Aarch64RegisterEncoding
+  target: Aarch64RegisterEncoding
+  offset: i64 = 0
+  load: bool = true
+  byteCount: i64 = 4
+  diagnosticCode: string = ""
+}
+
+impl Aarch64LoadStoreEncoding {
+  pub Aarch64LoadStoreEncoding(
+    base: Aarch64RegisterEncoding,
+    target: Aarch64RegisterEncoding,
+    offset: i64,
+    load: bool
+  ) =
+    This {
+      base
+      target
+      offset
+      load
+    }
+}
+
+impl view Aarch64LoadStoreEncoding {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    base.valid &&
+    target.valid &&
+    offset >= 0 &&
+    byteCount == 4
+
+  pub debugName: string => "aarch64.mem.{target.name}.{base.name}.{offset}"
+}

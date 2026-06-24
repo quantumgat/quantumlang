@@ -1,0 +1,32 @@
+pub X86BranchSelect {
+  conditionKind: string
+  targetLabel: string
+  selectedOpcode: string
+  shortFormAllowed: bool = true
+  diagnosticCode: string = ""
+}
+
+impl X86BranchSelect {
+  pub X86BranchSelect(conditionKind: string, targetLabel: string, selectedOpcode: string) =
+    This {
+      conditionKind
+      targetLabel
+      selectedOpcode
+    }
+
+  pub jump(targetLabel: string) =
+    This("always", targetLabel, "jmp-rel32")
+
+  pub conditional(conditionKind: string, targetLabel: string) =
+    This(conditionKind, targetLabel, "jcc-rel32")
+}
+
+impl view X86BranchSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    conditionKind != "" &&
+    targetLabel != "" &&
+    selectedOpcode != ""
+
+  pub debugName: string => "isel.x86_64.branch.{conditionKind}.{targetLabel}"
+}

@@ -1,0 +1,39 @@
+pub ObjectCacheKey {
+  unitKey: ObjectUnitKey
+  byteHash: string
+  format: string
+  cacheKey: string
+  diagnosticCode: string = ""
+}
+
+impl ObjectCacheKey {
+  pub ObjectCacheKey(unitKey: ObjectUnitKey, byteHash: string, format: string, cacheKey: string) =
+    This {
+      unitKey
+      byteHash
+      format
+      cacheKey
+    }
+
+  pub fromObjectBytes(unitKey: ObjectUnitKey, objectBytes: ObjectBytes, format: string) =
+    This {
+      unitKey
+      byteHash: objectBytes.byteHash
+      format
+      cacheKey: "native-object-cache:{unitKey.cacheKey}:{objectBytes.byteHash}:{format}"
+      diagnosticCode: match unitKey.valid && objectBytes.cacheable && format != "" {
+        true => ""
+        false => "QNATIVE0740"
+      }
+    }
+}
+
+impl view ObjectCacheKey {
+  pub valid => diagnosticCode == "" &&
+    unitKey.valid &&
+    byteHash != "" &&
+    format != "" &&
+    cacheKey != ""
+  pub stable => valid
+  pub debugName => "object.cache.key.{format}"
+}

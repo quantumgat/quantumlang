@@ -1,0 +1,49 @@
+pub QuantumIfMergeFact {
+  branchCount: i64
+  resourcesBalanced: bool
+  measurementEffectMerged: bool
+  noClonePreserved: bool
+  deterministic: bool
+  diagnosticCode: string
+  valid: bool
+}
+
+impl QuantumIfMergeFact {
+  pub QuantumIfMergeFact(left: QuantumIfBranchFact, right: QuantumIfBranchFact) {
+    let resourcesBalanced = left.valid &&
+      right.valid &&
+      left.ownershipPreserved == right.ownershipPreserved &&
+      left.resetReleaseBalanced == right.resetReleaseBalanced
+
+    let measurementEffectMerged = left.measurementRecorded && right.measurementRecorded
+    let noClonePreserved = left.cloneRejected && right.cloneRejected
+    let deterministic = resourcesBalanced && measurementEffectMerged && noClonePreserved
+
+    if deterministic {
+      return This {
+        branchCount: 2
+        resourcesBalanced: true
+        measurementEffectMerged: true
+        noClonePreserved: true
+        deterministic: true
+        diagnosticCode: ""
+        valid: true
+      }
+    }
+
+    This {
+      branchCount: 2
+      resourcesBalanced
+      measurementEffectMerged
+      noClonePreserved
+      deterministic: false
+      diagnosticCode: "QTQUANTUM0201"
+      valid: false
+    }
+  }
+}
+
+impl view QuantumIfMergeFact {
+  pub merged => valid && deterministic
+  pub resourceSafe => resourcesBalanced && noClonePreserved
+}

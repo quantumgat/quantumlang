@@ -1,0 +1,22 @@
+pub DebugProbe {
+  probe: Probe
+  canFlash: bool
+  canReset: bool
+  canHalt: bool
+}
+
+impl DebugProbe {
+  pub DebugProbe(probe: Probe, canFlash: bool, canReset: bool, canHalt: bool) =
+    This {
+      probe
+      canFlash
+      canReset
+      canHalt
+    }
+}
+
+impl view DebugProbe {
+  pub valid => probe.valid && canFlash && canReset && canHalt
+  pub deployReady => valid && canFlash
+  pub debugReady => valid && canHalt
+}

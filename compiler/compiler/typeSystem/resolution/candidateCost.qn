@@ -1,0 +1,37 @@
+pub CandidateCost {
+  sourceRank: usize = 0
+  conversionCost: usize = 0
+  defaultCost: usize = 0
+  genericCost: usize = 0
+  variadicCost: usize = 0
+}
+
+impl CandidateCost {
+  pub compare(other: CandidateCost) -> i64 {
+    if sourceRank != other.sourceRank {
+      return match sourceRank < other.sourceRank { true => -1, false => 1 }
+    }
+    if conversionCost != other.conversionCost {
+      return match conversionCost < other.conversionCost { true => -1, false => 1 }
+    }
+    if defaultCost != other.defaultCost {
+      return match defaultCost < other.defaultCost { true => -1, false => 1 }
+    }
+    if genericCost != other.genericCost {
+      return match genericCost < other.genericCost { true => -1, false => 1 }
+    }
+    if variadicCost != other.variadicCost {
+      return match variadicCost < other.variadicCost { true => -1, false => 1 }
+    }
+    return 0
+  }
+}
+
+impl view CandidateCost {
+  pub total: usize =>
+    sourceRank +
+    conversionCost +
+    defaultCost +
+    genericCost +
+    variadicCost
+}

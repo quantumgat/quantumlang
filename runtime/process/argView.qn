@@ -1,0 +1,30 @@
+pub ArgView {
+  index: i64 = -1
+  byteOffset: i64 = 0
+  byteLength: i64 = 0
+  typeName: string = "TextView"
+  borrowed: bool = true
+}
+
+impl ArgView {
+  pub ArgView(index: i64, byteOffset: i64, byteLength: i64) =
+    This {
+      index
+      byteOffset
+      byteLength
+    }
+
+  pub fromArg(arg: Arg) =
+    This {
+      index: arg.index
+      byteOffset: 0
+      byteLength: arg.rawText.length()
+    }
+}
+
+impl view ArgView {
+  pub valid: bool => index >= 0 && byteOffset >= 0 && byteLength >= 0
+  pub empty: bool => byteLength == 0
+  pub nonEmpty: bool => byteLength > 0
+  pub zeroCopy: bool => valid && borrowed
+}

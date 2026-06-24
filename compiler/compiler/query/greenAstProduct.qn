@@ -1,0 +1,39 @@
+pub GreenAstProduct {
+  fileId: StableId
+  key: QueryKey
+  tokenFingerprint: Fingerprint
+  astFingerprint: Fingerprint
+  rootNodeId: StableId
+  nodeCount: usize
+  errorNodeCount: usize = 0
+  schemaVersion: u64 = 1
+}
+
+impl GreenAstProduct {
+  pub init(
+    fileId: StableId,
+    tokenFingerprint: Fingerprint,
+    astFingerprint: Fingerprint,
+    rootNodeId: StableId,
+    nodeCount: usize,
+    errorNodeCount: usize
+  ) =
+    This {
+      fileId
+      key: QueryKey.ast(fileId)
+      tokenFingerprint
+      astFingerprint
+      rootNodeId
+      nodeCount
+      errorNodeCount
+    }
+
+  pub productFingerprint() =
+    ProductFingerprint(tokenFingerprint, astFingerprint)
+}
+
+impl view GreenAstProduct {
+  pub replayable => errorNodeCount == 0
+  pub hasRoot => rootNodeId.localScoped || rootNodeId.bodyScoped
+  pub parseClean => replayable && nodeCount > 0
+}

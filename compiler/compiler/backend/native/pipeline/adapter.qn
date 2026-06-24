@@ -1,0 +1,84 @@
+import host::{CompilerIo}
+
+pub PipelineAdapter {
+  plan: PipelinePlan
+  materialize: Materialize
+  result: PipelineResult
+  writer: PipelineWriter
+  diagnosticCode: string = ""
+}
+
+impl PipelineAdapter {
+  pub PipelineAdapter(
+    plan: PipelinePlan,
+    materialize: Materialize,
+    result: PipelineResult,
+    writer: PipelineWriter
+  ) =
+    This {
+      plan
+      materialize
+      result
+      writer
+    }
+
+  pub fromPipeline(pipeline: Pipeline) =
+    This {
+      plan: pipeline.plan
+      materialize: pipeline.materialize
+      result: pipeline.result
+      writer: PipelineWriter.pending(pipeline.plan, pipeline.result)
+      diagnosticCode: match pipeline.valid {
+        true => ""
+        false => "QNATIVE0864"
+      }
+    }
+}
+
+context PipelineAdapter {
+  pub writeStatus(io: CompilerIo) -> i64 {
+    if valid == false {
+      return -260
+    }
+    if materializationReady == false {
+      return -261
+    }
+    return writer.writeStatus(io)
+  }
+
+  pub write(io: CompilerIo) -> bool {
+    return writeStatus(io) == 0
+  }
+}
+
+impl view PipelineAdapter {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    plan.valid &&
+    materialize.valid &&
+    result.valid
+
+  pub materializationReady: bool =>
+    valid &&
+    materialize.ready &&
+    result.runnable
+
+  pub payloadReady: bool =>
+    materializationReady &&
+    writer.valid &&
+    writer.payloadReady
+
+  pub adapterHash: string =>
+    "pipeline-adapter:{plan.planHash}:{materialize.materializeHash}:{result.resultHash}:{writer.writerHash}"
+
+  pub materializerName: string => "qtlc1-native-pipeline"
+
+  pub statusText: string => match true {
+    payloadReady => "payload-ready"
+    materializationReady => "pending-executable-payload"
+    valid => "pending-materialization"
+    _ => "invalid"
+  }
+
+  pub debugName: string => "pipeline.adapter.{statusText}"
+}

@@ -1,0 +1,44 @@
+pub LibraryModel {
+  staticArchives: bool
+  dynamicLibraries: bool
+  importLibraries: bool
+  frameworkLibraries: bool
+  rpathSupport: bool
+}
+
+impl LibraryModel {
+  pub LibraryModel(
+    staticArchives: bool,
+    dynamicLibraries: bool,
+    importLibraries: bool,
+    frameworkLibraries: bool,
+    rpathSupport: bool
+  ) =
+    This {
+      staticArchives
+      dynamicLibraries
+      importLibraries
+      frameworkLibraries
+      rpathSupport
+    }
+
+  pub linux() =
+    This(true, true, false, false, true)
+
+  pub windows() =
+    This(true, true, true, false, false)
+
+  pub macos() =
+    This(true, true, false, true, true)
+
+  pub staticOnly() =
+    This(true, false, false, false, false)
+}
+
+impl view LibraryModel {
+  pub canArchive => staticArchives
+  pub canDynamicLink => dynamicLibraries
+  pub needsImportLibrary => importLibraries
+  pub frameworkCapable => frameworkLibraries
+  pub valid => staticArchives || dynamicLibraries || frameworkLibraries
+}

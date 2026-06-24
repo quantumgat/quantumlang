@@ -1,0 +1,50 @@
+pub ObjectCacheEntry {
+  key: ObjectCacheKey
+  objectPath: string
+  byteCount: i64
+  reusable: bool
+  checksum: string
+  diagnosticCode: string = ""
+}
+
+impl ObjectCacheEntry {
+  pub ObjectCacheEntry(
+    key: ObjectCacheKey,
+    objectPath: string,
+    byteCount: i64,
+    reusable: bool,
+    checksum: string
+  ) =
+    This {
+      key
+      objectPath
+      byteCount
+      reusable
+      checksum
+    }
+
+  pub fromBytes(key: ObjectCacheKey, objectPath: string, objectBytes: ObjectBytes) =
+    This {
+      key
+      objectPath
+      byteCount: objectBytes.byteCount
+      reusable: true
+      checksum: "checksum:{objectBytes.byteHash}:{objectBytes.byteCount}"
+      diagnosticCode: match key.valid && objectPath != "" && objectBytes.valid {
+        true => ""
+        false => "QNATIVE0741"
+      }
+    }
+}
+
+impl view ObjectCacheEntry {
+  pub valid => diagnosticCode == "" &&
+    key.valid &&
+    objectPath != "" &&
+    byteCount > 0 &&
+    checksum != ""
+  pub hit => valid && reusable
+  pub miss => valid && reusable == false
+  pub entryHash => "object-cache-entry:{key.cacheKey}:{objectPath}:{byteCount}:{checksum}:{reusable}"
+  pub debugName => "object.cache.entry.{byteCount}"
+}

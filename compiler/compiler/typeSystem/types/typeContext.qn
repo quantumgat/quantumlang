@@ -1,0 +1,3 @@
+pub TypeContext {
+  typeCount: i64
+}

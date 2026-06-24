@@ -1,0 +1,32 @@
+pub Riscv64ArithmeticSelect {
+  operation: string
+  widthBits: i64
+  selectedOpcode: string
+  immediateFormAllowed: bool = true
+  diagnosticCode: string = ""
+}
+
+impl Riscv64ArithmeticSelect {
+  pub Riscv64ArithmeticSelect(operation: string, widthBits: i64, selectedOpcode: string) =
+    This {
+      operation
+      widthBits
+      selectedOpcode
+    }
+
+  pub add(widthBits: i64) =
+    This("add", widthBits, "add")
+
+  pub sub(widthBits: i64) =
+    This("sub", widthBits, "sub")
+}
+
+impl view Riscv64ArithmeticSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    operation != "" &&
+    widthBits > 0 &&
+    selectedOpcode != ""
+
+  pub debugName: string => "isel.riscv64.arith.{operation}.{widthBits}"
+}

@@ -1,0 +1,360 @@
+import core::{Vec}
+import source::{SourceSpan}
+import syntax::parser::sourceAnalysis::{callOpenIndex, tokenText}
+
+pub SourceParserSignature {
+  input: LexProduct = {}
+}
+
+impl SourceParserSignature {
+  pub SourceParserSignature(input: LexProduct) =
+    This { input }
+
+  pub declarationNameToken(index: i64) -> SyntaxToken {
+    let cursor = index + 1
+    if cursor < input.tokenCount &&
+       (input.tokenAt(cursor).kind.keyword == KeywordKind.View ||
+        input.tokenAt(cursor).text == "view") {
+      cursor = cursor + 1
+    }
+    if cursor < input.tokenCount && input.tokenAt(cursor).text == "<" {
+      cursor = cursor + this.genericParameterHeaderWidth(cursor)
+    }
+    while cursor < input.tokenCount {
+      let token = input.tokenAt(cursor)
+      if token.kind.identifierToken {
+        return token
+      }
+      cursor = cursor + 1
+    }
+    return input.tokenAt(index)
+  }
+
+  pub genericParameterNamesAt(index: i64) -> Vec<string> {
+    let rows = this.genericParametersAt(index)
+    let names: Vec<string> = []
+    let row: i64 = 0
+    while row < rows.count {
+      names.push(rows[row].name)
+      row = row + 1
+    }
+    return names
+  }
+
+  pub genericParametersAt(index: i64) -> Vec<AstGenericParameter> {
+    let cursor = index
+    while cursor < input.tokenCount && !input.tokenAt(cursor).kind.identifierToken {
+      if input.tokenAt(cursor).text == "<" {
+        break
+      }
+      cursor = cursor + 1
+    }
+    if cursor >= input.tokenCount {
+      return []
+    }
+    if input.tokenAt(cursor).text != "<" {
+      if cursor + 1 >= input.tokenCount || input.tokenAt(cursor + 1).text != "<" {
+        return []
+      }
+      cursor = cursor + 1
+    }
+    if input.tokenAt(cursor).text != "<" {
+      return []
+    }
+
+    cursor = cursor + 1
+    let rows: Vec<AstGenericParameter> = []
+    let depth: i64 = 1
+    let start = cursor
+    while cursor < input.tokenCount && depth > 0 {
+      let token = input.tokenAt(cursor)
+      if token.text == "<" {
+        depth = depth + 1
+      } else if token.text == ">" {
+        depth = depth - 1
+        if depth == 0 && cursor > start {
+          rows.push(this.genericParameterFromRange(start, cursor, rows.count))
+        }
+      } else if depth == 1 && token.text == "," {
+        if cursor > start {
+          rows.push(this.genericParameterFromRange(start, cursor, rows.count))
+        }
+        start = cursor + 1
+      }
+      cursor = cursor + 1
+    }
+    return rows
+  }
+
+  genericParameterHeaderWidth(index: i64) -> i64 {
+    if index >= input.tokenCount || input.tokenAt(index).text != "<" {
+      return 0
+    }
+
+    let cursor = index
+    let depth: i64 = 0
+    while cursor < input.tokenCount {
+      let token = input.tokenAt(cursor)
+      if token.text == "<" {
+        depth = depth + 1
+      } else if token.text == ">" {
+        depth = depth - 1
+        if depth == 0 {
+          return cursor - index + 1
+        }
+      }
+      cursor = cursor + 1
+    }
+    return cursor - index
+  }
+
+  genericParameterFromRange(
+    start: i64,
+    end: i64,
+    position: i64
+  ) -> AstGenericParameter {
+    let cursor = start
+    let variadic = false
+    if cursor < end && input.tokenAt(cursor).text == "..." {
+      variadic = true
+      cursor = cursor + 1
+    }
+    while cursor < end && !input.tokenAt(cursor).kind.identifierToken {
+      cursor = cursor + 1
+    }
+    if cursor >= end {
+      return AstGenericParameter()
+    }
+
+    let nameToken = input.tokenAt(cursor)
+    let colon: i64 = -1
+    let equal: i64 = -1
+    let depth: i64 = 0
+    let scan = cursor + 1
+    while scan < end {
+      let text = input.tokenAt(scan).text
+      if text == "<" || text == "(" || text == "[" {
+        depth = depth + 1
+      } else if (text == ">" || text == ")" || text == "]") && depth > 0 {
+        depth = depth - 1
+      } else if depth == 0 && text == ":" && colon < 0 {
+        colon = scan
+      } else if depth == 0 && text == "=" {
+        equal = scan
+        break
+      }
+      scan = scan + 1
+    }
+
+    let bounds: Vec<string> = []
+    if colon >= 0 {
+      let boundEnd = match equal >= 0 {
+        true => equal
+        false => end
+      }
+      let boundText = tokenText(input, colon + 1, boundEnd)
+      if boundText != "" {
+        bounds.push(boundText)
+      }
+    }
+
+    let defaultTypeName = ""
+    if equal >= 0 {
+      defaultTypeName = tokenText(input, equal + 1, end)
+    }
+    let last = input.tokenAt(end - 1)
+    return AstGenericParameter {
+      position: position as usize
+      name: nameToken.text
+      bounds
+      defaultTypeName
+      span: SourceSpan(nameToken.span.fileId, nameToken.span.start, last.span.end)
+      variadic
+    }
+  }
+
+  pub parameterNamesAt(index: i64) -> Vec<string> {
+    let rows = this.callableParametersAt(index)
+    let names: Vec<string> = []
+    let row: i64 = 0
+    while row < rows.count {
+      names.push(rows[row].name)
+      row = row + 1
+    }
+    return names
+  }
+
+  pub callableParametersAt(index: i64) -> Vec<AstCallableParameter> {
+    let rows: Vec<AstCallableParameter> = []
+    let cursor = callOpenIndex(input, index)
+    if cursor < 0 {
+      return rows
+    }
+    cursor = cursor + 1
+    if cursor < input.tokenCount && input.tokenAt(cursor).text == ")" {
+      return rows
+    }
+    let depth: i64 = 1
+    let angleDepth: i64 = 0
+    let start = cursor
+    while cursor < input.tokenCount && depth > 0 {
+      let token = input.tokenAt(cursor)
+      if token.text == "<" {
+        angleDepth = angleDepth + 1
+      } else if token.text == ">" && angleDepth > 0 {
+        angleDepth = angleDepth - 1
+      } else if angleDepth == 0 &&
+                (token.text == "(" || token.text == "[" || token.text == "{") {
+        depth = depth + 1
+      } else if angleDepth == 0 &&
+                (token.text == ")" || token.text == "]" || token.text == "}") {
+        depth = depth - 1
+        if depth == 0 && cursor > start {
+          rows.push(this.callableParameterFromRange(start, cursor, rows.count))
+        }
+      } else if depth == 1 && angleDepth == 0 && token.text == "," {
+        if cursor > start {
+          rows.push(this.callableParameterFromRange(start, cursor, rows.count))
+        }
+        start = cursor + 1
+      }
+      cursor = cursor + 1
+    }
+    return rows
+  }
+
+  callableParameterFromRange(
+    start: i64,
+    end: i64,
+    position: i64
+  ) -> AstCallableParameter {
+    let cursor = start
+    let variadic = false
+    if cursor < end && input.tokenAt(cursor).text == "..." {
+      variadic = true
+      cursor = cursor + 1
+    }
+    while cursor < end && !input.tokenAt(cursor).kind.identifierToken {
+      cursor = cursor + 1
+    }
+    if cursor >= end {
+      return AstCallableParameter()
+    }
+
+    let nameToken = input.tokenAt(cursor)
+    let colon: i64 = -1
+    let equal: i64 = -1
+    let depth: i64 = 0
+    let scan = cursor + 1
+    while scan < end {
+      let text = input.tokenAt(scan).text
+      if text == "<" || text == "(" || text == "[" {
+        depth = depth + 1
+      } else if (text == ">" || text == ")" || text == "]") && depth > 0 {
+        depth = depth - 1
+      } else if depth == 0 && text == ":" && colon < 0 {
+        colon = scan
+      } else if depth == 0 && text == "=" {
+        equal = scan
+        break
+      }
+      scan = scan + 1
+    }
+
+    let typeName = ""
+    if colon >= 0 {
+      let typeEnd = match equal >= 0 {
+        true => equal
+        false => end
+      }
+      typeName = tokenText(input, colon + 1, typeEnd)
+    }
+    let defaultValueText = ""
+    if equal >= 0 {
+      defaultValueText = tokenText(input, equal + 1, end)
+    }
+    let last = input.tokenAt(end - 1)
+    return AstCallableParameter {
+      position: position as usize
+      name: nameToken.text
+      typeName
+      defaultValueText
+      span: SourceSpan(nameToken.span.fileId, nameToken.span.start, last.span.end)
+      defaulted: equal >= 0
+      variadic
+    }
+  }
+
+  pub returnTypeNameAt(index: i64) -> string {
+    let cursor = callOpenIndex(input, index)
+    if cursor < 0 {
+      return ""
+    }
+
+    let depth: i64 = 1
+    cursor = cursor + 1
+    while cursor < input.tokenCount && depth > 0 {
+      let token = input.tokenAt(cursor)
+      if token.text == "(" {
+        depth = depth + 1
+      } else if token.text == ")" {
+        depth = depth - 1
+      }
+      cursor = cursor + 1
+    }
+
+    if cursor < input.tokenCount && input.tokenAt(cursor).text == "->" {
+      cursor = cursor + 1
+    } else {
+      if cursor + 1 >= input.tokenCount ||
+         input.tokenAt(cursor).text != "-" ||
+         input.tokenAt(cursor + 1).text != ">" {
+        return ""
+      }
+      cursor = cursor + 2
+    }
+    let result = ""
+    let genericDepth: i64 = 0
+    while cursor < input.tokenCount {
+      let token = input.tokenAt(cursor)
+      if genericDepth == 0 &&
+         (token.text == "{" ||
+          token.text == "}" ||
+          token.text == "=" ||
+          token.text == "\n") {
+        break
+      }
+      result = "{result}{token.text}"
+      if token.text == "<" {
+        genericDepth = genericDepth + 1
+      } else if token.text == ">" && genericDepth > 0 {
+        genericDepth = genericDepth - 1
+      }
+      cursor = cursor + 1
+    }
+    return result
+  }
+
+  pub visibilityAt(index: i64) -> AstDeclarationVisibility {
+    if input.tokenAt(index).kind.keyword == KeywordKind.Pub {
+      return AstDeclarationVisibility.Public
+    }
+    if index > 0 && input.tokenAt(index - 1).kind.keyword == KeywordKind.Pub {
+      return AstDeclarationVisibility.Public
+    }
+    if index > 0 && input.tokenAt(index - 1).kind.keyword == KeywordKind.Private {
+      return AstDeclarationVisibility.Private
+    }
+    return AstDeclarationVisibility.Private
+  }
+
+  pub nextKeywordIs(index: i64, keyword: KeywordKind) -> bool {
+    if index + 1 >= input.tokenCount {
+      return false
+    }
+    if keyword == KeywordKind.View && input.tokenAt(index + 1).text == "view" {
+      return true
+    }
+    return input.tokenAt(index + 1).kind.keyword == keyword
+  }
+}

@@ -1,0 +1,48 @@
+pub ParallelWorkerContract {
+  regionId: i64
+  workerCount: i64
+  bodyId: i64
+  joinId: i64
+  implicitJoin: bool = true
+  cancellable: bool = true
+  backpressured: bool = true
+  diagnosticCode: string = ""
+}
+
+impl ParallelWorkerContract {
+  pub workers(
+    regionId: i64,
+    workerCount: i64,
+    bodyId: i64,
+    joinId: i64
+  ) =
+    This {
+      regionId
+      workerCount
+      bodyId
+      joinId
+      diagnosticCode: match true {
+        workerCount <= 0 => "QTCFLOW0007"
+        _ => ""
+      }
+    }
+}
+
+impl view ParallelWorkerContract {
+  pub stableIds: bool =>
+    regionId >= 0 &&
+    bodyId >= 0 &&
+    joinId >= 0
+
+  pub workerCountValid: bool => workerCount > 0
+
+  pub sequentialBodyLoops: bool => true
+
+  pub valid: bool =>
+    stableIds &&
+    workerCountValid &&
+    implicitJoin &&
+    cancellable &&
+    backpressured &&
+    diagnosticCode == ""
+}

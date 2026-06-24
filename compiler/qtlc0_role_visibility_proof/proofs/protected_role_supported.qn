@@ -1,0 +1,13 @@
+pub ProtectedUser {
+  id: i64
+}
+
+role ProtectedRole {
+  value() -> i64
+}
+
+extend ProtectedUser : protected ProtectedRole {
+  value() -> i64 {
+    id
+  }
+}

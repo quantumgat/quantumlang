@@ -1,0 +1,36 @@
+pub CpuProfile {
+  name: string
+  arch: string
+  pointerBits: i64
+  endian: string
+  hasFpu: bool
+  hasMpu: bool
+}
+
+impl CpuProfile {
+  pub CpuProfile(name: string, arch: string, pointerBits: i64, endian: string, hasFpu: bool, hasMpu: bool) =
+    This {
+      name
+      arch
+      pointerBits
+      endian
+      hasFpu
+      hasMpu
+    }
+
+  pub cortexM7() =
+    This("cortex-m7", "armv7m", 32, "little", true, true)
+
+  pub cortexM4() =
+    This("cortex-m4", "armv7m", 32, "little", true, true)
+
+  pub riscv32imac() =
+    This("riscv32imac", "riscv32", 32, "little", false, false)
+}
+
+impl view CpuProfile {
+  pub valid => name != "" && arch != "" && pointerBits > 0 && endian != ""
+  pub littleEndian => endian == "little"
+  pub bareMetalReady => valid && pointerBits > 0
+  pub interruptCapable => arch != "" && pointerBits > 0
+}

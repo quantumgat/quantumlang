@@ -1,0 +1,7 @@
+pub enum FunctionBodyKind {
+  ExpressionBody
+  BlockBody
+  EmptyBlockBody
+  ConstructorBody
+  Unknown
+}

@@ -1,0 +1,32 @@
+pub CallSelect {
+  targetSymbol: string
+  argumentCount: i64
+  returnCount: i64
+  selectedOpcode: string = "call"
+  relocationRequired: bool = true
+  diagnosticCode: string = ""
+}
+
+impl CallSelect {
+  pub CallSelect(targetSymbol: string, argumentCount: i64, returnCount: i64) =
+    This {
+      targetSymbol
+      argumentCount
+      returnCount
+    }
+
+  pub direct(targetSymbol: string, argumentCount: i64, returnCount: i64) =
+    This(targetSymbol, argumentCount, returnCount)
+}
+
+impl view CallSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetSymbol != "" &&
+    argumentCount >= 0 &&
+    returnCount >= 0 &&
+    selectedOpcode != ""
+
+  pub directCall: bool => valid && relocationRequired
+  pub debugName: string => "isel.call.{targetSymbol}.{argumentCount}"
+}

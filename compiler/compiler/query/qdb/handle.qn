@@ -1,0 +1,46 @@
+pub enum QdbLoadMode {
+  MemoryMapped
+  Buffered
+  Rejected
+}
+
+pub QdbHandle {
+  path: string = ""
+  mode: QdbLoadMode = QdbLoadMode.Rejected
+  snapshot: QdbSnapshot = {}
+  mappedLength: u64 = 0
+  readOnly: bool = true
+  loaded: bool = false
+}
+
+impl QdbHandle {
+  pub memoryMapped(
+    path: string,
+    snapshot: QdbSnapshot
+  ) =
+    This {
+      path
+      mode: QdbLoadMode.MemoryMapped
+      snapshot
+      mappedLength: snapshot.header.fileLength
+      readOnly: true
+      loaded: true
+    }
+}
+
+impl view QdbHandle {
+  pub memoryMapped: bool => mode == QdbLoadMode.MemoryMapped
+  pub rejected: bool => mode == QdbLoadMode.Rejected
+  pub lengthMatches: bool => mappedLength == snapshot.header.fileLength
+  pub zeroCopyReadable: bool =>
+    memoryMapped &&
+    readOnly &&
+    snapshot.mmapReady
+  pub valid: bool =>
+    loaded &&
+    rejected == false &&
+    path != "" &&
+    snapshot.valid &&
+    lengthMatches &&
+    zeroCopyReadable
+}

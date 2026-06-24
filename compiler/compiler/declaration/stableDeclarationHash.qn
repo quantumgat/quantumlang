@@ -1,0 +1,105 @@
+import core::{Hash256, HashDomain, HashError, StableHash, StableHashWriter}
+
+impl DeclarationRecord {
+  pub stableHash() -> Result<Hash256, HashError> {
+    let out = StableHashWriter(HashDomain.Semantic)
+    this.stableHashInto(out)?
+    return out.finish()
+  }
+
+  stableHashInto(out: StableHashWriter) -> Result<void, HashError> {
+    out.begin("frontend.DeclarationRecord", 2)?
+    out.writeI64("kind", declarationKindOrdinal(kind))?
+    out.writeString("modulePath", modulePath)?
+    out.writeString("name", name)?
+    out.writeString("importAlias", importAlias)?
+    out.writeString("selectedSymbol", selectedSymbol)?
+    out.writeBool("wildcardImport", wildcardImport)?
+    out.beginList("excludedSymbols", excludedSymbols.count)?
+    let excludedSymbolRow: i64 = 0
+    while excludedSymbolRow < excludedSymbols.count {
+      out.writeItemString(excludedSymbols[excludedSymbolRow])?
+      excludedSymbolRow = excludedSymbolRow + 1
+    }
+    out.endList()?
+    out.beginList("genericParameters", genericParameters.count)?
+    let genericRow: i64 = 0
+    while genericRow < genericParameters.count {
+      out.writeItemString(genericParameters[genericRow])?
+      genericRow = genericRow + 1
+    }
+    out.endList()?
+    out.beginList("roleConformances", this.roleConformances.count)?
+    let conformanceRow: i64 = 0
+    while conformanceRow < this.roleConformances.count {
+      let conformance = this.roleConformances[conformanceRow]
+      out.writeItemString(
+        "{conformance.roleName}:{astRoleVisibilityOrdinal(conformance.visibility)}"
+      )?
+      conformanceRow = conformanceRow + 1
+    }
+    out.endList()?
+    out.beginList("genericParameterRows", genericParameterRows.count)?
+    let genericFactRow: i64 = 0
+    while genericFactRow < genericParameterRows.count {
+      let parameter = genericParameterRows[genericFactRow]
+      out.writeItemString(
+        "{parameter.position}:{parameter.name}:{parameter.bounds.count}:{parameter.defaultTypeName}:{parameter.variadic}"
+      )?
+      genericFactRow = genericFactRow + 1
+    }
+    out.endList()?
+    out.beginList("parameters", parameters.count)?
+    let parameterRow: i64 = 0
+    while parameterRow < parameters.count {
+      out.writeItemString(parameters[parameterRow])?
+      parameterRow = parameterRow + 1
+    }
+    out.endList()?
+    out.beginList("parameterRows", parameterRows.count)?
+    let parameterFactRow: i64 = 0
+    while parameterFactRow < parameterRows.count {
+      let parameter = parameterRows[parameterFactRow]
+      out.writeItemString(
+        "{parameter.position}:{parameter.name}:{parameter.typeName}:{parameter.defaultValueText}:{parameter.defaulted}:{parameter.variadic}"
+      )?
+      parameterFactRow = parameterFactRow + 1
+    }
+    out.endList()?
+    out.writeCompilerId("fileId", fileId.id)?
+    out.writeRange("rows", rows.start, rows.count)?
+    out.writeI64("visibility", declarationVisibilityOrdinal(visibility))?
+    out.writeBool("resolved", resolved)?
+    return out.end()
+  }
+}
+
+declarationKindOrdinal(kind: DeclarationKind) -> i64 {
+  if kind == DeclarationKind.Module { return 1 }
+  if kind == DeclarationKind.Type { return 2 }
+  if kind == DeclarationKind.Impl { return 3 }
+  if kind == DeclarationKind.View { return 4 }
+  if kind == DeclarationKind.Role { return 5 }
+  if kind == DeclarationKind.Function { return 6 }
+  if kind == DeclarationKind.Import { return 7 }
+  if kind == DeclarationKind.Context { return 8 }
+  if kind == DeclarationKind.Extract { return 9 }
+  if kind == DeclarationKind.Extend { return 10 }
+  if kind == DeclarationKind.Enum { return 11 }
+  return 0
+}
+
+declarationVisibilityOrdinal(visibility: DeclarationVisibility) -> i64 {
+  if visibility == DeclarationVisibility.Public { return 1 }
+  if visibility == DeclarationVisibility.Private { return 2 }
+  if visibility == DeclarationVisibility.Exported { return 3 }
+  return 0
+}
+
+astRoleVisibilityOrdinal(visibility: AstRoleVisibility) -> i64 {
+  if visibility == AstRoleVisibility.Public { return 1 }
+  if visibility == AstRoleVisibility.Internal { return 2 }
+  if visibility == AstRoleVisibility.Protected { return 3 }
+  if visibility == AstRoleVisibility.Private { return 4 }
+  return 0
+}

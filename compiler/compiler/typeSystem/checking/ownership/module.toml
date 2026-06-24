@@ -1,0 +1,9 @@
+[module]
+name = "ownership"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/typeSystem/checking/ownership"
+role = "ownership-authority"
+
+[dependencies]
+modules = ["core", "declaration", "frontend"]

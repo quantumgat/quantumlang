@@ -1,0 +1,92 @@
+import backend::{InputSummary, Layout, ObjectStage, LinkStage}
+import buildSystem::{CompilerStageMaterialization, CompilerStagePipeline}
+import frontend::{FrontendProduct}
+
+pub CompilerStageProof {
+  frontendBackedObjects: bool
+  unitIdentityStable: bool
+  linkIdentityUsesObjects: bool
+  pipelinePathsOwned: bool
+  materializationBridgeOwned: bool
+  valid: bool
+}
+
+pub compilerStageProof() -> CompilerStageProof {
+  let target = "qtlang/compiler/tests/language/positive/oopSurfaceRoleCapability"
+  let frontend = FrontendProduct.forPackage(target)
+  let backendInput = InputSummary(
+    frontend.target,
+    frontend.source.fileCount,
+    frontend.declarations.recordCount,
+    frontend.declarations.typeCount,
+    frontend.declarations.functionCount,
+    frontend.declarations.behavioralCount,
+    frontend.ast.product.nodeCount,
+    frontend.typecheckTypedNodeCount,
+    frontend.typecheckContextCount,
+    frontend.typecheckFactCount
+  )
+  let native = ObjectStage.fromSummary(backendInput)
+  let link = LinkStage.fromObjectStage(native)
+  let layout = Layout.forPackage(target, "qtlc2", "debug")
+  let pipeline = CompilerStagePipeline.forNativeObjects(
+    frontend,
+    true,
+    frontend.typecheckTypedNodeCount,
+    frontend.typecheckFactCount
+  )
+  let firstUnit = native.unitKeyAt(0)
+  let materialization = CompilerStageMaterialization.fromPipeline(target, pipeline, false)
+
+  let frontendBackedObjects =
+    native.valid &&
+    native.unitCount == frontend.source.fileCount &&
+    native.rebuiltCount == native.unitCount &&
+    native.outputPath == layout.objectSetPath
+
+  let unitIdentityStable =
+    firstUnit.valid &&
+    firstUnit.stableUnitId == "source-unit:{target}:{frontend.source.fileCount}:0" &&
+    firstUnit.abiHash == native.abiHash &&
+    firstUnit.backendHash == native.backendHash
+
+  let linkIdentityUsesObjects =
+    link.valid &&
+    link.objectUnitCount == native.unitCount &&
+    link.sortedObjectHash == native.objectSetHash &&
+    link.outputPath == layout.executablePath &&
+    link.inputSet().sortedObjectHash == native.objectSetHash
+
+  let pipelinePathsOwned =
+    pipeline.readyForMaterialization &&
+    pipeline.object.path == native.outputPath &&
+    pipeline.link.path == link.outputPath &&
+    pipeline.nativePipeline.bridgeReady &&
+    pipeline.nativePipeline.result.outputPath == link.outputPath &&
+    pipeline.hir.path == layout.artifactPath("hir") &&
+    pipeline.mir.path == layout.artifactPath("mir")
+
+  let materializationBridgeOwned =
+    materialization.valid &&
+    materialization.materializerName == "qtlc1-native-pipeline" &&
+    materialization.physicalBridgeName == "qtlc1-native-pipeline-adapter" &&
+    materialization.adapter.materializationReady &&
+    materialization.adapter.statusText == "pending-executable-payload" &&
+    materialization.physicalBridge.provenance == "bootstrap-materializer:qtlc/build/compiler/driver/qtlc:{target}:{layout.executablePath}"
+
+  let valid =
+    frontendBackedObjects &&
+    unitIdentityStable &&
+    linkIdentityUsesObjects &&
+    pipelinePathsOwned &&
+    materializationBridgeOwned
+
+  return CompilerStageProof {
+    frontendBackedObjects
+    unitIdentityStable
+    linkIdentityUsesObjects
+    pipelinePathsOwned
+    materializationBridgeOwned
+    valid
+  }
+}

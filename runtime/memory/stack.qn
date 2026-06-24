@@ -1,0 +1,26 @@
+pub RuntimeStack {
+  pointerWidth: i64
+  guardRequired: bool
+  alignmentBytes: i64
+}
+
+impl RuntimeStack {
+  pub RuntimeStack(pointerWidth: i64, guardRequired: bool, alignmentBytes: i64) =
+    This {
+      pointerWidth
+      guardRequired
+      alignmentBytes
+    }
+
+  pub core() =
+    This {
+      pointerWidth: 64
+      guardRequired: false
+      alignmentBytes: 16
+    }
+}
+
+impl view RuntimeStack {
+  pub valid: bool => pointerWidth > 0 && alignmentBytes > 0
+  pub stackHash: string => "runtime.stack:{pointerWidth}:{guardRequired}:{alignmentBytes}"
+}

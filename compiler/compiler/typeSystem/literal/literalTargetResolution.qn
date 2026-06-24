@@ -1,0 +1,536 @@
+import diagnostics::{DiagnosticRegistry, DiagnosticSpec, LiteralDiagnosticCode}
+
+pub LiteralTargetResolution {
+  kind: TypeLiteralKind
+  resolvedType: string
+  needsTarget: bool
+  contextAccepted: bool
+  diagnostic: DiagnosticSpec = {}
+  valid: bool
+}
+
+impl LiteralTargetResolution {
+  pub LiteralTargetResolution(
+    kind: TypeLiteralKind,
+    resolvedType: string,
+    needsTarget: bool,
+    contextAccepted: bool,
+    diagnostic: DiagnosticSpec,
+    valid: bool
+  ) =
+    This { kind, resolvedType, needsTarget, contextAccepted, diagnostic, valid }
+
+  pub resolved(kind: TypeLiteralKind, resolvedType: string) =
+    This(kind, resolvedType, false, true, {}, true)
+
+  pub needTarget(kind: TypeLiteralKind, code: LiteralDiagnosticCode) =
+    This(kind, "", true, false, DiagnosticRegistry.literal(code), false)
+
+  pub invalidTarget(kind: TypeLiteralKind) =
+    This(
+      kind,
+      "",
+      false,
+      false,
+      DiagnosticRegistry.literal(LiteralDiagnosticCode.InvalidLiteralTarget),
+      false
+    )
+
+  pub unknown(kind: TypeLiteralKind) =
+    This(
+      kind,
+      "",
+      false,
+      false,
+      DiagnosticRegistry.literal(LiteralDiagnosticCode.Unknown),
+      false
+    )
+}
+
+impl view LiteralTargetResolution {
+  pub diagnosticCode: string => diagnostic.code.display
+  pub hasDiagnostic => diagnostic.present
+  pub resolved => valid && resolvedType != ""
+}
+
+context LiteralTargetContext {
+  pub resolve(kind: TypeLiteralKind) -> LiteralTargetResolution {
+    if kind == TypeLiteralKind.Bool {
+      return resolveScalar(kind, "bool")
+    }
+    if kind == TypeLiteralKind.Integer {
+      return resolveScalar(kind, "i32")
+    }
+    if kind == TypeLiteralKind.Float {
+      return resolveScalar(kind, "f64")
+    }
+    if kind == TypeLiteralKind.String {
+      return resolveScalar(kind, "string")
+    }
+    if kind == TypeLiteralKind.Bytes {
+      return resolveScalar(kind, "bytes")
+    }
+    if kind == TypeLiteralKind.Byte {
+      return resolveScalar(kind, "byte")
+    }
+    if kind == TypeLiteralKind.None {
+      if isOptionTarget() {
+        return LiteralTargetResolution.resolved(kind, targetType)
+      }
+      return LiteralTargetResolution.needTarget(kind, LiteralDiagnosticCode.NoneWithoutOptionTarget)
+    }
+    if kind == TypeLiteralKind.Vec {
+      if targetType != "" {
+        if acceptsTarget(kind) {
+          return LiteralTargetResolution.resolved(kind, targetType)
+        }
+        return LiteralTargetResolution.invalidTarget(kind)
+      }
+      if contextClear {
+        return LiteralTargetResolution.resolved(kind, "Vec<T>")
+      }
+      return LiteralTargetResolution.needTarget(kind, LiteralDiagnosticCode.UnclearEmptyArray)
+    }
+    if kind == TypeLiteralKind.FixedArray {
+      if targetType != "" {
+        if acceptsTarget(kind) {
+          return LiteralTargetResolution.resolved(kind, targetType)
+        }
+        return LiteralTargetResolution.invalidTarget(kind)
+      }
+      return LiteralTargetResolution.needTarget(kind, LiteralDiagnosticCode.UnclearEmptyArray)
+    }
+    if kind == TypeLiteralKind.Map {
+      if targetType != "" {
+        if acceptsTarget(kind) {
+          return LiteralTargetResolution.resolved(kind, targetType)
+        }
+        return LiteralTargetResolution.invalidTarget(kind)
+      }
+      if quotedMapKeys {
+        return LiteralTargetResolution.resolved(kind, "Map<string,T>")
+      }
+      return LiteralTargetResolution.needTarget(kind, LiteralDiagnosticCode.UnclearMapLiteral)
+    }
+    if kind == TypeLiteralKind.Set {
+      if targetType != "" {
+        if acceptsTarget(kind) {
+          return LiteralTargetResolution.resolved(kind, targetType)
+        }
+        return LiteralTargetResolution.invalidTarget(kind)
+      }
+      if contextClear {
+        return LiteralTargetResolution.resolved(kind, "Set<T>")
+      }
+      return LiteralTargetResolution.needTarget(kind, LiteralDiagnosticCode.UnclearEmptyArray)
+    }
+    if kind == TypeLiteralKind.Tuple {
+      if targetType != "" {
+        if acceptsTarget(kind) {
+          return LiteralTargetResolution.resolved(kind, targetType)
+        }
+        return LiteralTargetResolution.invalidTarget(kind)
+      }
+      return LiteralTargetResolution.resolved(kind, "Tuple<...T>")
+    }
+    if kind == TypeLiteralKind.Range {
+      if targetType != "" {
+        if acceptsTarget(kind) {
+          return LiteralTargetResolution.resolved(kind, targetType)
+        }
+        return LiteralTargetResolution.invalidTarget(kind)
+      }
+      if contextClear {
+        return LiteralTargetResolution.resolved(kind, "Range<T>")
+      }
+      return LiteralTargetResolution.needTarget(kind, LiteralDiagnosticCode.InvalidLiteralTarget)
+    }
+    if kind == TypeLiteralKind.HalfOpenRange {
+      if targetType != "" {
+        if acceptsTarget(kind) {
+          return LiteralTargetResolution.resolved(kind, targetType)
+        }
+        return LiteralTargetResolution.invalidTarget(kind)
+      }
+      if contextClear {
+        return LiteralTargetResolution.resolved(kind, "Range<T>")
+      }
+      return LiteralTargetResolution.needTarget(kind, LiteralDiagnosticCode.InvalidLiteralTarget)
+    }
+    if kind == TypeLiteralKind.RangeFrom {
+      return resolveRangeSpec(kind, "RangeFrom<T>")
+    }
+    if kind == TypeLiteralKind.RangeTo {
+      return resolveRangeSpec(kind, "RangeTo<T>")
+    }
+    if kind == TypeLiteralKind.RangeToInclusive {
+      return resolveRangeSpec(kind, "RangeToInclusive<T>")
+    }
+    if kind == TypeLiteralKind.RangeFull {
+      if targetType == "" || targetType == "RangeFull" {
+        return LiteralTargetResolution.resolved(kind, "RangeFull")
+      }
+      return LiteralTargetResolution.invalidTarget(kind)
+    }
+    if kind == TypeLiteralKind.Record {
+      if targetType != "" {
+        if acceptsTarget(kind) {
+          return LiteralTargetResolution.resolved(kind, targetType)
+        }
+        return LiteralTargetResolution.invalidTarget(kind)
+      }
+      return LiteralTargetResolution.resolved(kind, "record")
+    }
+    return LiteralTargetResolution.unknown(kind)
+  }
+
+  resolveScalar(kind: TypeLiteralKind, defaultType: string) -> LiteralTargetResolution {
+    if targetType != "" {
+      if acceptsTarget(kind) {
+        return LiteralTargetResolution.resolved(kind, targetType)
+      }
+      return LiteralTargetResolution.invalidTarget(kind)
+    }
+    return LiteralTargetResolution.resolved(kind, defaultType)
+  }
+
+  acceptsTarget(kind: TypeLiteralKind) -> bool {
+    if targetType == "" {
+      return true
+    }
+    if isOptionTarget() {
+      return acceptsOptionTarget(kind)
+    }
+    if kind == TypeLiteralKind.Bool {
+      return targetType == "bool"
+    }
+    if kind == TypeLiteralKind.Integer {
+      return acceptsIntegerTarget(targetType)
+    }
+    if kind == TypeLiteralKind.Float {
+      return acceptsFloatTarget(targetType)
+    }
+    if kind == TypeLiteralKind.String {
+      return targetType == "string" || targetType == "str"
+    }
+    if kind == TypeLiteralKind.Bytes {
+      return targetType == "bytes" || targetType == "BytesView" || targetType == "BytesMutView"
+    }
+    if kind == TypeLiteralKind.Byte {
+      return targetType == "byte" || targetType == "u8"
+    }
+    if kind == TypeLiteralKind.Record {
+      return isBuiltinTypeName(targetType) == false
+    }
+    if kind == TypeLiteralKind.Vec {
+      return acceptsVecTarget(targetType)
+    }
+    if kind == TypeLiteralKind.FixedArray {
+      return acceptsArrayTarget(targetType)
+    }
+    if kind == TypeLiteralKind.Map {
+      return acceptsMapTarget(targetType)
+    }
+    if kind == TypeLiteralKind.Set {
+      return acceptsSetTarget(targetType)
+    }
+    if kind == TypeLiteralKind.Tuple {
+      return acceptsTupleTarget(targetType)
+    }
+    if kind == TypeLiteralKind.Range || kind == TypeLiteralKind.HalfOpenRange ||
+       kind == TypeLiteralKind.RangeFrom || kind == TypeLiteralKind.RangeTo ||
+       kind == TypeLiteralKind.RangeToInclusive || kind == TypeLiteralKind.RangeFull {
+      return acceptsRangeTarget(kind, targetType)
+    }
+    return false
+  }
+
+  acceptsOptionTarget(kind: TypeLiteralKind) -> bool {
+    let payload = optionPayload()
+    if payload == "" {
+      return false
+    }
+    if kind == TypeLiteralKind.Bool {
+      return payload == "bool"
+    }
+    if kind == TypeLiteralKind.Integer {
+      return acceptsIntegerTarget(payload)
+    }
+    if kind == TypeLiteralKind.Float {
+      return acceptsFloatTarget(payload)
+    }
+    if kind == TypeLiteralKind.String {
+      return payload == "string" || payload == "str"
+    }
+    if kind == TypeLiteralKind.Bytes {
+      return payload == "bytes" || payload == "BytesView" || payload == "BytesMutView"
+    }
+    if kind == TypeLiteralKind.Byte {
+      return payload == "byte" || payload == "u8"
+    }
+    if kind == TypeLiteralKind.None {
+      return isKnownOptionPayload(payload)
+    }
+    if kind == TypeLiteralKind.Vec {
+      return acceptsVecTarget(payload)
+    }
+    if kind == TypeLiteralKind.FixedArray {
+      return acceptsArrayTarget(payload)
+    }
+    if kind == TypeLiteralKind.Map {
+      return acceptsMapTarget(payload)
+    }
+    if kind == TypeLiteralKind.Set {
+      return acceptsSetTarget(payload)
+    }
+    if kind == TypeLiteralKind.Tuple {
+      return acceptsTupleTarget(payload)
+    }
+    if kind == TypeLiteralKind.Range || kind == TypeLiteralKind.HalfOpenRange ||
+       kind == TypeLiteralKind.RangeFrom || kind == TypeLiteralKind.RangeTo ||
+       kind == TypeLiteralKind.RangeToInclusive || kind == TypeLiteralKind.RangeFull {
+      return acceptsRangeTarget(kind, payload)
+    }
+    if kind == TypeLiteralKind.Record {
+      return isBuiltinTypeName(payload) == false
+    }
+    return false
+  }
+
+  acceptsIntegerTarget(value: string) -> bool {
+    return isIntegerTypeName(value) ||
+      value == "BigInt" ||
+      value == "BigUint" ||
+      acceptsDecimalFixedTarget(value)
+  }
+
+  acceptsFloatTarget(value: string) -> bool {
+    return isFloatTypeName(value) ||
+      acceptsDecimalFixedTarget(value)
+  }
+
+  acceptsDecimalFixedTarget(value: string) -> bool {
+    let canonical = canonicalTypeAliasName(value)
+    return canonical == "dec" ||
+      canonical == "dec64" ||
+      canonical == "dec128" ||
+      canonical == "dec256" ||
+      canonical == "fixed"
+  }
+
+  acceptsVecTarget(value: string) -> bool {
+    return value == "Vec" || value.startsWith("Vec<")
+  }
+
+  acceptsArrayTarget(value: string) -> bool {
+    return value == "Array" || value.startsWith("Array<")
+  }
+
+  acceptsMapTarget(value: string) -> bool {
+    return value == "Map" || value.startsWith("Map<")
+  }
+
+  acceptsSetTarget(value: string) -> bool {
+    return value == "Set" || value.startsWith("Set<")
+  }
+
+  acceptsTupleTarget(value: string) -> bool {
+    return value == "Tuple" || value.startsWith("Tuple<") || value.startsWith("(")
+  }
+
+  resolveRangeSpec(kind: TypeLiteralKind, defaultType: string) -> LiteralTargetResolution {
+    if targetType != "" {
+      if acceptsRangeTarget(kind, targetType) {
+        return LiteralTargetResolution.resolved(kind, targetType)
+      }
+      return LiteralTargetResolution.invalidTarget(kind)
+    }
+    if contextClear {
+      return LiteralTargetResolution.resolved(kind, defaultType)
+    }
+    return LiteralTargetResolution.needTarget(kind, LiteralDiagnosticCode.InvalidLiteralTarget)
+  }
+
+  acceptsRangeTarget(kind: TypeLiteralKind, value: string) -> bool {
+    if kind == TypeLiteralKind.Range || kind == TypeLiteralKind.HalfOpenRange {
+      return value == "Range" || value.startsWith("Range<")
+    }
+    if kind == TypeLiteralKind.RangeFrom {
+      return value == "RangeFrom" || value.startsWith("RangeFrom<")
+    }
+    if kind == TypeLiteralKind.RangeTo {
+      return value == "RangeTo" || value.startsWith("RangeTo<")
+    }
+    if kind == TypeLiteralKind.RangeToInclusive {
+      return value == "RangeToInclusive" || value.startsWith("RangeToInclusive<")
+    }
+    return kind == TypeLiteralKind.RangeFull && value == "RangeFull"
+  }
+
+  isOptionTarget() -> bool {
+    return targetType.startsWith("Option<") && targetType.endsWith(">")
+  }
+
+  optionPayload() -> string {
+    if targetType == "Option<bool>" {
+      return "bool"
+    }
+    if targetType == "Option<string>" {
+      return "string"
+    }
+    if targetType == "Option<str>" {
+      return "str"
+    }
+    if targetType == "Option<bytes>" {
+      return "bytes"
+    }
+    if targetType == "Option<BytesView>" {
+      return "BytesView"
+    }
+    if targetType == "Option<BytesMutView>" {
+      return "BytesMutView"
+    }
+    if targetType == "Option<byte>" {
+      return "byte"
+    }
+    if targetType == "Option<int>" {
+      return "int"
+    }
+    if targetType == "Option<uint>" {
+      return "uint"
+    }
+    if targetType == "Option<i8>" {
+      return "i8"
+    }
+    if targetType == "Option<i16>" {
+      return "i16"
+    }
+    if targetType == "Option<i32>" {
+      return "i32"
+    }
+    if targetType == "Option<i64>" {
+      return "i64"
+    }
+    if targetType == "Option<i128>" {
+      return "i128"
+    }
+    if targetType == "Option<i256>" {
+      return "i256"
+    }
+    if targetType == "Option<isize>" {
+      return "isize"
+    }
+    if targetType == "Option<u8>" {
+      return "u8"
+    }
+    if targetType == "Option<u16>" {
+      return "u16"
+    }
+    if targetType == "Option<u32>" {
+      return "u32"
+    }
+    if targetType == "Option<u64>" {
+      return "u64"
+    }
+    if targetType == "Option<u128>" {
+      return "u128"
+    }
+    if targetType == "Option<u256>" {
+      return "u256"
+    }
+    if targetType == "Option<usize>" {
+      return "usize"
+    }
+    if targetType == "Option<f16>" {
+      return "f16"
+    }
+    if targetType == "Option<f32>" {
+      return "f32"
+    }
+    if targetType == "Option<f64>" {
+      return "f64"
+    }
+    if targetType == "Option<f128>" {
+      return "f128"
+    }
+    if targetType == "Option<dec>" {
+      return "dec"
+    }
+    if targetType == "Option<dec64>" {
+      return "dec64"
+    }
+    if targetType == "Option<dec128>" {
+      return "dec128"
+    }
+    if targetType == "Option<dec256>" {
+      return "dec256"
+    }
+    if targetType == "Option<fixed>" {
+      return "fixed"
+    }
+    if targetType == "Option<BigInt>" {
+      return "BigInt"
+    }
+    if targetType == "Option<BigUint>" {
+      return "BigUint"
+    }
+    if targetType == "Option<Vec<T>>" {
+      return "Vec<T>"
+    }
+    if targetType == "Option<Array<T,N>>" {
+      return "Array<T,N>"
+    }
+    if targetType == "Option<Map<K,V>>" {
+      return "Map<K,V>"
+    }
+    if targetType == "Option<Set<T>>" {
+      return "Set<T>"
+    }
+    if targetType == "Option<Tuple<...T>>" {
+      return "Tuple<...T>"
+    }
+    if targetType == "Option<Range<T>>" {
+      return "Range<T>"
+    }
+    if targetType == "Option<RangeFrom<T>>" {
+      return "RangeFrom<T>"
+    }
+    if targetType == "Option<RangeTo<T>>" {
+      return "RangeTo<T>"
+    }
+    if targetType == "Option<RangeToInclusive<T>>" {
+      return "RangeToInclusive<T>"
+    }
+    if targetType == "Option<RangeFull>" {
+      return "RangeFull"
+    }
+    return ""
+  }
+
+  isKnownOptionPayload(value: string) -> bool {
+    return value == "bool" ||
+      acceptsIntegerTarget(value) ||
+      acceptsFloatTarget(value) ||
+      value == "string" ||
+      value == "str" ||
+      value == "bytes" ||
+      value == "BytesView" ||
+      value == "BytesMutView" ||
+      value == "byte" ||
+      acceptsVecTarget(value) ||
+      acceptsArrayTarget(value) ||
+      acceptsMapTarget(value) ||
+      acceptsSetTarget(value) ||
+      acceptsTupleTarget(value) ||
+      isAnyRangeType(value) ||
+      isBuiltinTypeName(value) == false
+  }
+
+  isAnyRangeType(value: string) -> bool {
+    return value == "Range" || value.startsWith("Range<") ||
+      value == "RangeFrom" || value.startsWith("RangeFrom<") ||
+      value == "RangeTo" || value.startsWith("RangeTo<") ||
+      value == "RangeToInclusive" || value.startsWith("RangeToInclusive<") ||
+      value == "RangeFull"
+  }
+}

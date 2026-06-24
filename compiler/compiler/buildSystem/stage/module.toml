@@ -1,0 +1,9 @@
+[module]
+name = "stage"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/buildSystem/stage"
+role = "compiler-stage-bootstrap-boundary"
+
+[dependencies]
+modules = ["host"]

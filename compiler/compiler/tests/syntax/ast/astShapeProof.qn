@@ -1,0 +1,52 @@
+import syntax::{*}
+pub AstShapeProof {
+  stableNodeIdUsesFileSpanKind: bool
+  greenNodeCarriesChildren: bool
+  itemExprStmtShape: bool
+  patternTypeShape: bool
+  valid: bool
+}
+
+pub astShapeProof() -> AstShapeProof {
+  let moduleNode = AstNode(1, AstNodeKind.Module, 7, 0, 64, 3)
+  let exprNode = AstNode(2, AstNodeKind.Expression, 7, 14, 19, 1)
+  let stmtNode = AstNode(3, AstNodeKind.Statement, 7, 8, 19, 1)
+  let patternNode = AstNode(4, AstNodeKind.Pattern, 7, 4, 8, 0)
+  let typeNode = AstNode(5, AstNodeKind.TypeRef, 7, 20, 27, 0)
+  let item = AstItem(1, AstItemKind.ModuleDecl, moduleNode)
+  let expr = AstExpr(2, AstExprKind.Call, exprNode)
+  let stmt = AstStmt(3, AstStmtKind.Let, stmtNode)
+  let pattern = AstPattern(4, AstPatternKind.Name, patternNode)
+  let typeRef = AstTypeRef(5, AstTypeRefKind.Optional, typeNode)
+
+  let stableNodeIdUsesFileSpanKind = moduleNode.valid &&
+    moduleNode.stableId.spanKey == "7:0:64"
+
+  let greenNodeCarriesChildren = moduleNode.greenNode &&
+    moduleNode.hasChildren
+
+  let itemExprStmtShape = item.valid &&
+    item.moduleDecl &&
+    expr.valid &&
+    expr.callable &&
+    stmt.valid &&
+    stmt.kind == AstStmtKind.Let
+
+  let patternTypeShape = pattern.valid &&
+    pattern.binding &&
+    typeRef.valid &&
+    typeRef.optional
+
+  let valid = stableNodeIdUsesFileSpanKind &&
+    greenNodeCarriesChildren &&
+    itemExprStmtShape &&
+    patternTypeShape
+
+  return AstShapeProof {
+    stableNodeIdUsesFileSpanKind: stableNodeIdUsesFileSpanKind,
+    greenNodeCarriesChildren: greenNodeCarriesChildren,
+    itemExprStmtShape: itemExprStmtShape,
+    patternTypeShape: patternTypeShape,
+    valid: valid,
+  }
+}

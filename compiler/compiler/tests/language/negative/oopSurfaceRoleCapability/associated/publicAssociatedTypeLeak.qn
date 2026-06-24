@@ -1,0 +1,9 @@
+private SecretBody {
+  value: string = ""
+}
+
+extend HttpCtx<...Caps> : pub HttpAssociatedSpec<HttpCtx<...Caps>> {
+  type Body = SecretBody
+  type Error = IntoHttpError
+  const requiresAuth: bool = true
+}

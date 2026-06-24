@@ -1,0 +1,40 @@
+pub ProcessModel {
+  name: string
+  spawnSupport: bool
+  environmentSupport: bool
+  exitStatusEncoding: string
+  signalModel: string
+}
+
+impl ProcessModel {
+  pub ProcessModel(
+    name: string,
+    spawnSupport: bool,
+    environmentSupport: bool,
+    exitStatusEncoding: string,
+    signalModel: string
+  ) =
+    This {
+      name
+      spawnSupport
+      environmentSupport
+      exitStatusEncoding
+      signalModel
+    }
+
+  pub posix() =
+    This("posix", true, true, "int", "signal")
+
+  pub win32() =
+    This("win32", true, true, "dword", "seh")
+
+  pub none() =
+    This("none", false, false, "none", "none")
+}
+
+impl view ProcessModel {
+  pub canSpawn => spawnSupport
+  pub hasEnvironment => environmentSupport
+  pub hosted => spawnSupport && environmentSupport
+  pub valid => name != "" && exitStatusEncoding != "" && signalModel != ""
+}

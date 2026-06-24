@@ -1,0 +1,38 @@
+pub StringTableBytes {
+  stringCount: i64
+  byteCount: i64
+  byteHash: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl StringTableBytes {
+  pub StringTableBytes(stringCount: i64, byteCount: i64, byteHash: string) =
+    This {
+      stringCount
+      byteCount
+      byteHash
+    }
+
+  pub fromStringTable(stringTable: ObjectStringTable) =
+    This {
+      stringCount: stringTable.stringCount
+      byteCount: stringTable.byteCount
+      byteHash: stringTable.tableHash
+      deterministic: stringTable.deterministic
+      diagnosticCode: match stringTable.valid {
+        true => ""
+        false => "QNATIVE0733"
+      }
+    }
+}
+
+impl view StringTableBytes {
+  pub valid => diagnosticCode == "" &&
+    stringCount >= 0 &&
+    byteCount >= 0 &&
+    byteHash != "" &&
+    deterministic
+  pub hasStrings => stringCount > 0
+  pub debugName => "strtab.bytes.{stringCount}.{byteCount}"
+}

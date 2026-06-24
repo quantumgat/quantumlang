@@ -1,0 +1,25 @@
+pub QuantumNoCloneRule {
+  enforced: bool
+  duplicateRejected: bool
+  diagnosticCode: string
+}
+
+impl QuantumNoCloneRule {
+  pub QuantumNoCloneRule(duplicateRejected: bool) =
+    This {
+      enforced: true
+      duplicateRejected
+      diagnosticCode: ""
+    }
+
+  pub rejected() =
+    This {
+      enforced: true
+      duplicateRejected: true
+      diagnosticCode: "QTQUANTUM0002"
+    }
+}
+
+impl view QuantumNoCloneRule {
+  pub valid => enforced && duplicateRejected
+}

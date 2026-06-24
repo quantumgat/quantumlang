@@ -1,0 +1,33 @@
+import core::{Slice, Vec}
+
+pub CandidateSet {
+  key: CandidateKey = {}
+  candidateValues: Vec<CandidateId> = []
+  candidates: Slice<CandidateId> = []
+  lexicalDepth: usize = 0
+  deterministic: bool = true
+}
+
+impl CandidateSet {
+  pub fromBucket(bucket: CandidateBucket) =
+    This {
+      key: bucket.key
+      candidateValues: bucket.candidateValues
+      candidates: Slice(bucket.candidateValues.count)
+    }
+}
+
+impl view CandidateSet {
+  pub count: i64 => candidateValues.count
+
+  pub empty: bool => count == 0
+
+  pub single: bool => count == 1
+
+  pub valid: bool =>
+    deterministic &&
+    key.valid &&
+    candidateValues.valid &&
+    candidates.valid &&
+    candidates.count == count
+}

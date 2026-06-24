@@ -1,0 +1,13 @@
+pub DuplicateUser {
+  id: i64
+}
+
+pub role DuplicateRole {
+  idValue() -> i64
+}
+
+extend DuplicateUser : pub DuplicateRole, private DuplicateRole {
+  idValue() -> i64 {
+    id
+  }
+}

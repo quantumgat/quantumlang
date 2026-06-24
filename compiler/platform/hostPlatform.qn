@@ -1,0 +1,131 @@
+pub HostPlatform {
+  arch: HostArch
+  os: HostOs
+  runtime: RuntimeModel
+  executable: ExecutableModel
+  filesystem: FileSystemModel
+  process: ProcessModel
+  threads: ThreadModel
+  libraries: LibraryModel
+  toolchain: ToolchainModel
+  deployment: DeploymentModel
+  objectFormat: string
+  abi: string
+}
+
+impl HostPlatform {
+  pub HostPlatform(
+    arch: HostArch,
+    os: HostOs,
+    runtime: RuntimeModel,
+    executable: ExecutableModel,
+    filesystem: FileSystemModel,
+    process: ProcessModel,
+    threads: ThreadModel,
+    libraries: LibraryModel,
+    toolchain: ToolchainModel,
+    deployment: DeploymentModel,
+    objectFormat: string,
+    abi: string
+  ) =
+    This {
+      arch
+      os
+      runtime
+      executable
+      filesystem
+      process
+      threads
+      libraries
+      toolchain
+      deployment
+      objectFormat
+      abi
+    }
+
+  pub linuxX86_64() =
+    This(
+      HostArch.x86_64(),
+      HostOs.linux(),
+      RuntimeModel.glibc(),
+      ExecutableModel.linux(),
+      FileSystemModel.posix(),
+      ProcessModel.posix(),
+      ThreadModel.pthread(),
+      LibraryModel.linux(),
+      ToolchainModel.linux(),
+      DeploymentModel.nativeExecutable(),
+      "elf",
+      "sysv"
+    )
+
+  pub windowsX86_64() =
+    This(
+      HostArch.x86_64(),
+      HostOs.windows(),
+      RuntimeModel.msvc(),
+      ExecutableModel.windows(),
+      FileSystemModel.windows(),
+      ProcessModel.win32(),
+      ThreadModel.win32(),
+      LibraryModel.windows(),
+      ToolchainModel.windows(),
+      DeploymentModel.nativeExecutable(),
+      "coff",
+      "win64"
+    )
+
+  pub macosAarch64() =
+    This(
+      HostArch.aarch64(),
+      HostOs.macos(),
+      RuntimeModel.darwin(),
+      ExecutableModel.macos(),
+      FileSystemModel.posix(),
+      ProcessModel.posix(),
+      ThreadModel.darwin(),
+      LibraryModel.macos(),
+      ToolchainModel.macos(),
+      DeploymentModel.appBundle(),
+      "macho",
+      "darwin"
+    )
+
+  pub bareMetalArmv7m() =
+    This(
+      HostArch.armv7m(),
+      HostOs.none(),
+      RuntimeModel.bareMetal(),
+      ExecutableModel.staticOnly(),
+      FileSystemModel.none(),
+      ProcessModel.none(),
+      ThreadModel.none(),
+      LibraryModel.staticOnly(),
+      ToolchainModel.embedded("arm-none-eabi-"),
+      DeploymentModel.firmwareImage(),
+      "elf",
+      "embedded-eabi"
+    )
+}
+
+impl view HostPlatform {
+  pub pointerBits => arch.pointerBits
+  pub executableSuffix => executable.executableSuffix
+  pub pathSeparator => filesystem.pathSeparator
+  pub hosted => os.hosted && runtime.hosted && process.hosted
+  pub nativeLinkable => objectFormat != "" && toolchain.linkerReady
+  pub dynamicLinkable => executable.dynamicCapable && libraries.canDynamicLink
+  pub staticLinkable => executable.staticCapable && libraries.canArchive
+  pub valid => arch.valid &&
+    os.valid &&
+    runtime.valid &&
+    executable.valid &&
+    filesystem.valid &&
+    process.valid &&
+    threads.valid &&
+    libraries.valid &&
+    toolchain.valid &&
+    deployment.valid &&
+    objectFormat != "" &&
+    abi != ""
+}

@@ -1,0 +1,6 @@
+[module]
+name = "roleProvider"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/qtlc0_role_visibility_proof"
+role = "role-conformance-visibility-proof"

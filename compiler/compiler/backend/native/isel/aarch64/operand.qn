@@ -1,0 +1,29 @@
+pub Aarch64OperandSelect {
+  operandKind: string
+  widthBits: i64
+  registerClass: string
+  shiftedImmediateAllowed: bool = true
+  diagnosticCode: string = ""
+}
+
+impl Aarch64OperandSelect {
+  pub Aarch64OperandSelect(operandKind: string, widthBits: i64, registerClass: string) =
+    This {
+      operandKind
+      widthBits
+      registerClass
+    }
+
+  pub integerRegister(widthBits: i64) =
+    This("register", widthBits, "gpr")
+}
+
+impl view Aarch64OperandSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    operandKind != "" &&
+    widthBits > 0 &&
+    registerClass != ""
+
+  pub debugName: string => "isel.aarch64.operand.{operandKind}.{widthBits}"
+}

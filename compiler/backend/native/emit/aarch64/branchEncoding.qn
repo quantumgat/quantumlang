@@ -1,0 +1,23 @@
+pub Aarch64BranchEncoding {
+  targetSymbol: string
+  conditional: bool = false
+  byteCount: i64 = 4
+  relocationKind: string = "branch26"
+  diagnosticCode: string = ""
+}
+
+impl Aarch64BranchEncoding {
+  pub Aarch64BranchEncoding(targetSymbol: string, conditional: bool) =
+    This { targetSymbol, conditional }
+}
+
+impl view Aarch64BranchEncoding {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetSymbol != "" &&
+    byteCount == 4 &&
+    relocationKind != ""
+
+  pub needsRelocation: bool => valid
+  pub debugName: string => "aarch64.branch.{targetSymbol}"
+}

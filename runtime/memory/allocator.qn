@@ -1,0 +1,26 @@
+pub RuntimeAllocator {
+  name: string
+  allocationModel: string
+  deterministic: bool
+}
+
+impl RuntimeAllocator {
+  pub RuntimeAllocator(name: string, allocationModel: string, deterministic: bool) =
+    This {
+      name
+      allocationModel
+      deterministic
+    }
+
+  pub core() =
+    This {
+      name: "qtlc-runtime-allocator"
+      allocationModel: "host-process"
+      deterministic: true
+    }
+}
+
+impl view RuntimeAllocator {
+  pub valid: bool => name != "" && allocationModel != "" && deterministic
+  pub allocatorHash: string => "runtime.allocator:{name}:{allocationModel}:{deterministic}"
+}

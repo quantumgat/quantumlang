@@ -1,0 +1,20 @@
+pub enum ExpressionKind {
+  Literal
+  NoneLiteral
+  RecordLiteral
+  VecLiteral
+  FixedArrayLiteral
+  MapLiteral
+  ThisValue
+  ThisType
+  VoidReturn
+  BinaryOperator
+  UnaryOperator
+  AssignmentOperator
+  IndexAccess
+  CallAccess
+  MemberAccess
+  CastOperator
+  PropagateOperator
+  Unknown
+}

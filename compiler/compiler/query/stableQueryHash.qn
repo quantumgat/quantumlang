@@ -1,0 +1,77 @@
+import core::{Hash256, HashDomain, HashError, StableHash, StableHashWriter}
+
+impl QueryKey {
+  pub stableHash() -> Result<Hash256, HashError> {
+    let out = StableHashWriter(HashDomain.Query)
+    this.stableHashInto(out)?
+    return out.finish()
+  }
+
+  stableHashInto(out: StableHashWriter) -> Result<void, HashError> {
+    out.begin("query.QueryKey", 1)?
+    out.writeI64("kind", queryKindOrdinal(kind))?
+    out.writeI64("subjectKind", stableIdKindOrdinal(subject.kind))?
+    out.writeU64("packageHash", subject.packageHash)?
+    out.writeU64("moduleHash", subject.moduleHash)?
+    out.writeU64("localHash", subject.localHash)?
+    out.writeU64("disambiguator", subject.disambiguator)?
+    out.writeI64("component", queryComponentOrdinal(epoch.component))?
+    out.writeU64("epoch", epoch.value)?
+    out.writeU64("schemaVersion", epoch.schemaVersion)?
+    out.writeString("targetKey", targetKey)?
+    out.writeString("profileKey", profileKey)?
+    out.writeString("featureKey", featureKey)?
+    return out.end()
+  }
+}
+
+queryKindOrdinal(kind: QueryKind) -> i64 {
+  if kind == QueryKind.SourceFingerprint { return 1 }
+  if kind == QueryKind.Tokens { return 2 }
+  if kind == QueryKind.Ast { return 3 }
+  if kind == QueryKind.ExportSurface { return 4 }
+  if kind == QueryKind.SymbolDependencySet { return 5 }
+  if kind == QueryKind.ImportGraph { return 6 }
+  if kind == QueryKind.ResolveSymbol { return 7 }
+  if kind == QueryKind.TypeSignature { return 8 }
+  if kind == QueryKind.TypeBody { return 9 }
+  if kind == QueryKind.HirBody { return 10 }
+  if kind == QueryKind.MirBody { return 11 }
+  if kind == QueryKind.OptimizedBody { return 12 }
+  if kind == QueryKind.GenericInstance { return 13 }
+  if kind == QueryKind.NativeObject { return 14 }
+  if kind == QueryKind.QuantumArtifact { return 15 }
+  return 16
+}
+
+stableIdKindOrdinal(kind: StableIdKind) -> i64 {
+  if kind == StableIdKind.Package { return 1 }
+  if kind == StableIdKind.Module { return 2 }
+  if kind == StableIdKind.File { return 3 }
+  if kind == StableIdKind.Item { return 4 }
+  if kind == StableIdKind.Body { return 5 }
+  if kind == StableIdKind.Node { return 6 }
+  if kind == StableIdKind.Symbol { return 7 }
+  if kind == StableIdKind.Type { return 8 }
+  if kind == StableIdKind.Effect { return 9 }
+  if kind == StableIdKind.QuantumResource { return 10 }
+  if kind == StableIdKind.GenericInstance { return 11 }
+  if kind == StableIdKind.CodegenUnit { return 12 }
+  if kind == StableIdKind.ObjectUnit { return 13 }
+  return 14
+}
+
+queryComponentOrdinal(component: QueryComponent) -> i64 {
+  if component == QueryComponent.Source { return 1 }
+  if component == QueryComponent.Syntax { return 2 }
+  if component == QueryComponent.Module { return 3 }
+  if component == QueryComponent.Resolve { return 4 }
+  if component == QueryComponent.Type { return 5 }
+  if component == QueryComponent.Hir { return 6 }
+  if component == QueryComponent.Mir { return 7 }
+  if component == QueryComponent.Optimize { return 8 }
+  if component == QueryComponent.Generic { return 9 }
+  if component == QueryComponent.Native { return 10 }
+  if component == QueryComponent.Quantum { return 11 }
+  return 12
+}

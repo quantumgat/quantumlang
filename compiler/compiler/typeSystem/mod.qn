@@ -1,0 +1,119 @@
+module typeSystem
+
+mod {
+  types.compilerType as compilerType
+  types.typeId as typeId
+  types.typeContext as typeContext
+  generic.generic as generic
+  inference.inference as inference
+  checking
+  resolution.candidateSource as candidateSource
+  resolution.candidateAccess as candidateAccess
+  resolution.candidateId as candidateId
+  resolution.candidateKey as candidateKey
+  resolution.candidateEntry as candidateEntry
+  resolution.candidateBucket as candidateBucket
+  resolution.candidateSet as candidateSet
+  resolution.candidateIndex as candidateIndex
+  resolution.candidateIndexBuilder as candidateIndexBuilder
+  resolution.conversionFact as conversionFact
+  resolution.argumentBinding as argumentBinding
+  resolution.genericSubstitution as genericSubstitution
+  resolution.candidateRejection as candidateRejection
+  resolution.candidateCost as candidateCost
+  resolution.callCandidate as callCandidate
+  resolution.callResolution as callResolution
+  resolution.overloadResolver as overloadResolver
+  effect.effects as effects
+  effect.capability as capability
+  literal.literalKind as literalKind
+  literal.carrierConstructorKind as carrierConstructorKind
+  literal.carrierConstructorFact as carrierConstructorFact
+  literal.literalTypingPolicy as literalTypingPolicy
+  literal.literalTypeFact as literalTypeFact
+  literal.literalTargetContext as literalTargetContext
+  literal.literalTargetResolution as literalTargetResolution
+  literal.literalDiagnosticKind as literalDiagnosticKind
+  literal.literalDiagnosticFact as literalDiagnosticFact
+  literal.literalDiagnosticRules as literalDiagnosticRules
+  literal.literalSyntaxKind as literalSyntaxKind
+  literal.literalSyntaxFact as literalSyntaxFact
+  literal.literalAstBridge as literalAstBridge
+  catalog.primitive.primitiveTypeFamily as primitiveTypeFamily
+  catalog.primitive.primitiveAbiReturnKind as primitiveAbiReturnKind
+  catalog.primitive.primitiveTypeFact as primitiveTypeFact
+  catalog.primitive.primitiveTypeCatalog as primitiveTypeCatalog
+  catalog.core.coreTypeFamily as coreTypeFamily
+  catalog.core.coreTypeCatalog as coreTypeCatalog
+  catalog.core.coreCollectionMethodKind as coreCollectionMethodKind
+  catalog.core.coreCollectionMethodFact as coreCollectionMethodFact
+  catalog.core.coreTextMethodKind as coreTextMethodKind
+  catalog.core.coreTextMethodFact as coreTextMethodFact
+  catalog.alias.typeAliasCatalog as typeAliasCatalog
+  catalog.alias.builtinTypeAlias as builtinTypeAlias
+  catalog.layout.typeLayoutCatalog as typeLayoutCatalog
+  catalog.layout.builtinLayoutFact as builtinLayoutFact
+  catalog.builtin.builtinTypeKind as builtinTypeKind
+  catalog.builtin.builtinTypeFact as builtinTypeFact
+  catalog.builtin.builtinOperator as builtinOperator
+  catalog.builtin.builtinTypeCatalog as builtinTypeCatalog
+}
+
+export {
+  compilerType.* except {}
+  typeId.*
+  typeContext.*
+  generic.*
+  inference.*
+  checking.*
+  candidateSource.*
+  candidateAccess.*
+  candidateId.*
+  candidateKey.*
+  candidateEntry.*
+  candidateBucket.*
+  candidateSet.*
+  candidateIndex.*
+  candidateIndexBuilder.*
+  conversionFact.*
+  argumentBinding.*
+  genericSubstitution.*
+  candidateRejection.*
+  candidateCost.*
+  callCandidate.*
+  callResolution.*
+  overloadResolver.*
+  effects.*
+  capability.*
+  literalKind.*
+  carrierConstructorKind.*
+  carrierConstructorFact.*
+  literalTypingPolicy.*
+  literalTypeFact.*
+  literalTargetContext.*
+  literalTargetResolution.*
+  literalDiagnosticKind.*
+  literalDiagnosticFact.*
+  literalDiagnosticRules.*
+  literalSyntaxKind.*
+  literalSyntaxFact.*
+  literalAstBridge.*
+  primitiveTypeFamily.*
+  primitiveAbiReturnKind.*
+  primitiveTypeFact.*
+  primitiveTypeCatalog.*
+  coreTypeFamily.*
+  coreTypeCatalog.*
+  coreCollectionMethodKind.*
+  coreCollectionMethodFact.*
+  coreTextMethodKind.*
+  coreTextMethodFact.*
+  typeAliasCatalog.*
+  typeLayoutCatalog.*
+  builtinTypeKind.*
+  builtinTypeAlias.*
+  builtinTypeFact.*
+  builtinOperator.*
+  builtinLayoutFact.*
+  builtinTypeCatalog.*
+}

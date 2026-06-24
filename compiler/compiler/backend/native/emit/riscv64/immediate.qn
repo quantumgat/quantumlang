@@ -1,0 +1,23 @@
+pub Riscv64Immediate {
+  value: i64
+  widthBits: i64
+  signed: bool = true
+  diagnosticCode: string = ""
+}
+
+impl Riscv64Immediate {
+  pub Riscv64Immediate(value: i64, widthBits: i64) =
+    This { value, widthBits }
+
+  pub imm12(value: i64) = This(value, 12)
+  pub imm20(value: i64) = This(value, 20)
+}
+
+impl view Riscv64Immediate {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    widthBits > 0 &&
+    widthBits <= 64
+
+  pub debugName: string => "riscv64.imm.{widthBits}.{value}"
+}

@@ -1,0 +1,40 @@
+pub RuntimeArtifact {
+  objectPath: string
+  objectFormat: string
+  payloadHash: string
+  byteCount: i64
+}
+
+impl RuntimeArtifact {
+  pub RuntimeArtifact(
+    objectPath: string,
+    objectFormat: string,
+    payloadHash: string,
+    byteCount: i64
+  ) =
+    This {
+      objectPath
+      objectFormat
+      payloadHash
+      byteCount
+    }
+
+  pub forObject(objectPath: string) =
+    This {
+      objectPath
+      objectFormat: "elf"
+      payloadHash: "elf64-x86_64-runtime-start:496"
+      byteCount: 496
+    }
+}
+
+impl view RuntimeArtifact {
+  pub valid: bool =>
+    objectPath != "" &&
+    objectFormat != "" &&
+    payloadHash != "" &&
+    byteCount > 0
+
+  pub linkable: bool => valid
+  pub artifactHash: string => "runtime.artifact:{objectPath}:{payloadHash}:{byteCount}"
+}

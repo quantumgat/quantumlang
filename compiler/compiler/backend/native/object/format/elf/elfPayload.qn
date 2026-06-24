@@ -1,0 +1,167 @@
+pub ElfPayload {
+  entry: ObjectCacheEntry = {}
+}
+
+impl ElfPayload {
+  pub ElfPayload(entry: ObjectCacheEntry) =
+    This { entry }
+
+  pub relocatable(entry: ObjectCacheEntry) -> ObjectPayload {
+    return This(entry).relocatable()
+  }
+
+  pub relocatable() -> ObjectPayload {
+    return compilerEntryRelocatable()
+  }
+
+  pub compilerEntryRelocatable() -> ObjectPayload {
+    let target = TargetIdentity(
+      entry.key.unitKey.targetTriple,
+      entry.key.unitKey.profile,
+      entry.key.format,
+      entry.key.unitKey.abiHash
+    )
+    let function = MachineFunction("main", 1, 2, 2, 1)
+    let entryFunction = MachineFunction("qtlc2_compiler_entry", 1, 2, 2, 1)
+    let driverFunction = MachineFunction("qtlc2_driver_main", 1, 8, 2, 2)
+    let commandFunction = MachineFunction("qtlc2_command_main", 1, 60, 2, 4)
+    let selectionPlan = SelectionPlan.fromMachineFunction(function, target)
+    let entrySelectionPlan = SelectionPlan.fromMachineFunction(entryFunction, target)
+    let driverSelectionPlan = SelectionPlan.fromMachineFunction(driverFunction, target)
+    let commandSelectionPlan = SelectionPlan.fromMachineFunction(commandFunction, target)
+    let checkFunction = MachineFunction("qtlc2_check_command", 1, 20, 6, 4)
+    let buildFunction = MachineFunction("qtlc2_build_command", 1, 5, 2, 2)
+    let firstPositionalFunction = MachineFunction("qtlc2_first_positional_arg", 1, 11, 4, 4)
+    let strlenFunction = MachineFunction("qtlc2_strlen", 1, 4, 2, 2)
+    let stdoutFunction = MachineFunction("qtlc2_write_stdout", 1, 4, 2, 2)
+    let selection = X86Selection.fromPlan(selectionPlan)
+    let entrySelection = X86Selection.fromPlan(entrySelectionPlan)
+    let driverSelection = X86Selection.fromPlan(driverSelectionPlan)
+    let commandSelection = X86Selection.fromPlan(commandSelectionPlan)
+    let checkSelectionPlan = SelectionPlan.fromMachineFunction(checkFunction, target)
+    let buildSelectionPlan = SelectionPlan.fromMachineFunction(buildFunction, target)
+    let firstPositionalSelectionPlan = SelectionPlan.fromMachineFunction(firstPositionalFunction, target)
+    let strlenSelectionPlan = SelectionPlan.fromMachineFunction(strlenFunction, target)
+    let stdoutSelectionPlan = SelectionPlan.fromMachineFunction(stdoutFunction, target)
+    let checkSelection = X86Selection.fromPlan(checkSelectionPlan)
+    let buildSelection = X86Selection.fromPlan(buildSelectionPlan)
+    let firstPositionalSelection = X86Selection.fromPlan(firstPositionalSelectionPlan)
+    let strlenSelection = X86Selection.fromPlan(strlenSelectionPlan)
+    let stdoutSelection = X86Selection.fromPlan(stdoutSelectionPlan)
+    let functionEmitter = FunctionEmitter.fromMachineFunction(function, 6)
+    let entryEmitter = FunctionEmitter.fromMachineFunction(entryFunction, 6)
+    let driverEmitter = FunctionEmitter.fromMachineFunction(driverFunction, 19)
+    let commandEmitter = FunctionEmitter.fromMachineFunction(commandFunction, 245)
+    let checkEmitter = FunctionEmitter.fromMachineFunction(checkFunction, 89)
+    let buildEmitter = FunctionEmitter.fromMachineFunction(buildFunction, 23)
+    let firstPositionalEmitter = FunctionEmitter.fromMachineFunction(firstPositionalFunction, 36)
+    let strlenEmitter = FunctionEmitter.fromMachineFunction(strlenFunction, 13)
+    let stdoutEmitter = FunctionEmitter.fromMachineFunction(stdoutFunction, 13)
+    let callSelect = X86CallSelect.direct("qtlc2_compiler_entry", 0)
+    let callEncoding = X86CallEncoding("qtlc2_compiler_entry")
+    let driverCallSelect = X86CallSelect.direct("qtlc2_driver_main", 0)
+    let driverCallEncoding = X86CallEncoding("qtlc2_driver_main")
+    let runtimeCallSelect = X86CallSelect.direct("qtlc2_runtime_start", 0)
+    let runtimeCallEncoding = X86CallEncoding("qtlc2_runtime_start")
+    let commandCallSelect = X86CallSelect.direct("qtlc2_command_main", 0)
+    let commandCallEncoding = X86CallEncoding("qtlc2_command_main")
+    let checkCallSelect = X86CallSelect.direct("qtlc2_check_command", 0)
+    let checkCallEncoding = X86CallEncoding("qtlc2_check_command")
+    let buildCallSelect = X86CallSelect.direct("qtlc2_build_command", 0)
+    let buildCallEncoding = X86CallEncoding("qtlc2_build_command")
+    let firstPositionalCallSelect = X86CallSelect.direct("qtlc2_first_positional_arg", 0)
+    let firstPositionalCallEncoding = X86CallEncoding("qtlc2_first_positional_arg")
+    let strlenCallSelect = X86CallSelect.direct("qtlc2_strlen", 0)
+    let strlenCallEncoding = X86CallEncoding("qtlc2_strlen")
+    let stdoutCallSelect = X86CallSelect.direct("qtlc2_write_stdout", 0)
+    let stdoutCallEncoding = X86CallEncoding("qtlc2_write_stdout")
+    let encoder = X86Encoder(120, 450, 21)
+    let objectFile = ObjectFile(
+      entry.key.format,
+      entry.key.unitKey.targetTriple,
+      9,
+      12,
+      21,
+      178,
+      2296
+    )
+    let objectLayout = ObjectLayout(
+      "qtlc2-object:{objectFile.objectHash}:{encoder.encoderHash}",
+      ObjectHeaderLayout.elf64(1720, 9),
+      ObjectSectionLayout(".text", ObjectRange(64, 450, 1), 1),
+      ObjectStringLayout(8, ObjectRange(968, 178, 1)),
+      ObjectSymbolLayout.elf64(12, 680),
+      ObjectRelocationLayout.elf64Rela(21, 1152),
+      2296
+    )
+    let objectWriter = ObjectByteWriter(
+      objectLayout,
+      ObjectVerifier.fromLayout(objectLayout),
+      ObjectEndian.little(),
+      2296,
+      11
+    )
+    let image = ObjectImage.normalizedArgs(objectWriter, objectFile)
+    let payloadHash = match entry.valid &&
+      target.valid &&
+      image.payloadReady &&
+      image.byteCount == 2296 {
+      true => "elf64-x86_64-entry-runtime-argv-normalized-object-writer:{entry.checksum}:{selection.patternSetHash}:{entrySelection.patternSetHash}:{driverSelection.patternSetHash}:{commandSelection.patternSetHash}:{functionEmitter.debugName}:{entryEmitter.debugName}:{driverEmitter.debugName}:{commandEmitter.debugName}:{checkEmitter.debugName}:{buildEmitter.debugName}:{firstPositionalEmitter.debugName}:{strlenEmitter.debugName}:{stdoutEmitter.debugName}:{image.debugName}"
+      false => ""
+    }
+    return ObjectPayload.fromBytes(
+      entry.objectPath,
+      image.payload,
+      payloadHash
+    )
+  }
+
+  pub minimalRelocatable() -> ObjectPayload {
+    let stringTable = ObjectStringTable(2, 17)
+    let objectFile = ObjectFile(
+      entry.key.format,
+      entry.key.unitKey.targetTriple,
+      3,
+      0,
+      0,
+      stringTable.byteCount,
+      280
+    )
+    let layout = ObjectLayout.elf64Relocatable(objectFile, stringTable)
+    let verifier = ObjectVerifier.fromLayout(layout)
+    let writer = ObjectByteWriter.fromLayout(layout)
+    let checksum = ObjectChecksum.fromWriter(writer, entry.checksum)
+    let elfHeader = ElfHeader.relocatableX86_64(layout.header)
+    let nullSection = ElfSectionHeader.nullHeader()
+    let textSection = ElfSectionHeader.text(layout)
+    let stringSection = ElfSectionHeader.shstrtab(layout)
+    let elfStrings = ElfStringTable.minimalSectionNames()
+    let image = ElfObjectImage.minimalRelocatable(
+      writer,
+      elfHeader,
+      elfStrings,
+      nullSection,
+      textSection,
+      stringSection
+    )
+    let payloadHash = match verifier.payloadReady &&
+      writer.payloadReady &&
+      checksum.valid &&
+      elfHeader.valid &&
+      nullSection.valid &&
+      textSection.valid &&
+      stringSection.valid &&
+      elfStrings.valid &&
+      image.payloadReady &&
+      layout.fileSize == 280 &&
+      image.byteCount == 280 {
+      true => "elf64-relocatable:{checksum.byteHash}:{layout.fileSize}:{image.byteCount}"
+      false => ""
+    }
+    return ObjectPayload.fromBytes(
+      entry.objectPath,
+      image.payload,
+      payloadHash
+    )
+  }
+}

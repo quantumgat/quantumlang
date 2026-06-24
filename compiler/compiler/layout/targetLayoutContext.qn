@@ -1,0 +1,27 @@
+pub TargetLayoutContext {
+  targetTriple: string
+  pointerSize: u64
+  pointerAlignment: u64
+  stackAlignment: u64
+  littleEndian: bool = true
+  deterministic: bool = true
+}
+
+impl TargetLayoutContext {
+  pub TargetLayoutContext(
+    targetTriple: string,
+    pointerSize: u64,
+    pointerAlignment: u64,
+    stackAlignment: u64
+  ) =
+    This { targetTriple, pointerSize, pointerAlignment, stackAlignment }
+}
+
+impl view TargetLayoutContext {
+  pub valid: bool =>
+    targetTriple != "" &&
+    (pointerSize == 4 || pointerSize == 8) &&
+    pointerAlignment > 0 &&
+    stackAlignment >= pointerAlignment &&
+    deterministic
+}

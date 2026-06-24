@@ -1,0 +1,10 @@
+module analysis
+
+mod {
+  tokenAnalysis
+}
+
+export {
+  tokenAnalysis.TokenPair
+  tokenAnalysis.verifyNested
+}

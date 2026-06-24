@@ -1,0 +1,39 @@
+pub enum CommunicationState {
+  Open
+  Completing
+  Completed
+  Failed
+  Cancelled
+  Closed
+}
+
+pub enum CommunicationErrorKind {
+  Closed
+  Backpressured
+  Empty
+  Cancelled
+  Failed
+  Rejected
+  NoHandler
+  InvalidToken
+}
+
+pub CommunicationError {
+  kind: CommunicationErrorKind
+  message: string = ""
+}
+
+impl view CommunicationError {
+  pub retryable: bool =>
+    kind == CommunicationErrorKind.Backpressured ||
+    kind == CommunicationErrorKind.Empty
+}
+
+pub CommunicationToken {
+  id: u64 = 0
+  active: bool = false
+}
+
+impl view CommunicationToken {
+  pub valid: bool => id > 0 && active
+}

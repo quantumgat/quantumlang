@@ -1,0 +1,29 @@
+pub ManifestProduct {
+  package: PackageIdentity
+  target: PackageTarget
+  manifestPath: string
+  sourceRoot: string
+  dependencyCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl ManifestProduct {
+  pub ManifestProduct(
+    package: PackageIdentity,
+    target: PackageTarget,
+    manifestPath: string,
+    sourceRoot: string,
+    dependencyCount: i64
+  ) =
+    This { package, target, manifestPath, sourceRoot, dependencyCount }
+}
+
+impl view ManifestProduct {
+  pub valid: bool =>
+    package.valid &&
+    target.valid &&
+    manifestPath != "" &&
+    sourceRoot != "" &&
+    dependencyCount >= 0 &&
+    deterministic
+}

@@ -1,0 +1,46 @@
+pub BackendDiagnostic {
+  code: BackendDiagnosticCode
+  sourcePath: string
+  line: i64
+  column: i64
+  symbolName: string
+  message: string
+  help: string
+}
+
+impl BackendDiagnostic {
+  pub BackendDiagnostic(
+    code: BackendDiagnosticCode,
+    sourcePath: string,
+    line: i64,
+    column: i64,
+    symbolName: string,
+    message: string,
+    help: string
+  ) =
+    This {
+      code
+      sourcePath
+      line
+      column
+      symbolName
+      message
+      help
+    }
+
+  pub objectError(sourcePath: string, line: i64, column: i64, symbolName: string, message: string, help: string) =
+    This(BackendDiagnosticCode.objectWriter("QNATIVE0700"), sourcePath, line, column, symbolName, message, help)
+}
+
+impl view BackendDiagnostic {
+  pub valid => code.valid &&
+    sourcePath != "" &&
+    line >= 0 &&
+    column >= 0 &&
+    message != ""
+  pub hasSymbol => symbolName != ""
+  pub hasHelp => help != ""
+  pub location => "{sourcePath}:{line}:{column}"
+  pub diagnosticHash => "{code.code}:{sourcePath}:{line}:{column}:{symbolName}:{message}:{help}"
+  pub debugName => "diag.{code.code}.{location}"
+}

@@ -1,0 +1,34 @@
+pub enum LoopTransferKind {
+  Break
+  Continue
+  Return
+}
+
+pub LoopTarget {
+  transferId: i64
+  kind: LoopTransferKind
+  targetLoopId: i64
+  label: string
+  resolved: bool = false
+  diagnosticCode: string = ""
+}
+
+impl LoopTarget {
+  pub LoopTarget(
+    transferId: i64,
+    kind: LoopTransferKind,
+    targetLoopId: i64,
+    label: string
+  ) -> This {
+    if targetLoopId >= 0 {
+      return This { transferId, kind, targetLoopId, label, resolved: true }
+    }
+    This { transferId, kind, targetLoopId, label, diagnosticCode: "QTCFLOW0002" }
+  }
+
+  isBreak() = kind == LoopTransferKind.Break
+
+  isContinue() = kind == LoopTransferKind.Continue
+
+  isResolved() = resolved
+}

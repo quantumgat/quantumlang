@@ -1,0 +1,47 @@
+import platform::{HostArch, HostOs, HostPlatform, LinuxPlatform}
+
+pub HostInfo {
+  arch: HostArch
+  os: HostOs
+  platform: HostPlatform
+  source: string = "default"
+}
+
+impl HostInfo {
+  pub HostInfo(arch: HostArch, os: HostOs, platform: HostPlatform, source: string) =
+    This {
+      arch
+      os
+      platform
+      source
+    }
+
+  pub current() =
+    This.forLinuxX86_64()
+
+  pub forLinuxX86_64() =
+    This(
+      HostArch.x86_64(),
+      HostOs.linux(),
+      LinuxPlatform().hostDefault(HostArch.x86_64()),
+      "host-default-linux-x86_64"
+    )
+}
+
+impl view HostInfo {
+  pub targetTriple => "{arch.name}-unknown-{os.name}-gnu"
+  pub objectFormat => platform.objectFormat
+  pub abi => platform.abi
+  pub profile => "debug"
+  pub executableSuffix => platform.executableSuffix
+  pub pointerBits => arch.pointerBits
+  pub hosted => platform.hosted
+  pub nativeLinkable => platform.nativeLinkable
+  pub valid =>
+    arch.valid &&
+    os.valid &&
+    platform.valid &&
+    objectFormat != "" &&
+    abi != "" &&
+    source != ""
+}

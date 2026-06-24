@@ -1,0 +1,120 @@
+import source::{SourceSpan}
+
+pub enum AstDeclarationKind {
+  Module
+  Type
+  Impl
+  View
+  Role
+  Function
+  Import
+  Context
+  Extract
+  Extend
+  Unknown
+}
+
+pub enum AstDeclarationVisibility {
+  Public
+  Private
+  Exported
+  Unknown
+}
+
+pub AstDeclaration {
+  kind: AstDeclarationKind = AstDeclarationKind.Unknown
+  modulePath: string = ""
+  name: string = ""
+  importAlias: string = ""
+  selectedSymbol: string = ""
+  wildcardImport: bool = false
+  excludedSymbolCount: i64 = 0
+  excludedSymbols: Vec<string> = []
+  genericParameterCount: i64 = 0
+  genericParameters: Vec<string> = []
+  parameters: Vec<string> = []
+  genericParameterRows: Vec<AstGenericParameter> = []
+  parameterRows: Vec<AstCallableParameter> = []
+  roleConformances: Vec<AstRoleConformance> = []
+  returnTypeName: string = ""
+  ownerTypeName: string = ""
+  memberKind: string = ""
+  span: SourceSpan = {}
+  visibility: AstDeclarationVisibility = AstDeclarationVisibility.Unknown
+}
+
+impl AstDeclaration {
+  pub AstDeclaration(
+    kind: AstDeclarationKind,
+    modulePath: string,
+    name: string,
+    span: SourceSpan,
+    visibility: AstDeclarationVisibility
+  ) =
+    This { kind, modulePath, name, span, visibility }
+
+  pub fromImport(
+    modulePath: string,
+    name: string,
+    importAlias: string,
+    selectedSymbol: string,
+    wildcardImport: bool,
+    span: SourceSpan
+  ) =
+    This {
+      kind: AstDeclarationKind.Import
+      modulePath
+      name
+      importAlias
+      selectedSymbol
+      wildcardImport
+      span
+      visibility: AstDeclarationVisibility.Private
+    }
+}
+
+impl view AstDeclaration {
+  pub named: bool => name != ""
+
+  pub moduleOwned: bool => modulePath != ""
+
+  pub aliasedImport: bool =>
+    kind == AstDeclarationKind.Import &&
+    importAlias != ""
+
+  pub publicVisible: bool =>
+    visibility == AstDeclarationVisibility.Public ||
+    visibility == AstDeclarationVisibility.Exported
+
+  pub callableResult: string => {
+    if returnTypeName == "" {
+      "void"
+    } else {
+      returnTypeName
+    }
+  }
+
+  pub memberDeclaration: bool => ownerTypeName != ""
+
+  pub memberCallable: bool => memberKind == "method"
+
+  pub memberValue: bool =>
+    memberKind == "field" ||
+    memberKind == "property" ||
+    memberKind == "enum-variant"
+
+  pub structuredGenericParameters: bool =>
+    genericParameterRows.count == genericParameterCount
+
+  pub structuredParameters: bool =>
+    parameterRows.count == parameters.count
+
+  pub hasRoleConformances: bool => roleConformances.nonEmpty
+
+  pub valid: bool =>
+    kind != AstDeclarationKind.Unknown &&
+    visibility != AstDeclarationVisibility.Unknown &&
+    named &&
+    moduleOwned &&
+    span.valid
+}

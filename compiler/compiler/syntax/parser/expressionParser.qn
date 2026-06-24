@@ -1,0 +1,33 @@
+import core::{FileId}
+import source::{SourceSpan}
+
+pub ExprParser {
+  cursor: i64
+  fileId: FileId = {}
+}
+
+impl ExprParser {
+  pub ExprParser(fileId: FileId) =
+    This {
+      cursor: 0
+      fileId
+    }
+
+  pub ExprParser(fileId: u64) =
+    This(FileId(0, 0, fileId))
+
+  pub parseLiteral() -> AstExpr {
+    let node = AstNode(30, AstNodeKind.Expression, SourceSpan(fileId, cursor, cursor + 1), 1)
+    return AstExpr(30, AstExprKind.Literal, node)
+  }
+
+  pub parseCall() -> AstExpr {
+    let node = AstNode(31, AstNodeKind.Expression, SourceSpan(fileId, cursor, cursor + 1), 2)
+    return AstExpr(31, AstExprKind.Call, node)
+  }
+
+  pub parseRecord() -> AstExpr {
+    let node = AstNode(32, AstNodeKind.Expression, SourceSpan(fileId, cursor, cursor + 1), 2)
+    return AstExpr(32, AstExprKind.Record, node)
+  }
+}

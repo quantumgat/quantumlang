@@ -1,0 +1,16 @@
+pub Owner {
+  value: i64
+}
+
+pub badConstPointerFromWritableReference() -> i64 {
+  let owner: Owner = { value: 1 }
+  let pointer: const *Owner = &owner
+  if pointer.valid {
+    return pointer.value
+  }
+  return 0
+}
+
+pub main() -> i64 {
+  return badConstPointerFromWritableReference()
+}

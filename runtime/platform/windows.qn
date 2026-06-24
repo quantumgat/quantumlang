@@ -1,0 +1,29 @@
+pub WindowsRuntimePlatform {
+  targetTriple: string
+  objectFormat: string
+  abi: string
+  enabled: bool
+}
+
+impl WindowsRuntimePlatform {
+  pub WindowsRuntimePlatform(targetTriple: string, objectFormat: string, abi: string, enabled: bool) =
+    This {
+      targetTriple
+      objectFormat
+      abi
+      enabled
+    }
+
+  pub x86_64() =
+    This {
+      targetTriple: "x86_64-pc-windows-msvc"
+      objectFormat: "coff"
+      abi: "win64"
+      enabled: false
+    }
+}
+
+impl view WindowsRuntimePlatform {
+  pub valid: bool => targetTriple != "" && objectFormat == "coff" && abi != ""
+  pub supported: bool => valid && enabled
+}

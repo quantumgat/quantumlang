@@ -1,0 +1,55 @@
+pub ObjectSection {
+  name: string
+  kind: string
+  offset: i64
+  sizeBytes: i64
+  alignBytes: i64
+  flags: string
+  diagnosticCode: string = ""
+}
+
+impl ObjectSection {
+  pub ObjectSection(
+    name: string,
+    kind: string,
+    offset: i64,
+    sizeBytes: i64,
+    alignBytes: i64,
+    flags: string
+  ) =
+    This {
+      name
+      kind
+      offset
+      sizeBytes
+      alignBytes
+      flags
+    }
+
+  pub text(sizeBytes: i64) =
+    This(".text", "progbits", 0, sizeBytes, 16, "alloc,exec")
+
+  pub rodata(offset: i64, sizeBytes: i64) =
+    This(".rodata", "progbits", offset, sizeBytes, 8, "alloc")
+
+  pub data(offset: i64, sizeBytes: i64) =
+    This(".data", "progbits", offset, sizeBytes, 8, "alloc,write")
+
+  pub bss(offset: i64, sizeBytes: i64) =
+    This(".bss", "nobits", offset, sizeBytes, 8, "alloc,write")
+}
+
+impl view ObjectSection {
+  pub valid => diagnosticCode == "" &&
+    name != "" &&
+    kind != "" &&
+    offset >= 0 &&
+    sizeBytes >= 0 &&
+    alignBytes > 0 &&
+    flags != ""
+  pub executable => flags == "alloc,exec"
+  pub writable => flags == "alloc,write"
+  pub allocated => flags != ""
+  pub sectionHash => "section:{name}:{kind}:{offset}:{sizeBytes}:{alignBytes}:{flags}"
+  pub debugName => "section.{name}.{sizeBytes}"
+}

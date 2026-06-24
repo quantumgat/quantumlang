@@ -1,0 +1,26 @@
+pub RuntimePanic {
+  symbolName: string
+  messageType: string
+  aborts: bool
+}
+
+impl RuntimePanic {
+  pub RuntimePanic(symbolName: string, messageType: string, aborts: bool) =
+    This {
+      symbolName
+      messageType
+      aborts
+    }
+
+  pub core() =
+    This {
+      symbolName: "qtlc_runtime_panic"
+      messageType: "string"
+      aborts: true
+    }
+}
+
+impl view RuntimePanic {
+  pub valid: bool => symbolName != "" && messageType != ""
+  pub panicHash: string => "runtime.panic:{symbolName}:{messageType}:{aborts}"
+}

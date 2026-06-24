@@ -1,0 +1,53 @@
+pub ObjectSymbol {
+  name: string
+  sectionName: string
+  offset: i64
+  sizeBytes: i64
+  binding: string
+  symbolType: string
+  diagnosticCode: string = ""
+}
+
+impl ObjectSymbol {
+  pub ObjectSymbol(
+    name: string,
+    sectionName: string,
+    offset: i64,
+    sizeBytes: i64,
+    binding: string,
+    symbolType: string
+  ) =
+    This {
+      name
+      sectionName
+      offset
+      sizeBytes
+      binding
+      symbolType
+    }
+
+  pub function(name: string, sectionName: string, offset: i64, sizeBytes: i64) =
+    This(name, sectionName, offset, sizeBytes, "global", "function")
+
+  pub localFunction(name: string, sectionName: string, offset: i64, sizeBytes: i64) =
+    This(name, sectionName, offset, sizeBytes, "local", "function")
+
+  pub external(name: string) =
+    This(name, "undefined", 0, 0, "global", "undefined")
+}
+
+impl view ObjectSymbol {
+  pub valid => diagnosticCode == "" &&
+    name != "" &&
+    sectionName != "" &&
+    offset >= 0 &&
+    sizeBytes >= 0 &&
+    binding != "" &&
+    symbolType != ""
+  pub defined => sectionName != "undefined" && symbolType != "undefined"
+  pub undefined => sectionName == "undefined" || symbolType == "undefined"
+  pub global => binding == "global"
+  pub local => binding == "local"
+  pub symbolHash => "symbol:{name}:{sectionName}:{offset}:{sizeBytes}:{binding}:{symbolType}"
+  pub debugName => "symbol.{name}.{binding}.{symbolType}"
+}

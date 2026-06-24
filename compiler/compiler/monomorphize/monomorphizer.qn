@@ -1,0 +1,20 @@
+pub Monomorphizer {
+  deterministic: bool = true
+}
+
+context Monomorphizer {
+  pub materialize(
+    key: InstanceKey,
+    substitution: Substitution,
+    owner: InstanceOwner,
+    bodyCount: i64
+  ) =
+    InstanceProduct {
+      key
+      substitution
+      owner
+      fingerprint: StableInstanceHash.fromKey(key)
+      bodyCount
+      deterministic
+    }
+}

@@ -1,0 +1,65 @@
+pub ProofRange<T> {
+  start: i64
+  count: i64
+}
+
+impl ProofRange<T> {
+  pub ProofRange(start: i64, count: i64) =
+    This { start, count }
+}
+
+impl view ProofRange<T> {
+  pub end: i64 => start + count
+  pub nonEmpty: bool => count > 0
+  pub valid: bool => start >= 0 && count >= 0
+}
+
+pub ProofPair<K, V> {
+  keys: ProofRange<K>
+  values: ProofRange<V>
+  deterministic: bool = true
+}
+
+impl ProofPair<K, V> {
+  pub ProofPair(keys: ProofRange<K>, values: ProofRange<V>) =
+    This { keys, values }
+}
+
+impl view ProofPair<K, V> {
+  pub count: i64 => keys.count
+  pub aligned: bool => keys.count == values.count
+  pub populated: bool => keys.nonEmpty && values.nonEmpty
+  pub valid: bool => keys.valid && values.valid && aligned && populated && deterministic
+}
+
+pub ProofTable<K, V> {
+  pair: ProofPair<K, V>
+  rowCount: i64
+}
+
+impl ProofTable<K, V> {
+  pub ProofTable(pair: ProofPair<K, V>, rowCount: i64) =
+    This { pair, rowCount }
+}
+
+impl view ProofTable<K, V> {
+  pub rowsMatch: bool => pair.count == rowCount
+  pub ready: bool => pair.valid && rowsMatch
+  pub score: i64 => pair.keys.end + pair.values.end + rowCount
+}
+
+main() -> i64 {
+  let keys: ProofRange<string> = ProofRange(0, 4)
+  let values: ProofRange<i64> = ProofRange(10, 4)
+  let proofPair: ProofPair<string, i64> = ProofPair(keys, values)
+  let table: ProofTable<string, i64> = ProofTable(proofPair, 4)
+
+  if proofPair.aligned != true { return 11 }
+  if proofPair.valid != true { return 12 }
+  if table.ready != true { return 13 }
+  if table.score != 22 { return 14 }
+  print("table.score")
+  println("table.score: {table.score}")
+  print("table.score")
+  return 0
+}

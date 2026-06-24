@@ -1,0 +1,14 @@
+import model::{OwnerBox}
+
+pub bumpValue(box: &OwnerBox) -> i64 {
+  box.value = box.value + 1
+  return box.value
+}
+
+pub mutableBorrowProof() -> bool {
+  let box = OwnerBox.sample()
+  let next = bumpValue(&box)
+
+  box.value == 43 &&
+  next == 43
+}

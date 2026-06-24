@@ -1,0 +1,86 @@
+import syntax::{*}
+pub ParserShapeProof {
+  moduleParseProducesRoot: bool
+  itemParsersProduceItems: bool
+  statementParsersProduceStatements: bool
+  expressionParsersProduceExpressions: bool
+  typeParserProducesTypeRefs: bool
+  precedenceRulesStable: bool
+  recoveryHasSyncToken: bool
+  valid: bool
+}
+
+pub parserShapeProof() -> ParserShapeProof {
+  let rootParser = Parser(7, 64)
+  let item = ItemParser(7)
+  let stmt = StmtParser(7)
+  let expr = ExprParser(7)
+  let ty = TypeParser(7)
+
+  let moduleResult = rootParser.parseModule()
+  let importItem = item.parseImport()
+  let functionItem = item.parseFunction()
+  let letStmt = stmt.parseLet()
+  let returnStmt = stmt.parseReturn()
+  let callExpr = expr.parseCall()
+  let recordExpr = expr.parseRecord()
+  let optionalType = ty.parseOptional()
+  let genericType = ty.parseGeneric()
+  let accessPrecedence = Precedence("access", 90, true)
+  let addPrecedence = Precedence("additive", 60, true)
+  let moduloPrecedence = Precedence.forOperator("%")
+  let shiftPrecedence = Precedence.forOperator("<<")
+  let orderingPrecedence = Precedence.forOperator("<=")
+  let bitAndPrecedence = Precedence.forOperator("&")
+  let bitXorPrecedence = Precedence.forOperator("^")
+  let bitOrPrecedence = Precedence.forOperator("|")
+  let assignmentPrecedence = Precedence.forOperator("+=")
+  let recovery = ParseRecovery("}", 1)
+
+  let moduleParseProducesRoot = moduleResult.root.kind == AstNodeKind.Module &&
+    moduleResult.valid
+
+  let itemParsersProduceItems = importItem.kind == AstItemKind.ImportDecl &&
+    functionItem.kind == AstItemKind.FunctionDecl
+
+  let statementParsersProduceStatements = letStmt.kind == AstStmtKind.Let &&
+    returnStmt.kind == AstStmtKind.Return
+
+  let expressionParsersProduceExpressions = callExpr.kind == AstExprKind.Call &&
+    recordExpr.kind == AstExprKind.Record
+
+  let typeParserProducesTypeRefs = optionalType.kind == AstTypeRefKind.Optional &&
+    genericType.kind == AstTypeRefKind.Generic
+
+  let precedenceRulesStable = accessPrecedence.level > addPrecedence.level &&
+    addPrecedence.leftAssociative &&
+    moduloPrecedence.name == "multiplicative" &&
+    shiftPrecedence.level > orderingPrecedence.level &&
+    orderingPrecedence.level > bitAndPrecedence.level &&
+    bitAndPrecedence.level > bitXorPrecedence.level &&
+    bitXorPrecedence.level > bitOrPrecedence.level &&
+    assignmentPrecedence.leftAssociative == false
+
+  let recoveryHasSyncToken = recovery.synchronized &&
+    recovery.diagnostics == 1 &&
+    recovery.canContinue
+
+  let valid = moduleParseProducesRoot &&
+    itemParsersProduceItems &&
+    statementParsersProduceStatements &&
+    expressionParsersProduceExpressions &&
+    typeParserProducesTypeRefs &&
+    precedenceRulesStable &&
+    recoveryHasSyncToken
+
+  return ParserShapeProof {
+    moduleParseProducesRoot: moduleParseProducesRoot,
+    itemParsersProduceItems: itemParsersProduceItems,
+    statementParsersProduceStatements: statementParsersProduceStatements,
+    expressionParsersProduceExpressions: expressionParsersProduceExpressions,
+    typeParserProducesTypeRefs: typeParserProducesTypeRefs,
+    precedenceRulesStable: precedenceRulesStable,
+    recoveryHasSyncToken: recoveryHasSyncToken,
+    valid: valid,
+  }
+}

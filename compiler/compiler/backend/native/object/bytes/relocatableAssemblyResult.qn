@@ -1,0 +1,55 @@
+pub ObjectRelocatableAssemblyResult {
+  segments: ObjectRelocatableSegmentSet
+  payload: bytes = []
+  byteCount: i64
+  segmentCount: i64
+  diagnosticCode: string = ""
+}
+
+impl ObjectRelocatableAssemblyResult {
+  pub ObjectRelocatableAssemblyResult(
+    segments: ObjectRelocatableSegmentSet,
+    payload: bytes,
+    byteCount: i64,
+    segmentCount: i64
+  ) =
+    This {
+      segments
+      payload
+      byteCount
+      segmentCount
+    }
+
+  pub fromSegments(segments: ObjectRelocatableSegmentSet, payload: bytes) =
+    This {
+      segments
+      payload
+      byteCount: payload.length()
+      segmentCount: segments.segmentCount
+      diagnosticCode: match segments.valid &&
+        payload.length() == segments.byteCount {
+        true => ""
+        false => "QNATIVE0771"
+      }
+    }
+
+  pub failed(segments: ObjectRelocatableSegmentSet, diagnosticCode: string) =
+    This {
+      segments
+      payload: []
+      byteCount: 0
+      segmentCount: segments.segmentCount
+      diagnosticCode
+    }
+}
+
+impl view ObjectRelocatableAssemblyResult {
+  pub valid: bool => diagnosticCode == "" &&
+    segments.valid &&
+    payload.length() == byteCount &&
+    byteCount == segments.byteCount &&
+    segmentCount == segments.segmentCount
+
+  pub payloadReady: bool => valid && byteCount > 0
+  pub debugName: string => "object.relocatable.assembly.{segmentCount}.{byteCount}"
+}

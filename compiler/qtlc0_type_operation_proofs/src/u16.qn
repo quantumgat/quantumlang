@@ -1,0 +1,9 @@
+pub proof_u16() -> i64 {
+  let a: u16 = 100
+  let b: u16 = 40
+  let c: u16 = a - b
+  let d: u16 = c + 2
+  if d != 62 { return 11 }
+  println("u16 ok: {d}")
+  return 0
+}

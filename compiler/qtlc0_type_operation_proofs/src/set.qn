@@ -1,0 +1,5 @@
+pub proof_set() -> i64 {
+  let names: Set<string> = #{"native", "registry"}
+  println("set ok")
+  return 0
+}

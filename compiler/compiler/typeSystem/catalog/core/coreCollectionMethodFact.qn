@@ -1,0 +1,69 @@
+pub CoreCollectionMethodFact {
+  receiverType: string
+  name: string
+  kind: CoreCollectionMethodKind = Unknown
+  returnType: string = ""
+  mutatesReceiver: bool = false
+  compilerNeeded: bool = true
+  nativeReady: bool = true
+  valid: bool = false
+}
+
+impl CoreCollectionMethodFact {
+  pub fromReceiver(receiverType: string, name: string) -> This {
+    if receiverType == "Vec" || receiverType.startsWith("Vec<") {
+      return This.vec(receiverType, name)
+    }
+    return This { receiverType, name, compilerNeeded: false, nativeReady: false }
+  }
+
+  pub vec(receiverType: string, name: string) -> This {
+    if name == "push" {
+      return This {
+        receiverType
+        name
+        kind: CoreCollectionMethodKind.Push
+        returnType: "void"
+        mutatesReceiver: true
+        valid: true
+      }
+    }
+    if name == "reserve" {
+      return This {
+        receiverType
+        name
+        kind: CoreCollectionMethodKind.Reserve
+        returnType: receiverType
+        mutatesReceiver: true
+        valid: true
+      }
+    }
+    if name == "asSlice" {
+      return This {
+        receiverType
+        name
+        kind: CoreCollectionMethodKind.AsSlice
+        returnType: sliceTypeFor(receiverType)
+        valid: true
+      }
+    }
+    return This { receiverType, name, compilerNeeded: false, nativeReady: false }
+  }
+}
+
+impl view CoreCollectionMethodFact {
+  pub hasReturn => returnType != ""
+
+  pub compilerSurface => compilerNeeded && valid
+
+  pub hotPath => valid && nativeReady
+}
+
+sliceTypeFor(receiverType: string) -> string {
+  if !receiverType.startsWith("Vec<") {
+    return "Slice<T>"
+  }
+  let elementType = receiverType.slice(4, receiverType.length() - 1).toString()
+  return "Slice<{elementType}>"
+}
+

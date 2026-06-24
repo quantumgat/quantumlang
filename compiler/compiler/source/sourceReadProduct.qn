@@ -1,0 +1,45 @@
+pub SourceReadProduct {
+  request: SourceReadRequest
+  file: SourceFile
+  text: SourceText
+  cacheKeyHigh: u64
+  cacheKeyLow: u64
+  fromCache: bool
+}
+
+impl SourceReadProduct {
+  pub SourceReadProduct(
+    request: SourceReadRequest,
+    file: SourceFile,
+    text: SourceText,
+    cacheKeyHigh: u64,
+    cacheKeyLow: u64,
+    fromCache: bool
+  ) =
+    This {
+      request,
+      file,
+      text,
+      cacheKeyHigh,
+      cacheKeyLow,
+      fromCache,
+    }
+}
+
+impl view SourceReadProduct {
+  pub valid =>
+    request.valid &&
+    file.valid &&
+    text.valid &&
+    request.path == file.path &&
+    file.textHashHigh == text.fingerprintHigh &&
+    file.textHashLow == text.fingerprintLow &&
+    cacheKeyHigh == text.fingerprintHigh &&
+    cacheKeyLow == text.fingerprintLow &&
+    text.byteLength > 0
+
+  pub cacheHit => fromCache && valid
+  pub cacheMiss => fromCache == false
+  pub fingerprintStable => file.fingerprintStable && text.fingerprintStable
+  pub cacheIdentity => "{request.cacheIdentity}:{cacheKeyHigh}:{cacheKeyLow}"
+}

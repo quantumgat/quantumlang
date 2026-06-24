@@ -1,0 +1,38 @@
+import syntax::{PackageAstProduct}
+
+pub FrontendAstProduct {
+  product: PackageAstProduct = {}
+}
+
+impl FrontendAstProduct {
+  pub fromProduct(product: PackageAstProduct) =
+    This { product }
+}
+
+impl view FrontendAstProduct {
+  pub rootCount: i64 => product.rootCount
+
+  pub nodeCount: i64 => product.nodeCount
+
+  pub errorNodeCount: i64 => product.diagnosticCount
+
+  pub moduleRoot: bool => product.moduleRoot
+
+  pub deterministic: bool => product.deterministic
+
+  pub hasRoots => rootCount != 0
+
+  pub hasNodes => nodeCount != 0
+
+  pub clean => errorNodeCount == 0
+
+  pub arenaOwned: bool => product.fileCount > 0 && product.nodeCount == nodeCount
+
+  pub valid =>
+    hasRoots &&
+    hasNodes &&
+    clean &&
+    moduleRoot &&
+    deterministic &&
+    arenaOwned
+}

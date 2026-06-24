@@ -1,0 +1,9 @@
+[module]
+name = "driver"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/driver"
+role = "compiler-driver"
+
+[dependencies]
+modules = ["buildSystem", "core", "driver.progress", "frontend", "moduleSystem", "source", "syntax", "typeSystem"]

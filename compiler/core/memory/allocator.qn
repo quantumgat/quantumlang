@@ -1,0 +1,698 @@
+pub enum MemoryErrorKind {
+  None
+  InvalidAllocator
+  InvalidLayout
+  OutOfMemory
+  InvalidPointer
+  DoubleFree
+  Released
+  Unsupported
+  Unknown
+}
+
+pub MemoryError {
+  kind: MemoryErrorKind = MemoryErrorKind.None
+  message: string = ""
+}
+
+impl MemoryError {
+  pub MemoryError(kind: MemoryErrorKind) =
+    This {
+      kind
+    }
+
+  pub MemoryError(kind: MemoryErrorKind, message: string) =
+    This {
+      kind
+      message
+    }
+}
+
+impl view MemoryError {
+  pub valid => kind != MemoryErrorKind.None
+
+  pub fatal =>
+    kind == MemoryErrorKind.InvalidAllocator ||
+    kind == MemoryErrorKind.InvalidLayout ||
+    kind == MemoryErrorKind.DoubleFree
+}
+
+pub MemoryLayout {
+  size: i64 = 0
+  align: i64 = 1
+  stride: i64 = 0
+}
+
+impl MemoryLayout {
+  pub MemoryLayout(size: i64, align: i64) =
+    This {
+      size
+      align
+      stride: size
+    }
+
+  pub MemoryLayout(size: i64, align: i64, stride: i64) =
+    This {
+      size
+      align
+      stride
+    }
+}
+
+impl view MemoryLayout {
+  pub empty => size == 0
+
+  pub valid => size >= 0 && align > 0 && stride >= size
+}
+
+pub AllocatorMark {
+  generation: u64 = 0
+  allocationCount: i64 = 0
+  liveBytes: i64 = 0
+  valid: bool = false
+}
+
+pub AllocatorCheckpoint {
+  generation: u64 = 0
+  allocationCount: i64 = 0
+  freeCount: i64 = 0
+  liveBytes: i64 = 0
+  peakBytes: i64 = 0
+  valid: bool = false
+}
+
+pub AllocatorSnapshot {
+  name: string = ""
+  generation: u64 = 0
+  allocationCount: i64 = 0
+  freeCount: i64 = 0
+  liveBytes: i64 = 0
+  peakBytes: i64 = 0
+  capacity: i64 = 0
+  remaining: i64 = 0
+  valid: bool = false
+}
+
+pub enum MemoryProtectMode {
+  None
+  Read
+  Write
+  ReadWrite
+  Execute
+  ReadExecute
+}
+
+pub AllocatorProtect {
+  pointer: *u8 = null
+  size: i64 = 0
+  mode: MemoryProtectMode = MemoryProtectMode.None
+  valid: bool = false
+}
+
+pub AllocatorNativeHandle {
+  name: string = ""
+  id: CompilerId = {}
+  valid: bool = false
+}
+
+pub AtomicAllocatorStats {
+  allocationCount: i64 = 0
+  freeCount: i64 = 0
+  liveBytes: i64 = 0
+  peakBytes: i64 = 0
+  valid: bool = false
+}
+
+pub Allocator {
+  name: string = ""
+  safeBoundary: bool = false
+  owner: CompilerId = {}
+  generation: u64 = 0
+  allocationCount: i64 = 0
+  freeCount: i64 = 0
+  liveBytes: i64 = 0
+  peakBytes: i64 = 0
+  capacity: i64 = 0
+  align: i64 = 8
+  tag: string = ""
+  debug: bool = false
+  zeroFill: bool = false
+  guard: bool = false
+  released: bool = false
+  lastError: MemoryError = {}
+  diagnosticCount: i64 = 0
+  threadSafe: bool = false
+  lockedPolicy: bool = false
+  nativeName: string = ""
+  pageSize: i64 = 4096
+}
+
+impl Allocator {
+  pub Allocator(name: string) =
+    This {
+      name
+    }
+
+  pub Allocator(name: string, safeBoundary: bool) =
+    This {
+      name
+      safeBoundary
+    }
+
+  pub alloc<T>(value: T) -> *T {
+    if live == false {
+      return null
+    }
+    return &value
+  }
+
+  pub alloc<T>() -> *T {
+    return null
+  }
+
+  pub allocMany<T>(count: i64) -> *T {
+    if live == false || count <= 0 {
+      return null
+    }
+    return null
+  }
+
+  pub allocBytes(size: i64) -> *u8 {
+    if live == false || size <= 0 {
+      return null
+    }
+    return null
+  }
+
+  pub free<T>(ptr: *T) -> This {
+    if ptr.valid == false {
+      return withError(MemoryError(MemoryErrorKind.InvalidPointer))
+    }
+    return this {
+      freeCount: freeCount + 1
+      generation: generation + 1
+    }
+  }
+
+  pub freeMany<T>(ptr: *T, count: i64) -> This {
+    if count <= 0 {
+      return withError(MemoryError(MemoryErrorKind.InvalidLayout))
+    }
+    return free(ptr)
+  }
+
+  pub freeBytes(ptr: *u8, size: i64) -> This {
+    if size <= 0 || ptr.valid == false {
+      return withError(MemoryError(MemoryErrorKind.InvalidPointer))
+    }
+    return this {
+      freeCount: freeCount + 1
+      generation: generation + 1
+    }
+  }
+
+  pub resizeBytes(ptr: *u8, oldSize: i64, newSize: i64) -> *u8 {
+    if live == false || ptr.valid == false || oldSize < 0 || newSize < 0 {
+      return null
+    }
+    return ptr
+  }
+
+  pub move<T>(from: *T, to: *T) -> This {
+    if from.valid == false || to.valid == false {
+      return withError(MemoryError(MemoryErrorKind.InvalidPointer))
+    }
+    return this {
+      generation: generation + 1
+    }
+  }
+
+  pub copy<T>(from: const *T, to: *T) -> This {
+    if from.valid == false || to.valid == false {
+      return withError(MemoryError(MemoryErrorKind.InvalidPointer))
+    }
+    return this {
+      generation: generation + 1
+    }
+  }
+
+  pub zero(ptr: *u8, size: i64) -> This {
+    if ptr.valid == false || size < 0 {
+      return withError(MemoryError(MemoryErrorKind.InvalidPointer))
+    }
+    return this {
+      generation: generation + 1
+    }
+  }
+
+  pub fill(ptr: *u8, size: i64, value: u8) -> This {
+    if ptr.valid == false || size < 0 {
+      return withError(MemoryError(MemoryErrorKind.InvalidPointer))
+    }
+    return this {
+      generation: generation + 1
+    }
+  }
+
+  pub make<T>(value: T) -> Unique<T> {
+    return Unique<T>(value, owner, generation + 1)
+  }
+
+  pub makeShared<T>(value: T) -> Shared<T> {
+    return Shared<T>(value, owner, generation + 1)
+  }
+
+  pub makePin<T>(value: T) -> Pin<T> {
+    return Pin<T>(value, owner, generation + 1)
+  }
+
+  pub makeBuffer<T>(value: T, capacity: i64) -> Buffer<T> {
+    return Buffer<T>(value, capacity)
+  }
+
+  pub makeArena<T>(capacity: i64) -> ArenaOwner<T> {
+    return ArenaOwner<T>(capacity, owner, generation + 1)
+  }
+
+  pub layout<T>() -> MemoryLayout {
+    return MemoryLayout(0, align, 0)
+  }
+
+  pub layout(size: i64, align: i64) -> MemoryLayout {
+    return MemoryLayout(size, align)
+  }
+
+  pub alignOf<T>() -> i64 {
+    return align
+  }
+
+  pub sizeOf<T>() -> i64 {
+    return 0
+  }
+
+  pub strideOf<T>() -> i64 {
+    return sizeOf<T>()
+  }
+
+  pub owns<T>(ptr: *T) -> bool {
+    return live && ptr.valid
+  }
+
+  pub owns(ptr: *u8) -> bool {
+    return live && ptr.valid
+  }
+
+  pub contains<T>(ptr: *T) -> bool {
+    return owns(ptr)
+  }
+
+  pub contains(ptr: *u8) -> bool {
+    return owns(ptr)
+  }
+
+  pub validPtr<T>(ptr: *T) -> bool {
+    return ptr.valid
+  }
+
+  pub validPtr(ptr: *u8) -> bool {
+    return ptr.valid
+  }
+
+  pub live<T>(ptr: *T) -> bool {
+    return live && ptr.valid
+  }
+
+  pub released<T>(ptr: *T) -> bool {
+    return live(ptr) == false
+  }
+
+  pub withLimit(bytes: i64) -> This {
+    return this {
+      capacity: bytes
+    }
+  }
+
+  pub withAlign(align: i64) -> This {
+    return this {
+      align
+    }
+  }
+
+  pub withTag(tag: string) -> This {
+    return this {
+      tag
+    }
+  }
+
+  pub withDebug(enabled: bool) -> This {
+    return this {
+      debug: enabled
+    }
+  }
+
+  pub withZeroFill(enabled: bool) -> This {
+    return this {
+      zeroFill: enabled
+    }
+  }
+
+  pub withGuard(enabled: bool) -> This {
+    return this {
+      guard: enabled
+    }
+  }
+
+  pub tryAlloc<T>(value: T) -> Result<*T, MemoryError> {
+    if live == false {
+      return Err(MemoryError(MemoryErrorKind.Released))
+    }
+    return Ok(alloc(value))
+  }
+
+  pub tryAllocBytes(size: i64) -> Result<*u8, MemoryError> {
+    if live == false {
+      return Err(MemoryError(MemoryErrorKind.Released))
+    }
+    if size <= 0 {
+      return Err(MemoryError(MemoryErrorKind.InvalidLayout))
+    }
+    return Ok(allocBytes(size))
+  }
+
+  pub tryFree<T>(ptr: *T) -> Result<This, MemoryError> {
+    if ptr.valid == false {
+      return Err(MemoryError(MemoryErrorKind.InvalidPointer))
+    }
+    return Ok(free(ptr))
+  }
+
+  pub mark() -> AllocatorMark {
+    return AllocatorMark {
+      generation
+      allocationCount
+      liveBytes
+      valid: live
+    }
+  }
+
+  pub rewind(mark: AllocatorMark) -> This {
+    if mark.valid == false {
+      return withError(MemoryError(MemoryErrorKind.InvalidPointer))
+    }
+    return this {
+      generation: generation + 1
+      allocationCount: mark.allocationCount
+      liveBytes: mark.liveBytes
+    }
+  }
+
+  pub checkpoint() -> AllocatorCheckpoint {
+    return AllocatorCheckpoint {
+      generation
+      allocationCount
+      freeCount
+      liveBytes
+      peakBytes
+      valid: live
+    }
+  }
+
+  pub rollback(checkpoint: AllocatorCheckpoint) -> This {
+    if checkpoint.valid == false {
+      return withError(MemoryError(MemoryErrorKind.InvalidPointer))
+    }
+    return this {
+      generation: generation + 1
+      allocationCount: checkpoint.allocationCount
+      freeCount: checkpoint.freeCount
+      liveBytes: checkpoint.liveBytes
+      peakBytes: checkpoint.peakBytes
+    }
+  }
+
+  pub snapshot() -> AllocatorSnapshot {
+    return AllocatorSnapshot {
+      name
+      generation
+      allocationCount
+      freeCount
+      liveBytes
+      peakBytes
+      capacity
+      remaining
+      valid
+    }
+  }
+
+  pub reset() -> This {
+    return this {
+      generation: generation + 1
+      allocationCount: 0
+      freeCount: 0
+      liveBytes: 0
+    }
+  }
+
+  pub release() -> This {
+    return this {
+      generation: generation + 1
+      released: true
+      liveBytes: 0
+    }
+  }
+
+  pub threadLocal() -> This {
+    return this {
+      threadSafe: false
+      lockedPolicy: false
+    }
+  }
+
+  pub shared() -> This {
+    return this {
+      threadSafe: true
+    }
+  }
+
+  pub locked() -> This {
+    return this {
+      threadSafe: true
+      lockedPolicy: true
+    }
+  }
+
+  pub atomicStats() -> AtomicAllocatorStats {
+    return AtomicAllocatorStats {
+      allocationCount
+      freeCount
+      liveBytes
+      peakBytes
+      valid
+    }
+  }
+
+  pub astats() -> AtomicAllocatorStats {
+    return atomicStats()
+  }
+
+  pub nativeHandle() -> AllocatorNativeHandle {
+    return AllocatorNativeHandle {
+      name: nativeName
+      id: owner
+      valid
+    }
+  }
+
+  pub native() -> AllocatorNativeHandle {
+    return nativeHandle()
+  }
+
+  pub commit(size: i64) -> This {
+    if size <= 0 {
+      return withError(MemoryError(MemoryErrorKind.InvalidLayout))
+    }
+    return this {
+      capacity: capacity + size
+      generation: generation + 1
+    }
+  }
+
+  pub decommit(ptr: *u8, size: i64) -> This {
+    if ptr.valid == false || size <= 0 {
+      return withError(MemoryError(MemoryErrorKind.InvalidPointer))
+    }
+    return this {
+      generation: generation + 1
+    }
+  }
+
+  pub protect(ptr: *u8, size: i64, mode: MemoryProtectMode) -> AllocatorProtect {
+    return AllocatorProtect {
+      pointer: ptr
+      size
+      mode
+      valid: ptr.valid && size > 0 && mode != MemoryProtectMode.None
+    }
+  }
+
+  pub withError(error: MemoryError) -> This {
+    return this {
+      lastError: error
+      diagnosticCount: diagnosticCount + 1
+    }
+  }
+}
+
+impl view Allocator {
+  pub live => released == false
+
+  pub empty => allocationCount == 0 && liveBytes == 0
+
+  pub used => liveBytes
+
+  pub allocCount => allocationCount
+
+  pub freeCnt => freeCount
+
+  pub errors => diagnosticCount
+
+  pub hasLimit => capacity > 0
+
+  pub bounded => hasLimit
+
+  pub unbounded => hasLimit == false
+
+  pub remaining: i64 => match capacity > liveBytes {
+    true => capacity - liveBytes
+    false => 0
+  }
+
+  pub full => hasLimit && remaining == 0
+
+  pub overLimit => hasLimit && liveBytes > capacity
+
+  pub canAllocate => live && overLimit == false
+
+  pub hasAllocations => allocationCount > 0
+
+  pub hasFrees => freeCount > 0
+
+  pub hasAllocs => hasAllocations
+
+  pub balanced => freeCount <= allocationCount
+
+  pub leaked => liveBytes > 0 && released
+
+  pub tracked => allocationCount > 0 || freeCount > 0 || liveBytes > 0
+
+  pub aligned => align > 0
+
+  pub powerOfTwoAlign =>
+    align == 1 ||
+    align == 2 ||
+    align == 4 ||
+    align == 8 ||
+    align == 16 ||
+    align == 32 ||
+    align == 64 ||
+    align == 128 ||
+    align == 256 ||
+    align == 512 ||
+    align == 1024 ||
+    align == 2048 ||
+    align == 4096 ||
+    align == 8192 ||
+    align == 16384 ||
+    align == 32768 ||
+    align == 65536
+
+  pub guarded => guard
+
+  pub debugMode => debug
+
+  pub zeroFilled => zeroFill
+
+  pub tagged => tag != ""
+
+  pub safe => safeBoundary
+
+  pub unsafeBoundary => safeBoundary == false
+
+  pub threadLocalPolicy => threadSafe == false
+
+  pub sharedPolicy => threadSafe
+
+  pub locked => lockedPolicy
+
+  pub lockRequired => sharedPolicy && lockedPolicy == false
+
+  pub nativeBacked => nativeName != ""
+
+  pub hasNativeHandle => nativeBacked && owner.valid
+
+  pub abiStable => safeBoundary && nativeName != ""
+
+  pub pageAligned => pageSize > 0 && pageSize >= align
+
+  pub hasError => lastError.valid
+
+  pub clean => hasError == false && diagnosticCount == 0
+
+  pub diagnosticFree => diagnosticCount == 0
+
+  pub failed => hasError
+
+  pub fatal => lastError.fatal
+
+  pub recoverable => hasError && fatal == false
+
+  pub fits(layout: MemoryLayout) -> bool {
+    return accepts(layout) && wouldExceed(layout.size) == false
+  }
+
+  pub fits(size: i64) -> bool {
+    return size >= 0 && wouldExceed(size) == false
+  }
+
+  pub fits(size: i64, align: i64) -> bool {
+    return fits(size) && acceptsAlign(align)
+  }
+
+  pub wouldOverflow(size: i64) -> bool {
+    if size < 0 {
+      return true
+    }
+    if hasLimit == false {
+      return false
+    }
+    return size > remaining
+  }
+
+  pub wouldExceed(size: i64) -> bool {
+    return wouldOverflow(size)
+  }
+
+  pub accepts(layout: MemoryLayout) -> bool {
+    return layout.valid && acceptsAlign(layout.align)
+  }
+
+  pub acceptsAlign(value: i64) -> bool {
+    return value > 0 && value <= align
+  }
+
+  pub ownsLayout(layout: MemoryLayout) -> bool {
+    return accepts(layout)
+  }
+
+  pub errorKind(kind: MemoryErrorKind) -> bool {
+    return lastError.kind == kind
+  }
+
+  pub valid =>
+    name != "" &&
+    aligned &&
+    balanced &&
+    overLimit == false &&
+    pageSize > 0 &&
+    live
+}

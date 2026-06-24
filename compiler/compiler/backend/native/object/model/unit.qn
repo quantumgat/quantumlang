@@ -1,0 +1,84 @@
+pub ObjectUnit {
+  key: ObjectUnitKey
+  symbolName: string
+  objectHash: string
+  cachePath: string
+  reusable: bool
+  missReason: string
+  diagnosticCode: string = ""
+}
+
+impl ObjectUnit {
+  pub ObjectUnit(
+    key: ObjectUnitKey,
+    symbolName: string,
+    objectHash: string,
+    cachePath: string,
+    reusable: bool,
+    missReason: string
+  ) =
+    This { key, symbolName, objectHash, cachePath, reusable, missReason }
+
+  pub cached(key: ObjectUnitKey, symbolName: string, objectHash: string, cachePath: string) =
+    This {
+      key
+      symbolName
+      objectHash
+      cachePath
+      reusable: true
+      missReason: ""
+    }
+
+  pub miss(key: ObjectUnitKey, symbolName: string, objectHash: string, cachePath: string, missReason: string) =
+    This {
+      key
+      symbolName
+      objectHash
+      cachePath
+      reusable: false
+      missReason
+    }
+
+  pub fromObjectFile(
+    key: ObjectUnitKey,
+    symbolName: string,
+    objectFile: ObjectFile,
+    cachePath: string,
+    reusable: bool,
+    missReason: string
+  ) =
+    This {
+      key
+      symbolName
+      objectHash: objectFile.objectHash
+      cachePath
+      reusable
+      missReason
+      diagnosticCode: match objectFile.valid {
+        true => ""
+        false => "QNATIVE0702"
+      }
+    }
+
+  withObjectHash(objectHash: string) =
+    this {
+      objectHash
+    }
+
+  markRebuilt(missReason: string) =
+    this {
+      reusable: false
+      missReason
+    }
+}
+
+impl view ObjectUnit {
+  pub missValid => reusable || missReason != ""
+  pub valid => diagnosticCode == "" && key.valid && symbolName != "" && objectHash != "" && cachePath != "" && missValid
+  pub cacheHit => reusable && valid
+  pub cacheMiss => reusable == false
+  pub rebuildRequired => cacheMiss
+  pub linkable => valid && objectHash != "" && cachePath != ""
+  pub lowerable => valid
+  pub debugName => "native.object.unit.{symbolName}.{objectHash}"
+}

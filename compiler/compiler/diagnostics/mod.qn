@@ -1,0 +1,35 @@
+module diagnostics
+
+mod {
+  diagnostic
+  diagnosticCode
+  diagnosticDomain
+  diagnosticSpec
+  diagnosticRegistry
+  codes.typeDiagnosticCode as typeDiagnosticCode
+  codes.literalDiagnosticCode as literalDiagnosticCode
+  codes.functionDiagnosticCode as functionDiagnosticCode
+  diagnosticBag
+  label
+  reporter
+  color
+  severity
+  diagnosticPolicy
+}
+
+export {
+  diagnostic.{Diagnostic}
+  diagnosticCode.{DiagnosticCode}
+  diagnosticDomain.{DiagnosticDomain}
+  diagnosticSpec.{DiagnosticSpec}
+  diagnosticRegistry.{DiagnosticRegistry}
+  typeDiagnosticCode.{TypeDiagnosticCode}
+  literalDiagnosticCode.{LiteralDiagnosticCode}
+  functionDiagnosticCode.{FunctionDiagnosticCode}
+  diagnosticBag.{DiagnosticBag}
+  label.{DiagnosticLabel}
+  reporter.{DiagnosticReporter}
+  color.{DiagnosticColor}
+  severity.{DiagnosticSeverity}
+  diagnosticPolicy.{DiagnosticPolicy}
+}

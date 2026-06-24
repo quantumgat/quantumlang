@@ -1,0 +1,14 @@
+pub enum ProgressStatus {
+  Pending
+  Running
+  Completed
+  Failed
+  Cancelled
+}
+
+impl view ProgressStatus {
+  pub terminal: bool =>
+    this == ProgressStatus.Completed ||
+    this == ProgressStatus.Failed ||
+    this == ProgressStatus.Cancelled
+}

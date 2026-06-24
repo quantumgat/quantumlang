@@ -1,0 +1,26 @@
+pub X86CompareSelect {
+  compareKind: string
+  widthBits: i64
+  selectedOpcode: string = "cmp"
+  flagResult: string = "eflags"
+  diagnosticCode: string = ""
+}
+
+impl X86CompareSelect {
+  pub X86CompareSelect(compareKind: string, widthBits: i64) =
+    This {
+      compareKind
+      widthBits
+    }
+}
+
+impl view X86CompareSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    compareKind != "" &&
+    widthBits > 0 &&
+    selectedOpcode != "" &&
+    flagResult != ""
+
+  pub debugName: string => "isel.x86_64.compare.{compareKind}.{widthBits}"
+}

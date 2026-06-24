@@ -1,0 +1,51 @@
+pub EmitPlan {
+  targetTriple: string
+  objectFormat: string
+  functionCount: i64
+  entrySymbolName: string
+  planHash: string
+  diagnosticCode: string = ""
+}
+
+impl EmitPlan {
+  pub EmitPlan(
+    targetTriple: string,
+    objectFormat: string,
+    functionCount: i64,
+    entrySymbolName: string,
+    planHash: string
+  ) =
+    This {
+      targetTriple
+      objectFormat
+      functionCount
+      entrySymbolName
+      planHash
+    }
+
+  pub fromMachineUnit(unit: MachineUnit, target: TargetIdentity, entrySymbolName: string) =
+    This {
+      targetTriple: target.targetTriple
+      objectFormat: target.objectFormat
+      functionCount: unit.functionCount
+      entrySymbolName
+      planHash: "emit-plan:{unit.machineHash}:{target.targetOptionsHash}:{entrySymbolName}"
+      diagnosticCode: match unit.valid && target.valid && entrySymbolName != "" {
+        true => ""
+        false => "QNATIVE0900"
+      }
+    }
+}
+
+impl view EmitPlan {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetTriple != "" &&
+    objectFormat != "" &&
+    functionCount > 0 &&
+    entrySymbolName != "" &&
+    planHash != ""
+
+  pub linkable: bool => valid
+  pub debugName: string => "emit.plan.{targetTriple}.{entrySymbolName}"
+}

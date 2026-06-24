@@ -1,0 +1,25 @@
+pub PackageGraph {
+  packageCount: i64 = 0
+  dependencyCount: i64 = 0
+  lockfileRequired: bool = true
+  provenanceRequired: bool = true
+  cycleCount: i64 = 0
+  valid: bool = true
+}
+
+impl PackageGraph {
+  pub PackageGraph(packageCount: i64, dependencyCount: i64) =
+    This { packageCount, dependencyCount }
+}
+
+impl view PackageGraph {
+  pub singlePackage => packageCount == 1
+
+  pub hasDependencies => dependencyCount > 0
+
+  pub cycleFree => cycleCount == 0
+
+  pub supplyChainReady => lockfileRequired && provenanceRequired
+
+  pub buildable => valid && cycleFree && packageCount > 0
+}

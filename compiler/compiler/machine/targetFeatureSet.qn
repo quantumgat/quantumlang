@@ -1,0 +1,16 @@
+pub TargetFeatureSet {
+  enabledCount: i64
+  requiredCount: i64
+  deterministic: bool
+  valid: bool
+}
+
+impl TargetFeatureSet {
+  pub TargetFeatureSet(enabledCount: i64, requiredCount: i64) =
+    This {
+      enabledCount,
+      requiredCount,
+      deterministic: true,
+      valid: enabledCount >= requiredCount && requiredCount >= 0,
+    }
+}

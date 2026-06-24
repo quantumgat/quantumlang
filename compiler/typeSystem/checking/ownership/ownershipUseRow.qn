@@ -1,0 +1,112 @@
+pub OwnershipUseRow {
+  rowId: i64 = 0
+  kind: OwnershipUseKind = Unknown
+  subject: string = ""
+  authority: OwnershipAuthorityRow = {}
+  addressKind: OwnershipAddressKind = Unknown
+  escapesToGlobal: bool = false
+}
+
+impl OwnershipUseRow {
+  pub OwnershipUseRow(
+    rowId: i64,
+    kind: OwnershipUseKind,
+    subject: string,
+    authority: OwnershipAuthorityRow,
+    addressKind: OwnershipAddressKind
+  ) =
+    This {
+      rowId
+      kind
+      subject
+      authority
+      addressKind
+    }
+
+  pub globalEscape(
+    rowId: i64,
+    subject: string,
+    authority: OwnershipAuthorityRow,
+    addressKind: OwnershipAddressKind
+  ) =
+    This {
+      rowId
+      kind: EscapeToGlobal
+      subject
+      authority
+      addressKind
+      escapesToGlobal: true
+    }
+}
+
+impl view OwnershipUseRow {
+  pub copyRejected => kind == CopyOwner && authority.moveOnly
+
+  pub writeRejected => kind.requiresWritableAddress && addressKind.readOnly
+
+  pub escapeRejected =>
+    escapesToGlobal &&
+    authority.canEscapeScope == false
+
+  pub manualReleaseRejected =>
+    kind.manualRelease &&
+    authority.manualFreeAllowed == false
+
+  pub handleCloseValid =>
+    kind != CloseHandle ||
+    (authority.externalResource && authority.idempotentClose)
+
+  pub rejected =>
+    copyRejected ||
+    writeRejected ||
+    escapeRejected ||
+    manualReleaseRejected ||
+    handleCloseValid == false
+
+  pub diagnosticCode: string => {
+    if copyRejected {
+      return "QTOWN0101"
+    }
+    if writeRejected {
+      return "QTOWN0102"
+    }
+    if escapeRejected {
+      return "QTOWN0103"
+    }
+    if manualReleaseRejected {
+      return "QTOWN0104"
+    }
+    if handleCloseValid == false {
+      return "QTOWN0105"
+    }
+    return ""
+  }
+
+  pub diagnosticMessage: string => {
+    if copyRejected {
+      return "move-only owner cannot be copied"
+    }
+    if writeRejected {
+      return "cannot write through read-only ownership view"
+    }
+    if escapeRejected {
+      return "ownership view cannot escape to global lifetime"
+    }
+    if manualReleaseRejected {
+      return "manual free/delete is rejected in safe ownership code"
+    }
+    if handleCloseValid == false {
+      return "close is only valid for idempotent external handles"
+    }
+    return ""
+  }
+
+  pub deterministic =>
+    rowId >= 0 &&
+    kind.valid &&
+    subject != "" &&
+    authority.valid &&
+    addressKind != Unknown
+
+  pub valid => deterministic && handleCloseValid
+}

@@ -1,0 +1,142 @@
+import declaration::{DeclarationKind, DeclarationRecord}
+
+pub OwnershipAuthorityRow {
+  rowId: i64 = 0
+  declarationId: i64 = 0
+  modulePath: string = ""
+  name: string = ""
+  authorityKind: OwnershipAuthorityKind = Unknown
+  addressKind: OwnershipAddressKind = Unknown
+  ownsStorage: bool = false
+  canEscapeScope: bool = false
+  moveOnly: bool = false
+  sharedOwner: bool = false
+  weakView: bool = false
+  stableAddress: bool = false
+  regionOwner: bool = false
+  globalLifetime: bool = false
+  permanentLifetime: bool = false
+  externalResource: bool = false
+  idempotentClose: bool = false
+  manualFreeAllowed: bool = false
+  backendAuthorityRequired: bool = false
+  diagnosticStart: i64 = 0
+  diagnosticCount: i64 = 0
+}
+
+impl OwnershipAuthorityRow {
+  pub fromRecord(rowId: i64, record: DeclarationRecord) -> This {
+    let authority = This.authorityKindForRecord(record)
+    return This {
+      rowId
+      declarationId: record.id
+      modulePath: record.modulePath
+      name: record.name
+      authorityKind: authority
+      addressKind: This.addressKindForAuthority(authority)
+      ownsStorage: authority.ownsStorage
+      canEscapeScope: authority.canEscapeScope
+      moveOnly: This.moveOnlyForAuthority(authority)
+      sharedOwner: authority == SharedOwner
+      weakView: authority == WeakView
+      stableAddress: authority == PinnedOwner
+      regionOwner: authority == ArenaRegion
+      globalLifetime: authority == GlobalOwner || authority == PermanentOwner
+      permanentLifetime: authority == PermanentOwner
+      externalResource: authority == ExternalHandle
+      idempotentClose: authority == ExternalHandle
+      manualFreeAllowed: false
+      backendAuthorityRequired: authority != Unknown
+    }
+  }
+}
+
+impl view OwnershipAuthorityRow {
+  pub authorityKindForRecord(record: DeclarationRecord) -> OwnershipAuthorityKind {
+    if record.name == "Unique" {
+      return UniqueOwner
+    }
+    if record.name == "Shared" {
+      return SharedOwner
+    }
+    if record.name == "Weak" {
+      return WeakView
+    }
+    if record.name == "Pin" {
+      return PinnedOwner
+    }
+    if record.name == "Arena" {
+      return ArenaRegion
+    }
+    if record.name == "Global" {
+      return GlobalOwner
+    }
+    if record.name == "Permanent" {
+      return PermanentOwner
+    }
+    if record.name == "Handle" {
+      return ExternalHandle
+    }
+    if record.kind == DeclarationKind.Function {
+      return CallableBoundary
+    }
+    return Unknown
+  }
+
+  pub addressKindForAuthority(authority: OwnershipAuthorityKind) -> OwnershipAddressKind {
+    match authority {
+      UniqueOwner => SmartOwner
+      SharedOwner => SmartOwner
+      WeakView => ConstReference
+      PinnedOwner => SmartOwner
+      ArenaRegion => SmartOwner
+      GlobalOwner => OwnershipAddressKind.GlobalOwner
+      PermanentOwner => OwnershipAddressKind.GlobalOwner
+      ExternalHandle => OwnershipAddressKind.ExternalHandle
+      RawView => Pointer
+      _ => Value
+    }
+  }
+
+  pub moveOnlyForAuthority(authority: OwnershipAuthorityKind) -> bool {
+    match authority {
+      UniqueOwner => true
+      PinnedOwner => true
+      ArenaRegion => true
+      ExternalHandle => true
+      _ => false
+    }
+  }
+
+  pub key => "{modulePath}:{name}:{declarationId}"
+
+  pub deterministic => rowId >= 0 && declarationId >= 0 && modulePath != "" && name != ""
+
+  pub smartOwner =>
+    authorityKind == UniqueOwner ||
+    authorityKind == SharedOwner ||
+    authorityKind == PinnedOwner ||
+    authorityKind == ArenaRegion ||
+    authorityKind == GlobalOwner ||
+    authorityKind == PermanentOwner ||
+    authorityKind == ExternalHandle
+
+  pub storagePolicyValid =>
+    ownsStorage == authorityKind.ownsStorage &&
+    weakView == (authorityKind == WeakView) &&
+    (weakView == false || ownsStorage == false) &&
+    manualFreeAllowed == false
+
+  pub lifetimePolicyValid =>
+    (permanentLifetime == false || globalLifetime) &&
+    (stableAddress == false || moveOnly) &&
+    (idempotentClose == false || externalResource)
+
+  pub valid =>
+    deterministic &&
+    authorityKind != Unknown &&
+    addressKind != Unknown &&
+    storagePolicyValid &&
+    lifetimePolicyValid &&
+    backendAuthorityRequired
+}

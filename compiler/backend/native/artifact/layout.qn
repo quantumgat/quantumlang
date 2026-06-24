@@ -1,0 +1,76 @@
+pub Layout {
+  packageRoot: string = ""
+  packageName: string
+  profile: string
+  debugDir: string
+  releaseDir: string
+  cachePrivate: bool
+  diagnosticCode: string = ""
+}
+
+impl Layout {
+  pub Layout(packageName: string, profile: string) =
+    This {
+      packageName
+      profile
+      debugDir: "build/debug"
+      releaseDir: "build/release"
+      cachePrivate: true
+    }
+
+  pub forPackage(packageRoot: string, packageName: string, profile: string) =
+    This {
+      packageRoot
+      packageName
+      profile
+      debugDir: "build/debug"
+      releaseDir: "build/release"
+      cachePrivate: true
+    }
+
+  withProfile(profile: string) =
+    this {
+      profile
+    }
+
+  publicCache() =
+    this {
+      cachePrivate: false
+    }
+}
+
+impl view Layout {
+  pub valid => diagnosticCode == "" && packageName != "" && profile != "" && debugDir != "" && releaseDir != ""
+  pub debugProfile => profile == "debug"
+  pub releaseProfile => profile == "release"
+  pub profileDir: string => {
+    if releaseProfile {
+      releaseDir
+    } else {
+      debugDir
+    }
+  }
+  pub outputDir: string => {
+    if packageRoot != "" {
+      return "{packageRoot}/{profileDir}"
+    }
+    return profileDir
+  }
+  pub artifactPath(extension: string) -> string {
+    return "{outputDir}/{packageName}.{extension}"
+  }
+  pub objectSetPath => artifactPath("objects")
+  pub executablePath => "{outputDir}/{packageName}"
+  pub buildPlanPath => artifactPath("build-plan")
+  pub cacheIsPrivate => cachePrivate
+  pub profileInfo: ArtifactProfile => ArtifactProfile.named(profile)
+  pub naming: ArtifactNaming => ArtifactNaming.forPackage(packageName)
+  pub paths: ArtifactPaths => ArtifactPaths.fromNaming(packageRoot, profileInfo, naming)
+  pub cacheScope: ArtifactCacheScope => match cachePrivate {
+    true => ArtifactCacheScope.private()
+    false => ArtifactCacheScope.public()
+  }
+  pub product: ArtifactProduct => ArtifactProduct.fromLayout(this)
+  pub lowerable => valid
+  pub debugName => "native.artifact.{packageName}.{profile}"
+}

@@ -1,0 +1,6 @@
+pub proof_vec() -> i64 {
+  let values: Vec<i64> = [1, 2, 3]
+  let empty: Vec<i64> = []
+  println("vec ok")
+  return 0
+}

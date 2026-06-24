@@ -1,0 +1,26 @@
+pub Probe {
+  name: string
+  transport: string
+  maxClockHz: i64
+}
+
+impl Probe {
+  pub Probe(name: string, transport: string, maxClockHz: i64) =
+    This {
+      name
+      transport
+      maxClockHz
+    }
+
+  pub swd(name: string, maxClockHz: i64) =
+    This(name, "swd", maxClockHz)
+
+  pub jtag(name: string, maxClockHz: i64) =
+    This(name, "jtag", maxClockHz)
+}
+
+impl view Probe {
+  pub valid => name != "" && transport != "" && maxClockHz > 0
+  pub swd => transport == "swd"
+  pub jtag => transport == "jtag"
+}

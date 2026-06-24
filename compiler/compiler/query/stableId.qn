@@ -1,0 +1,107 @@
+pub StableId {
+  kind: StableIdKind
+  packageHash: u64
+  moduleHash: u64
+  localHash: u64
+  disambiguator: u64
+}
+
+impl StableId {
+  pub init(
+    kind: StableIdKind,
+    packageHash: u64,
+    moduleHash: u64,
+    localHash: u64,
+    disambiguator: u64
+  ) =
+    This { kind, packageHash, moduleHash, localHash, disambiguator }
+
+  pub package(packageHash: u64) =
+    This(StableIdKind.Package, packageHash, 0, 0, 0)
+
+  pub module(packageHash: u64, moduleHash: u64) =
+    This(StableIdKind.Module, packageHash, moduleHash, 0, 0)
+
+  pub file(packageHash: u64, moduleHash: u64, localHash: u64) =
+    This(StableIdKind.File, packageHash, moduleHash, localHash, 0)
+
+  pub item(packageHash: u64, moduleHash: u64, localHash: u64, disambiguator: u64) =
+    This(StableIdKind.Item, packageHash, moduleHash, localHash, disambiguator)
+
+  pub body(packageHash: u64, moduleHash: u64, localHash: u64, disambiguator: u64) =
+    This(StableIdKind.Body, packageHash, moduleHash, localHash, disambiguator)
+
+  pub node(packageHash: u64, moduleHash: u64, localHash: u64, disambiguator: u64) =
+    This(StableIdKind.Node, packageHash, moduleHash, localHash, disambiguator)
+
+  pub symbol(packageHash: u64, moduleHash: u64, localHash: u64, disambiguator: u64) =
+    This(StableIdKind.Symbol, packageHash, moduleHash, localHash, disambiguator)
+
+  pub typeId(packageHash: u64, moduleHash: u64, localHash: u64, disambiguator: u64) =
+    This(StableIdKind.Type, packageHash, moduleHash, localHash, disambiguator)
+
+  pub effect(packageHash: u64, moduleHash: u64, localHash: u64, disambiguator: u64) =
+    This(StableIdKind.Effect, packageHash, moduleHash, localHash, disambiguator)
+
+  pub quantumResource(packageHash: u64, moduleHash: u64, localHash: u64, disambiguator: u64) =
+    This(StableIdKind.QuantumResource, packageHash, moduleHash, localHash, disambiguator)
+
+  pub genericInstance(packageHash: u64, moduleHash: u64, localHash: u64, disambiguator: u64) =
+    This(StableIdKind.GenericInstance, packageHash, moduleHash, localHash, disambiguator)
+
+  pub codegenUnit(packageHash: u64, moduleHash: u64, localHash: u64, disambiguator: u64) =
+    This(StableIdKind.CodegenUnit, packageHash, moduleHash, localHash, disambiguator)
+
+  pub objectUnit(packageHash: u64, moduleHash: u64, localHash: u64, disambiguator: u64) =
+    This(StableIdKind.ObjectUnit, packageHash, moduleHash, localHash, disambiguator)
+
+  pub linkTarget(packageHash: u64, localHash: u64, disambiguator: u64) =
+    This(StableIdKind.LinkTarget, packageHash, 0, localHash, disambiguator)
+}
+
+impl view StableId {
+  pub packageScoped => packageHash != 0
+  pub moduleScoped => moduleHash != 0
+  pub localScoped => localHash != 0
+  pub bodyScoped => disambiguator != 0
+  pub frontendIdentity =>
+    kind == StableIdKind.Package ||
+    kind == StableIdKind.Module ||
+    kind == StableIdKind.File ||
+    kind == StableIdKind.Item ||
+    kind == StableIdKind.Body ||
+    kind == StableIdKind.Node ||
+    kind == StableIdKind.Symbol ||
+    kind == StableIdKind.Type ||
+    kind == StableIdKind.Effect ||
+    kind == StableIdKind.QuantumResource ||
+    kind == StableIdKind.GenericInstance
+  pub backendIdentity =>
+    kind == StableIdKind.CodegenUnit ||
+    kind == StableIdKind.ObjectUnit ||
+    kind == StableIdKind.LinkTarget
+  pub valid =>
+    (
+      kind == StableIdKind.Package &&
+      packageScoped
+    ) ||
+    (
+      kind == StableIdKind.Module &&
+      packageScoped &&
+      moduleScoped
+    ) ||
+    (
+      kind == StableIdKind.LinkTarget &&
+      packageScoped &&
+      localScoped
+    ) ||
+    (
+      kind != StableIdKind.Package &&
+      kind != StableIdKind.Module &&
+      kind != StableIdKind.LinkTarget &&
+      packageScoped &&
+      moduleScoped &&
+      localScoped
+    )
+  pub stableKey => "{kind}:{packageHash}:{moduleHash}:{localHash}:{disambiguator}"
+}

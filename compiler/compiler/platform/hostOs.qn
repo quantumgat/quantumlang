@@ -1,0 +1,50 @@
+pub HostOs {
+  name: string
+  family: PlatformFamily
+  pathSeparator: string
+  executableSuffix: string
+  known: bool = true
+}
+
+impl HostOs {
+  pub HostOs(name: string, family: PlatformFamily, pathSeparator: string, executableSuffix: string) =
+    This {
+      name
+      family
+      pathSeparator
+      executableSuffix
+      known: name != "" && family.valid && pathSeparator != ""
+    }
+
+  pub linux() =
+    This("linux", PlatformFamily.hosted(), "/", "")
+
+  pub windows() =
+    This("windows", PlatformFamily.hosted(), "\\", ".exe")
+
+  pub macos() =
+    This("macos", PlatformFamily.hosted(), "/", "")
+
+  pub freebsd() =
+    This("freebsd", PlatformFamily.hosted(), "/", "")
+
+  pub none() =
+    This("none", PlatformFamily.bareMetal(), "/", "")
+
+  pub unknown() =
+    This {
+      name: "unknown"
+      family: PlatformFamily()
+      pathSeparator: "/"
+      executableSuffix: ""
+      known: false
+    }
+}
+
+impl view HostOs {
+  pub hosted => family.hosted
+  pub bareMetal => family.bareMetal
+  pub windowsStylePath => pathSeparator == "\\"
+  pub posixStylePath => pathSeparator == "/"
+  pub valid => known && name != "" && family.valid && pathSeparator != ""
+}

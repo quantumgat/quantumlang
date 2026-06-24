@@ -1,0 +1,13 @@
+import core::{Unique}
+
+pub ManualFreeUser {
+  name: string = ""
+}
+
+pub manualFreeDeleteSafeCode() -> bool {
+  let owner = Unique<ManualFreeUser>({ name: "A" })
+  let pointer = owner.ptr()
+  free(pointer)
+  delete(pointer)
+  return pointer.valid
+}

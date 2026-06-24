@@ -1,0 +1,24 @@
+pub LoopResultFact {
+  loopId: i64
+  hasValue: bool
+  resultTypeName: string
+  breakCount: usize
+  allBreakValuesCompatible: bool
+}
+
+impl LoopResultFact {
+  pub LoopResultFact(loopId: i64, hasValue: bool, resultTypeName: string, breakCount: usize) =
+    This {
+      loopId
+      hasValue
+      resultTypeName
+      breakCount
+      allBreakValuesCompatible: true
+    }
+
+  isValid() = allBreakValuesCompatible
+
+  hasBreaks() = breakCount > 0
+
+  carriesValue() = hasValue
+}

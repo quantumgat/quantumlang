@@ -1,0 +1,80 @@
+pub ObjectRuleBatch {
+  nameCode: i64
+  count: i64
+}
+
+pub ObjectRuleArea {
+  count: i64
+}
+
+pub ObjectRuleTable {
+  storage: ObjectRuleArea
+  nameCode: i64
+  count: i64
+}
+
+impl ObjectRuleBatch {
+  pub ObjectRuleBatch(nameCode: i64, count: i64) =
+    This { nameCode, count }
+
+  pub sample() =
+    This(7, 4)
+}
+
+impl ObjectRuleArea {
+  pub ObjectRuleArea(count: i64) =
+    This { count }
+}
+
+impl ObjectRuleTable {
+  pub ObjectRuleTable(storage: ObjectRuleArea, nameCode: i64, count: i64) =
+    This { storage, nameCode, count }
+
+  pub valid() =
+    storage.count == count && nameCode > 0
+}
+
+// Locked final call rules:
+//   arenaFromBatch(batch)       read borrow/default, no move
+//   arenaFromBatch(&batch)      explicit read borrow
+//   arenaFromBatch(^batch)      move ownership
+//   arenaFromBatch(&!batch)     mutable borrow
+//   let pointer: *Batch = &batch
+//   pointer.valid               validated direct target access
+//   ...value                    spread/variadic expansion
+
+arenaFromRuleBatchRead(batch: ObjectRuleBatch) -> ObjectRuleArea {
+  return ObjectRuleArea { count: batch.count }
+}
+
+// Final desired qtlc0 behavior after explicit ownership symbols:
+// tableFromReadDefault(batch: ObjectRuleBatch) -> ObjectRuleTable {
+//   let storage = arenaFromRuleBatchRead(batch)
+//   return ObjectRuleTable {
+//     storage
+//     name: batch.name
+//     count: batch.count
+//   }
+// }
+
+tableFromRuleExtractBeforeConsume(batch: ObjectRuleBatch) -> ObjectRuleTable {
+  let nameCode = batch.nameCode
+  let count = batch.count
+  let storage = ObjectRuleArea { count }
+  return ObjectRuleTable { storage, nameCode, count }
+}
+
+main() -> i64 {
+  let batch = ObjectRuleBatch.sample()
+  let table = ObjectRuleTable {
+    storage: ObjectRuleArea { count: batch.count }
+    nameCode: batch.nameCode
+    count: batch.count
+  }
+  println("omg: ####################")
+  if table.valid() != true {
+    return 1
+  }
+
+  return 0
+}

@@ -1,0 +1,77 @@
+import declaration::{DeclarationRecord, DeclarationVisibility}
+import source::{SourceSpan}
+
+pub SurfaceConformanceRow {
+  row: i64 = 0
+  declarationId: i64 = 0
+  kind: OopSurfaceKind = OopSurfaceKind.Unknown
+  modulePath: string = ""
+  targetTypeName: string = ""
+  surfaceVisibility: DeclarationVisibility = DeclarationVisibility.Private
+  mergeKey: string = ""
+  conformanceKey: string = ""
+  genericParameterCount: i64 = 0
+  roleStart: i64 = 0
+  roleCount: i64 = 0
+  policy: OopSurfacePolicy = {}
+  span: SourceSpan = {}
+}
+
+impl SurfaceConformanceRow {
+  pub fromRecord(
+    row: i64,
+    record: DeclarationRecord,
+    kind: OopSurfaceKind
+  ) =
+    This {
+      row
+      declarationId: record.id
+      kind
+      modulePath: record.modulePath
+      targetTypeName: record.name
+      surfaceVisibility: record.visibility
+      mergeKey: This.mergeKey(record, kind)
+      conformanceKey: This.conformanceKey(record, kind)
+      genericParameterCount: record.genericParameterCount
+      roleStart: 0
+      roleCount: record.roleConformances.count
+      policy: OopSurfacePolicy.forKind(kind)
+      span: record.span
+    }
+
+  mergeKey(record: DeclarationRecord, kind: OopSurfaceKind) -> string {
+    return "{record.modulePath}:{oopSurfaceKindName(kind)}:{record.name}"
+  }
+
+  conformanceKey(record: DeclarationRecord, kind: OopSurfaceKind) -> string {
+    let key = This.mergeKey(record, kind)
+    let index: i64 = 0
+    while index < record.roleConformances.count {
+      let role = record.roleConformances[index]
+      key = "{key}:role={role.roleName}"
+      index = index + 1
+    }
+    return key
+  }
+}
+
+impl view SurfaceConformanceRow {
+  pub surfaceName => oopSurfaceKindName(kind)
+
+  pub hasRoles => roleCount > 0
+
+  pub publicVisible =>
+    surfaceVisibility == DeclarationVisibility.Public ||
+    surfaceVisibility == DeclarationVisibility.Exported
+
+  pub valid =>
+    row >= 0 &&
+    declarationId > 0 &&
+    oopSurfaceKindValid(kind) &&
+    modulePath != "" &&
+    targetTypeName != "" &&
+    mergeKey != "" &&
+    conformanceKey != "" &&
+    policy.valid &&
+    span.valid
+}

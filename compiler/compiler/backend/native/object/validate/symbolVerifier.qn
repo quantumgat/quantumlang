@@ -1,0 +1,35 @@
+pub ObjectSymbolVerifier {
+  symbols: ObjectSymbolLayout
+  issueCount: i64
+  diagnosticCode: string = ""
+}
+
+impl ObjectSymbolVerifier {
+  pub ObjectSymbolVerifier(symbols: ObjectSymbolLayout, issueCount: i64, diagnosticCode: string) =
+    This {
+      symbols
+      issueCount
+      diagnosticCode
+    }
+
+  pub fromLayout(symbols: ObjectSymbolLayout) =
+    This {
+      symbols
+      issueCount: match symbols.valid {
+        true => 0
+        false => 1
+      }
+      diagnosticCode: match symbols.valid {
+        true => ""
+        false => "QNATIVE0742"
+      }
+    }
+}
+
+impl view ObjectSymbolVerifier {
+  pub valid: bool => diagnosticCode == "" &&
+    issueCount == 0 &&
+    symbols.valid
+  pub failed: bool => !valid
+  pub debugName: string => "object.symbol.verify.{symbols.symbolCount}.{issueCount}"
+}

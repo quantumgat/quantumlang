@@ -1,0 +1,9 @@
+[module]
+name = "nameResolve"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/nameResolve"
+role = "name-resolution"
+
+[dependencies]
+modules = ["core", "declaration", "moduleSystem"]

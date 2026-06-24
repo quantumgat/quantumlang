@@ -1,0 +1,39 @@
+pub RuntimeTargetSupport {
+  targetTriple: string
+  objectFormat: string
+  abi: string
+  supported: bool
+}
+
+impl RuntimeTargetSupport {
+  pub RuntimeTargetSupport(
+    targetTriple: string,
+    objectFormat: string,
+    abi: string,
+    supported: bool
+  ) =
+    This {
+      targetTriple
+      objectFormat
+      abi
+      supported
+    }
+
+  pub linuxX86_64() =
+    This {
+      targetTriple: "x86_64-unknown-linux-gnu"
+      objectFormat: "elf"
+      abi: "sysv"
+      supported: true
+    }
+}
+
+impl view RuntimeTargetSupport {
+  pub valid: bool =>
+    targetTriple != "" &&
+    objectFormat != "" &&
+    abi != "" &&
+    supported
+
+  pub supportHash: string => "runtime.target:{targetTriple}:{objectFormat}:{abi}:{supported}"
+}

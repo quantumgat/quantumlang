@@ -1,0 +1,45 @@
+pub QidxProduct {
+  indexPath: string
+  contentHashHigh: u64
+  contentHashLow: u64
+  packageCount: usize
+  moduleIndexCount: usize
+  symbolIndexCount: usize
+  capsuleOffsetCount: usize
+}
+
+impl QidxProduct {
+  pub QidxProduct(
+    indexPath: string,
+    contentHashHigh: u64,
+    contentHashLow: u64,
+    packageCount: usize,
+    moduleIndexCount: usize,
+    symbolIndexCount: usize,
+    capsuleOffsetCount: usize,
+  ) =
+    This {
+      indexPath
+      contentHashHigh
+      contentHashLow
+      packageCount
+      moduleIndexCount
+      symbolIndexCount
+      capsuleOffsetCount
+    }
+}
+
+impl view QidxProduct {
+  pub deterministic => true
+  pub hashed => contentHashHigh != 0 || contentHashLow != 0
+  pub hasPackages => packageCount > 0
+  pub hasModules => moduleIndexCount > 0
+  pub hasSymbols => symbolIndexCount > 0
+  pub hasOffsets => capsuleOffsetCount > 0
+  pub valid =>
+    indexPath != "" &&
+    hasPackages &&
+    hasModules &&
+    hasSymbols &&
+    hasOffsets
+}

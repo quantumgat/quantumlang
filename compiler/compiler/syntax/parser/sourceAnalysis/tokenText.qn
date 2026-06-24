@@ -1,0 +1,11 @@
+import syntax::{LexProduct}
+
+pub tokenText(input: LexProduct, start: i64, end: i64) -> string {
+  let result = ""
+  let cursor = start
+  while cursor < end && cursor < input.tokenCount {
+    result = "{result}{input.tokenAt(cursor).text}"
+    cursor = cursor + 1
+  }
+  return result
+}

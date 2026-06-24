@@ -1,0 +1,29 @@
+pub TextCursor {
+  view: TextView = {}
+  position: i64 = 0
+}
+
+impl TextCursor {
+  pub TextCursor(value: string) =
+    This { view: TextView(value) }
+
+  pub TextCursor(view: TextView) =
+    This { view }
+
+  pub TextCursor(view: TextView, position: i64) =
+    This { view, position }
+
+  pub advance(count: i64) -> TextCursor {
+    let next = position + count
+    if next > view.byteLength {
+      next = view.byteLength
+    }
+    return This(view, next)
+  }
+}
+
+impl view TextCursor {
+  pub atEnd => position >= view.byteLength
+  pub remaining => view.byteLength - position
+  pub valid => view.valid && position >= 0 && position <= view.byteLength
+}

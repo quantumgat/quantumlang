@@ -1,0 +1,29 @@
+pub X86Pattern {
+  sourceOpcode: string
+  selectedOpcode: string
+  operandCount: i64
+  requiresRex: bool = false
+  diagnosticCode: string = ""
+}
+
+impl X86Pattern {
+  pub X86Pattern(sourceOpcode: string, selectedOpcode: string, operandCount: i64) =
+    This {
+      sourceOpcode
+      selectedOpcode
+      operandCount
+    }
+
+  pub exact(sourceOpcode: string, selectedOpcode: string, operandCount: i64) =
+    This(sourceOpcode, selectedOpcode, operandCount)
+}
+
+impl view X86Pattern {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    sourceOpcode != "" &&
+    selectedOpcode != "" &&
+    operandCount >= 0
+
+  pub debugName: string => "isel.x86_64.pattern.{sourceOpcode}.{selectedOpcode}"
+}

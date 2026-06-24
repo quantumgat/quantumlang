@@ -1,0 +1,28 @@
+import model::{OwnerBox, OwnerView}
+
+pub readDefault(box: OwnerBox) -> OwnerView {
+  OwnerView(box.value)
+}
+
+pub readExplicit(box: const &OwnerBox) -> OwnerView {
+  OwnerView(box.value)
+}
+
+pub readNestedDefault(box: OwnerBox) -> i64 {
+  let view = readDefault(box)
+  box.value + view.value
+}
+
+pub readBorrowProof() -> bool {
+  let box = OwnerBox.sample()
+  let before = box.value
+  let defaultView = readDefault(box)
+  let explicitView = readExplicit(const &box)
+  let after = box.value
+
+  before == 42 &&
+  defaultView.value == 42 &&
+  explicitView.value == 42 &&
+  after == 42 &&
+  readNestedDefault(box) == 84
+}

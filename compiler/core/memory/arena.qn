@@ -1,0 +1,525 @@
+pub ArenaRef<T> {
+  pointer: const *T = null
+  owner: CompilerId = {}
+  generation: u64 = 0
+  proven: bool = false
+}
+
+impl view ArenaRef<T> {
+  pub valid => proven && pointer.valid && owner.valid
+
+  pub readable => valid
+
+  pub writable => false
+
+  pub ptr() -> const *T {
+    return pointer
+  }
+
+  pub cptr() -> const *T {
+    return pointer
+  }
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return valid && generation == currentGeneration
+  }
+
+  pub sameOwner(other: ArenaRef<T>) -> bool {
+    return owner == other.owner
+  }
+
+  pub sameOwner(other: ArenaPtr<T>) -> bool {
+    return owner == other.owner
+  }
+
+  pub sameGen(other: ArenaRef<T>) -> bool {
+    return generation == other.generation
+  }
+
+  pub sameGen(other: ArenaPtr<T>) -> bool {
+    return generation == other.generation
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub expired(currentGeneration: u64) -> bool {
+    return stale(currentGeneration)
+  }
+
+  pub expired(owner: ArenaOwner<T>) -> bool {
+    return this.owner != owner.owner || generation != owner.generation
+  }
+}
+
+pub ArenaPtr<T> {
+  pointer: *T = null
+  owner: CompilerId = {}
+  generation: u64 = 0
+  proven: bool = false
+}
+
+impl view ArenaPtr<T> {
+  pub valid => proven && pointer.valid && owner.valid
+
+  pub readable => valid
+
+  pub writable => valid
+
+  pub ptr() -> *T {
+    return pointer
+  }
+
+  pub cptr() -> const *T {
+    if pointer.valid == false {
+      return null
+    }
+    return const *pointer
+  }
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return valid && generation == currentGeneration
+  }
+
+  pub sameOwner(other: ArenaPtr<T>) -> bool {
+    return owner == other.owner
+  }
+
+  pub sameOwner(other: ArenaRef<T>) -> bool {
+    return owner == other.owner
+  }
+
+  pub sameGen(other: ArenaPtr<T>) -> bool {
+    return generation == other.generation
+  }
+
+  pub sameGen(other: ArenaRef<T>) -> bool {
+    return generation == other.generation
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub asRef() -> ArenaRef<T> {
+    return ArenaRef<T> {
+      pointer: cptr()
+      owner
+      generation
+      proven
+    }
+  }
+
+  pub expired(owner: ArenaOwner<T>) -> bool {
+    return this.owner != owner.owner || generation != owner.generation
+  }
+}
+
+pub ArenaLease<T> {
+  owner: CompilerId = {}
+  generation: u64 = 0
+  allocCount: i64 = 0
+  active: bool = false
+}
+
+impl view ArenaLease<T> {
+  pub readOnly => valid
+
+  pub writable => valid
+
+  pub valid => active && owner.valid && allocCount >= 0
+
+  pub expired(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub sameOwner(owner: CompilerId) -> bool {
+    return this.owner == owner
+  }
+
+  pub covers(ref: ArenaRef<T>) -> bool {
+    return valid &&
+      ref.valid &&
+      ref.owner == owner &&
+      ref.generation == generation
+  }
+
+  pub covers(ptr: ArenaPtr<T>) -> bool {
+    return valid &&
+      ptr.valid &&
+      ptr.owner == owner &&
+      ptr.generation == generation
+  }
+
+  pub covers(owner: ArenaOwner<T>) -> bool {
+    return valid &&
+      owner.valid &&
+      this.owner == owner.owner &&
+      generation == owner.generation
+  }
+}
+
+pub ArenaMark {
+  owner: CompilerId = {}
+  generation: u64 = 0
+  allocCount: i64 = 0
+  valid: bool = false
+}
+
+pub ArenaCheckpoint {
+  owner: CompilerId = {}
+  generation: u64 = 0
+  allocCount: i64 = 0
+  released: bool = false
+  sealed: bool = false
+  valid: bool = false
+}
+
+pub ArenaSnapshot {
+  owner: CompilerId = {}
+  generation: u64 = 0
+  allocCount: i64 = 0
+  capacity: i64 = 0
+  remaining: i64 = 0
+  released: bool = false
+  sealed: bool = false
+  valid: bool = false
+}
+
+pub ArenaStats {
+  allocCount: i64 = 0
+  capacity: i64 = 0
+  remaining: i64 = 0
+  valid: bool = false
+}
+
+pub ArenaOwner<T> {
+  arena: Arena<T> = {}
+  owner: CompilerId = {}
+  generation: u64 = 0
+  released: bool = false
+}
+
+impl ArenaOwner<T> {
+  pub ArenaOwner(capacity: i64) =
+    This {
+      arena: Arena<T> {
+        rows: Range<T>(0, capacity)
+        capacity: capacity
+        allocationCount: 0
+      }
+    }
+
+  pub ArenaOwner(capacity: i64, owner: CompilerId, generation: u64) =
+    This {
+      arena: Arena<T> {
+        rows: Range<T>(0, capacity)
+        capacity: capacity
+        owner: owner
+        generation: generation
+        allocationCount: 0
+      }
+      owner: owner
+      generation: generation
+    }
+
+  pub ArenaOwner(source: Arena<T>) =
+    This {
+      arena: source
+      owner: source.owner
+      generation: source.generation
+      released: source.released
+    }
+
+  pub alloc(value: T) -> ArenaPtr<T> {
+    let pointer = arena.allocate(value)
+    return ArenaPtr<T> {
+      pointer
+      owner
+      generation: arena.generation
+      proven: arena.owns(pointer)
+    }
+  }
+
+  pub allocMany(count: i64) -> ArenaStats {
+    if count < 0 {
+      return ArenaStats()
+    }
+    return ArenaStats {
+      allocCount: arena.allocationCount + count
+      capacity: arena.capacity
+      remaining: remaining - count
+      valid: live && count <= remaining
+    }
+  }
+
+  pub allocBytes(size: i64) -> ArenaStats {
+    if size < 0 {
+      return ArenaStats()
+    }
+    return ArenaStats {
+      allocCount: arena.allocationCount
+      capacity: arena.capacity
+      remaining
+      valid: live && size >= 0
+    }
+  }
+
+  pub borrow(pointer: const *T) -> ArenaRef<T> {
+    return ArenaRef<T> {
+      pointer
+      owner
+      generation: arena.generation
+      proven: arena.owns(pointer)
+    }
+  }
+
+  pub borrow(pointer: *T) -> ArenaPtr<T> {
+    return ArenaPtr<T> {
+      pointer
+      owner
+      generation: arena.generation
+      proven: arena.owns(pointer)
+    }
+  }
+
+  pub ptr(value: T) -> *T {
+    return alloc(value).pointer
+  }
+
+  pub cptr(value: T) -> const *T {
+    return alloc(value).asRef().pointer
+  }
+
+  pub contains(pointer: *T) -> bool {
+    return arena.contains(pointer)
+  }
+
+  pub contains(pointer: const *T) -> bool {
+    return arena.contains(pointer)
+  }
+
+  pub owns(pointer: *T) -> bool {
+    return arena.owns(pointer)
+  }
+
+  pub owns(pointer: const *T) -> bool {
+    return arena.owns(pointer)
+  }
+
+  pub validPtr(pointer: *T) -> bool {
+    return pointer.valid && owns(pointer)
+  }
+
+  pub validPtr(pointer: const *T) -> bool {
+    return pointer.valid && owns(pointer)
+  }
+
+  pub livePtr(pointer: *T) -> bool {
+    return live && validPtr(pointer)
+  }
+
+  pub livePtr(pointer: const *T) -> bool {
+    return live && validPtr(pointer)
+  }
+
+  pub ok(pointer: *T) -> bool {
+    return validPtr(pointer)
+  }
+
+  pub ok(pointer: const *T) -> bool {
+    return validPtr(pointer)
+  }
+
+  pub alive(pointer: *T) -> bool {
+    return livePtr(pointer)
+  }
+
+  pub alive(pointer: const *T) -> bool {
+    return livePtr(pointer)
+  }
+
+  pub lease() -> ArenaLease<T> {
+    return ArenaLease<T> {
+      owner
+      generation: arena.generation
+      allocCount: arena.allocationCount
+      active: live
+    }
+  }
+
+  pub mark() -> ArenaMark {
+    return ArenaMark {
+      owner
+      generation
+      allocCount: arena.allocationCount
+      valid: live
+    }
+  }
+
+  pub rewind(mark: ArenaMark) -> This {
+    if mark.valid == false || mark.owner != owner {
+      return this
+    }
+    let nextArena = arena.rewind(mark.allocCount)
+    return this {
+      arena: nextArena
+      generation: nextArena.generation
+    }
+  }
+
+  pub checkpoint() -> ArenaCheckpoint {
+    return ArenaCheckpoint {
+      owner
+      generation
+      allocCount: arena.allocationCount
+      released
+      sealed: arena.sealed
+      valid: live
+    }
+  }
+
+  pub rollback(checkpoint: ArenaCheckpoint) -> This {
+    if checkpoint.valid == false || checkpoint.owner != owner {
+      return this
+    }
+    let nextArena = arena.rewind(checkpoint.allocCount)
+    return this {
+      arena: nextArena
+      generation: nextArena.generation
+      released: checkpoint.released
+    }
+  }
+
+  pub snapshot() -> ArenaSnapshot {
+    return ArenaSnapshot {
+      owner
+      generation
+      allocCount: arena.allocationCount
+      capacity: arena.capacity
+      remaining
+      released
+      sealed: arena.sealed
+      valid
+    }
+  }
+
+  pub stats() -> ArenaStats {
+    return ArenaStats {
+      allocCount
+      capacity
+      remaining
+      valid
+    }
+  }
+
+  pub clear() -> This {
+    return reset()
+  }
+
+  pub reset() -> This {
+    let nextArena = arena.reset()
+    return this {
+      arena: nextArena
+      generation: nextArena.generation
+    }
+  }
+
+  pub release() -> This {
+    let nextArena = arena.release()
+    return this {
+      arena: nextArena
+      generation: nextArena.generation
+      released: true
+    }
+  }
+
+  pub seal() -> This {
+    return this {
+      arena: arena.seal()
+      generation: generation + 1
+    }
+  }
+
+  pub unseal() -> This {
+    let nextArena = arena.unseal()
+    return this {
+      arena: nextArena
+      generation: generation + 1
+    }
+  }
+
+  pub make(value: T) -> ArenaPtr<T> {
+    return alloc(value)
+  }
+
+  pub makeRef(value: T) -> ArenaRef<T> {
+    return alloc(value).asRef()
+  }
+
+  pub makeLease(value: T) -> ArenaLease<T> {
+    let ignored = alloc(value)
+    return lease()
+  }
+}
+
+impl view ArenaOwner<T> {
+  pub live => released == false && arena.live
+
+  pub empty => allocCount == 0
+
+  pub sealed => arena.sealed
+
+  pub allocCount => arena.allocationCount
+
+  pub capacity => arena.capacity
+
+  pub remaining => arena.remaining
+
+  pub full => capacity > 0 && remaining == 0
+
+  pub hasCapacity => arena.hasCapacity
+
+  pub overCapacity => allocCount > capacity
+
+  pub canAllocate => live && overCapacity == false && full == false
+
+  pub ownsStorage => live
+
+  pub regionOwner => true
+
+  pub stableRegion => owner.valid
+
+  pub tracked => allocCount > 0
+
+  pub fits(count: i64) -> bool {
+    return count >= 0 && count <= remaining
+  }
+
+  pub fitsBytes(size: i64) -> bool {
+    return size >= 0 && live
+  }
+
+  pub exceeds(count: i64) -> bool {
+    return fits(count) == false
+  }
+
+  pub accepts(ptr: ArenaPtr<T>) -> bool {
+    return ptr.valid && ptr.owner == owner && ptr.generation == generation
+  }
+
+  pub accepts(ref: ArenaRef<T>) -> bool {
+    return ref.valid && ref.owner == owner && ref.generation == generation
+  }
+
+  pub accepts(lease: ArenaLease<T>) -> bool {
+    return lease.valid && lease.owner == owner && lease.generation == generation
+  }
+
+  pub sameRegion(other: ArenaOwner<T>) -> bool {
+    return owner == other.owner && generation == other.generation
+  }
+
+  pub valid => arena.valid && live && overCapacity == false
+}

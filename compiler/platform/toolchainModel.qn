@@ -1,0 +1,38 @@
+pub ToolchainModel {
+  linker: string
+  archiver: string
+  objectDump: string
+  sdkRoot: string = ""
+  crossPrefix: string = ""
+}
+
+impl ToolchainModel {
+  pub ToolchainModel(linker: string, archiver: string, objectDump: string, sdkRoot: string, crossPrefix: string) =
+    This {
+      linker
+      archiver
+      objectDump
+      sdkRoot
+      crossPrefix
+    }
+
+  pub linux() =
+    This("cc", "ar", "objdump", "", "")
+
+  pub windows() =
+    This("link.exe", "lib.exe", "dumpbin.exe", "", "")
+
+  pub macos() =
+    This("clang", "ar", "otool", "", "")
+
+  pub embedded(prefix: string) =
+    This("{prefix}ld", "{prefix}ar", "{prefix}objdump", "", prefix)
+}
+
+impl view ToolchainModel {
+  pub linkerReady => linker != ""
+  pub archiverReady => archiver != ""
+  pub objectDumpReady => objectDump != ""
+  pub cross => crossPrefix != ""
+  pub valid => linkerReady && archiverReady
+}

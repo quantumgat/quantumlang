@@ -1,0 +1,183 @@
+pub TypedViewStage {
+  code: i64
+  ready: bool
+}
+
+pub TypedViewError {
+  code: i64
+  message: string
+}
+
+pub TypedViewUser {
+  id: i64
+  name: string
+  active: bool
+}
+
+impl TypedViewStage {
+  pub TypedViewStage(code: i64, ready: bool) =
+    This { code, ready }
+}
+
+impl TypedViewUser {
+  pub TypedViewUser(id: i64, name: string, active: bool) =
+    This { id, name, active }
+}
+
+impl view TypedViewUser {
+  pub activeCopy => active
+  pub nameCopy: string => this.name
+  pub aliasInt: int => 21
+  pub aliasUint: uint => 22
+  pub signed8: i8 => 8
+  pub unsigned8: u8 => 9
+  pub rawByte: byte => 10
+  pub signed16: i16 => 16
+  pub unsigned16: u16 => 17
+  pub signed32: i32 => 32
+  pub unsigned32: u32 => 33
+  pub signed64: i64 => id
+  pub unsigned64: u64 => 64
+  pub signedSize: isize => 65
+  pub unsignedSize: usize => 66
+  pub ratio32: f32 => 3.5
+  pub ratio64: f64 => 6.25
+  pub idCopy => id
+  pub readyLabel: string => {
+    if active {
+      name
+    } else {
+      "inactive"
+    }
+  }
+  pub readyState: bool => {
+    if this.active {
+      true
+    } else {
+      false
+    }
+  }
+  pub nextId: i64 => {
+    if id > 0 {
+      id + 1
+    } else {
+      0
+    }
+  }
+  pub stage: TypedViewStage => {
+    if active {
+      TypedViewStage(id, true)
+    } else {
+      TypedViewStage(0, false)
+    }
+  }
+  pub maybeStage: Option<TypedViewStage> => {
+    if active {
+      Some(TypedViewStage(id + 10, true))
+    } else {
+      None
+    }
+  }
+  pub stageResult: Result<TypedViewStage, TypedViewError> => {
+    if active {
+      Ok(TypedViewStage(id + 20, true))
+    } else {
+      Err(TypedViewError {
+        code: 404
+        message: "inactive"
+      })
+    }
+  }
+}
+
+pub typedViewPropertyProof() -> i64 {
+  let user = TypedViewUser(7, "Ali", true)
+  let inactiveUser = TypedViewUser(0, "Omar", false)
+  let expectedRatio32: f32 = 3.5
+  let expectedRatio64: f64 = 6.25
+
+  if user.activeCopy != true { return 301 }
+  if user.nameCopy != "Ali" { return 302 }
+  if user.aliasInt != 21 { return 303 }
+  if user.aliasUint != 22 { return 304 }
+  if user.signed8 != 8 { return 305 }
+  if user.unsigned8 != 9 { return 306 }
+  if user.rawByte != 10 { return 307 }
+  if user.signed16 != 16 { return 308 }
+  if user.unsigned16 != 17 { return 309 }
+  if user.signed32 != 32 { return 310 }
+  if user.unsigned32 != 33 { return 311 }
+  if user.signed64 != 7 { return 312 }
+  if user.unsigned64 != 64 { return 313 }
+  if user.signedSize != 65 { return 314 }
+  if user.unsignedSize != 66 { return 315 }
+  if user.ratio32 != expectedRatio32 { return 316 }
+  if user.ratio64 != expectedRatio64 { return 317 }
+  if user.idCopy != 7 { return 318 }
+  if user.readyLabel != "Ali" { return 319 }
+  if user.readyState != true { return 320 }
+  if user.nextId != 8 { return 321 }
+
+  let stage = user.stage
+  if stage.code != 7 { return 322 }
+  if stage.ready != true { return 323 }
+
+  let inactiveStage = inactiveUser.stage
+  if inactiveStage.code != 0 { return 324 }
+  if inactiveStage.ready != false { return 325 }
+  if inactiveUser.readyLabel != "inactive" { return 326 }
+  if inactiveUser.readyState != false { return 327 }
+  if inactiveUser.nextId != 0 { return 328 }
+
+  match user.maybeStage {
+    Some(activeStage) => {
+      if activeStage.code != 17 { return 329 }
+      if activeStage.ready != true { return 330 }
+    }
+    None => return 331
+  }
+
+  match inactiveUser.maybeStage {
+    Some(stageValue) => return 332
+    None => {}
+  }
+
+  match user.stageResult {
+    Ok(resultStage) => {
+      if resultStage.code != 27 { return 333 }
+      if resultStage.ready != true { return 334 }
+    }
+    Err(error) => return 335
+  }
+
+  match inactiveUser.stageResult {
+    Ok(resultStage) => return 336
+    Err(error) => {
+      if error.code != 404 { return 337 }
+      if error.message != "inactive" { return 338 }
+    }
+  }
+
+  return 0
+}
+
+main() -> i64 {
+  typedViewPropertyProof()
+  
+  let omg: string = "edfvf test \n"
+  let omgTest: i256 = 34523453524535444444444444444444444444444444
+  let omgTest2: dec256 = 34523453524535444444444444444444444444444444
+  let omgTest4: decimal = 34523453524535444444444444444444444444444444
+  let omgTest3: i64 = 345234535
+
+  println(omgTest3)
+
+
+  println(omgTest)
+  println(omgTest2)
+  println("omgTest4: {omgTest4}")
+
+  println(omg)
+  
+  return 0
+}

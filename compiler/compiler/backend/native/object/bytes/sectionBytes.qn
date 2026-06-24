@@ -1,0 +1,43 @@
+pub SectionBytes {
+  sectionName: string
+  byteCount: i64
+  alignBytes: i64
+  byteHash: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl SectionBytes {
+  pub SectionBytes(sectionName: string, byteCount: i64, alignBytes: i64, byteHash: string) =
+    This {
+      sectionName
+      byteCount
+      alignBytes
+      byteHash
+    }
+
+  pub fromSection(section: ObjectSection) =
+    This {
+      sectionName: section.name
+      byteCount: section.sizeBytes
+      alignBytes: section.alignBytes
+      byteHash: "section-bytes:{section.sectionHash}"
+      deterministic: true
+      diagnosticCode: match section.valid {
+        true => ""
+        false => "QNATIVE0730"
+      }
+    }
+}
+
+impl view SectionBytes {
+  pub valid => diagnosticCode == "" &&
+    sectionName != "" &&
+    byteCount >= 0 &&
+    alignBytes > 0 &&
+    byteHash != "" &&
+    deterministic
+  pub empty => byteCount == 0
+  pub aligned => alignBytes > 0
+  pub debugName => "section.bytes.{sectionName}.{byteCount}"
+}

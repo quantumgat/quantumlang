@@ -1,0 +1,36 @@
+pub ArtifactPolicy {
+  nativeBackendOnly: bool = true
+  cSourceEmissionAllowed: bool = false
+  cppSourceEmissionAllowed: bool = false
+  headerEmissionAllowed: bool = false
+  objectUnitsAllowed: bool = true
+  qcapAllowed: bool = true
+  qidxAllowed: bool = true
+  qiAllowed: bool = true
+  qnaAllowed: bool = true
+}
+
+impl ArtifactPolicy {
+}
+
+impl view ArtifactPolicy {
+  pub nativeBackend => nativeBackendOnly
+
+  pub forbidsGeneratedCFamilySource =>
+    nativeBackendOnly &&
+    cSourceEmissionAllowed == false &&
+    cppSourceEmissionAllowed == false &&
+    headerEmissionAllowed == false
+
+  pub allowsNativeProductsOnly =>
+    objectUnitsAllowed &&
+    qcapAllowed &&
+    qidxAllowed &&
+    qiAllowed &&
+    qnaAllowed &&
+    forbidsGeneratedCFamilySource
+
+  pub forbidsGeneratedSources => forbidsGeneratedCFamilySource
+  pub emitsToolchainMetadata => qcapAllowed && qidxAllowed && qiAllowed && qnaAllowed
+  pub emitsNativeToolchainArtifacts => nativeBackendOnly && objectUnitsAllowed
+}

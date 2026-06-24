@@ -1,0 +1,13 @@
+pub role ByteCodec<T> {
+  byteSize() -> usize
+  encode(out: ByteBuffer) -> Result<void, ByteError>
+  decode(cur: ByteCursor) -> Result<T, ByteError>
+}
+
+pub extend<T: ByteCodec<T>> T {
+  toBytes() -> Result<bytes, ByteError> {
+    let out = ByteBuffer.withCapacity(this.byteSize())
+    this.encode(out)?
+    return Ok(out.finish())
+  }
+}

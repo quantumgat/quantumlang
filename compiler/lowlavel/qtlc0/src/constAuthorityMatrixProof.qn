@@ -1,0 +1,152 @@
+import model::{OwnerBox}
+
+pub ConstAuthorityMatrixProof {
+  writableReferenceBinding: bool
+  fixedWritableReferenceBinding: bool
+  readonlyReferenceBinding: bool
+  fixedReadonlyReferenceBinding: bool
+  writablePointerBinding: bool
+  fixedWritablePointerBinding: bool
+  readonlyPointerBinding: bool
+  fixedReadonlyPointerBinding: bool
+  memberAccessSemantics: bool
+  mutationSemantics: bool
+}
+
+impl view ConstAuthorityMatrixProof {
+  pub valid: bool => {
+    writableReferenceBinding &&
+    fixedWritableReferenceBinding &&
+    readonlyReferenceBinding &&
+    fixedReadonlyReferenceBinding &&
+    writablePointerBinding &&
+    fixedWritablePointerBinding &&
+    readonlyPointerBinding &&
+    fixedReadonlyPointerBinding &&
+    memberAccessSemantics &&
+    mutationSemantics
+  }
+}
+
+pub readReference(box: const &OwnerBox) -> i64 {
+  return box.value
+}
+
+pub writeReference(box: &OwnerBox, next: i64) -> i64 {
+  box.value = next
+  return box.value
+}
+
+pub readPointer(pointer: const *OwnerBox) -> i64 {
+  if pointer.valid {
+    return pointer.value
+  }
+  return -1
+}
+
+pub writePointer(pointer: *OwnerBox, next: i64) -> i64 {
+  if pointer.valid {
+    pointer.value = next
+    return pointer.value
+  }
+  return -1
+}
+
+pub pointerMemberAccessProof(
+  writablePointer: *OwnerBox,
+  fixedWritablePointer: *OwnerBox,
+  readonlyPointer: const *OwnerBox,
+  fixedReadonlyPointer: const *OwnerBox
+) -> bool {
+  if writablePointer.valid {
+    if fixedWritablePointer.valid {
+      if readonlyPointer.valid {
+        if fixedReadonlyPointer.valid {
+          return writablePointer.value == 51 &&
+            fixedWritablePointer.value == 61 &&
+            readonlyPointer.value == 70 &&
+            fixedReadonlyPointer.value == 80
+        }
+      }
+    }
+  }
+  return false
+}
+
+pub constAuthorityMatrixProof() -> ConstAuthorityMatrixProof {
+  let refBox: OwnerBox = OwnerBox(10, 10)
+  let writableReference: &OwnerBox = &refBox
+  let writableReferenceBinding = writeReference(writableReference, 11) == 11
+
+  let fixedRefBox: OwnerBox = OwnerBox(11, 20)
+  const fixedWritableReference: &OwnerBox = &fixedRefBox
+  let fixedWritableReferenceBinding =
+    writeReference(fixedWritableReference, 21) == 21
+
+  let readRefBox: OwnerBox = OwnerBox(12, 30)
+  let readonlyReference: const &OwnerBox = const &readRefBox
+  let readonlyReferenceBinding = readReference(readonlyReference) == 30
+
+  let fixedReadRefBox: OwnerBox = OwnerBox(13, 40)
+  const fixedReadonlyReference: const &OwnerBox = const &fixedReadRefBox
+  let fixedReadonlyReferenceBinding =
+    readReference(fixedReadonlyReference) == 40
+
+  let ptrBox: OwnerBox = OwnerBox(20, 50)
+  let writablePointer: *OwnerBox = &ptrBox
+  let writablePointerBinding = writePointer(writablePointer, 51) == 51
+
+  let fixedPtrBox: OwnerBox = OwnerBox(21, 60)
+  const fixedWritablePointer: *OwnerBox = &fixedPtrBox
+  let fixedWritablePointerBinding =
+    writePointer(fixedWritablePointer, 61) == 61
+
+  let readPtrBox: OwnerBox = OwnerBox(22, 70)
+  let readonlyPointer: const *OwnerBox = const *readPtrBox
+  let readonlyPointerBinding = readPointer(readonlyPointer) == 70
+
+  let fixedReadPtrBox: OwnerBox = OwnerBox(23, 80)
+  const fixedReadonlyPointer: const *OwnerBox = const *fixedReadPtrBox
+  let fixedReadonlyPointerBinding =
+    readPointer(fixedReadonlyPointer) == 80
+
+  let memberAccessSemantics =
+    pointerMemberAccessProof(
+      writablePointer,
+      fixedWritablePointer,
+      readonlyPointer,
+      fixedReadonlyPointer
+    ) &&
+    writableReference.value == 11 &&
+    readonlyReference.value == 30
+
+  let mutationSemantics =
+    writeReference(writableReference, 12) == 12 &&
+    writePointer(writablePointer, 52) == 52
+
+  return ConstAuthorityMatrixProof {
+    writableReferenceBinding
+    fixedWritableReferenceBinding
+    readonlyReferenceBinding
+    fixedReadonlyReferenceBinding
+    writablePointerBinding
+    fixedWritablePointerBinding
+    readonlyPointerBinding
+    fixedReadonlyPointerBinding
+    memberAccessSemantics
+    mutationSemantics
+  }
+}
+
+// Rejected final-syntax designs:
+//   let p: const *OwnerBox = &box
+//   let p: const *OwnerBox = const &box
+//   let r: const &OwnerBox = &box
+//   let p: *OwnerBox = const *box
+//   let r: &OwnerBox = const &box
+//
+// Explicit conversions may be added later:
+//   let r: const &OwnerBox = const &box
+//   let p: const *OwnerBox = r.rawPointer()
+//   let w: &OwnerBox = &box
+//   let p: *OwnerBox = w.rawPointer()

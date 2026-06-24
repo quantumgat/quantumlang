@@ -1,0 +1,143 @@
+import typeSystem::{*}
+import core::{TextMethodGroup, TextLiteralEscape, TextFormatSpec, TextContract}
+pub CoreTextMethodProof {
+  stringMethods: bool
+  searchMethods: bool
+  sliceMethods: bool
+  transformMethods: bool
+  codecBoundaries: bool
+  compatibilityAliases: bool
+  literalEscapes: bool
+  formatSpecs: bool
+  hotPathContract: bool
+  bytesMethods: bool
+  charLexerMethods: bool
+  byteLexerMethods: bool
+  invalidMethodRejected: bool
+  valid: bool
+}
+
+pub coreTextMethodProof() -> CoreTextMethodProof {
+  let byteLength = CoreTextMethodFact.fromReceiver("string", "byteLength")
+  let length = CoreTextMethodFact.fromReceiver("string", "length")
+  let charLength = CoreTextMethodFact.fromReceiver("string", "charLength")
+  let graphemeLength = CoreTextMethodFact.fromReceiver("string", "graphemeLength")
+  let startsWith = CoreTextMethodFact.fromReceiver("string", "startsWith")
+  let contains = CoreTextMethodFact.fromReceiver("string", "contains")
+  let findIndex = CoreTextMethodFact.fromReceiver("string", "findIndex")
+  let indexOf = CoreTextMethodFact.fromReceiver("string", "indexOf")
+  let sliceChars = CoreTextMethodFact.fromReceiver("string", "sliceChars")
+  let splitOnce = CoreTextMethodFact.fromReceiver("string", "splitOnce")
+  let lower = CoreTextMethodFact.fromReceiver("string", "lower")
+  let replace = CoreTextMethodFact.fromReceiver("string", "replace")
+  let asBytes = CoreTextMethodFact.fromReceiver("string", "asBytes")
+  let toBytes = CoreTextMethodFact.fromReceiver("string", "toBytes")
+  let jsonEscape = CoreTextMethodFact.fromReceiver("string", "jsonEscape")
+  let constantTimeEq = CoreTextMethodFact.fromReceiver("string", "constantTimeEq")
+  let lenAlias = CoreTextMethodFact.fromReceiver("string", "len")
+  let charsAlias = CoreTextMethodFact.fromReceiver("string", "lenChars")
+  let bytesLength = CoreTextMethodFact.fromReceiver("bytes", "length")
+  let byteAt = CoreTextMethodFact.fromReceiver("bytes", "byteAt")
+  let bytesToString = CoreTextMethodFact.fromReceiver("bytes", "toString")
+  let charIdentifier = CoreTextMethodFact.fromReceiver("char", "isIdentifierStart")
+  let charDigit = CoreTextMethodFact.fromReceiver("char", "isDigit")
+  let byteDigit = CoreTextMethodFact.fromReceiver("byte", "isAsciiDigit")
+  let byteWhitespace = CoreTextMethodFact.fromReceiver("byte", "isAsciiWhitespace")
+  let invalid = CoreTextMethodFact.fromReceiver("string", "regexMatch")
+
+  let stringMethods = byteLength.returnType == "usize" &&
+    length.returnType == "usize" &&
+    charLength.returnType == "usize" &&
+    graphemeLength.returnType == "usize" &&
+    startsWith.returnType == "bool" &&
+    contains.returnType == "bool" &&
+    indexOf.returnType == "i64" &&
+    toBytes.returnType == "bytes"
+
+  let searchMethods =
+    findIndex.returnType == "usize?" &&
+    findIndex.group == TextMethodGroup.Search &&
+    findIndex.nativeReady
+
+  let sliceMethods =
+    sliceChars.group == TextMethodGroup.Slice &&
+    splitOnce.returnType == "TextSplit?" &&
+    splitOnce.zeroCopy
+
+  let transformMethods =
+    lower.group == TextMethodGroup.Transform &&
+    lower.allocates &&
+    lower.nativeReady &&
+    replace.valid &&
+    replace.nativeReady
+
+  let codecBoundaries =
+    jsonEscape.group == TextMethodGroup.Codec &&
+    jsonEscape.importFree == false &&
+    constantTimeEq.group == TextMethodGroup.Security &&
+    constantTimeEq.importFree == false
+
+  let compatibilityAliases =
+    lenAlias.compatibilityAlias &&
+    charsAlias.compatibilityAlias &&
+    lenAlias.kind == CoreTextMethodKind.Length &&
+    charsAlias.kind == CoreTextMethodKind.CharLength
+
+  let literalEscapes =
+    TextLiteralEscape.fromSpelling("\\n").textAllowed &&
+    TextLiteralEscape.fromSpelling("\\xNN").bytesAllowed &&
+    TextLiteralEscape.fromSpelling("\\u{{...}}").bytesAllowed == false &&
+    TextLiteralEscape.fromSpelling("{{").interpolationEscape
+
+  let formatSpecs =
+    TextFormatSpec.fromSpelling("?").hotPath &&
+    TextFormatSpec.fromSpelling("x").numericOnly &&
+    TextFormatSpec.fromSpelling(">N").valid
+
+  let hotPathContract =
+    TextContract().valid &&
+    TextContract().remainingLiteralWork
+
+  let bytesMethods = bytesLength.returnType == "usize" &&
+    byteAt.returnType == "byte?" &&
+    bytesToString.returnType == "string?"
+
+  let charLexerMethods = charIdentifier.returnType == "bool" &&
+    charDigit.returnType == "bool"
+
+  let byteLexerMethods = byteDigit.returnType == "bool" &&
+    byteWhitespace.returnType == "bool"
+
+  let invalidMethodRejected = !invalid.valid
+
+  let valid = stringMethods &&
+    searchMethods &&
+    sliceMethods &&
+    transformMethods &&
+    codecBoundaries &&
+    compatibilityAliases &&
+    literalEscapes &&
+    formatSpecs &&
+    hotPathContract &&
+    bytesMethods &&
+    charLexerMethods &&
+    byteLexerMethods &&
+    invalidMethodRejected
+
+  return CoreTextMethodProof {
+    stringMethods: stringMethods,
+    searchMethods: searchMethods,
+    sliceMethods: sliceMethods,
+    transformMethods: transformMethods,
+    codecBoundaries: codecBoundaries,
+    compatibilityAliases: compatibilityAliases,
+    literalEscapes: literalEscapes,
+    formatSpecs: formatSpecs,
+    hotPathContract: hotPathContract,
+    bytesMethods: bytesMethods,
+    charLexerMethods: charLexerMethods,
+    byteLexerMethods: byteLexerMethods,
+    invalidMethodRejected: invalidMethodRejected,
+    valid: valid,
+  }
+}

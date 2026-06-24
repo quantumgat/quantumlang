@@ -1,0 +1,43 @@
+import core::{FileId, Vec}
+
+pub LineMap {
+  fileId: FileId = {}
+  lineStarts: Vec<u64> = []
+  byteOffsetColumn: bool
+  displayColumnComputedLate: bool
+}
+
+pub LineColumn {
+  line: i64
+  column: i64
+}
+
+impl LineMap {
+  pub LineMap(fileId: FileId, lineCount: i64) =
+    This {
+      fileId: fileId
+      lineStarts: Vec(lineCount)
+      byteOffsetColumn: true
+      displayColumnComputedLate: true
+    }
+}
+
+impl LineColumn {
+  pub LineColumn(line: i64, column: i64) =
+    This {
+      line,
+      column,
+    }
+}
+
+impl view LineMap {
+  pub lineCount => lineStarts.count
+  pub valid => fileId.valid && lineStarts.valid
+  pub empty => lineCount == 0
+  pub sourceCoordinatesStable => byteOffsetColumn && displayColumnComputedLate
+}
+
+impl view LineColumn {
+  pub valid => line >= 0 && column >= 0
+  pub origin => line == 0 && column == 0
+}

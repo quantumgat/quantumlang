@@ -1,0 +1,23 @@
+pub InlinePass {
+  inlined: i64
+  aggressive: bool
+  debugSafe: bool
+  valid: bool
+}
+
+impl InlinePass {
+  pub InlinePass(inlined: i64, aggressive: bool) {
+    let debugSafe = !aggressive && inlined == 0
+    This {
+      inlined
+      aggressive
+      debugSafe
+      valid: inlined >= 0 && debugSafe
+    }
+  }
+}
+
+impl view InlinePass {
+  pub disabled => inlined == 0
+  pub safe => valid && debugSafe
+}

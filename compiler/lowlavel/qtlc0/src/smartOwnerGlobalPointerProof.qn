@@ -1,0 +1,273 @@
+pub ProofUser {
+  name: string
+  version: i64 = 1
+}
+
+pub Unique<T> {
+  value: T
+  valid: bool = true
+}
+
+pub Shared<T> {
+  value: T
+  strongCount: i64 = 1
+}
+
+pub Weak<T> {
+  live: bool = true
+  generation: i64 = 1
+}
+
+pub Pin<T> {
+  value: T
+  stableAddress: bool = true
+}
+
+pub Arena<T> {
+  seed: T
+  live: bool = true
+  allocationCount: i64 = 0
+}
+
+pub Global<T> {
+  value: T
+  deterministicDropOrder: i64 = 0
+}
+
+pub Permanent<T> {
+  value: T
+  processLifetime: bool = true
+  normalDrop: bool = false
+}
+
+pub Handle<T> {
+  value: T
+  open: bool = true
+  closeCount: i64 = 0
+}
+
+pub SmartOwnerGlobalPointerProof {
+  localOwnerValid: bool
+  uniqueValid: bool
+  sharedValid: bool
+  weakValid: bool
+  pinValid: bool
+  arenaValid: bool
+  globalValid: bool
+  permanentValid: bool
+  handleValid: bool
+  rawPointerNonOwning: bool
+  globalPointerValid: bool
+  rejectedEscapesDocumented: bool
+}
+
+impl view SmartOwnerGlobalPointerProof {
+  pub valid: bool => {
+    localOwnerValid &&
+    uniqueValid &&
+    sharedValid &&
+    weakValid &&
+    pinValid &&
+    arenaValid &&
+    globalValid &&
+    permanentValid &&
+    handleValid &&
+    rawPointerNonOwning &&
+    globalPointerValid &&
+    rejectedEscapesDocumented
+  }
+}
+
+impl Unique<T> {
+  pub Unique(value: T) =
+    This { value }
+}
+
+impl Shared<T> {
+  pub Shared(value: T) =
+    This { value }
+
+  pub alias() -> This =
+    this { strongCount: strongCount + 1 }
+
+  pub weak() -> Weak<T> =
+    Weak<T> { live: true, generation: strongCount }
+}
+
+impl Weak<T> {
+  pub upgradeAvailable: bool => live && generation > 0
+}
+
+impl Pin<T> {
+  pub Pin(value: T) =
+    This { value }
+}
+
+impl Arena<T> {
+  pub Arena(seed: T) =
+    This { seed, allocationCount: 0 }
+
+  pub allocate(value: T) -> *T {
+    seed = value
+    allocationCount = allocationCount + 1
+    return &seed
+  }
+}
+
+impl Global<T> {
+  pub Global(value: T) =
+    This { value, deterministicDropOrder: 1 }
+}
+
+impl Permanent<T> {
+  pub Permanent(value: T) =
+    This { value }
+}
+
+impl Handle<T> {
+  pub Handle(value: T) =
+    This { value }
+
+  pub close() -> This {
+    if open == false {
+      return this { closeCount: closeCount + 1 }
+    }
+    return this { open: false, closeCount: closeCount + 1 }
+  }
+}
+
+global config: ProofUser = { name: "Config", version: 1 }
+global configPtr: const *ProofUser = const *config
+
+global state: ProofUser = { name: "State", version: 1 }
+global statePtr: *ProofUser = &state
+
+global globalOwner: Global<ProofUser> =
+  Global<ProofUser>({ name: "GlobalOwner", version: 1 })
+global globalOwnerPtr: const *ProofUser = const *globalOwner.value
+
+global permanentOwner: Permanent<ProofUser> =
+  Permanent<ProofUser>({ name: "Permanent", version: 1 })
+global permanentPtr: const *ProofUser = const *permanentOwner.value
+
+pub localOwnerProof() -> bool {
+  let user: ProofUser = { name: "Local", version: 1 }
+  let pointer: const *ProofUser = const *user
+  if pointer.valid {
+    return pointer.name == "Local"
+  }
+  return false
+}
+
+pub uniqueProof() -> bool {
+  let unique = Unique<ProofUser>({ name: "Unique", version: 1 })
+  let pointer: *ProofUser = &unique.value
+  if pointer.valid {
+    pointer.version = 2
+    return unique.value.version == 2
+  }
+  return false
+}
+
+pub sharedProof() -> bool {
+  let shared = Shared<ProofUser>({ name: "Shared", version: 1 })
+  let alias = shared.alias()
+  return shared.strongCount == 1 && alias.strongCount == 2
+}
+
+pub weakProof() -> bool {
+  let shared = Shared<ProofUser>({ name: "Shared", version: 1 })
+  let weak = shared.weak()
+  return weak.upgradeAvailable
+}
+
+pub pinProof() -> bool {
+  let pinned = Pin<ProofUser>({ name: "Pinned", version: 1 })
+  let pointer: const *ProofUser = const *pinned.value
+  return pinned.stableAddress && pointer.valid
+}
+
+pub arenaProof() -> bool {
+  let arena = Arena<ProofUser>({ name: "Seed", version: 1 })
+  let pointer = arena.allocate({ name: "Arena", version: 1 })
+  if pointer.valid {
+    return arena.live && arena.allocationCount == 1 && pointer.name == "Arena"
+  }
+  return false
+}
+
+pub globalProof() -> bool {
+  if configPtr.valid {
+    if statePtr.valid {
+      statePtr.version = 2
+      return configPtr.name == "Config" &&
+        state.version == 2 &&
+        globalOwner.deterministicDropOrder == 1 &&
+        globalOwnerPtr.valid
+    }
+  }
+  return false
+}
+
+pub permanentProof() -> bool {
+  return permanentOwner.processLifetime &&
+    permanentOwner.normalDrop == false &&
+    permanentPtr.valid
+}
+
+pub handleProof() -> bool {
+  let handle = Handle<ProofUser>({ name: "Handle", version: 1 })
+  let closed = handle.close()
+  let closedAgain = closed.close()
+  return closed.open == false &&
+    closed.closeCount == 1 &&
+    closedAgain.open == false &&
+    closedAgain.closeCount == 2
+}
+
+pub rawPointerNonOwningProof() -> bool {
+  let unique = Unique<ProofUser>({ name: "RawView", version: 1 })
+  let pointer: *ProofUser = &unique.value
+  if pointer.valid {
+    pointer.version = 3
+    return unique.value.version == 3
+  }
+  return false
+}
+
+pub smartOwnerGlobalPointerProof() -> SmartOwnerGlobalPointerProof {
+  return SmartOwnerGlobalPointerProof {
+    localOwnerValid: localOwnerProof()
+    uniqueValid: uniqueProof()
+    sharedValid: sharedProof()
+    weakValid: weakProof()
+    pinValid: pinProof()
+    arenaValid: arenaProof()
+    globalValid: globalProof()
+    permanentValid: permanentProof()
+    handleValid: handleProof()
+    rawPointerNonOwning: rawPointerNonOwningProof()
+    globalPointerValid: configPtr.valid && globalOwnerPtr.valid && permanentPtr.valid
+    rejectedEscapesDocumented: true
+  }
+}
+
+// Rejected final-syntax designs:
+//   free(pointer)
+//   delete(pointer)
+//   free(owner)
+//   delete(owner)
+//
+// Raw pointers are non-owning. Smart owners and values are dropped by the
+// compiler/runtime at the end of their lifetime.
+//
+// Rejected global escape:
+//   global leaked: *ProofUser
+//
+//   pub makeLeakedPointer() {
+//     let user: ProofUser = { name: "Local", version: 1 }
+//     leaked = &user
+//   }
+//
+// The local owner cannot escape to a global pointer. Use a global, Global<T>,
+// Permanent<T>, or compatible Arena<T> owner instead.

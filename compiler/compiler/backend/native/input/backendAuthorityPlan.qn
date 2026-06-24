@@ -1,0 +1,55 @@
+pub NativeBackendAuthorityPlan {
+  authorityRowCount: i64 = 0
+  ownerCount: i64 = 0
+  rawViewCount: i64 = 0
+  callableBoundaryCount: i64 = 0
+  diagnosticCount: i64 = 0
+  objectEmissionAuthorized: bool = false
+  linkAuthorized: bool = false
+  diagnosticCode: string = ""
+}
+
+impl NativeBackendAuthorityPlan {
+  pub fromOwnershipCounts(
+    authorityRowCount: i64,
+    ownerCount: i64,
+    rawViewCount: i64,
+    callableBoundaryCount: i64,
+    diagnosticCount: i64,
+    backendAuthorityReady: bool,
+    ownershipValid: bool
+  ) =
+    This {
+      authorityRowCount
+      ownerCount
+      rawViewCount
+      callableBoundaryCount
+      diagnosticCount
+      objectEmissionAuthorized: ownershipValid
+      linkAuthorized: ownershipValid && backendAuthorityReady
+      diagnosticCode: match ownershipValid {
+        true => ""
+        false => "QNATIVE0601"
+      }
+    }
+}
+
+impl view NativeBackendAuthorityPlan {
+  pub clean => diagnosticCount == 0 && diagnosticCode == ""
+
+  pub countsValid =>
+    authorityRowCount >= ownerCount &&
+    authorityRowCount >= rawViewCount &&
+    authorityRowCount >= callableBoundaryCount &&
+    diagnosticCount >= 0
+
+  pub valid =>
+    clean &&
+    countsValid &&
+    objectEmissionAuthorized &&
+    linkAuthorized
+
+  pub objectReady => valid
+
+  pub linkReady => valid
+}

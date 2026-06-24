@@ -1,0 +1,69 @@
+import storage::{CacheAtomicWrite, CacheHash256, CacheLease, CacheQuarantine, CacheSafetyContract, CacheSchemaMigration, CacheValidation, CacheWriteState}
+
+pub CacheAtomicSafetyProof {
+  validationRequired: bool
+  leaseRequired: bool
+  atomicPublicationRequired: bool
+  migrationRequired: bool
+  valid: bool
+}
+
+pub cacheAtomicSafetyProof() -> CacheAtomicSafetyProof {
+  let action = CacheHash256.action("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+  let content = CacheHash256.content("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+  let lease = CacheLease {
+    action
+    owner: "worker-7"
+    expiresAt: 200
+    currentTime: 100
+  }
+  let validation = CacheValidation.accepted()
+  let write = CacheAtomicWrite {
+    temporaryPath: "~/.cache/qtlc/.tmp/product.part"
+    finalPath: "~/.cache/qtlc/bb/content.qco"
+    content
+    payloadWritten: true
+    payloadSynced: true
+    directorySynced: true
+    atomicRename: true
+  }
+  let migration = CacheSchemaMigration {
+    sourceVersion: 1
+    targetVersion: 2
+    readerCompatible: true
+  }
+  let quarantine = CacheQuarantine {
+    sourcePath: ""
+    quarantinePath: ""
+    validation
+  }
+  let contract = CacheSafetyContract {
+    lease
+    validation
+    write
+    migration
+    quarantine
+  }
+
+  let validationRequired = validation.valid
+  let leaseRequired = lease.active && lease.expired == false
+  let atomicPublicationRequired =
+    write.publishable &&
+    write.state == CacheWriteState.Prepared &&
+    write.committed == false
+  let migrationRequired = migration.valid
+  let valid =
+    contract.valid &&
+    validationRequired &&
+    leaseRequired &&
+    atomicPublicationRequired &&
+    migrationRequired
+
+  return CacheAtomicSafetyProof {
+    validationRequired
+    leaseRequired
+    atomicPublicationRequired
+    migrationRequired
+    valid
+  }
+}

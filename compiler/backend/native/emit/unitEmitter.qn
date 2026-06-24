@@ -1,0 +1,56 @@
+pub UnitEmitter {
+  plan: EmitPlan
+  functionCount: i64
+  sectionCount: i64
+  symbolCount: i64
+  relocationCount: i64
+  byteCount: i64
+  diagnosticCode: string = ""
+}
+
+impl UnitEmitter {
+  pub UnitEmitter(
+    plan: EmitPlan,
+    functionCount: i64,
+    sectionCount: i64,
+    symbolCount: i64,
+    relocationCount: i64,
+    byteCount: i64
+  ) =
+    This {
+      plan
+      functionCount
+      sectionCount
+      symbolCount
+      relocationCount
+      byteCount
+    }
+
+  pub fromPlan(plan: EmitPlan, byteCount: i64) =
+    This {
+      plan
+      functionCount: plan.functionCount
+      sectionCount: 1
+      symbolCount: 1
+      relocationCount: 0
+      byteCount
+      diagnosticCode: match plan.valid && byteCount >= 0 {
+        true => ""
+        false => "QNATIVE0930"
+      }
+    }
+}
+
+impl view UnitEmitter {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    plan.valid &&
+    functionCount > 0 &&
+    sectionCount > 0 &&
+    symbolCount > 0 &&
+    relocationCount >= 0 &&
+    byteCount >= 0
+
+  pub objectFactsReady: bool => valid && byteCount > 0
+  pub debugName: string => "emit.unit.{plan.targetTriple}.{byteCount}"
+}

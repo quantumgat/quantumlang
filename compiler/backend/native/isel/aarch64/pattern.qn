@@ -1,0 +1,26 @@
+pub Aarch64Pattern {
+  sourceOpcode: string
+  selectedOpcode: string
+  operandCount: i64
+  usesConditionFlags: bool = false
+  diagnosticCode: string = ""
+}
+
+impl Aarch64Pattern {
+  pub Aarch64Pattern(sourceOpcode: string, selectedOpcode: string, operandCount: i64) =
+    This {
+      sourceOpcode
+      selectedOpcode
+      operandCount
+    }
+}
+
+impl view Aarch64Pattern {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    sourceOpcode != "" &&
+    selectedOpcode != "" &&
+    operandCount >= 0
+
+  pub debugName: string => "isel.aarch64.pattern.{sourceOpcode}.{selectedOpcode}"
+}

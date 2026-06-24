@@ -1,0 +1,18 @@
+import core::{Hash256, HashDomain, HashError, StableHash, StableHashWriter}
+
+impl MirBlock {
+  pub stableHash() -> Result<Hash256, HashError> {
+    let out = StableHashWriter(HashDomain.Semantic)
+    this.stableHashInto(out)?
+    return out.finish()
+  }
+
+  stableHashInto(out: StableHashWriter) -> Result<void, HashError> {
+    out.begin("mir.MirBlock", 1)?
+    out.writeI64("id", id)?
+    out.writeI64("instructionCount", instructionCount)?
+    out.writeString("terminatorKind", terminatorKind)?
+    out.writeString("diagnosticCode", diagnosticCode)?
+    return out.end()
+  }
+}

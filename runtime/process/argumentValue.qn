@@ -1,0 +1,74 @@
+pub ArgumentValue {
+  rawText: string = ""
+  typeName: string = ""
+  kind: ArgumentValueKind = ArgumentValueKind.Raw
+  present: bool = false
+  valid: bool = true
+}
+
+impl ArgumentValue {
+  pub raw(rawText: string) =
+    This {
+      rawText
+      typeName: "string"
+      kind: ArgumentValueKind.Raw
+      present: rawText != ""
+    }
+
+  pub typed(rawText: string, typeName: string, kind: ArgumentValueKind) =
+    This {
+      rawText
+      typeName
+      kind
+      present: rawText != ""
+      valid: typeName != ""
+    }
+
+  pub missing(typeName: string) =
+    This {
+      typeName
+      present: false
+      valid: typeName != ""
+    }
+}
+
+impl view ArgumentValue {
+  pub readable: bool => valid && typeName != ""
+  pub typedValue: bool => kind != ArgumentValueKind.Raw
+  pub scalar: bool =>
+    kind == ArgumentValueKind.String ||
+    kind == ArgumentValueKind.TextView ||
+    kind == ArgumentValueKind.Bool ||
+    kind == ArgumentValueKind.I8 ||
+    kind == ArgumentValueKind.I16 ||
+    kind == ArgumentValueKind.I32 ||
+    kind == ArgumentValueKind.I64 ||
+    kind == ArgumentValueKind.I128 ||
+    kind == ArgumentValueKind.I256 ||
+    kind == ArgumentValueKind.U8 ||
+    kind == ArgumentValueKind.U16 ||
+    kind == ArgumentValueKind.U32 ||
+    kind == ArgumentValueKind.U64 ||
+    kind == ArgumentValueKind.U128 ||
+    kind == ArgumentValueKind.U256 ||
+    kind == ArgumentValueKind.USize ||
+    kind == ArgumentValueKind.ISize ||
+    kind == ArgumentValueKind.F16 ||
+    kind == ArgumentValueKind.F32 ||
+    kind == ArgumentValueKind.F64 ||
+    kind == ArgumentValueKind.F128 ||
+    kind == ArgumentValueKind.Decimal
+
+  pub structured: bool =>
+    kind == ArgumentValueKind.Json ||
+    kind == ArgumentValueKind.Toml ||
+    kind == ArgumentValueKind.Yaml ||
+    kind == ArgumentValueKind.Xml ||
+    kind == ArgumentValueKind.Vec ||
+    kind == ArgumentValueKind.Map ||
+    kind == ArgumentValueKind.Option ||
+    kind == ArgumentValueKind.Result ||
+    kind == ArgumentValueKind.Custom
+
+  pub conversionKey: string => "arg.value:{typeName}:{kind}:{present}:{valid}"
+}

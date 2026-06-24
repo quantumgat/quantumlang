@@ -1,0 +1,41 @@
+pub EmbeddedTarget {
+  board: BoardProfile
+  device: DeviceProfile
+  cpu: CpuProfile
+  memory: MemoryMap
+  clock: ClockProfile
+  peripherals: PeripheralMap
+}
+
+impl EmbeddedTarget {
+  pub EmbeddedTarget(
+    board: BoardProfile,
+    device: DeviceProfile,
+    cpu: CpuProfile,
+    memory: MemoryMap,
+    clock: ClockProfile,
+    peripherals: PeripheralMap
+  ) =
+    This {
+      board
+      device
+      cpu
+      memory
+      clock
+      peripherals
+    }
+}
+
+impl view EmbeddedTarget {
+  pub valid => board.valid &&
+    device.valid &&
+    cpu.valid &&
+    memory.valid &&
+    clock.ready &&
+    peripherals.valid &&
+    device.arch == cpu.arch &&
+    board.deviceName == device.name
+  pub linkable => valid && memory.linkable
+  pub bootable => linkable && device.bootReady && cpu.interruptCapable
+  pub deterministic => bootable && clock.ready
+}

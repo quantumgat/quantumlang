@@ -1,0 +1,17 @@
+module frontend
+
+mod {
+  frontendAstProduct
+  declarationParserBridge
+  frontendProduct
+  runtimeFrontendScan
+  realFrontend
+}
+
+export {
+  frontendAstProduct.{FrontendAstProduct}
+  declarationParserBridge.{DeclarationParserBridge}
+  frontendProduct.{FrontendProduct, FrontendSourceProduct, FrontendLexProduct, FrontendParseProduct, FrontendDeclarationProduct, FrontendModuleProduct, frontendProductForPackage}
+  runtimeFrontendScan.{RuntimeFrontendScan}
+  realFrontend.{RealFrontend}
+}

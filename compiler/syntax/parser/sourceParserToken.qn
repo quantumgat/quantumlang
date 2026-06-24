@@ -1,0 +1,136 @@
+import core::{Vec}
+
+pub SourceParserToken {
+  input: LexProduct = {}
+}
+
+impl SourceParserToken {
+  pub SourceParserToken(input: LexProduct) =
+    This { input }
+
+  pub memberReceiverPathAt(index: i64) -> Vec<string> {
+    let start = index
+    while start >= 2 && input.tokenAt(start - 1).text == "." {
+      let left = start - 2
+      if input.tokenAt(left).kind.identifierToken {
+        start = left
+      } else if input.tokenAt(left).text == "]" {
+        let open = left
+        let depth: i64 = 0
+        while open >= 0 {
+          let text = input.tokenAt(open).text
+          if text == "]" {
+            depth = depth + 1
+          } else if text == "[" {
+            depth = depth - 1
+            if depth == 0 {
+              break
+            }
+          }
+          open = open - 1
+        }
+        if open <= 0 || !input.tokenAt(open - 1).kind.identifierToken {
+          break
+        }
+        start = open - 1
+      } else {
+        break
+      }
+    }
+    if start < 0 || start == index {
+      return []
+    }
+    let path: Vec<string> = []
+    let cursor = start
+    while cursor < index {
+      let token = input.tokenAt(cursor)
+      if !token.kind.identifierToken {
+        return []
+      }
+      let segment = token.text
+      cursor = cursor + 1
+      if cursor < index && input.tokenAt(cursor).text == "[" {
+        let close = cursor
+        let depth: i64 = 0
+        while close < input.tokenCount {
+          let text = input.tokenAt(close).text
+          if text == "[" {
+            depth = depth + 1
+          } else if text == "]" {
+            depth = depth - 1
+            if depth == 0 {
+              break
+            }
+          }
+          close = close + 1
+        }
+        if close < 0 || close >= index {
+          return []
+        }
+        segment = "{segment}[]"
+        cursor = close + 1
+      }
+      path.push(segment)
+      if cursor < index {
+        if input.tokenAt(cursor).text != "." {
+          return []
+        }
+        cursor = cursor + 1
+      }
+    }
+    return path
+  }
+
+  pub receiverPathName(path: Vec<string>) -> string {
+    let result = ""
+    let index: i64 = 0
+    while index < path.count {
+      if result != "" {
+        result = "{result}."
+      }
+      result = "{result}{path[index]}"
+      index = index + 1
+    }
+    return result
+  }
+
+  pub nodeTextAt(index: i64) -> string {
+    let token = input.tokenAt(index)
+    if (token.kind.keyword == KeywordKind.Let ||
+        token.kind.keyword == KeywordKind.Const) &&
+       index + 1 < input.tokenCount {
+      return input.tokenAt(index + 1).text
+    }
+    let dot: i64 = token.text.lastIndexOf(".")
+    if dot >= 0 && dot + 1 < token.text.length() {
+      return token.text.slice(dot + 1, token.text.length()).toString()
+    }
+    return token.text
+  }
+
+  pub tokensSeparatedByLineBreak(
+    leftIndex: i64,
+    rightIndex: i64
+  ) -> bool {
+    if leftIndex < 0 || rightIndex >= input.tokenCount {
+      return false
+    }
+
+    let leftEnd = input.tokenAt(leftIndex).end
+    let rightStart = input.tokenAt(rightIndex).start
+    let row: i64 = 0
+    while row < input.triviaCount {
+      let trivia = input.trivia.triviaAt(row)
+      if trivia.start > rightStart {
+        return false
+      }
+      if trivia.start >= leftEnd &&
+         trivia.end <= rightStart &&
+         (trivia.linePreserving || trivia.text.contains("\n")) {
+        return true
+      }
+      row = row + 1
+    }
+    return false
+  }
+}

@@ -1,0 +1,19 @@
+pub TokenPair {
+  first: string
+  second: string
+  count: i64
+}
+
+privateConstStart(input: TokenPair, index: i64) -> bool {
+  return input.first == "const" &&
+    index + 1 < input.count &&
+    input.second == "name"
+}
+
+privateSurfaceStart(input: TokenPair, index: i64) -> bool {
+  return privateConstStart(input, index)
+}
+
+pub verifyNested(input: TokenPair) -> bool {
+  return privateSurfaceStart(input, 0)
+}

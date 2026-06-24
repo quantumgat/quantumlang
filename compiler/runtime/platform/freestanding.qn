@@ -1,0 +1,29 @@
+pub FreestandingRuntimePlatform {
+  targetTriple: string
+  objectFormat: string
+  abi: string
+  hasHost: bool
+}
+
+impl FreestandingRuntimePlatform {
+  pub FreestandingRuntimePlatform(targetTriple: string, objectFormat: string, abi: string, hasHost: bool) =
+    This {
+      targetTriple
+      objectFormat
+      abi
+      hasHost
+    }
+
+  pub genericElf() =
+    This {
+      targetTriple: "x86_64-unknown-none"
+      objectFormat: "elf"
+      abi: "freestanding"
+      hasHost: false
+    }
+}
+
+impl view FreestandingRuntimePlatform {
+  pub valid: bool => targetTriple != "" && objectFormat != "" && abi != ""
+  pub hosted: bool => valid && hasHost
+}

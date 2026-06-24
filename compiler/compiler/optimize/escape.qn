@@ -1,0 +1,21 @@
+pub EscapeAnalysis {
+  escaped: i64
+  analysisOnly: bool
+  debugSafe: bool
+  valid: bool
+}
+
+impl EscapeAnalysis {
+  pub EscapeAnalysis(escaped: i64, analysisOnly: bool) =
+    This {
+      escaped
+      analysisOnly
+      debugSafe: analysisOnly
+      valid: escaped >= 0 && analysisOnly
+    }
+}
+
+impl view EscapeAnalysis {
+  pub analysisSafe => analysisOnly && debugSafe
+  pub safe => valid && analysisSafe
+}

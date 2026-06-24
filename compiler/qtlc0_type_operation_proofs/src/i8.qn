@@ -1,0 +1,10 @@
+pub proof_i8() -> i64 {
+  let a: i8 = 10
+  let b: i8 = 3
+  let c: i8 = a + b
+  let d: i8 = c - 2
+  if d != 11 { return 11 }
+  if d <= b { return 12 }
+  println("i8 ok: {d}")
+  return 0
+}

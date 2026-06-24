@@ -1,0 +1,30 @@
+pub X86OperandSelect {
+  operandKind: string
+  widthBits: i64
+  registerClass: string
+  allowsMemory: bool = true
+  diagnosticCode: string = ""
+}
+
+impl X86OperandSelect {
+  pub X86OperandSelect(operandKind: string, widthBits: i64, registerClass: string) =
+    This {
+      operandKind
+      widthBits
+      registerClass
+    }
+
+  pub integerRegister(widthBits: i64) =
+    This("register", widthBits, "gpr")
+}
+
+impl view X86OperandSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    operandKind != "" &&
+    widthBits > 0 &&
+    registerClass != ""
+
+  pub generalPurpose: bool => valid && registerClass == "gpr"
+  pub debugName: string => "isel.x86_64.operand.{operandKind}.{widthBits}"
+}

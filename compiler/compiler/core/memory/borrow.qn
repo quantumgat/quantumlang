@@ -1,0 +1,80 @@
+pub Borrow<T> {
+  pointer: const *T = null
+  owner: CompilerId = {}
+  generation: u64 = 0
+  active: bool = false
+}
+
+impl Borrow<T> {
+  pub Borrow(pointer: const *T) =
+    This {
+      pointer
+      active: pointer.valid
+    }
+
+  pub Borrow(pointer: const *T, owner: CompilerId, generation: u64) =
+    This {
+      pointer
+      owner
+      generation
+      active: pointer.valid
+    }
+
+  pub ptr() -> const *T {
+    return pointer
+  }
+
+  pub cptr() -> const *T {
+    return pointer
+  }
+
+  pub close() -> This {
+    return this {
+      active: false
+    }
+  }
+
+  pub release() -> This {
+    return close()
+  }
+}
+
+impl view Borrow<T> {
+  pub readable => valid
+
+  pub writable => false
+
+  pub live => active
+
+  pub empty => active == false
+
+  pub hasOwner => owner.valid
+
+  pub readOnly => true
+
+  pub unique => false
+
+  pub shared => true
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return valid && generation == currentGeneration
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub expired(currentGeneration: u64) -> bool {
+    return stale(currentGeneration)
+  }
+
+  pub sameOwner(value: CompilerId) -> bool {
+    return owner == value
+  }
+
+  pub sameGen(value: u64) -> bool {
+    return generation == value
+  }
+
+  pub valid => active && pointer.valid
+}

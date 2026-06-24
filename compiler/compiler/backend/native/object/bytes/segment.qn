@@ -1,0 +1,50 @@
+pub ObjectByteSegment {
+  name: string
+  offset: i64
+  payload: bytes = []
+  byteCount: i64
+  logicalByteCount: i64
+  diagnosticCode: string = ""
+}
+
+impl ObjectByteSegment {
+  pub ObjectByteSegment(
+    name: string,
+    offset: i64,
+    payload: bytes,
+    byteCount: i64,
+    logicalByteCount: i64
+  ) =
+    This {
+      name
+      offset
+      payload
+      byteCount
+      logicalByteCount
+    }
+
+  pub fromPayload(name: string, offset: i64, payload: bytes, logicalByteCount: i64) =
+    This {
+      name
+      offset
+      payload
+      byteCount: payload.length()
+      logicalByteCount
+      diagnosticCode: match name != "" && offset >= 0 && logicalByteCount >= 0 {
+        true => ""
+        false => "QNATIVE0756"
+      }
+    }
+}
+
+impl view ObjectByteSegment {
+  pub valid: bool => diagnosticCode == "" &&
+    name != "" &&
+    offset >= 0 &&
+    byteCount == payload.length() &&
+    byteCount >= logicalByteCount &&
+    logicalByteCount >= 0
+  pub endOffset: i64 => offset + byteCount
+  pub hasPadding: bool => byteCount > logicalByteCount
+  pub debugName: string => "object.segment.{name}.{offset}.{byteCount}"
+}

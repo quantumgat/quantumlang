@@ -1,0 +1,3 @@
+pub wrongNamedArgument(ctx: HttpCtx<AuthUser>) -> Result<CreateUserBody, IntoHttpError> {
+  return ctx.query<CreateUserBody>(limit: 64)
+}

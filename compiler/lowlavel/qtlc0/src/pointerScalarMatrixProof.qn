@@ -1,0 +1,141 @@
+pub ScalarCell<T> {
+  value: T
+  revision: i64 = 1
+}
+
+impl view ScalarCell<T> {
+  pub current => value
+  pub stable: bool => revision > 0
+}
+
+pub pointerScalarMatrixStatus() -> i64 {
+  let boolCell: ScalarCell<bool> = { value: false }
+  let boolPtr: *ScalarCell<bool> = &boolCell
+  if boolPtr.valid {
+    boolPtr.value = true
+    if boolPtr.current != true { return 1 }
+  } else { return 2 }
+
+  let i8Cell: ScalarCell<i8> = { value: 8 }
+  let i8Ptr: *ScalarCell<i8> = &i8Cell
+  if i8Ptr.valid {
+    i8Ptr.value = 9
+    if i8Ptr.current != 9 { return 3 }
+  } else { return 4 }
+
+  let u8Cell: ScalarCell<u8> = { value: 8 }
+  let u8Ptr: *ScalarCell<u8> = &u8Cell
+  if u8Ptr.valid {
+    u8Ptr.value = 9
+    if u8Ptr.current != 9 { return 5 }
+  } else { return 6 }
+
+  let i16Cell: ScalarCell<i16> = { value: 16 }
+  let i16Ptr: *ScalarCell<i16> = &i16Cell
+  if i16Ptr.valid {
+    i16Ptr.value = 17
+    if i16Ptr.current != 17 { return 7 }
+  } else { return 8 }
+
+  let u16Cell: ScalarCell<u16> = { value: 16 }
+  let u16Ptr: *ScalarCell<u16> = &u16Cell
+  if u16Ptr.valid {
+    u16Ptr.value = 17
+    if u16Ptr.current != 17 { return 9 }
+  } else { return 10 }
+
+  let i32Cell: ScalarCell<i32> = { value: 32 }
+  let i32Ptr: *ScalarCell<i32> = &i32Cell
+  if i32Ptr.valid {
+    i32Ptr.value = 33
+    if i32Ptr.current != 33 { return 11 }
+  } else { return 12 }
+
+  let u32Cell: ScalarCell<u32> = { value: 32 }
+  let u32Ptr: *ScalarCell<u32> = &u32Cell
+  if u32Ptr.valid {
+    u32Ptr.value = 33
+    if u32Ptr.current != 33 { return 13 }
+  } else { return 14 }
+
+  let i64Cell: ScalarCell<i64> = { value: 64 }
+  let i64Ptr: *ScalarCell<i64> = &i64Cell
+  if i64Ptr.valid {
+    i64Ptr.value = 65
+    if i64Ptr.current != 65 { return 15 }
+  } else { return 16 }
+
+  let u64Cell: ScalarCell<u64> = { value: 64 }
+  let u64Ptr: *ScalarCell<u64> = &u64Cell
+  if u64Ptr.valid {
+    u64Ptr.value = 65
+    if u64Ptr.current != 65 { return 17 }
+  } else { return 18 }
+
+  let i128Cell: ScalarCell<i128> = { value: 128 }
+  let i128Ptr: *ScalarCell<i128> = &i128Cell
+  if i128Ptr.valid {
+    i128Ptr.value = 129
+    if i128Ptr.current != 129 { return 19 }
+  } else { return 20 }
+
+  let u128Cell: ScalarCell<u128> = { value: 128 }
+  let u128Ptr: *ScalarCell<u128> = &u128Cell
+  if u128Ptr.valid {
+    u128Ptr.value = 129
+    if u128Ptr.current != 129 { return 21 }
+  } else { return 22 }
+
+  let i256Cell: ScalarCell<i256> = { value: 256 }
+  let i256Ptr: *ScalarCell<i256> = &i256Cell
+  if i256Ptr.valid {
+    i256Ptr.value = 257
+    if i256Ptr.current != 257 { return 23 }
+  } else { return 24 }
+
+  let u256Cell: ScalarCell<u256> = { value: 256 }
+  let u256Ptr: *ScalarCell<u256> = &u256Cell
+  if u256Ptr.valid {
+    u256Ptr.value = 257
+    if u256Ptr.current != 257 { return 25 }
+  } else { return 26 }
+
+  let isizeCell: ScalarCell<isize> = { value: 7 }
+  let isizePtr: *ScalarCell<isize> = &isizeCell
+  if isizePtr.valid {
+    isizePtr.value = 8
+    if isizePtr.current != 8 { return 27 }
+  } else { return 28 }
+
+  let usizeCell: ScalarCell<usize> = { value: 7 }
+  let usizePtr: *ScalarCell<usize> = &usizeCell
+  if usizePtr.valid {
+    usizePtr.value = 8
+    if usizePtr.current != 8 { return 29 }
+  } else { return 30 }
+
+  let f32Cell: ScalarCell<f32> = { value: 1.5 }
+  let f32Ptr: *ScalarCell<f32> = &f32Cell
+  let f32Old: f32 = 1.5
+  if f32Ptr.valid {
+    f32Ptr.value = 2.5
+    if f32Ptr.current == f32Old { return 31 }
+  } else { return 32 }
+
+  let f64Cell: ScalarCell<f64> = { value: 1.5 }
+  let f64Ptr: *ScalarCell<f64> = &f64Cell
+  let f64Old: f64 = 1.5
+  if f64Ptr.valid {
+    f64Ptr.value = 2.5
+    if f64Ptr.current == f64Old { return 33 }
+  } else { return 34 }
+
+  let constCell: ScalarCell<i64> = { value: 77 }
+  let constPtr: const *ScalarCell<i64> = const *constCell
+  if constPtr.valid {
+    if constPtr.current != 77 { return 35 }
+    if constPtr.stable != true { return 36 }
+  } else { return 37 }
+
+  return 0
+}

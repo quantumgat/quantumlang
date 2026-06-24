@@ -1,0 +1,58 @@
+pub SretAbi {
+  returnTypeName: string
+  sizeBytes: i64
+  enabled: bool
+  hiddenPointer: bool
+  pointerRegisterIndex: i64
+  diagnosticCode: string = ""
+}
+
+impl SretAbi {
+  pub SretAbi(
+    returnTypeName: string,
+    sizeBytes: i64,
+    enabled: bool,
+    hiddenPointer: bool,
+    pointerRegisterIndex: i64
+  ) =
+    This {
+      returnTypeName
+      sizeBytes
+      enabled
+      hiddenPointer
+      pointerRegisterIndex
+    }
+
+  pub forAggregate(aggregate: AggregateAbi) -> This {
+    if aggregate.valid == false {
+      return This {
+        returnTypeName: aggregate.typeName
+        sizeBytes: aggregate.sizeBytes
+        enabled: false
+        hiddenPointer: false
+        pointerRegisterIndex: 0
+        diagnosticCode: "QNATIVE0620"
+      }
+    }
+
+    let needsSret: bool = aggregate.memoryClass
+    return This {
+      returnTypeName: aggregate.typeName
+      sizeBytes: aggregate.sizeBytes
+      enabled: needsSret
+      hiddenPointer: needsSret
+      pointerRegisterIndex: 0
+    }
+  }
+}
+
+impl view SretAbi {
+  pub valid => diagnosticCode == "" &&
+    returnTypeName != "" &&
+    sizeBytes >= 0 &&
+    pointerRegisterIndex >= 0
+  pub usesSret => valid && enabled && hiddenPointer
+  pub directReturn => valid && enabled == false
+  pub abiHash => "sret:{returnTypeName}:{sizeBytes}:{enabled}:{pointerRegisterIndex}"
+  pub debugName => "sret.{returnTypeName}.{enabled}"
+}

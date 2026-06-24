@@ -1,0 +1,33 @@
+pub SliceProofRange<T> {
+  start: i64 = 0
+  count: i64 = 0
+}
+
+impl SliceProofRange<T> {
+  pub SliceProofRange(start: i64, count: i64) =
+    This { start, count }
+}
+
+pub SliceProof<T> {
+  rows: SliceProofRange<T> = {}
+}
+
+impl SliceProof<T> {
+  pub SliceProof(start: i64, count: i64) =
+    This { rows: SliceProofRange<T>(start, count) }
+}
+
+impl view SliceProof<T> {
+  pub start: i64 => rows.start
+  pub count: i64 => rows.count
+  pub end: i64 => rows.start + rows.count
+}
+
+pub proof_slice() -> i64 {
+  let rows: SliceProof<i64> = SliceProof(3, 6)
+  if rows.start != 3 { return 11 }
+  if rows.count != 6 { return 12 }
+  if rows.end != 9 { return 13 }
+  println("slice ok: {rows.start} {rows.count} {rows.end}")
+  return 0
+}

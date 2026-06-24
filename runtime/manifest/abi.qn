@@ -1,0 +1,34 @@
+pub RuntimeAbi {
+  name: string
+  version: string
+  pointerWidth: i64
+  endian: string
+}
+
+impl RuntimeAbi {
+  pub RuntimeAbi(name: string, version: string, pointerWidth: i64, endian: string) =
+    This {
+      name
+      version
+      pointerWidth
+      endian
+    }
+
+  pub core() =
+    This {
+      name: "qtlc-runtime-abi"
+      version: "qtlc-runtime-abi-v1"
+      pointerWidth: 64
+      endian: "little"
+    }
+}
+
+impl view RuntimeAbi {
+  pub valid: bool =>
+    name != "" &&
+    version != "" &&
+    pointerWidth > 0 &&
+    endian != ""
+
+  pub abiHash: string => "runtime.abi:{name}:{version}:{pointerWidth}:{endian}"
+}

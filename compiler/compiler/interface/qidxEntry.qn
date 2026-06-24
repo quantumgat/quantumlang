@@ -1,0 +1,17 @@
+pub QidxEntry {
+  modulePath: string
+  symbolName: string
+  capsulePath: string
+  capsuleOffset: usize
+}
+
+impl QidxEntry {
+  pub QidxEntry(modulePath: string, symbolName: string, capsulePath: string, capsuleOffset: usize) =
+    This { modulePath, symbolName, capsulePath, capsuleOffset }
+}
+
+impl view QidxEntry {
+  pub pointsIntoCapsule => capsulePath != ""
+  pub hasSymbol => modulePath != "" && symbolName != ""
+  pub valid => hasSymbol && pointsIntoCapsule
+}

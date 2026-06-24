@@ -1,0 +1,69 @@
+import frontend::{FrontendProduct}
+
+pub TypecheckFactState {
+  moduleContextCount: i64
+  callableContextCount: i64
+  expressionTypeFactCount: i64
+  literalTypeFactCount: i64
+  operatorTypeFactCount: i64
+  carrierFactCount: i64
+  diagnosticCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl TypecheckFactState {
+  pub forFrontend(frontend: FrontendProduct) =
+    This.forEnvironment(TypeEnvironment.forFrontend(frontend))
+
+  pub forEnvironment(environment: TypeEnvironment) =
+    This {
+      moduleContextCount: environment.moduleScopeCount
+      callableContextCount: environment.functionSymbolCount
+      expressionTypeFactCount: environment.expressionNodeCount
+      literalTypeFactCount: environment.literalNodeCount
+      operatorTypeFactCount: environment.operatorUseCount
+      carrierFactCount: environment.carrierUseCount
+      diagnosticCount: environment.diagnosticCount
+      deterministic: environment.deterministic
+    }
+}
+
+impl view TypecheckFactState {
+  pub typeContextCount => moduleContextCount + callableContextCount
+
+  pub typeFactCount =>
+    expressionTypeFactCount +
+    literalTypeFactCount +
+    operatorTypeFactCount +
+    carrierFactCount
+
+  pub typedNodeCount => expressionTypeFactCount
+
+  pub hasModuleContexts => moduleContextCount > 0
+
+  pub hasCallableContexts => callableContextCount > 0
+
+  pub hasExpressionFacts => expressionTypeFactCount > 0
+
+  pub hasLiteralFacts => literalTypeFactCount > 0
+
+  pub clean => diagnosticCount == 0
+
+  pub countsConsistent =>
+    moduleContextCount >= 0 &&
+    callableContextCount >= 0 &&
+    expressionTypeFactCount >= 0 &&
+    literalTypeFactCount >= 0 &&
+    operatorTypeFactCount >= 0 &&
+    carrierFactCount >= 0 &&
+    diagnosticCount >= 0
+
+  pub valid =>
+    deterministic &&
+    clean &&
+    countsConsistent &&
+    hasModuleContexts &&
+    hasCallableContexts &&
+    hasExpressionFacts &&
+    hasLiteralFacts
+}

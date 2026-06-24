@@ -1,0 +1,26 @@
+pub Riscv64CallSelect {
+  targetSymbol: string
+  argumentCount: i64
+  selectedOpcode: string = "jal"
+  relocationKind: string = "jal"
+  diagnosticCode: string = ""
+}
+
+impl Riscv64CallSelect {
+  pub Riscv64CallSelect(targetSymbol: string, argumentCount: i64) =
+    This {
+      targetSymbol
+      argumentCount
+    }
+}
+
+impl view Riscv64CallSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetSymbol != "" &&
+    argumentCount >= 0 &&
+    selectedOpcode != "" &&
+    relocationKind != ""
+
+  pub debugName: string => "isel.riscv64.call.{targetSymbol}"
+}

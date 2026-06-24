@@ -1,0 +1,79 @@
+import typeSystem::{OwnershipAuthorityTable}
+
+pub OwnershipInput {
+  authorityRowCount: i64
+  ownerCount: i64
+  rawViewCount: i64
+  callableBoundaryCount: i64
+  diagnosticCount: i64
+  backendAuthorityReady: bool
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl OwnershipInput {
+  pub OwnershipInput(
+    authorityRowCount: i64,
+    ownerCount: i64,
+    rawViewCount: i64,
+    callableBoundaryCount: i64,
+    diagnosticCount: i64,
+    backendAuthorityReady: bool,
+    deterministic: bool
+  ) =
+    This {
+      authorityRowCount
+      ownerCount
+      rawViewCount
+      callableBoundaryCount
+      diagnosticCount
+      backendAuthorityReady
+      deterministic
+      diagnosticCode: match deterministic {
+        true => ""
+        false => "QNATIVE0601"
+      }
+    }
+
+  pub fromAuthorityTable(authorities: OwnershipAuthorityTable) =
+    This(
+      authorities.rowCount,
+      authorities.ownerCount,
+      authorities.rawViewCount,
+      authorities.callableBoundaryCount,
+      authorities.diagnosticCount,
+      authorities.backendAuthorityReady,
+      authorities.valid
+    )
+}
+
+impl view OwnershipInput {
+  pub countsValid: bool => {
+    authorityRowCount >= ownerCount &&
+      authorityRowCount >= rawViewCount &&
+      authorityRowCount >= callableBoundaryCount &&
+      diagnosticCount >= 0
+  }
+
+  pub clean => diagnosticCount == 0 && diagnosticCode == ""
+
+  pub valid: bool => {
+    clean &&
+      countsValid &&
+      backendAuthorityReady &&
+      deterministic
+  }
+
+  pub ownershipHash => "ownership:{authorityRowCount}:{ownerCount}:{rawViewCount}:{callableBoundaryCount}:{diagnosticCount}"
+
+  pub authorityPlan() =
+    NativeBackendAuthorityPlan.fromOwnershipCounts(
+      authorityRowCount,
+      ownerCount,
+      rawViewCount,
+      callableBoundaryCount,
+      diagnosticCount,
+      backendAuthorityReady,
+      valid
+    )
+}

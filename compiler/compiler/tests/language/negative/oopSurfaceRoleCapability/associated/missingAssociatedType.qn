@@ -1,0 +1,4 @@
+extend HttpCtx<...Caps> : pub HttpAssociatedSpec<HttpCtx<...Caps>> {
+  type Error = IntoHttpError
+  const requiresAuth: bool = true
+}

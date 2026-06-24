@@ -1,0 +1,35 @@
+pub IndexProofRange<T> {
+  start: i64 = 0
+  count: i64 = 0
+}
+
+impl IndexProofRange<T> {
+  pub IndexProofRange(start: i64, count: i64) =
+    This { start, count }
+}
+
+pub IndexProof<K, V> {
+  keys: IndexProofRange<K> = {}
+  values: IndexProofRange<V> = {}
+}
+
+impl IndexProof<K, V> {
+  pub IndexProof(count: i64) =
+    This {
+      keys: IndexProofRange<K>(0, count)
+      values: IndexProofRange<V>(0, count)
+    }
+}
+
+impl view IndexProof<K, V> {
+  pub count: i64 => keys.count
+  pub aligned: bool => keys.count == values.count
+}
+
+pub proof_index() -> i64 {
+  let table: IndexProof<string, i64> = IndexProof(4)
+  if table.count != 4 { return 11 }
+  if table.aligned == false { return 12 }
+  println("index ok: {table.count}")
+  return 0
+}

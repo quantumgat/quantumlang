@@ -1,0 +1,11 @@
+import model::{OwnerBox, OwnerView}
+
+pub consumeBox(box: OwnerBox) -> OwnerView {
+  OwnerView(box.value)
+}
+
+pub moveProof() -> bool {
+  let box = OwnerBox.sample()
+  let moved = consumeBox(^box)
+  moved.value == 42
+}

@@ -1,0 +1,38 @@
+pub ThreadModel {
+  name: string
+  nativeThreads: bool
+  tls: bool
+  atomics: bool
+  waitPrimitive: string
+}
+
+impl ThreadModel {
+  pub ThreadModel(name: string, nativeThreads: bool, tls: bool, atomics: bool, waitPrimitive: string) =
+    This {
+      name
+      nativeThreads
+      tls
+      atomics
+      waitPrimitive
+    }
+
+  pub pthread() =
+    This("pthread", true, true, true, "futex")
+
+  pub win32() =
+    This("win32", true, true, true, "wait-on-address")
+
+  pub darwin() =
+    This("darwin-pthread", true, true, true, "ulock")
+
+  pub none() =
+    This("none", false, false, false, "none")
+}
+
+impl view ThreadModel {
+  pub threaded => nativeThreads
+  pub threadLocalCapable => tls
+  pub atomicCapable => atomics
+  pub waitCapable => waitPrimitive != "" && waitPrimitive != "none"
+  pub valid => name != "" && waitPrimitive != ""
+}

@@ -1,0 +1,38 @@
+pub MemorySelect {
+  operation: string
+  baseKind: string
+  displacement: i64
+  widthBits: i64
+  selectedOpcode: string
+  diagnosticCode: string = ""
+}
+
+impl MemorySelect {
+  pub MemorySelect(operation: string, baseKind: string, displacement: i64, widthBits: i64, selectedOpcode: string) =
+    This {
+      operation
+      baseKind
+      displacement
+      widthBits
+      selectedOpcode
+    }
+
+  pub load(baseKind: string, displacement: i64, widthBits: i64) =
+    This("load", baseKind, displacement, widthBits, "load")
+
+  pub store(baseKind: string, displacement: i64, widthBits: i64) =
+    This("store", baseKind, displacement, widthBits, "store")
+}
+
+impl view MemorySelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    operation != "" &&
+    baseKind != "" &&
+    widthBits > 0 &&
+    selectedOpcode != ""
+
+  pub loadOperation: bool => operation == "load"
+  pub storeOperation: bool => operation == "store"
+  pub debugName: string => "isel.memory.{operation}.{widthBits}"
+}

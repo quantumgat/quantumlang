@@ -1,0 +1,9 @@
+[module]
+name = "controlFlow"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/controlFlow"
+role = "control-flow-analysis"
+
+[dependencies]
+modules = ["core", "diagnostics", "source", "syntax", "typeSystem"]

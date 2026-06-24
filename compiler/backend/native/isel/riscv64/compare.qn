@@ -1,0 +1,26 @@
+pub Riscv64CompareSelect {
+  compareKind: string
+  widthBits: i64
+  selectedOpcode: string = "slt"
+  flagResult: string = "integer"
+  diagnosticCode: string = ""
+}
+
+impl Riscv64CompareSelect {
+  pub Riscv64CompareSelect(compareKind: string, widthBits: i64) =
+    This {
+      compareKind
+      widthBits
+    }
+}
+
+impl view Riscv64CompareSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    compareKind != "" &&
+    widthBits > 0 &&
+    selectedOpcode != "" &&
+    flagResult != ""
+
+  pub debugName: string => "isel.riscv64.compare.{compareKind}.{widthBits}"
+}

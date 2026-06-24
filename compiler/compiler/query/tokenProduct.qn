@@ -1,0 +1,39 @@
+pub TokenProduct {
+  fileId: StableId
+  key: QueryKey
+  sourceFingerprint: Fingerprint
+  tokenFingerprint: Fingerprint
+  tokenCount: usize
+  triviaCount: usize
+  diagnosticCount: usize = 0
+  schemaVersion: u64 = 1
+}
+
+impl TokenProduct {
+  pub init(
+    fileId: StableId,
+    sourceFingerprint: Fingerprint,
+    tokenFingerprint: Fingerprint,
+    tokenCount: usize,
+    triviaCount: usize,
+    diagnosticCount: usize
+  ) =
+    This {
+      fileId
+      key: QueryKey.tokens(fileId)
+      sourceFingerprint
+      tokenFingerprint
+      tokenCount
+      triviaCount
+      diagnosticCount
+    }
+
+  pub productFingerprint() =
+    ProductFingerprint(sourceFingerprint, tokenFingerprint)
+}
+
+impl view TokenProduct {
+  pub replayable => diagnosticCount == 0
+  pub hasTokens => tokenCount > 0
+  pub triviaHeavy => triviaCount > tokenCount
+}

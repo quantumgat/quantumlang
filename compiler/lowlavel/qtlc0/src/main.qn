@@ -1,0 +1,138 @@
+import readBorrowProof::{readBorrowProof}
+import moveProof::{moveProof}
+import mutableBorrowProof::{mutableBorrowProof}
+import rawPointerProof::{rawPointerProof, rawReferenceAddressProof, rawPointerAddressProof}
+import doubleFreeProof::{doubleFreeProof}
+import syntaxIntentProof::{syntaxIntentProof}
+import pointerValidityProof::{pointerValidityProof, nestedPointerValidityProof, loopPointerValidityProof, constPointerProof, constPointerAliasProof, mutablePointerTransferProof}
+import deepPointerOopProof::{deepPointerConstStatus, deepPointerMutableStatus}
+import pointerScalarMatrixProof::{pointerScalarMatrixStatus}
+import pointerCarrierMatrixProof::{pointerCarrierMatrixStatus}
+import pointerMathQuantumMatrixProof::{pointerMathQuantumMatrixStatus}
+import ownershipLiteralMatrixProof::{ownershipLiteralMatrixStatus}
+import genericAggregateLayoutProof::{genericAggregateLayoutStatus}
+import constAuthorityMatrixProof::{constAuthorityMatrixProof}
+import smartOwnerGlobalPointerProof::{smartOwnerGlobalPointerProof}
+import bytesHotPathProof::{bytesHotPathStatus}
+
+main() -> i64 {
+  if readBorrowProof() != true {
+    return 1
+  }
+
+  if moveProof() != true {
+    return 2
+  }
+
+  if mutableBorrowProof() != true {
+    return 3
+  }
+
+  if rawPointerProof() != true {
+    return 4
+  }
+
+  if doubleFreeProof() != true {
+    return 5
+  }
+
+  if syntaxIntentProof() != true {
+    return 6
+  }
+
+  if pointerValidityProof() != true {
+    return 7
+  }
+
+  if constPointerProof() != true {
+    return 8
+  }
+
+  if nestedPointerValidityProof() != true {
+    return 9
+  }
+
+  if loopPointerValidityProof() != true {
+    return 10
+  }
+
+  if constPointerAliasProof() != true {
+    return 11
+  }
+
+  if mutablePointerTransferProof() != true {
+    return 12
+  }
+
+  let deepMutableStatus = deepPointerMutableStatus()
+  if deepMutableStatus != 0 {
+    return 130 + deepMutableStatus
+  }
+
+  let deepConstStatus = deepPointerConstStatus()
+  if deepConstStatus != 0 {
+    return 140 + deepConstStatus
+  }
+
+  if constAuthorityMatrixProof().valid != true {
+    return 150
+  }
+
+  if smartOwnerGlobalPointerProof().valid != true {
+    return 160
+  }
+
+  let scalarMatrixStatus = pointerScalarMatrixStatus()
+  if scalarMatrixStatus != 0 {
+    return 200 + scalarMatrixStatus
+  }
+
+  let carrierMatrixStatus = pointerCarrierMatrixStatus()
+  if carrierMatrixStatus != 0 {
+    return 300 + carrierMatrixStatus
+  }
+
+  let mathQuantumMatrixStatus = pointerMathQuantumMatrixStatus()
+  if mathQuantumMatrixStatus != 0 {
+    return 400 + mathQuantumMatrixStatus
+  }
+
+  let ownershipMatrixStatus = ownershipLiteralMatrixStatus()
+  print("qtlc0 ownership literal status: {ownershipMatrixStatus}\n")
+  if ownershipMatrixStatus != 0 {
+    return 500 + ownershipMatrixStatus
+  }
+
+  let genericLayoutStatus = genericAggregateLayoutStatus()
+  print("qtlc0 generic aggregate layout status: {genericLayoutStatus}\n")
+  if genericLayoutStatus != 0 {
+    return 600 + genericLayoutStatus
+  }
+
+  let bytesStatus = match bytesHotPathStatus() {
+    Ok(status) => status
+    Err(error) => 99
+  }
+  print("qtlc0 native bytes hot path status: {bytesStatus}\n")
+  if bytesStatus != 0 {
+    return 700 + bytesStatus
+  }
+
+  let refAddress = rawReferenceAddressProof()
+  let ptrAddress = rawPointerAddressProof()
+  print("qtlc0 ref address proof: {refAddress}\n")
+  print("qtlc0 raw pointer address proof: {ptrAddress}\n")
+
+  let addressValue: i64 = 42
+  let addressPtr: const *i64 = const *addressValue
+  print("address: {&addressValue}\n")
+  print("ptr address: {addressPtr}\n")
+
+  print("qtlc0 deep pointer oop surface proof: ok\n")
+  print("qtlc0 pointer full type matrix proof: ok\n")
+  print("qtlc0 ownership literal full matrix proof: ok\n")
+  print("qtlc0 generic aggregate concrete layout proof: ok\n")
+  print("qtlc0 native bytes hot path proof: ok\n")
+  print("qtlc0 explicit ownership symbol proof: ok\n")
+  return 0
+}

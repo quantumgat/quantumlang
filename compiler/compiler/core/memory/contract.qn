@@ -1,0 +1,164 @@
+pub OwnershipContract {
+  owners: i64 = 0
+  views: i64 = 0
+  writable: i64 = 0
+  readOnly: i64 = 0
+  released: i64 = 0
+  deterministic: bool = true
+  safe: bool = true
+}
+
+impl OwnershipContract {
+  pub OwnershipContract(
+    owners: i64,
+    views: i64,
+    writable: i64,
+    readOnly: i64,
+    released: i64
+  ) =
+    This {
+      owners
+      views
+      writable
+      readOnly
+      released
+    }
+
+  pub addOwner() -> This {
+    return this {
+      owners: owners + 1
+    }
+  }
+
+  pub addView() -> This {
+    return this {
+      views: views + 1
+      readOnly: readOnly + 1
+    }
+  }
+
+  pub addWritable() -> This {
+    return this {
+      views: views + 1
+      writable: writable + 1
+    }
+  }
+
+  pub addReadOnly() -> This {
+    return addView()
+  }
+
+  pub addRelease() -> This {
+    return this {
+      released: released + 1
+    }
+  }
+
+  pub dropOwner() -> This {
+    if owners <= 0 {
+      return this
+    }
+    return this {
+      owners: owners - 1
+    }
+  }
+
+  pub dropView() -> This {
+    if views <= 0 {
+      return this
+    }
+    if readOnly > 0 {
+      return this {
+        views: views - 1
+        readOnly: readOnly - 1
+      }
+    }
+    return this {
+      views: views - 1
+      writable: writable - 1
+    }
+  }
+
+  pub dropWritable() -> This {
+    if writable <= 0 || views <= 0 {
+      return this
+    }
+    return this {
+      views: views - 1
+      writable: writable - 1
+    }
+  }
+
+  pub dropReadOnly() -> This {
+    if readOnly <= 0 || views <= 0 {
+      return this
+    }
+    return this {
+      views: views - 1
+      readOnly: readOnly - 1
+    }
+  }
+
+  pub requireSafe() -> This {
+    return this {
+      safe: true
+    }
+  }
+
+  pub allowUnsafe() -> This {
+    return this {
+      safe: false
+    }
+  }
+
+  pub merge(other: OwnershipContract) -> This {
+    return this {
+      owners: owners + other.owners
+      views: views + other.views
+      writable: writable + other.writable
+      readOnly: readOnly + other.readOnly
+      released: released + other.released
+      deterministic: deterministic && other.deterministic
+      safe: safe && other.safe
+    }
+  }
+}
+
+impl view OwnershipContract {
+  pub empty => owners == 0 && views == 0 && released == 0
+
+  pub hasOwners => owners > 0
+
+  pub hasViews => views > 0
+
+  pub hasWritable => writable > 0
+
+  pub hasReadOnly => readOnly > 0
+
+  pub viewsOk: bool => views == writable + readOnly
+
+  pub countsOk: bool => {
+    owners >= 0 &&
+    views >= 0 &&
+    writable >= 0 &&
+    readOnly >= 0 &&
+    released >= 0 &&
+    released <= owners
+  }
+
+  pub balanced => released <= owners
+
+  pub leakFree => released == owners || owners == 0
+
+  pub leaking => leakFree == false
+
+  pub safeDrop => deterministic && safe
+
+  pub noManualFree => safe
+
+  pub valid: bool => {
+    countsOk &&
+    viewsOk &&
+    safeDrop
+  }
+}

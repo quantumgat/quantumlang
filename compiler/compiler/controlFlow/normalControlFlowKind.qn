@@ -1,0 +1,10 @@
+pub enum NormalControlFlowKind {
+  If
+  IfElse
+  Match
+  Return
+  Require
+  Expr
+  Block
+  Unknown
+}

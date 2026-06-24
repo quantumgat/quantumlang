@@ -1,0 +1,25 @@
+import qtlc1::core::{FileId}
+import qtlc1::declaration::{DeclarationRecordBatch}
+import qtlc1::syntax::{PackageAstProduct, SourceLexer, SourceParser}
+import qtlc1::typeSystem::{TypeSymbolTable}
+
+main() -> i64 {
+  let ast = PackageAstProduct()
+  ast.addFile(
+    SourceParser(
+      SourceLexer(
+        FileId(1, 91, 1),
+        "pub enum HashDomain {{ Unknown Object Link }}"
+      ).lex(),
+      "proof::hashDomain"
+    ).parse()
+  )
+  let records = DeclarationRecordBatch.fromAst(ast)
+  let symbols = TypeSymbolTable.fromRecords(records.recordValues, true)
+  let object = symbols.symbolValueForMember("HashDomain", "Object")
+  if !object.id.valid { return 1 }
+  if object.ownerTypeName != "HashDomain" { return 2 }
+  if object.typeName != "HashDomain" { return 3 }
+  if object.memberKind != "enum-variant" { return 4 }
+  return 0
+}

@@ -1,0 +1,14 @@
+pub Owner {
+  value: i64
+}
+
+pub badManualFreeDelete() -> i64 {
+  let owner: Owner = { value: 1 }
+  free(owner)
+  delete(owner)
+  return owner.value
+}
+
+pub main() -> i64 {
+  return badManualFreeDelete()
+}

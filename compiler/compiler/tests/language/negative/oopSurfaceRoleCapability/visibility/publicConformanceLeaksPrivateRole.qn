@@ -1,0 +1,9 @@
+private role PrivateHttpRole<T> {
+  hidden() -> i64
+}
+
+impl HttpCtx<...Caps> : pub PrivateHttpRole<HttpCtx<...Caps>> {
+  hidden() -> i64 {
+    return 1
+  }
+}

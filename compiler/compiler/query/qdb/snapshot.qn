@@ -1,0 +1,123 @@
+pub QdbSnapshot {
+  header: QdbHeader = {}
+  querySection: QdbSection = {}
+  productSection: QdbSection = {}
+  dependencySection: QdbSection = {}
+  stringSection: QdbSection = {}
+  diagnosticSection: QdbSection = {}
+  queryCount: u64 = 0
+  productCount: u64 = 0
+  dependencyCount: u64 = 0
+  storageExtension: string = ".qcm"
+  actionIndexed: bool = true
+  externalDatabaseRequired: bool = false
+}
+
+impl QdbSnapshot {
+  pub QdbSnapshot(
+    revision: u64,
+    queryCount: u64,
+    productCount: u64,
+    dependencyCount: u64,
+    stringByteCount: u64,
+    diagnosticByteCount: u64,
+    contentHash: Fingerprint,
+    checksum: Fingerprint
+  ) -> This {
+    let headerBytes: u64 = 128
+    let sectionTableBytes: u64 = 5 * 48
+    let queryOffset = alignQdbOffset(headerBytes + sectionTableBytes, 8)
+    let querySection = QdbSection.fixed(
+      QdbSectionKind.QueryRows,
+      queryOffset,
+      queryCount,
+      80
+    )
+    let productSection = QdbSection.fixed(
+      QdbSectionKind.ProductRows,
+      alignQdbOffset(querySection.endOffset, 8),
+      productCount,
+      72
+    )
+    let dependencySection = QdbSection.fixed(
+      QdbSectionKind.DependencyRows,
+      alignQdbOffset(productSection.endOffset, 8),
+      dependencyCount,
+      48
+    )
+    let stringSection = QdbSection.bytes(
+      QdbSectionKind.StringBytes,
+      dependencySection.endOffset,
+      stringByteCount
+    )
+    let diagnosticSection = QdbSection.bytes(
+      QdbSectionKind.Diagnostics,
+      stringSection.endOffset,
+      diagnosticByteCount
+    )
+    let fileLength = diagnosticSection.endOffset
+
+    return This {
+      header: QdbHeader(
+        5,
+        fileLength,
+        revision,
+        contentHash,
+        checksum
+      )
+      querySection
+      productSection
+      dependencySection
+      stringSection
+      diagnosticSection
+      queryCount
+      productCount
+      dependencyCount
+    }
+  }
+}
+
+impl view QdbSnapshot {
+  pub countsMatch: bool =>
+    querySection.rowCount == queryCount &&
+    productSection.rowCount == productCount &&
+    dependencySection.rowCount == dependencyCount
+
+  pub orderedSections: bool =>
+    querySection.endOffset <= productSection.offset &&
+    productSection.endOffset <= dependencySection.offset &&
+    dependencySection.endOffset <= stringSection.offset &&
+    stringSection.endOffset <= diagnosticSection.offset &&
+    diagnosticSection.endOffset == header.fileLength
+
+  pub mmapReady: bool =>
+    header.portable &&
+    querySection.aligned &&
+    productSection.aligned &&
+    dependencySection.aligned
+
+  pub globalMetadataProduct: bool =>
+    storageExtension == ".qcm" &&
+    actionIndexed
+
+  pub valid: bool =>
+    header.valid &&
+    querySection.valid &&
+    productSection.valid &&
+    dependencySection.valid &&
+    stringSection.valid &&
+    diagnosticSection.valid &&
+    countsMatch &&
+    orderedSections &&
+    mmapReady &&
+    globalMetadataProduct &&
+    externalDatabaseRequired == false
+}
+
+alignQdbOffset(value: u64, alignment: u64) -> u64 {
+  let remainder = value % alignment
+  if remainder == 0 {
+    return value
+  }
+  return value + alignment - remainder
+}

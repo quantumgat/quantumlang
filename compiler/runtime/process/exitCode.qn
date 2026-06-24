@@ -1,0 +1,26 @@
+pub ProcessExitCode {
+  success: i64
+  failure: i64
+  typeName: string
+}
+
+impl ProcessExitCode {
+  pub ProcessExitCode(success: i64, failure: i64, typeName: string) =
+    This {
+      success
+      failure
+      typeName
+    }
+
+  pub core() =
+    This {
+      success: 0
+      failure: 1
+      typeName: "i32"
+    }
+}
+
+impl view ProcessExitCode {
+  pub valid: bool => typeName != "" && success != failure
+  pub exitHash: string => "runtime.exitcode:{success}:{failure}:{typeName}"
+}

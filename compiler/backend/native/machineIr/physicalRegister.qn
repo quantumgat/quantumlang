@@ -1,0 +1,29 @@
+pub PhysicalRegister {
+  name: string
+  className: string
+  callerSaved: bool
+  calleeSaved: bool
+}
+
+impl PhysicalRegister {
+  pub PhysicalRegister(name: string, className: string, callerSaved: bool, calleeSaved: bool) =
+    This {
+      name
+      className
+      callerSaved
+      calleeSaved
+    }
+
+  pub caller(name: string, className: string) =
+    This(name, className, true, false)
+
+  pub callee(name: string, className: string) =
+    This(name, className, false, true)
+}
+
+impl view PhysicalRegister {
+  pub valid => name != "" && className != "" && (callerSaved || calleeSaved)
+  pub allocatable => valid
+  pub saveRequired => calleeSaved
+  pub debugName => name
+}

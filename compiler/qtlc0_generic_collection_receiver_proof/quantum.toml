@@ -1,0 +1,11 @@
+[package]
+name = "qtlc0_generic_collection_receiver_proof"
+version = "0.1.0"
+
+[sources]
+roots = ["src"]
+
+[targets.app]
+kind = "bin"
+main = "src/main.qn"
+backend = "native"

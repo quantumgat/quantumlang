@@ -1,0 +1,23 @@
+pub CoreGap {
+  kind: CoreKind = Unknown
+  currentShape: string = ""
+  targetShape: string = ""
+  blocksMigration: bool = true
+}
+
+impl CoreGap {
+  pub CoreGap(kind: CoreKind, currentShape: string, targetShape: string) =
+    This {
+      kind
+      currentShape
+      targetShape
+    }
+}
+
+impl view CoreGap {
+  pub known => kind != CoreKind.Unknown
+
+  pub described => currentShape != "" && targetShape != ""
+
+  pub valid => known && described
+}

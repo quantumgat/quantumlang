@@ -1,0 +1,26 @@
+pub RuntimeInit {
+  symbolName: string
+  phaseCount: i64
+  deterministic: bool
+}
+
+impl RuntimeInit {
+  pub RuntimeInit(symbolName: string, phaseCount: i64, deterministic: bool) =
+    This {
+      symbolName
+      phaseCount
+      deterministic
+    }
+
+  pub core() =
+    This {
+      symbolName: "qtlc_runtime_init"
+      phaseCount: 0
+      deterministic: true
+    }
+}
+
+impl view RuntimeInit {
+  pub valid: bool => symbolName != "" && phaseCount >= 0 && deterministic
+  pub initHash: string => "runtime.init:{symbolName}:{phaseCount}:{deterministic}"
+}

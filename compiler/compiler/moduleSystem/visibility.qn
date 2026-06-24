@@ -1,0 +1,40 @@
+pub enum VisibilityKind {
+  Public
+  Module
+  Private
+  Unknown
+}
+
+pub Visibility {
+  kind: VisibilityKind = Unknown
+  exported: bool = false
+  boundaryVisible: bool = false
+}
+
+impl Visibility {
+  pub public() =
+    This {
+      kind: VisibilityKind.Public,
+      exported: true,
+      boundaryVisible: true,
+    }
+
+  pub module() =
+    This {
+      kind: VisibilityKind.Module,
+      boundaryVisible: true,
+    }
+
+  pub private() =
+    This { kind: VisibilityKind.Private }
+}
+
+impl view Visibility {
+  pub publicApi => kind == VisibilityKind.Public && exported
+
+  pub moduleApi => kind == VisibilityKind.Module && boundaryVisible
+
+  pub internal => kind == VisibilityKind.Private
+
+  pub valid => kind != VisibilityKind.Unknown
+}

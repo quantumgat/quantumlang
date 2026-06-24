@@ -1,0 +1,18 @@
+pub QuantumHirLowering {
+  lowered: i64
+  qmirProduct: Qmir
+  deterministic: bool
+}
+
+impl QuantumHirLowering {
+  pub QuantumHirLowering(lowered: i64, qmirProduct: Qmir) =
+    This {
+      lowered
+      qmirProduct
+      deterministic: qmirProduct.deterministic
+    }
+}
+
+impl view QuantumHirLowering {
+  pub valid => lowered >= 0 && deterministic
+}

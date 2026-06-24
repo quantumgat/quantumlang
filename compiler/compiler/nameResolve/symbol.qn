@@ -1,0 +1,61 @@
+import core::{DeclarationId, ModuleId, NameId, QualifiedName, Slice, SymbolId, TypeId}
+import declaration::{DeclarationRecord}
+
+pub Symbol {
+  id: SymbolId = {}
+  nameId: NameId = {}
+  declaration: DeclarationId = {}
+  module: ModuleId = {}
+  qualifiedName: QualifiedName = {}
+  typeId: TypeId = {}
+  name: string = ""
+  public: bool = false
+  resolved: bool = true
+  deterministic: bool = true
+}
+
+impl Symbol {
+  pub Symbol(name: string) =
+    This { name }
+
+  pub Symbol(id: SymbolId, nameId: NameId, declaration: DeclarationId, module: ModuleId) =
+    This { id, nameId, declaration, module }
+
+  pub publicSymbol(id: SymbolId, nameId: NameId, declaration: DeclarationId, module: ModuleId) =
+    This { id, nameId, declaration, module, public: true }
+
+  pub fromRecord(record: DeclarationRecord, module: ModuleId) =
+    This {
+      id: SymbolId(1, module.id.moduleHash, record.id, 0)
+      nameId: NameId(record.id)
+      declaration: DeclarationId(1, module.id.moduleHash, record.id, 0)
+      module
+      qualifiedName: QualifiedName.interned(
+        NameId(1),
+        Slice<NameId>(1),
+        NameId(record.id),
+        record.id
+      )
+      name: record.name
+      public: record.publicVisible
+      resolved: record.resolved
+      deterministic: record.deterministic
+    }
+}
+
+impl view Symbol {
+  pub named: bool => name != "" || nameId.valid
+
+  pub declared: bool => declaration.valid
+
+  pub moduleScoped: bool => module.valid
+
+  pub typed: bool => typeId.valid
+
+  pub qualified: bool => qualifiedName.valid
+
+  pub valid: bool =>
+    deterministic &&
+    resolved &&
+    named
+}

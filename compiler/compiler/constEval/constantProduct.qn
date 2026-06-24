@@ -1,0 +1,27 @@
+import core::{Vec}
+
+pub ConstantProduct {
+  values: Vec<ConstantValue> = []
+  errors: Vec<ConstantError> = []
+  fingerprint: StableConstantHash
+  deterministic: bool = true
+}
+
+impl ConstantProduct {
+  pub ConstantProduct(values: Vec<ConstantValue>, fingerprint: StableConstantHash) =
+    This { values, fingerprint }
+}
+
+impl view ConstantProduct {
+  pub valueCount: i64 => values.count
+  pub errorCount: i64 => errors.count
+  pub clean: bool => errorCount == 0
+
+  pub valid: bool =>
+    values.valid &&
+    errors.valid &&
+    valueCount > 0 &&
+    clean &&
+    fingerprint.valid &&
+    deterministic
+}

@@ -1,0 +1,77 @@
+// design-only: target QuantumLang syntax for generic + variadic spread proof.
+
+impl<T, ...Caps> HttpCtx<T, ...Caps> :
+  pub Omg<HttpCtx<T, ...Caps>>,
+  internal OmgPack<T, ...Caps>
+where
+  T: HttpCapability,
+  ...Caps: HttpCapability
+{
+  pub omgValue() -> i64 {
+    return trace.value + Caps.count
+  }
+
+  internal packValue() -> i64 {
+    return Caps.count + 1
+  }
+}
+
+impl view<T, ...Caps> HttpCtx<T, ...Caps> :
+  pub OmgView<HttpCtx<T, ...Caps>>
+where
+  T: HttpCapability,
+  ...Caps: HttpCapability
+{
+  pub omgViewValue: string =>
+    "{path}:pack={Caps.count}"
+}
+
+context<T, ...Caps> HttpCtx<T, ...Caps> :
+  pub OmgContext<T, ...Caps>
+where
+  T: HttpCapability,
+  ...Caps: HttpCapability
+{
+  pub omgContextValue<U>() -> Result<U, IntoHttpError> {
+    return require<U>()
+  }
+}
+
+extract<T, ...Caps> HttpCtx<T, ...Caps> :
+  pub OmgExtract<T, ...Caps>
+where
+  T: HttpCapability,
+  ...Caps: HttpCapability
+{
+  pub omgExtractValue<U>() -> Result<U, IntoHttpError> {
+    return body<U>()
+  }
+}
+
+extend<T, ...Caps> HttpCtx<T, ...Caps> :
+  pub OmgExtend<HttpCtx<T, ...Caps>>
+where
+  T: HttpCapability,
+  ...Caps: HttpCapability
+{
+  pub omgExtendedValue() -> i64 {
+    return trace.value + Caps.count + 1000
+  }
+}
+
+pub secureRoute<...Caps>(
+  ctx: HttpCtx<AuthUser, Session<UserSession>, ...Caps>
+) -> Result<RouteReady<HttpCtx<AuthUser, Session<UserSession>, ...Caps>>, IntoHttpError> {
+  let user = ctx.user()?
+  let session = ctx.sessionData<UserSession>()?
+
+  if ctx.has<CsrfToken>() == false {
+    return Err(IntoHttpError.forbidden(TextView("missing csrf")))
+  }
+
+  return Ok(RouteReady<HttpCtx<AuthUser, Session<UserSession>, ...Caps>>(
+    ctx.withTrace(TraceId.new()),
+    user,
+    session
+  ))
+}

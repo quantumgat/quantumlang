@@ -1,0 +1,27 @@
+pub ElfTypes {
+  format: string = "elf"
+  class64: i64 = 2
+  littleEndian: i64 = 1
+  relocatable: i64 = 1
+  machineX86_64: i64 = 62
+  sectionNull: i64 = 0
+  sectionProgbits: i64 = 1
+  sectionStrtab: i64 = 3
+  flagAlloc: i64 = 2
+  flagExec: i64 = 4
+}
+
+impl ElfTypes {
+  pub defaults() =
+    This {}
+}
+
+impl view ElfTypes {
+  pub valid: bool => format == "elf" &&
+    class64 == 2 &&
+    littleEndian == 1 &&
+    relocatable == 1 &&
+    machineX86_64 == 62
+  pub textFlags: i64 => flagAlloc + flagExec
+  pub debugName: string => "elf.types.{format}.{machineX86_64}"
+}

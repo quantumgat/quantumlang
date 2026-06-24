@@ -1,0 +1,21 @@
+pub VirtualRegister {
+  id: i64
+  className: string
+  widthBits: i64
+}
+
+impl VirtualRegister {
+  pub VirtualRegister(id: i64, className: string, widthBits: i64) =
+    This {
+      id
+      className
+      widthBits
+    }
+}
+
+impl view VirtualRegister {
+  pub valid => id >= 0 && className != "" && widthBits > 0
+  pub scalar => className == "gpr" || className == "int"
+  pub vector => className == "vec" || className == "simd"
+  pub debugName => "v{className}{id}:{widthBits}"
+}

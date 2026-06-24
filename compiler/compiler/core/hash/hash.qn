@@ -1,0 +1,113 @@
+pub Hash128 {
+  value: bytes = ByteValue.empty()
+}
+
+impl Hash128 {
+  pub fromBytes(value: bytes) -> Result<This, HashError> {
+    if value.length() != 16 {
+      return Err(HashError {
+        kind: HashErrorKind.InvalidDigestLength
+        expected: 16
+        actual: value.length()
+      })
+    }
+
+    return Ok(This { value })
+  }
+
+}
+
+impl view Hash128 {
+  pub toBytes() -> bytes {
+    return value
+  }
+
+  pub asView() -> ByteView {
+    return ByteView(value)
+  }
+
+  pub same(other: Hash128) -> bool {
+    return value == other.value
+  }
+
+  pub length: usize => 16
+  pub bitLength: usize => 128
+  pub empty: bool => value.length() == 0
+  pub valid: bool => value.length() == length
+}
+
+pub Hash256 {
+  value: bytes = ByteValue.empty()
+}
+
+impl Hash256 {
+  pub fromBytes(value: bytes) -> Result<This, HashError> {
+    if value.length() != 32 {
+      return Err(HashError {
+        kind: HashErrorKind.InvalidDigestLength
+        expected: 32
+        actual: value.length()
+      })
+    }
+
+    return Ok(This { value })
+  }
+
+}
+
+impl view Hash256 {
+  pub toBytes() -> bytes {
+    return value
+  }
+
+  pub asView() -> ByteView {
+    return ByteView(value)
+  }
+
+  pub same(other: Hash256) -> bool {
+    return value == other.value
+  }
+
+  pub length: usize => 32
+  pub bitLength: usize => 256
+  pub empty: bool => value.length() == 0
+  pub valid: bool => value.length() == length
+}
+
+pub Hash512 {
+  value: bytes = ByteValue.empty()
+}
+
+impl Hash512 {
+  pub fromBytes(value: bytes) -> Result<This, HashError> {
+    if value.length() != 64 {
+      return Err(HashError {
+        kind: HashErrorKind.InvalidDigestLength
+        expected: 64
+        actual: value.length()
+      })
+    }
+
+    return Ok(This { value })
+  }
+
+}
+
+impl view Hash512 {
+  pub toBytes() -> bytes {
+    return value
+  }
+
+  pub asView() -> ByteView {
+    return ByteView(value)
+  }
+
+  pub same(other: Hash512) -> bool {
+    return value == other.value
+  }
+
+  pub length: usize => 64
+  pub bitLength: usize => 512
+  pub empty: bool => value.length() == 0
+  pub valid: bool => value.length() == length
+}

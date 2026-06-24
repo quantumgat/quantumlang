@@ -1,0 +1,12 @@
+pub MapUser {
+  id: string
+  name: string
+}
+
+pub proof_map() -> i64 {
+  let users: Map<string, MapUser> = {
+    "u1": { id: "u1", name: "Ali" }
+  }
+  println("map ok")
+  return 0
+}

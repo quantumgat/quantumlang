@@ -1,0 +1,15 @@
+[package]
+name = "qtlc1-overload-resolution-proof"
+version = "0.1.0"
+edition = "2026"
+
+[source]
+root = "src"
+
+[dependencies]
+qtlc1 = { path = "../compiler", version = "0.1.0" }
+
+[targets.app]
+kind = "bin"
+main = "src/main.qn"
+backend = "native"

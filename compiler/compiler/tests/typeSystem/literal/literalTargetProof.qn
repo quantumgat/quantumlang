@@ -1,0 +1,144 @@
+import typeSystem::{*}
+pub LiteralTargetProof {
+  emptyArrayRequiresTarget: bool
+  noneRequiresOptionTarget: bool
+  noneRejectsNonOptionTarget: bool
+  targetTypedValueLiftsToOption: bool
+  targetTypedIntegerLiftsToOption: bool
+  recordProducesAnonymousRecord: bool
+  quotedMapProducesMap: bool
+  byteTargetsByte: bool
+  stringTargetsString: bool
+  wideNumericTargetsAccepted: bool
+  coreNumericTargetsAccepted: bool
+  aggregateTargetsValidated: bool
+  nonLiteralTargetsRejected: bool
+  invalidTargetsRejected: bool
+  valid: bool
+}
+
+pub literalTargetProof() -> LiteralTargetProof {
+  let empty = LiteralTargetContext("", false, false)
+  let clear = LiteralTargetContext("", true, false)
+  let optionString = LiteralTargetContext("Option<string>", true, false)
+  let optionInteger = LiteralTargetContext("Option<i64>", true, false)
+  let plainString = LiteralTargetContext("string", true, false)
+  let quotedMap = LiteralTargetContext("", false, true)
+  let i128Target = LiteralTargetContext("i128", true, false)
+  let u256Target = LiteralTargetContext("u256", true, false)
+  let f128Target = LiteralTargetContext("f128", true, false)
+  let decTarget = LiteralTargetContext("dec256", true, false)
+  let fixedTarget = LiteralTargetContext("fixed", true, false)
+  let bigIntTarget = LiteralTargetContext("BigInt", true, false)
+  let bigUintTarget = LiteralTargetContext("BigUint", true, false)
+  let vecTarget = LiteralTargetContext("Vec<i64>", true, false)
+  let arrayTarget = LiteralTargetContext("Array<i64,4>", true, false)
+  let mapTarget = LiteralTargetContext("Map<string,i64>", true, false)
+  let quantumTarget = LiteralTargetContext("qubit", true, false)
+  let functionTarget = LiteralTargetContext("Function", true, false)
+  let integerIntoString = LiteralTargetContext("string", true, false)
+  let stringIntoInteger = LiteralTargetContext("i64", true, false)
+
+  let emptyArrayMiss = empty.resolve(TypeLiteralKind.Vec)
+  let clearArray = clear.resolve(TypeLiteralKind.Vec)
+  let noneMiss = empty.resolve(TypeLiteralKind.None)
+  let noneHit = optionString.resolve(TypeLiteralKind.None)
+  let noneWrongTarget = plainString.resolve(TypeLiteralKind.None)
+  let stringLift = optionString.resolve(TypeLiteralKind.String)
+  let integerLift = optionInteger.resolve(TypeLiteralKind.Integer)
+  let recordHit = empty.resolve(TypeLiteralKind.Record)
+  let mapHit = quotedMap.resolve(TypeLiteralKind.Map)
+  let byteHit = empty.resolve(TypeLiteralKind.Byte)
+  let stringHit = empty.resolve(TypeLiteralKind.String)
+  let i128Hit = i128Target.resolve(TypeLiteralKind.Integer)
+  let u256Hit = u256Target.resolve(TypeLiteralKind.Integer)
+  let f128Hit = f128Target.resolve(TypeLiteralKind.Float)
+  let decIntegerHit = decTarget.resolve(TypeLiteralKind.Integer)
+  let decFloatHit = decTarget.resolve(TypeLiteralKind.Float)
+  let fixedHit = fixedTarget.resolve(TypeLiteralKind.Float)
+  let bigIntHit = bigIntTarget.resolve(TypeLiteralKind.Integer)
+  let bigUintHit = bigUintTarget.resolve(TypeLiteralKind.Integer)
+  let vecHit = vecTarget.resolve(TypeLiteralKind.Vec)
+  let arrayHit = arrayTarget.resolve(TypeLiteralKind.FixedArray)
+  let mapTargetHit = mapTarget.resolve(TypeLiteralKind.Map)
+  let quantumMiss = quantumTarget.resolve(TypeLiteralKind.Integer)
+  let functionMiss = functionTarget.resolve(TypeLiteralKind.Record)
+  let integerStringMiss = integerIntoString.resolve(TypeLiteralKind.Integer)
+  let stringIntegerMiss = stringIntoInteger.resolve(TypeLiteralKind.String)
+
+  let emptyArrayRequiresTarget = emptyArrayMiss.needsTarget &&
+    emptyArrayMiss.diagnosticCode == "QTLIT0002" &&
+    clearArray.resolvedType == "Vec<T>"
+
+  let noneRequiresOptionTarget = noneMiss.needsTarget &&
+    noneMiss.diagnosticCode == "QTLIT0001" &&
+    noneHit.resolvedType == "Option<string>"
+
+  let noneRejectsNonOptionTarget = noneWrongTarget.needsTarget &&
+    noneWrongTarget.diagnosticCode == "QTLIT0001"
+
+  let targetTypedValueLiftsToOption = stringLift.resolvedType == "Option<string>"
+
+  let targetTypedIntegerLiftsToOption = integerLift.resolvedType == "Option<i64>"
+
+  let recordProducesAnonymousRecord = recordHit.resolvedType == "record"
+
+  let quotedMapProducesMap = mapHit.resolvedType == "Map<string,T>"
+
+  let byteTargetsByte = byteHit.resolvedType == "byte"
+
+  let stringTargetsString = stringHit.resolvedType == "string"
+
+  let wideNumericTargetsAccepted = i128Hit.resolvedType == "i128" &&
+    u256Hit.resolvedType == "u256" &&
+    f128Hit.resolvedType == "f128"
+
+  let coreNumericTargetsAccepted = decIntegerHit.resolvedType == "dec256" &&
+    decFloatHit.resolvedType == "dec256" &&
+    fixedHit.resolvedType == "fixed" &&
+    bigIntHit.resolvedType == "BigInt" &&
+    bigUintHit.resolvedType == "BigUint"
+
+  let aggregateTargetsValidated = vecHit.resolvedType == "Vec<i64>" &&
+    arrayHit.resolvedType == "Array<i64,4>" &&
+    mapTargetHit.resolvedType == "Map<string,i64>"
+
+  let nonLiteralTargetsRejected = quantumMiss.diagnosticCode == "QTLIT0008" &&
+    functionMiss.diagnosticCode == "QTLIT0008"
+
+  let invalidTargetsRejected = integerStringMiss.diagnosticCode == "QTLIT0008" &&
+    stringIntegerMiss.diagnosticCode == "QTLIT0008"
+
+  let valid = emptyArrayRequiresTarget &&
+    noneRequiresOptionTarget &&
+    noneRejectsNonOptionTarget &&
+    targetTypedValueLiftsToOption &&
+    targetTypedIntegerLiftsToOption &&
+    recordProducesAnonymousRecord &&
+    quotedMapProducesMap &&
+    byteTargetsByte &&
+    stringTargetsString &&
+    wideNumericTargetsAccepted &&
+    coreNumericTargetsAccepted &&
+    aggregateTargetsValidated &&
+    nonLiteralTargetsRejected &&
+    invalidTargetsRejected
+
+  return LiteralTargetProof {
+    emptyArrayRequiresTarget: emptyArrayRequiresTarget,
+    noneRequiresOptionTarget: noneRequiresOptionTarget,
+    noneRejectsNonOptionTarget: noneRejectsNonOptionTarget,
+    targetTypedValueLiftsToOption: targetTypedValueLiftsToOption,
+    targetTypedIntegerLiftsToOption: targetTypedIntegerLiftsToOption,
+    recordProducesAnonymousRecord: recordProducesAnonymousRecord,
+    quotedMapProducesMap: quotedMapProducesMap,
+    byteTargetsByte: byteTargetsByte,
+    stringTargetsString: stringTargetsString,
+    wideNumericTargetsAccepted: wideNumericTargetsAccepted,
+    coreNumericTargetsAccepted: coreNumericTargetsAccepted,
+    aggregateTargetsValidated: aggregateTargetsValidated,
+    nonLiteralTargetsRejected: nonLiteralTargetsRejected,
+    invalidTargetsRejected: invalidTargetsRejected,
+    valid: valid,
+  }
+}

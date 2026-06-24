@@ -1,0 +1,69 @@
+pub ObjectBytes {
+  objectHash: string
+  sectionBytes: i64
+  symbolBytes: i64
+  relocationBytes: i64
+  stringTableBytes: i64
+  byteCount: i64
+  byteHash: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl ObjectBytes {
+  pub ObjectBytes(
+    objectHash: string,
+    sectionBytes: i64,
+    symbolBytes: i64,
+    relocationBytes: i64,
+    stringTableBytes: i64,
+    byteCount: i64,
+    byteHash: string
+  ) =
+    This {
+      objectHash
+      sectionBytes
+      symbolBytes
+      relocationBytes
+      stringTableBytes
+      byteCount
+      byteHash
+    }
+
+  pub fromParts(
+    objectFile: ObjectFile,
+    section: SectionBytes,
+    symbols: SymbolTableBytes,
+    relocations: RelocationBytes,
+    strings: StringTableBytes
+  ) =
+    This {
+      objectHash: objectFile.objectHash
+      sectionBytes: section.byteCount
+      symbolBytes: symbols.byteCount
+      relocationBytes: relocations.byteCount
+      stringTableBytes: strings.byteCount
+      byteCount: section.byteCount + symbols.byteCount + relocations.byteCount + strings.byteCount + 64
+      byteHash: "object-bytes:{objectFile.objectHash}:{section.byteHash}:{symbols.byteHash}:{relocations.byteHash}:{strings.byteHash}"
+      deterministic: objectFile.deterministic && section.deterministic && symbols.deterministic && relocations.deterministic && strings.deterministic
+      diagnosticCode: match objectFile.valid && section.valid && symbols.valid && relocations.valid && strings.valid {
+        true => ""
+        false => "QNATIVE0734"
+      }
+    }
+}
+
+impl view ObjectBytes {
+  pub valid => diagnosticCode == "" &&
+    objectHash != "" &&
+    sectionBytes >= 0 &&
+    symbolBytes >= 0 &&
+    relocationBytes >= 0 &&
+    stringTableBytes >= 0 &&
+    byteCount > 0 &&
+    byteHash != "" &&
+    deterministic
+  pub hasPayload => byteCount > 0
+  pub cacheable => valid && byteHash != ""
+  pub debugName => "object.bytes.{byteCount}"
+}

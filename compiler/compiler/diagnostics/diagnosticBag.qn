@@ -1,0 +1,30 @@
+pub DiagnosticBag {
+  count: i64
+  errorCount: i64
+  warningCount: i64
+  deterministicOrder: bool = true
+}
+
+impl DiagnosticBag {
+  pub DiagnosticBag(count: i64, errorCount: i64, warningCount: i64) =
+    This { count, errorCount, warningCount }
+}
+
+impl view DiagnosticBag {
+  pub clean => errorCount == 0
+
+  pub failed => errorCount > 0
+
+  pub hasWarnings => warningCount > 0
+
+  pub hasDiagnostics => count > 0
+
+  pub empty => count == 0
+
+  pub countsConsistent => count >= errorCount + warningCount &&
+    count >= 0 &&
+    errorCount >= 0 &&
+    warningCount >= 0
+
+  pub valid => deterministicOrder && countsConsistent
+}

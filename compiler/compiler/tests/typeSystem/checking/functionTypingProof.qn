@@ -1,0 +1,50 @@
+import typeSystem::{*}
+pub FunctionTypingProof {
+  constructorDefaultsToThis: bool
+  expressionBodyInfersReturn: bool
+  expressionBodyHonorsDeclaredReturn: bool
+  voidBlockAllowsNoReturn: bool
+  nonVoidBlockRequiresReturn: bool
+  blockInferenceRejected: bool
+  valid: bool
+}
+
+pub functionTypingProof() -> FunctionTypingProof {
+  let constructor = FunctionReturnRule.fromBody(FunctionBodyKind.ConstructorBody, "", "SourceSpan", "SourceSpan", false)
+  let expressionInfer = FunctionReturnRule.fromBody(FunctionBodyKind.ExpressionBody, "", "usize", "SourceSpan", false)
+  let expressionDeclared = FunctionReturnRule.fromBody(FunctionBodyKind.ExpressionBody, "bool", "bool", "SourceSpan", false)
+  let emptyVoid = FunctionReturnRule.fromBody(FunctionBodyKind.EmptyBlockBody, "", "", "SourceSpan", false)
+  let nonVoidMissing = FunctionReturnRule.fromBody(FunctionBodyKind.BlockBody, "string", "", "SourceSpan", false)
+  let nonVoidReturn = FunctionReturnRule.fromBody(FunctionBodyKind.BlockBody, "string", "string", "SourceSpan", true)
+  let unclearBlock = FunctionReturnRule.fromBody(FunctionBodyKind.BlockBody, "", "string", "SourceSpan", true)
+
+  let constructorDefaultsToThis = constructor.inferredReturnType == "SourceSpan"
+
+  let expressionBodyInfersReturn = expressionInfer.inferredReturnType == "usize"
+
+  let expressionBodyHonorsDeclaredReturn = expressionDeclared.inferredReturnType == "bool"
+
+  let voidBlockAllowsNoReturn = emptyVoid.inferredReturnType == "void"
+
+  let nonVoidBlockRequiresReturn = nonVoidMissing.diagnosticCode == "QTFN0002" &&
+    nonVoidReturn.inferredReturnType == "string"
+
+  let blockInferenceRejected = unclearBlock.diagnosticCode == "QTFN0003"
+
+  let valid = constructorDefaultsToThis &&
+    expressionBodyInfersReturn &&
+    expressionBodyHonorsDeclaredReturn &&
+    voidBlockAllowsNoReturn &&
+    nonVoidBlockRequiresReturn &&
+    blockInferenceRejected
+
+  return FunctionTypingProof {
+    constructorDefaultsToThis: constructorDefaultsToThis,
+    expressionBodyInfersReturn: expressionBodyInfersReturn,
+    expressionBodyHonorsDeclaredReturn: expressionBodyHonorsDeclaredReturn,
+    voidBlockAllowsNoReturn: voidBlockAllowsNoReturn,
+    nonVoidBlockRequiresReturn: nonVoidBlockRequiresReturn,
+    blockInferenceRejected: blockInferenceRejected,
+    valid: valid,
+  }
+}

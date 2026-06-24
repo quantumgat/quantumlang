@@ -1,0 +1,33 @@
+pub X86MemorySelect {
+  operation: string
+  widthBits: i64
+  addressingMode: string = "base-displacement"
+  selectedOpcode: string
+  diagnosticCode: string = ""
+}
+
+impl X86MemorySelect {
+  pub X86MemorySelect(operation: string, widthBits: i64, selectedOpcode: string) =
+    This {
+      operation
+      widthBits
+      selectedOpcode
+    }
+
+  pub load(widthBits: i64) =
+    This("load", widthBits, "mov-load")
+
+  pub store(widthBits: i64) =
+    This("store", widthBits, "mov-store")
+}
+
+impl view X86MemorySelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    operation != "" &&
+    widthBits > 0 &&
+    addressingMode != "" &&
+    selectedOpcode != ""
+
+  pub debugName: string => "isel.x86_64.memory.{operation}.{widthBits}"
+}

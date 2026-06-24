@@ -1,0 +1,16 @@
+pub StableLayoutHash {
+  high: u64
+  low: u64
+}
+
+impl StableLayoutHash {
+  pub fromLayout(typeLayout: TypeLayout, context: TargetLayoutContext) =
+    This {
+      high: typeLayout.typeId.id.packageHash + typeLayout.size
+      low: typeLayout.typeId.id.localHash + typeLayout.alignment + context.pointerSize
+    }
+}
+
+impl view StableLayoutHash {
+  pub valid: bool => high != 0 || low != 0
+}

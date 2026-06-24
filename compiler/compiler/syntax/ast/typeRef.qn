@@ -1,0 +1,28 @@
+pub enum AstTypeRefKind {
+  Name
+  Optional
+  Generic
+  Function
+  Tuple
+  Array
+  Unknown
+}
+
+pub AstTypeRef {
+  id: i64
+  node: AstNode
+  kind: AstTypeRefKind
+}
+
+impl AstTypeRef {
+  pub AstTypeRef(id: i64, kind: AstTypeRefKind, node: AstNode) =
+    This { id, node, kind }
+}
+
+impl view AstTypeRef {
+  pub valid => id > 0 && node.valid && kind != AstTypeRefKind.Unknown
+  pub optional => kind == AstTypeRefKind.Optional
+  pub generic => kind == AstTypeRefKind.Generic
+  pub callable => kind == AstTypeRefKind.Function
+  pub aggregate => kind == AstTypeRefKind.Tuple || kind == AstTypeRefKind.Array
+}

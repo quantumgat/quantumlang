@@ -1,0 +1,47 @@
+pub PublicApi {
+  symbolCount: i64
+  typeCount: i64 = 0
+  functionCount: i64 = 0
+  valueCount: i64 = 0
+  exportedModuleCount: i64 = 0
+  stableHashHigh: u64 = 0
+  stableHashLow: u64 = 0
+  deterministic: bool = true
+}
+
+impl PublicApi {
+  pub PublicApi(symbolCount: i64) =
+    This { symbolCount }
+}
+
+impl view PublicApi {
+  pub empty => symbolCount == 0
+
+  pub hasTypes => typeCount > 0
+
+  pub hasFunctions => functionCount > 0
+
+  pub hasValues => valueCount > 0
+
+  pub hasStableHash => stableHashHigh != 0 || stableHashLow != 0
+
+  pub countsConsistent => symbolCount >= 0 &&
+    typeCount >= 0 &&
+    functionCount >= 0 &&
+    valueCount >= 0 &&
+    exportedModuleCount >= 0 &&
+    symbolCount >= typeCount + functionCount + valueCount
+
+  pub indexable => deterministic && symbolCount >= 0
+
+  pub stable => deterministic && hasStableHash
+
+  pub valid => deterministic && countsConsistent
+
+  pub status => match true {
+    countsConsistent == false => SemanticStatus.InvalidCounts
+    deterministic == false => SemanticStatus.Nondeterministic
+    empty == true => SemanticStatus.Empty
+    _ => SemanticStatus.Ready
+  }
+}

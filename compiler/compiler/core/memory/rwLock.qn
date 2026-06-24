@@ -1,0 +1,167 @@
+pub RwLock<T> {
+  value: T
+  owner: CompilerId = {}
+  generation: u64 = 0
+  readers: i64 = 0
+  writer: bool = false
+}
+
+impl RwLock<T> {
+  pub RwLock(value: T) =
+    This {
+      value
+    }
+
+  pub ptr() -> *T {
+    if writer == false {
+      return null
+    }
+    return &value
+  }
+
+  pub cptr() -> const *T {
+    if readers <= 0 && writer == false {
+      return null
+    }
+    return const *value
+  }
+
+  pub ref() -> &T {
+    return &value
+  }
+
+  pub cref() -> const &T {
+    return const &value
+  }
+
+  pub borrow() -> Borrow<T> {
+    return Borrow<T>(cptr(), owner, generation)
+  }
+
+  pub borrowMut() -> BorrowMut<T> {
+    return BorrowMut<T>(ptr(), owner, generation)
+  }
+
+  pub readLock() -> This {
+    if writer {
+      return this
+    }
+    return this {
+      readers: readers + 1
+    }
+  }
+
+  pub tryRead() -> This {
+    return readLock()
+  }
+
+  pub readUnlock() -> This {
+    if readers <= 0 {
+      return this
+    }
+    return this {
+      readers: readers - 1
+      generation: generation + 1
+    }
+  }
+
+  pub writeLock() -> This {
+    if writer || readers > 0 {
+      return this
+    }
+    return this {
+      writer: true
+    }
+  }
+
+  pub tryWrite() -> This {
+    return writeLock()
+  }
+
+  pub writeUnlock() -> This {
+    if writer == false {
+      return this
+    }
+    return this {
+      writer: false
+      generation: generation + 1
+    }
+  }
+
+  pub unlock() -> This {
+    if writer {
+      return writeUnlock()
+    }
+    return readUnlock()
+  }
+
+  pub set(value: T) -> This {
+    if writer == false {
+      return this
+    }
+    return this {
+      value
+      generation: generation + 1
+    }
+  }
+
+  pub replace(value: T) -> This {
+    return set(value)
+  }
+}
+
+impl view RwLock<T> {
+  pub live => true
+
+  pub reading => readers > 0
+
+  pub writing => writer
+
+  pub idle => readers == 0 && writer == false
+
+  pub readable => readers > 0 || writer
+
+  pub writable => writer
+
+  pub ownsStorage => true
+
+  pub sharedRead => readers > 1
+
+  pub exclusiveWrite => writer
+
+  pub contended => readers > 0 && writer
+
+  pub poisoned => false
+
+  pub hasOwner => owner.valid
+
+  pub tracked => generation > 0 || owner.valid
+
+  pub canRead => writer == false
+
+  pub canWrite => writer == false && readers == 0
+
+  pub canUnlock => readers > 0 || writer
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return generation == currentGeneration
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub expired(currentGeneration: u64) -> bool {
+    return stale(currentGeneration)
+  }
+
+  pub sameOwner(value: CompilerId) -> bool {
+    return owner == value
+  }
+
+  pub sameGen(value: u64) -> bool {
+    return generation == value
+  }
+
+  pub valid => readers >= 0
+}

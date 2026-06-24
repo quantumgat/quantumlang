@@ -1,0 +1,55 @@
+pub BinaryWriter {
+  buffer: ByteBuffer = {}
+}
+
+impl BinaryWriter {
+  pub BinaryWriter(buffer: ByteBuffer) =
+    This { buffer }
+
+  pub withCapacity(capacity: usize) =
+    This {
+      buffer: ByteBuffer.withCapacity(capacity)
+    }
+
+  pub accept(result: Result<void, ByteError>) -> Result<void, EncodeError> {
+    match result {
+      Ok(value) => {
+        return Ok(0)
+      }
+      Err(error) => {
+        return Err(EncodeError.fromByte(error))
+      }
+    }
+  }
+
+  pub reserve(extra: usize) -> Result<void, EncodeError> =
+    accept(this.buffer.reserve(extra))
+
+  pub append(value: string) -> Result<void, EncodeError> =
+    accept(this.buffer.append(value))
+
+  pub append(value: bytes) -> Result<void, EncodeError> =
+    accept(this.buffer.append(value))
+
+  pub u8(value: u8) -> Result<void, EncodeError> =
+    accept(this.buffer.u8(value))
+
+  pub u16le(value: u16) -> Result<void, EncodeError> =
+    accept(this.buffer.u16le(value))
+
+  pub i32le(value: i32) -> Result<void, EncodeError> =
+    accept(this.buffer.i32le(value))
+
+  pub i64le(value: i64) -> Result<void, EncodeError> =
+    accept(this.buffer.i64le(value))
+
+  pub finish() -> Result<bytes, EncodeError> =
+    Ok(this.buffer.finish())
+}
+
+impl view BinaryWriter {
+  pub length: usize => buffer.length
+  pub empty: bool => buffer.empty
+  pub valid: bool => buffer.valid
+  pub debugName: string => "binary.writer.{length}"
+}

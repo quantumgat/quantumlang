@@ -1,0 +1,34 @@
+pub QuantumTargetProfile {
+  name: string
+  providerName: string
+  qubitLimit: i64
+  supportsNoiseModel: bool
+  diagnosticCode: string = ""
+}
+
+impl QuantumTargetProfile {
+  pub QuantumTargetProfile(name: string, providerName: string, qubitLimit: i64, supportsNoiseModel: bool) =
+    This { name, providerName, qubitLimit, supportsNoiseModel }
+
+  pub simulator(name: string, providerName: string, qubitLimit: i64) =
+    This {
+      name
+      providerName
+      qubitLimit
+      supportsNoiseModel: true
+    }
+
+  withQubitLimit(qubitLimit: i64) =
+    this {
+      qubitLimit
+    }
+}
+
+impl view QuantumTargetProfile {
+  pub valid => diagnosticCode == "" && name != "" && providerName != "" && qubitLimit > 0
+  pub bounded => qubitLimit > 0
+  pub noiseReady => supportsNoiseModel
+  pub hardwareScale => qubitLimit > 64
+  pub lowerable => valid
+  pub debugName => "quantum.target.{providerName}.{name}.{qubitLimit}"
+}

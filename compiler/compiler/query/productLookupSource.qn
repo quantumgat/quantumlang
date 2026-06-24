@@ -1,0 +1,6 @@
+pub enum ProductLookupSource {
+  HotMemory
+  GlobalContentStore
+  Missing
+  Rejected
+}

@@ -1,0 +1,15 @@
+pub enum InstanceOwnerKind {
+  Module
+  CodegenUnit
+  Shared
+}
+
+pub InstanceOwner {
+  kind: InstanceOwnerKind
+  ownerHash: u64
+  targetHash: u64
+}
+
+impl view InstanceOwner {
+  pub valid: bool => ownerHash != 0 && targetHash != 0
+}

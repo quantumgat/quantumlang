@@ -1,0 +1,50 @@
+pub AggregateAbi {
+  typeName: string
+  sizeBytes: i64
+  alignBytes: i64
+  fieldCount: i64
+  registerCandidate: bool
+  memoryClass: bool
+  diagnosticCode: string = ""
+}
+
+impl AggregateAbi {
+  pub AggregateAbi(typeName: string, sizeBytes: i64, alignBytes: i64, fieldCount: i64) =
+    This {
+      typeName
+      sizeBytes
+      alignBytes
+      fieldCount
+      registerCandidate: sizeBytes > 0 && sizeBytes <= 16 && fieldCount <= 2
+      memoryClass: sizeBytes > 16 || fieldCount > 2
+    }
+
+  pub classify(typeName: string, sizeBytes: i64, alignBytes: i64, fieldCount: i64) -> This {
+    if typeName == "" || sizeBytes < 0 || alignBytes <= 0 || fieldCount < 0 {
+      return This {
+        typeName
+        sizeBytes
+        alignBytes
+        fieldCount
+        registerCandidate: false
+        memoryClass: false
+        diagnosticCode: "QNATIVE0610"
+      }
+    }
+
+    return This(typeName, sizeBytes, alignBytes, fieldCount)
+  }
+}
+
+impl view AggregateAbi {
+  pub valid => diagnosticCode == "" &&
+    typeName != "" &&
+    sizeBytes >= 0 &&
+    alignBytes > 0 &&
+    fieldCount >= 0
+  pub registerPassed => valid && registerCandidate && memoryClass == false
+  pub memoryPassed => valid && memoryClass
+  pub needsSret => memoryPassed
+  pub abiHash => "aggabi:{typeName}:{sizeBytes}:{alignBytes}:{fieldCount}:{registerCandidate}:{memoryClass}"
+  pub debugName => "aggabi.{typeName}.{sizeBytes}.{fieldCount}"
+}

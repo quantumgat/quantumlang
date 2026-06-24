@@ -1,0 +1,65 @@
+import compiler::quantum::{*}
+pub QuantumControlLoweringProof {
+  qifControlLowered: bool
+  qforControlLowered: bool
+  boundedLoopsLowered: bool
+  qmirCarriesControlCounts: bool
+  qtirCarriesControlSchedule: bool
+  backendHandoffReady: bool
+  valid: bool
+}
+
+pub quantumControlLoweringProof() -> QuantumControlLoweringProof {
+  let qifProof = quantumIfFlowProof()
+  let qforProof = quantumForFlowProof()
+  let loopProof = quantumLoopProfileProof()
+  let lowering = QuantumControlLoweringFact(
+    qifProof.valid && qifProof.branchMergeDeterministic,
+    qforProof.valid && qforProof.qregIterationOnly && qforProof.noClonePreserved,
+    loopProof.valid && loopProof.qwhileRestricted && loopProof.boundednessRequired,
+    loopProof.valid && loopProof.qloopRestricted && loopProof.boundednessRequired
+  )
+  let mirLowering = QuantumMirLowering(12, lowering.qmirProduct, lowering.qtirProduct)
+
+  let qifControlLowered = lowering.valid &&
+    lowering.qifLowered &&
+    qifProof.branchMergeDeterministic
+
+  let qforControlLowered = lowering.valid &&
+    lowering.qforLowered &&
+    qforProof.perIterationBorrowed
+
+  let boundedLoopsLowered = lowering.valid &&
+    lowering.qwhileLowered &&
+    lowering.qloopLowered &&
+    loopProof.boundednessRequired
+
+  let qmirCarriesControlCounts = lowering.qmirProduct.nodeCount == 12 &&
+    lowering.qmirProduct.operationCount == 4 &&
+    lowering.qmirProduct.resourceCount == 4 &&
+    lowering.qmirProduct.effectCount == 2
+
+  let qtirCarriesControlSchedule = lowering.qtirProduct.targetName == "simulator" &&
+    lowering.qtirProduct.profileName == "bounded-qasm3" &&
+    lowering.qtirProduct.scheduleSteps == 16
+
+  let backendHandoffReady = lowering.backendReady &&
+    mirLowering.backendReady
+
+  let valid = qifControlLowered &&
+    qforControlLowered &&
+    boundedLoopsLowered &&
+    qmirCarriesControlCounts &&
+    qtirCarriesControlSchedule &&
+    backendHandoffReady
+
+  return QuantumControlLoweringProof {
+    qifControlLowered: qifControlLowered,
+    qforControlLowered: qforControlLowered,
+    boundedLoopsLowered: boundedLoopsLowered,
+    qmirCarriesControlCounts: qmirCarriesControlCounts,
+    qtirCarriesControlSchedule: qtirCarriesControlSchedule,
+    backendHandoffReady: backendHandoffReady,
+    valid: valid,
+  }
+}

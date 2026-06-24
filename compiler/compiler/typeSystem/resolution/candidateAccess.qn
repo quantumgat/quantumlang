@@ -1,0 +1,89 @@
+import core::{ModuleId, PackageId, TypeId}
+import syntax::{AstRoleVisibility}
+
+pub enum CandidateAccessKind {
+  Public
+  Internal
+  Protected
+  Private
+  Unknown
+}
+
+pub CandidateAccess {
+  kind: CandidateAccessKind = CandidateAccessKind.Private
+  packageId: PackageId = {}
+  moduleId: ModuleId = {}
+  ownerType: TypeId = {}
+}
+
+impl CandidateAccess {
+  pub forSymbol(symbol: TypeSymbol) =
+    This {
+      kind: match symbol.public {
+        true => CandidateAccessKind.Public
+        false => CandidateAccessKind.Private
+      }
+      packageId: PackageId(symbol.moduleId.id.packageHash)
+      moduleId: symbol.moduleId
+      ownerType: symbol.typeId
+    }
+
+  pub forRole(
+    symbol: TypeSymbol,
+    ownerType: TypeId,
+    visibility: AstRoleVisibility
+  ) =
+    This {
+      kind: candidateAccessKindForRole(visibility)
+      packageId: PackageId(symbol.moduleId.id.packageHash)
+      moduleId: symbol.moduleId
+      ownerType
+    }
+
+  pub visibleFrom(moduleId: ModuleId, ownerType: TypeId) -> bool {
+    if kind == CandidateAccessKind.Public {
+      return true
+    }
+    if kind == CandidateAccessKind.Internal {
+      return packageId.id.value == moduleId.id.packageHash
+    }
+    if kind == CandidateAccessKind.Protected ||
+       kind == CandidateAccessKind.Private {
+      return this.ownerType.id.same(ownerType.id)
+    }
+    return false
+  }
+}
+
+impl view CandidateAccess {
+  pub publicVisible: bool => kind == CandidateAccessKind.Public
+
+  pub internalVisible: bool => kind == CandidateAccessKind.Internal
+
+  pub protectedVisible: bool => kind == CandidateAccessKind.Protected
+
+  pub privateVisible: bool => kind == CandidateAccessKind.Private
+
+  pub valid: bool =>
+    kind != CandidateAccessKind.Unknown &&
+    packageId.valid &&
+    moduleId.valid
+}
+
+candidateAccessKindForRole(
+  visibility: AstRoleVisibility
+) -> CandidateAccessKind {
+  if visibility == AstRoleVisibility.Public {
+    return CandidateAccessKind.Public
+  }
+  if visibility == AstRoleVisibility.Internal {
+    return CandidateAccessKind.Internal
+  }
+  if visibility == AstRoleVisibility.Protected {
+    return CandidateAccessKind.Protected
+  }
+  if visibility == AstRoleVisibility.Private {
+    return CandidateAccessKind.Private
+  }
+  return CandidateAccessKind.Unknown
+}

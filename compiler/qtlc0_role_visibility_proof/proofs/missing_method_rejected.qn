@@ -1,0 +1,10 @@
+pub MissingUser {
+  id: i64
+}
+
+pub role RequiredRole {
+  requiredValue() -> i64
+}
+
+extend MissingUser : pub RequiredRole {
+}

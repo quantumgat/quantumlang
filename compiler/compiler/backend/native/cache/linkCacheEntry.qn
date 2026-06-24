@@ -1,0 +1,50 @@
+pub LinkCacheEntry {
+  key: LinkCacheKey
+  executablePath: string
+  byteCount: i64
+  reusable: bool
+  checksum: string
+  diagnosticCode: string = ""
+}
+
+impl LinkCacheEntry {
+  pub LinkCacheEntry(
+    key: LinkCacheKey,
+    executablePath: string,
+    byteCount: i64,
+    reusable: bool,
+    checksum: string
+  ) =
+    This {
+      key
+      executablePath
+      byteCount
+      reusable
+      checksum
+    }
+
+  pub fromExecutable(key: LinkCacheKey, executable: Executable) =
+    This {
+      key
+      executablePath: executable.outputPath
+      byteCount: executable.byteCount
+      reusable: true
+      checksum: "checksum:{executable.executableHash}:{executable.byteCount}"
+      diagnosticCode: match key.valid && executable.valid {
+        true => ""
+        false => "QNATIVE0851"
+      }
+    }
+}
+
+impl view LinkCacheEntry {
+  pub valid => diagnosticCode == "" &&
+    key.valid &&
+    executablePath != "" &&
+    byteCount > 0 &&
+    checksum != ""
+  pub hit => valid && reusable
+  pub miss => valid && reusable == false
+  pub entryHash => "link-cache-entry:{key.cacheKey}:{executablePath}:{byteCount}:{checksum}:{reusable}"
+  pub debugName => "link.cache.entry.{byteCount}"
+}

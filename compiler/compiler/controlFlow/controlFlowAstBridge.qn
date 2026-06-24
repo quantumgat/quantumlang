@@ -1,0 +1,30 @@
+import syntax::{AstStmtKind}
+
+pub ControlFlowAstBridge {
+  stmtKind: AstStmtKind
+  flowKind: NormalControlFlowKind
+  valid: bool = false
+}
+
+impl ControlFlowAstBridge {
+  pub ControlFlowAstBridge(stmtKind: AstStmtKind) -> This {
+    if stmtKind == AstStmtKind.If {
+      return This { stmtKind, flowKind: NormalControlFlowKind.If, valid: true }
+    }
+    if stmtKind == AstStmtKind.Match {
+      return This { stmtKind, flowKind: NormalControlFlowKind.Match, valid: true }
+    }
+    if stmtKind == AstStmtKind.Return {
+      return This { stmtKind, flowKind: NormalControlFlowKind.Return, valid: true }
+    }
+    if stmtKind == AstStmtKind.Block {
+      return This { stmtKind, flowKind: NormalControlFlowKind.Block, valid: true }
+    }
+    if stmtKind == AstStmtKind.Expr || stmtKind == AstStmtKind.Let {
+      return This { stmtKind, flowKind: NormalControlFlowKind.Expr, valid: true }
+    }
+    This { stmtKind, flowKind: NormalControlFlowKind.Unknown }
+  }
+
+  isValid() = valid
+}

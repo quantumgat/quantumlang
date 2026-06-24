@@ -1,0 +1,3 @@
+pub Armv7mArch {
+  pointerBits: i64
+}

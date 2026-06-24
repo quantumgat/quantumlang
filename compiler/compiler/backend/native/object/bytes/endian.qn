@@ -1,0 +1,28 @@
+pub ObjectEndian {
+  name: string = "little"
+  byteOrderCode: i64 = 1
+  diagnosticCode: string = ""
+}
+
+impl ObjectEndian {
+  pub ObjectEndian(name: string, byteOrderCode: i64) =
+    This {
+      name
+      byteOrderCode
+    }
+
+  pub little() =
+    This("little", 1)
+
+  pub big() =
+    This("big", 2)
+}
+
+impl view ObjectEndian {
+  pub valid: bool => diagnosticCode == "" &&
+    name != "" &&
+    byteOrderCode > 0
+  pub littleEndian: bool => byteOrderCode == 1
+  pub bigEndian: bool => byteOrderCode == 2
+  pub debugName: string => "object.endian.{name}.{byteOrderCode}"
+}

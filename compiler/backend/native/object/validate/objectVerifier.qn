@@ -1,0 +1,54 @@
+pub ObjectVerifier {
+  layout: ObjectLayout
+  layoutVerifier: ObjectLayoutVerifier
+  symbolVerifier: ObjectSymbolVerifier
+  relocationVerifier: ObjectRelocationVerifier
+  issueCount: i64
+  diagnosticCode: string = ""
+}
+
+impl ObjectVerifier {
+  pub ObjectVerifier(
+    layout: ObjectLayout,
+    layoutVerifier: ObjectLayoutVerifier,
+    symbolVerifier: ObjectSymbolVerifier,
+    relocationVerifier: ObjectRelocationVerifier,
+    issueCount: i64,
+    diagnosticCode: string
+  ) =
+    This {
+      layout
+      layoutVerifier
+      symbolVerifier
+      relocationVerifier
+      issueCount
+      diagnosticCode
+    }
+
+  pub fromLayout(layout: ObjectLayout) =
+    This {
+      layout
+      layoutVerifier: ObjectLayoutVerifier.fromLayout(layout)
+      symbolVerifier: ObjectSymbolVerifier.fromLayout(layout.symbols)
+      relocationVerifier: ObjectRelocationVerifier.fromLayout(layout.relocations)
+      issueCount: match layout.valid {
+        true => 0
+        false => 1
+      }
+      diagnosticCode: match layout.valid {
+        true => ""
+        false => "QNATIVE0744"
+      }
+    }
+}
+
+impl view ObjectVerifier {
+  pub valid: bool => diagnosticCode == "" &&
+    issueCount == 0 &&
+    layoutVerifier.valid &&
+    symbolVerifier.valid &&
+    relocationVerifier.valid
+  pub failed: bool => !valid
+  pub payloadReady: bool => valid && layout.payloadReady
+  pub debugName: string => "object.verify.{layout.objectHash}.{issueCount}"
+}

@@ -1,0 +1,143 @@
+pub ObjectRelocatableSegmentSet {
+  header: ObjectByteSegment
+  text: ObjectByteSegment
+  rodata: ObjectByteSegment
+  rodataPadding: ObjectByteSegment
+  symbols: ObjectByteSegment
+  strings: ObjectByteSegment
+  stringPadding: ObjectByteSegment
+  relocations: ObjectByteSegment
+  sectionNames: ObjectByteSegment
+  sectionHeaderPadding: ObjectByteSegment
+  sectionHeaders: ObjectByteSegment
+  byteCount: i64
+  segmentCount: i64 = 11
+  diagnosticCode: string = ""
+}
+
+impl ObjectRelocatableSegmentSet {
+  pub ObjectRelocatableSegmentSet(
+    header: ObjectByteSegment,
+    text: ObjectByteSegment,
+    rodata: ObjectByteSegment,
+    rodataPadding: ObjectByteSegment,
+    symbols: ObjectByteSegment,
+    strings: ObjectByteSegment,
+    stringPadding: ObjectByteSegment,
+    relocations: ObjectByteSegment,
+    sectionNames: ObjectByteSegment,
+    sectionHeaderPadding: ObjectByteSegment,
+    sectionHeaders: ObjectByteSegment,
+    byteCount: i64
+  ) =
+    This {
+      header
+      text
+      rodata
+      rodataPadding
+      symbols
+      strings
+      stringPadding
+      relocations
+      sectionNames
+      sectionHeaderPadding
+      sectionHeaders
+      byteCount
+    }
+
+  pub elf64(
+    header: ObjectByteSegment,
+    text: ObjectByteSegment,
+    rodata: ObjectByteSegment,
+    rodataPadding: ObjectByteSegment,
+    symbols: ObjectByteSegment,
+    strings: ObjectByteSegment,
+    stringPadding: ObjectByteSegment,
+    relocations: ObjectByteSegment,
+    sectionNames: ObjectByteSegment,
+    sectionHeaderPadding: ObjectByteSegment,
+    sectionHeaders: ObjectByteSegment
+  ) =
+    This {
+      header
+      text
+      rodata
+      rodataPadding
+      symbols
+      strings
+      stringPadding
+      relocations
+      sectionNames
+      sectionHeaderPadding
+      sectionHeaders
+      byteCount: header.byteCount +
+        text.byteCount +
+        rodata.byteCount +
+        rodataPadding.byteCount +
+        symbols.byteCount +
+        strings.byteCount +
+        stringPadding.byteCount +
+        relocations.byteCount +
+        sectionNames.byteCount +
+        sectionHeaderPadding.byteCount +
+        sectionHeaders.byteCount
+      diagnosticCode: match header.valid &&
+        text.valid &&
+        rodata.valid &&
+        rodataPadding.valid &&
+        symbols.valid &&
+        strings.valid &&
+        stringPadding.valid &&
+        relocations.valid &&
+        sectionNames.valid &&
+        sectionHeaderPadding.valid &&
+        sectionHeaders.valid {
+        true => ""
+        false => "QNATIVE0770"
+      }
+    }
+}
+
+impl view ObjectRelocatableSegmentSet {
+  pub segmentBytes: i64 => header.byteCount +
+    text.byteCount +
+    rodata.byteCount +
+    rodataPadding.byteCount +
+    symbols.byteCount +
+    strings.byteCount +
+    stringPadding.byteCount +
+    relocations.byteCount +
+    sectionNames.byteCount +
+    sectionHeaderPadding.byteCount +
+    sectionHeaders.byteCount
+
+  pub ordered: bool => header.offset == 0 &&
+    text.offset == header.endOffset &&
+    rodata.offset == text.endOffset &&
+    rodataPadding.offset == rodata.endOffset &&
+    symbols.offset == rodataPadding.endOffset &&
+    strings.offset == symbols.endOffset &&
+    stringPadding.offset == strings.endOffset &&
+    relocations.offset == stringPadding.endOffset &&
+    sectionNames.offset == relocations.endOffset &&
+    sectionHeaderPadding.offset == sectionNames.endOffset &&
+    sectionHeaders.offset == sectionHeaderPadding.endOffset
+
+  pub valid: bool => diagnosticCode == "" &&
+    header.valid &&
+    text.valid &&
+    rodata.valid &&
+    rodataPadding.valid &&
+    symbols.valid &&
+    strings.valid &&
+    stringPadding.valid &&
+    relocations.valid &&
+    sectionNames.valid &&
+    sectionHeaderPadding.valid &&
+    sectionHeaders.valid &&
+    ordered &&
+    segmentCount == 11 &&
+    byteCount == segmentBytes
+
+  pub debugName: string => "object.relocatable.segments.{segmentCount}.{byteCount}"
+}

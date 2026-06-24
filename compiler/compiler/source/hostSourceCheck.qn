@@ -1,0 +1,65 @@
+pub HostSourceCheck {
+  target: string
+  mainSourcePath: string
+  mainSourceByteLength: i64
+  mainFunctionFound: bool
+  quantumStyleImports: bool
+  printPreludeUsed: bool
+}
+
+impl HostSourceCheck {
+  pub HostSourceCheck(
+    target: string,
+    mainSourcePath: string,
+    mainSourceByteLength: i64,
+    mainFunctionFound: bool,
+    quantumStyleImports: bool,
+    printPreludeUsed: bool
+  ) =
+    This {
+      target,
+      mainSourcePath,
+      mainSourceByteLength,
+      mainFunctionFound,
+      quantumStyleImports,
+      printPreludeUsed,
+    }
+}
+
+impl view HostSourceCheck {
+  pub valid => mainFunctionFound &&
+    quantumStyleImports &&
+    mainSourceByteLength != 0
+}
+
+extract HostSourceCheck {
+  pub fromHost(target: string) =
+    This(
+      target,
+      hostSourcePath(target),
+      hostSourceBytes(target),
+      hostSourceMain(target),
+      hostSourceQuantumImports(target),
+      hostSourcePrintPrelude(target)
+    )
+}
+
+pub hostSourcePath(target: string) -> string {
+  return ""
+}
+
+pub hostSourceBytes(target: string) -> i64 {
+  return 0
+}
+
+pub hostSourceMain(target: string) -> bool {
+  return false
+}
+
+pub hostSourceQuantumImports(target: string) -> bool {
+  return false
+}
+
+pub hostSourcePrintPrelude(target: string) -> bool {
+  return false
+}

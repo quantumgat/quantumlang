@@ -1,0 +1,63 @@
+import core::{Arena, FileId, Slice}
+import source::{SourceSpan}
+
+pub AstArena {
+  fileId: FileId = {}
+  records: Vec<AstNode> = []
+  nodes: Arena<AstNode> = {}
+  rootIds: Vec<AstNodeId> = []
+  roots: Slice<AstNodeId> = {}
+  recordCount: i64 = 0
+  rootRowCount: i64 = 0
+  diagnosticRows: Vec<SourceSpan> = []
+  diagnosticRowCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl AstArena {
+  pub AstArena(fileId: FileId) =
+    This { fileId }
+
+  pub add(node: AstNode) {
+    records.push(node)
+    recordCount = recordCount + 1
+    nodes = Arena(recordCount)
+  }
+
+  pub addRoot(root: AstNodeId) {
+    rootIds.push(root)
+    rootRowCount = rootRowCount + 1
+    roots = Slice<AstNodeId>(rootRowCount)
+  }
+
+  pub addDiagnostic(span: SourceSpan) {
+    diagnosticRows.push(span)
+    diagnosticRowCount = diagnosticRowCount + 1
+  }
+}
+
+impl view AstArena {
+  pub count: i64 => recordCount
+
+  pub rootCount: i64 => rootRowCount
+
+  pub diagnosticCount: i64 => diagnosticRowCount
+
+  pub clean: bool => diagnosticCount == 0
+
+  pub storageAligned: bool =>
+    nodes.count == count &&
+    roots.count == rootCount
+
+  pub valid: bool =>
+    fileId.valid &&
+    count > 0 &&
+    rootCount == 1 &&
+    storageAligned &&
+    clean &&
+    deterministic
+
+  pub nodeAt(index: i64) -> AstNode {
+    records[index]
+  }
+}

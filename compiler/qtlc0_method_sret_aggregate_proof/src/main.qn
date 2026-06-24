@@ -1,0 +1,37 @@
+pub Node {
+  value: i64
+}
+
+pub ScopeId {
+  value: i64
+}
+
+impl ScopeId {
+  ScopeId(value: i64) =
+    This { value }
+}
+
+pub ScopeTable {
+  bias: i64
+}
+
+impl ScopeTable {
+  ScopeTable(bias: i64) =
+    This { bias }
+
+  addLexicalScope(node: Node, parent: ScopeId, depth: i64) -> ScopeId {
+    return ScopeId(node.value + parent.value + depth + bias)
+  }
+
+  run() -> i64 {
+    let node = Node { value: 10 }
+    let parent = ScopeId(20)
+    let result = addLexicalScope(node, parent, 3)
+    return result.value
+  }
+}
+
+main() -> i64 {
+  let table = ScopeTable(0)
+  return table.run()
+}

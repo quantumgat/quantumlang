@@ -1,0 +1,34 @@
+pub enum LinkInputKind {
+  Object
+  StaticArchive
+  SharedLibrary
+  RuntimeArchive
+  PlatformLibrary
+}
+
+pub LinkInput {
+  inputId: StableId
+  kind: LinkInputKind
+  path: string
+  fingerprint: Fingerprint
+  byteSize: usize
+}
+
+impl LinkInput {
+  pub init(
+    inputId: StableId,
+    kind: LinkInputKind,
+    path: string,
+    fingerprint: Fingerprint,
+    byteSize: usize
+  ) =
+    This { inputId, kind, path, fingerprint, byteSize }
+}
+
+impl view LinkInput {
+  pub object => kind == LinkInputKind.Object
+  pub archive => kind == LinkInputKind.StaticArchive || kind == LinkInputKind.RuntimeArchive
+  pub dynamic => kind == LinkInputKind.SharedLibrary || kind == LinkInputKind.PlatformLibrary
+  pub materialized => path != "" && byteSize > 0
+  pub replayable => materialized && fingerprint.nonzero
+}

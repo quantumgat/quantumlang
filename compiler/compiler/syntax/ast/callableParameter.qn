@@ -1,0 +1,22 @@
+import source::{SourceSpan}
+
+pub AstCallableParameter {
+  position: usize
+  name: string = ""
+  typeName: string = ""
+  defaultValueText: string = ""
+  span: SourceSpan = {}
+  defaulted: bool = false
+  variadic: bool = false
+}
+
+impl view AstCallableParameter {
+  pub required: bool => defaulted == false && variadic == false
+
+  pub typed: bool => typeName != ""
+
+  pub valid: bool =>
+    name != "" &&
+    span.valid &&
+    (defaulted == false || defaultValueText != "")
+}

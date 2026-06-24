@@ -1,0 +1,57 @@
+pub User {
+  id: i64
+  active: bool
+}
+
+main() -> i64 {
+  let user: Option<User> = Some(User { id: 7, active: true })
+  let missingUser: Option<User> = None
+  let fallback = User { id: 0, active: false }
+
+  if user.matches(value => value.id == 7) == false { return 1 }
+  if user.valueOr(fallback).id != 7 { return 2 }
+  if missingUser.valueOr(fallback).id != 0 { return 3 }
+
+  let values: Vec<i64> = [1, 2, 3]
+  let vector: Option<Vec<i64>> = Some(values)
+  let missingVector: Option<Vec<i64>> = None
+  if vector.matches(items => items.length == 3) == false { return 4 }
+  if missingVector.missing == false { return 5 }
+
+  let inner: Option<i64> = Some(11)
+  let nested: Option<Option<i64>> = Some(inner)
+  let missingNested: Option<Option<i64>> = None
+  if nested.valueOr(None).valueOr(0) != 11 { return 6 }
+  if missingNested.valueOr(None).missing == false { return 7 }
+
+  let mapValue: Map<string, i64> = { "answer": 42 }
+  let mapOption: Option<Map<string, i64>> = Some(mapValue)
+  if mapOption.present == false { return 8 }
+
+  let sliceOption: Option<Slice<i64>> = None
+  if sliceOption.missing == false { return 9 }
+
+  let indexOption: Option<Index<string, i64>> = None
+  if indexOption.missing == false { return 10 }
+
+  let arenaOption: Option<Arena<User>> = None
+  if arenaOption.missing == false { return 11 }
+
+  let arrayValue: Array<i64, 3> = [1, 2, 3]
+  let arrayOption: Option<Array<i64, 3>> = Some(arrayValue)
+  if arrayOption.present == false { return 12 }
+
+  let rangeOption: Option<Range<i64>> = None
+  if rangeOption.missing == false { return 13 }
+
+  let nestedMapValue: Map<string, i64> = { "nested": 14 }
+  let nestedMap: Option<Option<Map<string, i64>>> =
+    Some(Some(nestedMapValue))
+  if nestedMap.present == false { return 14 }
+
+  let resultMapValue: Map<string, i64> = { "result": 15 }
+  let resultMap: Result<Map<string, i64>, string> = Ok(resultMapValue)
+  if resultMap.isOk() == false { return 15 }
+
+  return 0
+}

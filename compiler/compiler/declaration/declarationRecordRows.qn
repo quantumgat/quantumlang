@@ -1,0 +1,148 @@
+import core::{DeclarationId, Slice}
+
+pub DeclarationRecordRows {
+  sourceRows: DeclarationParserRows
+  records: Slice<DeclarationRecord> = []
+  declarations: Slice<DeclarationId> = []
+  publicRecords: Slice<DeclarationRecord> = []
+  publicDeclarations: Slice<DeclarationId> = []
+  unresolvedRecords: Slice<DeclarationRecord> = []
+  unresolvedDeclarations: Slice<DeclarationId> = []
+  moduleRecords: Slice<DeclarationRecord> = []
+  typeRecords: Slice<DeclarationRecord> = []
+  implRecords: Slice<DeclarationRecord> = []
+  viewRecords: Slice<DeclarationRecord> = []
+  roleRecords: Slice<DeclarationRecord> = []
+  functionRecords: Slice<DeclarationRecord> = []
+  importRecords: Slice<DeclarationRecord> = []
+  contextRecords: Slice<DeclarationRecord> = []
+  extractRecords: Slice<DeclarationRecord> = []
+  extendRecords: Slice<DeclarationRecord> = []
+  moduleDeclarations: Slice<DeclarationId> = []
+  typeDeclarations: Slice<DeclarationId> = []
+  implDeclarations: Slice<DeclarationId> = []
+  viewDeclarations: Slice<DeclarationId> = []
+  roleDeclarations: Slice<DeclarationId> = []
+  functionDeclarations: Slice<DeclarationId> = []
+  importDeclarations: Slice<DeclarationId> = []
+  contextDeclarations: Slice<DeclarationId> = []
+  extractDeclarations: Slice<DeclarationId> = []
+  extendDeclarations: Slice<DeclarationId> = []
+  parserProduced: bool = true
+  deterministic: bool = true
+}
+
+impl DeclarationRecordRows {
+  pub fromRows(rows: DeclarationParserRows) =
+    This.fromRows(rows, true)
+
+  pub fromRows(rows: DeclarationParserRows, parserProduced: bool) =
+    This {
+      sourceRows: rows
+      records: Slice(rows.totalCount)
+      declarations: Slice(1, rows.totalCount)
+      publicRecords: Slice(rows.totalCount)
+      publicDeclarations: Slice(1, rows.totalCount)
+      unresolvedRecords: Slice()
+      unresolvedDeclarations: Slice()
+      moduleRecords: rows.modules.records()
+      typeRecords: rows.types.records()
+      implRecords: rows.impls.records()
+      viewRecords: rows.views.records()
+      roleRecords: rows.roles.records()
+      functionRecords: rows.functions.records()
+      importRecords: rows.imports.records()
+      contextRecords: rows.contexts.records()
+      extractRecords: rows.extracts.records()
+      extendRecords: rows.extends.records()
+      moduleDeclarations: rows.modules.declarationIds()
+      typeDeclarations: rows.types.declarationIds()
+      implDeclarations: rows.impls.declarationIds()
+      viewDeclarations: rows.views.declarationIds()
+      roleDeclarations: rows.roles.declarationIds()
+      functionDeclarations: rows.functions.declarationIds()
+      importDeclarations: rows.imports.declarationIds()
+      contextDeclarations: rows.contexts.declarationIds()
+      extractDeclarations: rows.extracts.declarationIds()
+      extendDeclarations: rows.extends.declarationIds()
+      parserProduced
+    }
+
+}
+
+impl view DeclarationRecordRows {
+  pub totalCount: i64 => records.count
+
+  pub publicCount: i64 => publicRecords.count
+
+  pub unresolvedCount: i64 => unresolvedRecords.count
+
+  pub categoryRecordCount: i64 =>
+    moduleRecords.count +
+    typeRecords.count +
+    implRecords.count +
+    viewRecords.count +
+    roleRecords.count +
+    functionRecords.count +
+    importRecords.count +
+    contextRecords.count +
+    extractRecords.count +
+    extendRecords.count
+
+  pub categoryDeclarationCount: i64 =>
+    moduleDeclarations.count +
+    typeDeclarations.count +
+    implDeclarations.count +
+    viewDeclarations.count +
+    roleDeclarations.count +
+    functionDeclarations.count +
+    importDeclarations.count +
+    contextDeclarations.count +
+    extractDeclarations.count +
+    extendDeclarations.count
+
+  pub recordSlicesValid: bool =>
+    records.valid &&
+    publicRecords.valid &&
+    unresolvedRecords.valid &&
+    moduleRecords.valid &&
+    typeRecords.valid &&
+    implRecords.valid &&
+    viewRecords.valid &&
+    roleRecords.valid &&
+    functionRecords.valid &&
+    importRecords.valid &&
+    contextRecords.valid &&
+    extractRecords.valid &&
+    extendRecords.valid
+
+  pub declarationSlicesValid: bool =>
+    declarations.valid &&
+    publicDeclarations.valid &&
+    unresolvedDeclarations.valid &&
+    moduleDeclarations.valid &&
+    typeDeclarations.valid &&
+    implDeclarations.valid &&
+    viewDeclarations.valid &&
+    roleDeclarations.valid &&
+    functionDeclarations.valid &&
+    importDeclarations.valid &&
+    contextDeclarations.valid &&
+    extractDeclarations.valid &&
+    extendDeclarations.valid
+
+  pub recordsAligned: bool =>
+    totalCount == sourceRows.totalCount &&
+    totalCount == declarations.count &&
+    totalCount == categoryRecordCount &&
+    totalCount == categoryDeclarationCount &&
+    publicCount == publicDeclarations.count &&
+    unresolvedCount == unresolvedDeclarations.count
+
+  pub valid: bool =>
+    deterministic &&
+    sourceRows.valid &&
+    recordSlicesValid &&
+    declarationSlicesValid &&
+    recordsAligned
+}

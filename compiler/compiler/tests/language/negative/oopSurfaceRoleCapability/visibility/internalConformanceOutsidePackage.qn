@@ -1,0 +1,3 @@
+pub externalAccess(route: PublicRouteCarrier) -> i64 {
+  return route.impl.internalRouteValue()
+}

@@ -1,0 +1,85 @@
+pub Weak<T> {
+  owner: CompilerId = {}
+  generation: u64 = 0
+  live: bool = false
+}
+
+impl Weak<T> {
+  pub Weak(owner: CompilerId, generation: u64, live: bool) =
+    This {
+      owner
+      generation
+      live
+    }
+
+  pub matches(shared: Shared<T>) -> bool {
+    return live &&
+      shared.live &&
+      shared.owner == owner &&
+      shared.generation == generation
+  }
+
+  pub canUpgrade(shared: Shared<T>) -> bool {
+    return matches(shared)
+  }
+
+  pub upgrade(shared: Shared<T>) -> Shared<T> {
+    if matches(shared) {
+      return shared.alias()
+    }
+    return Shared<T>(shared.value, shared.owner, shared.generation).dropAlias()
+  }
+
+  pub refresh(shared: Shared<T>) -> This {
+    return This {
+      owner: shared.owner
+      generation: shared.generation
+      live: shared.live
+    }
+  }
+
+  pub clear() -> This {
+    return this {
+      live: false
+    }
+  }
+
+}
+
+impl view Weak<T> {
+  pub liveView => live
+
+  pub ownsStorage => false
+
+  pub readable => live
+
+  pub writable => false
+
+  pub expired => live == false
+
+  pub empty => expired
+
+  pub weakView => true
+
+  pub hasOwner => owner.valid
+
+  pub tracked => generation > 0 || owner.valid
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return live && generation == currentGeneration
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub sameOwner(value: CompilerId) -> bool {
+    return owner == value
+  }
+
+  pub sameGen(value: u64) -> bool {
+    return generation == value
+  }
+
+  pub valid => owner.valid
+}

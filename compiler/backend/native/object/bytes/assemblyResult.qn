@@ -1,0 +1,54 @@
+pub ObjectByteAssemblyResult {
+  segments: ObjectByteSegmentSet
+  payload: bytes = []
+  byteCount: i64
+  segmentCount: i64
+  diagnosticCode: string = ""
+}
+
+impl ObjectByteAssemblyResult {
+  pub ObjectByteAssemblyResult(
+    segments: ObjectByteSegmentSet,
+    payload: bytes,
+    byteCount: i64,
+    segmentCount: i64
+  ) =
+    This {
+      segments
+      payload
+      byteCount
+      segmentCount
+    }
+
+  pub fromSegments(segments: ObjectByteSegmentSet, payload: bytes) =
+    This {
+      segments
+      payload
+      byteCount: payload.length()
+      segmentCount: segments.segmentCount
+      diagnosticCode: match segments.valid &&
+        payload.length() == segments.byteCount {
+        true => ""
+        false => "QNATIVE0760"
+      }
+    }
+
+  pub failed(segments: ObjectByteSegmentSet, diagnosticCode: string) =
+    This {
+      segments
+      payload: []
+      byteCount: 0
+      segmentCount: segments.segmentCount
+      diagnosticCode
+    }
+}
+
+impl view ObjectByteAssemblyResult {
+  pub valid: bool => diagnosticCode == "" &&
+    segments.valid &&
+    payload.length() == byteCount &&
+    byteCount == segments.byteCount &&
+    segmentCount == segments.segmentCount
+  pub payloadReady: bool => valid && byteCount > 0
+  pub debugName: string => "object.byte-assembly.{segmentCount}.{byteCount}"
+}

@@ -1,0 +1,62 @@
+pub EmitResult {
+  plan: EmitPlan
+  textSection: ObjectSection
+  entrySymbol: ObjectSymbol
+  symbolCount: i64
+  relocationCount: i64
+  byteCount: i64
+  resultHash: string
+  diagnosticCode: string = ""
+}
+
+impl EmitResult {
+  pub EmitResult(
+    plan: EmitPlan,
+    textSection: ObjectSection,
+    entrySymbol: ObjectSymbol,
+    symbolCount: i64,
+    relocationCount: i64,
+    byteCount: i64,
+    resultHash: string
+  ) =
+    This {
+      plan
+      textSection
+      entrySymbol
+      symbolCount
+      relocationCount
+      byteCount
+      resultHash
+    }
+
+  pub fromEntry(plan: EmitPlan, section: ObjectSection, symbol: ObjectSymbol, byteCount: i64) =
+    This {
+      plan
+      textSection: section
+      entrySymbol: symbol
+      symbolCount: 1
+      relocationCount: 0
+      byteCount
+      resultHash: "emit-result:{plan.planHash}:{section.sectionHash}:{symbol.symbolHash}:{byteCount}"
+      diagnosticCode: match plan.valid && section.valid && symbol.valid && byteCount >= 0 {
+        true => ""
+        false => "QNATIVE0901"
+      }
+    }
+}
+
+impl view EmitResult {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    plan.valid &&
+    textSection.valid &&
+    entrySymbol.valid &&
+    symbolCount > 0 &&
+    relocationCount >= 0 &&
+    byteCount >= 0 &&
+    resultHash != ""
+
+  pub hasCode: bool => byteCount > 0
+  pub linkable: bool => valid && hasCode && entrySymbol.defined
+  pub debugName: string => "emit.result.{entrySymbol.name}.{byteCount}"
+}

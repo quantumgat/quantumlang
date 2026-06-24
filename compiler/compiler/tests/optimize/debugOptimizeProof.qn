@@ -1,0 +1,53 @@
+import optimize::{*}
+pub DebugOptimizeProof {
+  passManagerStable: bool
+  constFoldSafe: bool
+  inlineDisabled: bool
+  deadCodeSafe: bool
+  escapeAnalysisOnly: bool
+  productStable: bool
+  valid: bool
+}
+
+pub debugOptimizeProof() -> DebugOptimizeProof {
+  let plan = DebugPassPlan()
+  let pass = OptimizePass("debug-safe", true, false, true)
+
+  let passManagerStable = plan.manager.valid &&
+    plan.manager.profile == "debug" &&
+    plan.manager.passCount == 4
+
+  let constFoldSafe = plan.constFold.valid &&
+    plan.constFold.literalsOnly
+
+  let inlineDisabled = plan.inline.valid &&
+    plan.inline.inlined == 0 &&
+    !plan.inline.aggressive
+
+  let deadCodeSafe = plan.deadCode.valid &&
+    plan.deadCode.unreachableOnly
+
+  let escapeAnalysisOnly = plan.escape.valid &&
+    plan.escape.analysisOnly
+
+  let productStable = plan.passProductStable &&
+    pass.valid &&
+    pass.enabled
+
+  let valid = passManagerStable &&
+    constFoldSafe &&
+    inlineDisabled &&
+    deadCodeSafe &&
+    escapeAnalysisOnly &&
+    productStable
+
+  return DebugOptimizeProof {
+    passManagerStable: passManagerStable,
+    constFoldSafe: constFoldSafe,
+    inlineDisabled: inlineDisabled,
+    deadCodeSafe: deadCodeSafe,
+    escapeAnalysisOnly: escapeAnalysisOnly,
+    productStable: productStable,
+    valid: valid,
+  }
+}

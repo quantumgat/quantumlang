@@ -1,0 +1,108 @@
+import core::{Vec}
+import declaration::{DeclarationRecord}
+import frontend::{FrontendProduct}
+
+pub OopSurfaceTable {
+  conformanceCount: i64 = 0
+  roleRequirementCount: i64 = 0
+  mergedSurfaceCount: i64 = 0
+  duplicateConformanceCount: i64 = 0
+  rows: Vec<SurfaceConformanceRow> = []
+  roleRows: Vec<SurfaceRoleRequirementRow> = []
+  deterministic: bool = true
+}
+
+impl OopSurfaceTable {
+  pub forFrontend(frontend: FrontendProduct) -> This {
+    return This.fromRecords(
+      frontend.declarations.records.recordValues,
+      frontend.valid
+    )
+  }
+
+  pub fromRecords(records: Vec<DeclarationRecord>, recordsValid: bool) -> This {
+    let table = This {
+      deterministic: recordsValid
+    }
+    let index: i64 = 0
+    while index < records.count {
+      table.addRecord(records[index])
+      index = index + 1
+    }
+    return table
+  }
+
+  addRecord(record: DeclarationRecord) {
+    let kind = oopSurfaceKindForDeclaration(record.kind)
+    if !oopSurfaceKindValid(kind) {
+      return
+    }
+
+    let rowIndex = rows.count
+    let row = SurfaceConformanceRow.fromRecord(rowIndex, record, kind)
+    row.roleStart = roleRows.count
+    row.roleCount = record.roleConformances.count
+
+    if containsConformanceKey(row.conformanceKey) {
+      duplicateConformanceCount = duplicateConformanceCount + 1
+    } else if containsMergeKey(row.mergeKey) {
+      mergedSurfaceCount = mergedSurfaceCount + 1
+    }
+
+    let roleIndex: i64 = 0
+    while roleIndex < record.roleConformances.count {
+      roleRows.push(SurfaceRoleRequirementRow.fromConformance(
+        rowIndex,
+        record.modulePath,
+        record.name,
+        record.roleConformances[roleIndex]
+      ))
+      roleIndex = roleIndex + 1
+    }
+
+    rows.push(row)
+    conformanceCount = rows.count
+    roleRequirementCount = roleRows.count
+  }
+
+  containsMergeKey(key: string) -> bool {
+    let index: i64 = 0
+    while index < rows.count {
+      if rows[index].mergeKey == key {
+        return true
+      }
+      index = index + 1
+    }
+    return false
+  }
+
+  containsConformanceKey(key: string) -> bool {
+    let index: i64 = 0
+    while index < rows.count {
+      if rows[index].conformanceKey == key {
+        return true
+      }
+      index = index + 1
+    }
+    return false
+  }
+}
+
+impl view OopSurfaceTable {
+  pub hasConformances => conformanceCount > 0
+
+  pub hasRoleRequirements => roleRequirementCount > 0
+
+  pub deterministicMerge => duplicateConformanceCount == 0
+
+  pub rowsOwned =>
+    rows.valid &&
+    roleRows.valid &&
+    rows.count == conformanceCount &&
+    roleRows.count == roleRequirementCount
+
+  pub valid =>
+    deterministic &&
+    rowsOwned &&
+    deterministicMerge
+}

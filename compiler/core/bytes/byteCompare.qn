@@ -1,0 +1,17 @@
+pub enum ByteCompareOrder {
+  Less
+  Equal
+  Greater
+}
+
+pub extend ByteView {
+  pub equals(other: ByteView) -> bool
+
+  pub stableCompare(other: ByteView) -> i64
+
+  pub compareOrder(other: ByteView) -> ByteCompareOrder
+
+  pub constantTimeEq(other: ByteView) -> bool
+
+  pub checksum32() -> u32
+}

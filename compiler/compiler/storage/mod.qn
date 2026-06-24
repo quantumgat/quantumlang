@@ -1,0 +1,21 @@
+module storage
+
+mod {
+  globalCacheContract
+  actionContentHash
+  cacheObjectFormat
+  cacheAtomicSafety
+  cacheKey
+  artifactStore
+  globalBuildResult
+}
+
+export {
+  globalCacheContract.{CacheOwnership, CacheProductKind, DeliveryArtifactKind, GlobalCacheContract}
+  actionContentHash.{CacheHashDomain, CacheHash256, CacheActionIdentity, CacheActionContentLink}
+  cacheObjectFormat.{CacheObjectRole, CacheObjectFormat, CacheObjectHeader, CacheObjectContract}
+  cacheAtomicSafety.{CacheWriteState, CacheValidationStatus, CacheValidation, CacheLease, CacheAtomicWrite, CacheQuarantine, CacheSchemaMigration, CacheSafetyContract}
+  cacheKey.CacheKey
+  artifactStore.ArtifactStore
+  globalBuildResult.{BuildResultStatus, GlobalBuildResult, GlobalBuildResultIndex}
+}

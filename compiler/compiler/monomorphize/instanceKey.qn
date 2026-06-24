@@ -1,0 +1,23 @@
+import core::{SymbolId}
+
+pub InstanceKey {
+  origin: SymbolId
+  argumentHash: u64
+  targetHash: u64
+  disambiguator: u64 = 0
+}
+
+impl InstanceKey {
+  pub InstanceKey(origin: SymbolId, argumentHash: u64, targetHash: u64) =
+    This { origin, argumentHash, targetHash }
+}
+
+impl view InstanceKey {
+  pub stableKey: string =>
+    "{origin.id.stableKey}:{argumentHash}:{targetHash}:{disambiguator}"
+
+  pub valid: bool =>
+    origin.id.valid &&
+    argumentHash != 0 &&
+    targetHash != 0
+}

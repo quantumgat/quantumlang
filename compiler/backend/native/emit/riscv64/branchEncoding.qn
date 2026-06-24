@@ -1,0 +1,22 @@
+pub Riscv64BranchEncoding {
+  targetSymbol: string
+  byteCount: i64 = 4
+  relocationKind: string = "branch"
+  diagnosticCode: string = ""
+}
+
+impl Riscv64BranchEncoding {
+  pub Riscv64BranchEncoding(targetSymbol: string) =
+    This { targetSymbol }
+}
+
+impl view Riscv64BranchEncoding {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetSymbol != "" &&
+    byteCount == 4 &&
+    relocationKind != ""
+
+  pub needsRelocation: bool => valid
+  pub debugName: string => "riscv64.branch.{targetSymbol}"
+}

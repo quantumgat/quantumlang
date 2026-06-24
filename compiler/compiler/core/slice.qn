@@ -1,0 +1,182 @@
+pub enum SliceLease {
+  Detached
+  Borrowed
+  Owned
+}
+
+pub enum SliceError {
+  InvalidRange
+  MissingOwner
+  OutOfBounds
+}
+
+pub Slice<T> {
+  rows: Range<T> = {}
+  owner: CompilerId = {}
+  generation: u64 = 0
+  lease: SliceLease = SliceLease.Detached
+}
+
+impl Slice<T> {
+  pub Slice(rows: Range<T>) =
+    This { rows }
+
+  pub Slice(start: i64, count: i64) =
+    This { rows: Range<T>(start, count) }
+
+  pub Slice(count: i64) -> This =
+    This {
+      rows: Range<T>(0, count)
+    }
+    
+  pub all(count: i64) =
+    This { rows: Range<T>.all(count) }
+
+  pub single(index: i64) =
+    This { rows: Range<T>.single(index) }
+
+  pub fromBounds(start: i64, end: i64) =
+    This { rows: Range<T>.fromBounds(start, end) }
+
+  pub checked(start: i64, count: i64) -> Result<This, RangeError> {
+    if start < 0 {
+      return Err(RangeError.NegativeStart)
+    }
+
+    if count < 0 {
+      return Err(RangeError.NegativeCount)
+    }
+
+    return Ok(This { rows: Range<T>(start, count) })
+  }
+
+  pub checkedBounds(start: i64, end: i64) -> Result<This, RangeError> {
+    if end < start {
+      return Err(RangeError.EndBeforeStart)
+    }
+
+    return checked(start, end - start)
+  }
+
+  pub owned(rows: Range<T>, owner: CompilerId, generation: u64) -> This {
+    return This { rows, owner, generation, lease: SliceLease.Owned }
+  }
+
+  pub borrowed(rows: Range<T>, owner: CompilerId, generation: u64) -> This {
+    return This { rows, owner, generation, lease: SliceLease.Borrowed }
+  }
+
+  pub owned(start: i64, count: i64, owner: CompilerId, generation: u64) =
+    This.owned(Range<T>(start, count), owner, generation)
+
+  pub borrowed(start: i64, count: i64, owner: CompilerId, generation: u64) =
+    This.borrowed(Range<T>(start, count), owner, generation)
+
+  pub Slice(start: i64, count: i64, owner: CompilerId, generation: u64) =
+    This {
+      rows: Range<T>(start, count)
+      owner
+      generation
+      lease: SliceLease.Owned
+    }
+
+  pub Slice(count: i64, owner: CompilerId, generation: u64) =
+    This {
+      rows: Range<T>(0, count)
+      owner
+      generation
+      lease: SliceLease.Owned
+    }
+
+  pub attachBorrow(owner: CompilerId, generation: u64) =
+    this { owner, generation, lease: SliceLease.Borrowed }
+
+  pub attachOwner(owner: CompilerId, generation: u64) =
+    this { owner, generation, lease: SliceLease.Owned }
+
+  pub detach() =
+    this { owner: {}, generation: 0, lease: SliceLease.Detached }
+
+  pub withRows(nextRows: Range<T>) =
+    this { rows: nextRows }
+
+  pub contains(index: i64) -> bool {
+    return rows.contains(index)
+  }
+
+  pub containsLocal(offset: i64) -> bool {
+    return offset >= 0 && offset < rows.count
+  }
+
+  pub localToGlobal(offset: i64) -> Result<i64, SliceError> {
+    if !containsLocal(offset) {
+      return Err(SliceError.OutOfBounds)
+    }
+
+    return Ok(rows.start + offset)
+  }
+
+  pub containsRange(other: Slice<T>) -> bool {
+    return rows.containsRange(other.rows)
+  }
+
+  pub overlaps(other: Slice<T>) -> bool {
+    return rows.overlaps(other.rows)
+  }
+
+  pub sub(offset: i64, count: i64) -> Result<This, SliceError> {
+    if offset < 0 || count < 0 || offset > rows.count - count {
+      return Err(SliceError.OutOfBounds)
+    }
+
+    return Ok(this {
+      rows: Range<T>(rows.start + offset, count)
+    })
+  }
+
+  pub head(count: i64) -> Result<This, SliceError> {
+    return sub(0, count)
+  }
+
+  pub tail(count: i64) -> Result<This, SliceError> {
+    return sub(rows.count - count, count)
+  }
+
+  pub shift(delta: i64) =
+    this { rows: Range<T>(rows.start + delta, rows.count) }
+
+}
+
+impl view Slice<T> {
+  pub range => rows
+
+  pub start => rows.start
+
+  pub count => rows.count
+
+  pub end => rows.end
+
+  pub isEmpty => rows.empty
+
+  pub empty => rows.empty
+
+  pub nonEmpty => rows.nonEmpty
+
+  pub ownerId => owner
+
+  pub generationId => generation
+
+  pub leaseKind => lease
+
+  pub hasOwner => owner.valid
+
+  pub detached => lease == SliceLease.Detached
+
+  pub isBorrowed => lease == SliceLease.Borrowed
+
+  pub isOwned => lease == SliceLease.Owned
+
+  pub stableBorrow => isBorrowed && hasOwner
+
+  pub valid => rows.valid
+}

@@ -1,0 +1,31 @@
+pub LinkStage {
+  linkTarget: LinkTargetPlan
+}
+
+impl LinkStage {
+  pub fromObjectStage(objectStage: ObjectStage) =
+    This {
+      linkTarget: LinkTargetPlan.fromObjects(objectStage.objects, "qtlc2")
+    }
+}
+
+impl view LinkStage {
+  pub packageRoot: string => linkTarget.packageRoot
+  pub targetTriple: string => linkTarget.targetTriple
+  pub profile: string => linkTarget.profile
+  pub outputPath: string => linkTarget.outputPath
+  pub objectUnitCount: i64 => linkTarget.objectUnitCount
+  pub sortedObjectHash: string => linkTarget.sortedObjectHash
+  pub runtimeArchiveHash: string => linkTarget.runtimeArchiveHash
+  pub linkerScriptHash: string => linkTarget.linkerScriptHash
+  pub targetOptionsHash: string => linkTarget.targetOptionsHash
+  pub inputSetHash: string => linkTarget.inputSetHash
+  pub inputSet => linkTarget.inputSet()
+  pub plan => linkTarget.plan()
+  pub result => linkTarget.result()
+  pub identityValid: bool => linkTarget.identityValid
+  pub valid: bool => linkTarget.valid
+  pub deterministic: bool => linkTarget.deterministic
+  pub runnable: bool => linkTarget.runnable
+  pub fingerprint => linkTarget.fingerprint
+}

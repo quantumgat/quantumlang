@@ -1,0 +1,90 @@
+import core::{NameId, ScopeId, TypeId}
+
+pub enum CandidateKeyKind {
+  FreeCall
+  LexicalCall
+  MemberCall
+  Constructor
+  Extension
+  Operator
+  Unknown
+}
+
+pub CandidateKey {
+  kind: CandidateKeyKind = CandidateKeyKind.Unknown
+  nameId: NameId = {}
+  scopeId: ScopeId = {}
+  ownerType: TypeId = {}
+  name: string = ""
+  ownerName: string = ""
+  operatorForm: string = ""
+}
+
+impl CandidateKey {
+  pub free(nameId: NameId, name: string) =
+    This { kind: CandidateKeyKind.FreeCall, nameId, name }
+
+  pub lexical(scopeId: ScopeId, nameId: NameId, name: string) =
+    This { kind: CandidateKeyKind.LexicalCall, scopeId, nameId, name }
+
+  pub member(ownerType: TypeId, ownerName: string, nameId: NameId, name: string) =
+    This {
+      kind: CandidateKeyKind.MemberCall
+      ownerType
+      ownerName
+      nameId
+      name
+    }
+
+  pub constructor(ownerType: TypeId, ownerName: string) =
+    This {
+      kind: CandidateKeyKind.Constructor
+      ownerType
+      ownerName
+      name: ownerName
+    }
+
+  pub extension(ownerType: TypeId, ownerName: string, nameId: NameId, name: string) =
+    This {
+      kind: CandidateKeyKind.Extension
+      ownerType
+      ownerName
+      nameId
+      name
+    }
+
+  pub operator(symbol: string, form: string) =
+    This {
+      kind: CandidateKeyKind.Operator
+      name: symbol
+      operatorForm: form
+    }
+
+  pub storageKey: string => {
+    if kind == CandidateKeyKind.FreeCall {
+      return "free:{name}"
+    }
+    if kind == CandidateKeyKind.LexicalCall {
+      return "lexical:{scopeId.id.stableKey}:{name}"
+    }
+    if kind == CandidateKeyKind.MemberCall {
+      return "member:{ownerName}:{name}"
+    }
+    if kind == CandidateKeyKind.Constructor {
+      return "constructor:{ownerName}"
+    }
+    if kind == CandidateKeyKind.Extension {
+      return "extension:{ownerName}:{name}"
+    }
+    if kind == CandidateKeyKind.Operator {
+      return "operator:{operatorForm}:{name}"
+    }
+    return ""
+  }
+}
+
+impl view CandidateKey {
+  pub valid: bool =>
+    kind != CandidateKeyKind.Unknown &&
+    storageKey != ""
+}

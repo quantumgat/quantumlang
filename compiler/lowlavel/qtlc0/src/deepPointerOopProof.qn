@@ -1,0 +1,86 @@
+import deepPointerModel::{DeepBranch, DeepEnvelope, DeepLeaf, DeepRoot}
+import deepPointerExtensions
+
+pub deepPointerMutableStatus() -> i64 {
+  let envelope: DeepEnvelope<i64> = {
+    root: DeepRoot<i64> {
+      branch: DeepBranch<i64> {
+        leaf: DeepLeaf<i64> { value: 41 }
+      }
+      labelText: "deep"
+    }
+  }
+  let pointer: *DeepEnvelope<i64> = &envelope
+
+  if pointer.valid {
+    pointer.root.branch.leaf.value = 42
+    pointer.root.branch.leaf.revision = 2
+
+    if pointer.root.branch.leaf.value != 42 {
+      return 1
+    }
+    if pointer.current != 42 {
+      return 2
+    }
+    if pointer.ready != true {
+      return 3
+    }
+    return 0
+  }
+
+  return 4
+}
+
+pub deepPointerMutableProof() -> bool {
+  return deepPointerMutableStatus() == 0
+}
+
+pub deepPointerConstStatus() -> i64 {
+  let envelope: DeepEnvelope<i64> = {
+    root: DeepRoot<i64> {
+      branch: DeepBranch<i64> {
+        leaf: DeepLeaf<i64> { value: 43 }
+      }
+      labelText: "const-deep"
+    }
+  }
+  let pointer: const *DeepEnvelope<i64> = const *envelope
+
+  if pointer.valid {
+    if pointer.root.branch.leaf.value != 43 {
+      return 1
+    }
+    if pointer.current != 43 {
+      return 2
+    }
+    if pointer.read() != 43 {
+      return 3
+    }
+    if pointer.encoded() != 43 {
+      return 4
+    }
+    if pointer.contextValue() != 43 {
+      return 5
+    }
+    if pointer.extractedValue() != 43 {
+      return 6
+    }
+    if pointer.extractedLabel() != "const-deep" {
+      return 7
+    }
+    if deepPointerExtensions.deepBlanketProof(envelope) != true {
+      return 8
+    }
+    return 0
+  }
+
+  return 9
+}
+
+pub deepPointerConstProof() -> bool {
+  return deepPointerConstStatus() == 0
+}
+
+pub deepPointerOopSurfaceProof() -> bool {
+  return deepPointerMutableProof() && deepPointerConstProof()
+}

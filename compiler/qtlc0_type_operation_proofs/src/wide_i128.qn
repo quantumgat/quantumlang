@@ -1,0 +1,8 @@
+pub proof_wide_i128() -> i64 {
+  let a: i128 = 100
+  let b: i128 = 30
+  let c: i128 = a + b
+  if c != 130 { return 11 }
+  println("i128 ok: {c}")
+  return 0
+}

@@ -1,0 +1,38 @@
+pub RelocationBytes {
+  relocationCount: i64
+  byteCount: i64
+  byteHash: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl RelocationBytes {
+  pub RelocationBytes(relocationCount: i64, byteCount: i64, byteHash: string) =
+    This {
+      relocationCount
+      byteCount
+      byteHash
+    }
+
+  pub fromRelocation(relocation: ObjectRelocation) =
+    This {
+      relocationCount: 1
+      byteCount: 24
+      byteHash: "reloc-bytes:{relocation.relocationHash}"
+      deterministic: true
+      diagnosticCode: match relocation.valid {
+        true => ""
+        false => "QNATIVE0732"
+      }
+    }
+}
+
+impl view RelocationBytes {
+  pub valid => diagnosticCode == "" &&
+    relocationCount >= 0 &&
+    byteCount >= 0 &&
+    byteHash != "" &&
+    deterministic
+  pub hasRelocations => relocationCount > 0
+  pub debugName => "reloc.bytes.{relocationCount}.{byteCount}"
+}

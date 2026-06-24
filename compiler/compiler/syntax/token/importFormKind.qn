@@ -1,0 +1,8 @@
+pub enum ImportFormKind {
+  SelectedSymbols
+  ModuleDefaultName
+  ModuleAlias
+  DotPathRejected
+  CallPathRejected
+  Unknown
+}

@@ -1,0 +1,41 @@
+pub RelocationEmitter {
+  sectionName: string = ".text"
+  offset: i64 = 0
+  symbolName: string = ""
+  kind: string = "pc-relative"
+  addend: i64 = 0
+  diagnosticCode: string = ""
+}
+
+impl RelocationEmitter {
+  pub RelocationEmitter(sectionName: string, offset: i64, symbolName: string, kind: string, addend: i64) =
+    This {
+      sectionName
+      offset
+      symbolName
+      kind
+      addend
+    }
+
+  pub call(offset: i64, symbolName: string) =
+    This(".text", offset, symbolName, "pc-relative", -4)
+
+  pub relocation() -> ObjectRelocation {
+    if kind == "absolute" {
+      return ObjectRelocation.absolute(sectionName, offset, symbolName, addend)
+    }
+    return ObjectRelocation.pcRelative(sectionName, offset, symbolName, addend)
+  }
+}
+
+impl view RelocationEmitter {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    sectionName != "" &&
+    offset >= 0 &&
+    symbolName != "" &&
+    kind != ""
+
+  pub needsPatch: bool => valid
+  pub debugName: string => "emit.relocation.{sectionName}.{symbolName}.{kind}"
+}

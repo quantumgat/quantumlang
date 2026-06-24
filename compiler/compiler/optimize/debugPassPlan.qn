@@ -1,0 +1,44 @@
+pub DebugPassPlan {
+  manager: PassManager
+  constFold: ConstFoldPass
+  inline: InlinePass
+  deadCode: DeadCodePass
+  escape: EscapeAnalysis
+  passProductStable: bool
+  valid: bool
+}
+
+impl DebugPassPlan {
+  pub DebugPassPlan() {
+    let manager = PassManager("debug", 4, true)
+    let fold = ConstFoldPass(2, true)
+    let inline = InlinePass(0, false)
+    let dead = DeadCodePass(1, true)
+    let escape = EscapeAnalysis(3, true)
+    let passProductStable = manager.deterministic &&
+      fold.debugSafe &&
+      inline.debugSafe &&
+      dead.debugSafe &&
+      escape.debugSafe
+    let valid = manager.valid &&
+      fold.valid &&
+      inline.valid &&
+      dead.valid &&
+      escape.valid &&
+      passProductStable
+
+    This {
+      manager
+      constFold: fold
+      inline
+      deadCode: dead
+      escape
+      passProductStable
+      valid
+    }
+  }
+}
+
+impl view DebugPassPlan {
+  pub stable => passProductStable && valid
+}

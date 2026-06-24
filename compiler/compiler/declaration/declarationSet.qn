@@ -1,0 +1,128 @@
+import core::{DeclarationId, Slice}
+
+pub DeclarationSet {
+  kind: DeclarationKind
+  records: Slice<DeclarationRecord> = Slice<DeclarationRecord>()
+  declarations: Slice<DeclarationId> = Slice<DeclarationId>()
+  publicRecords: Slice<DeclarationRecord> = Slice<DeclarationRecord>()
+  publicDeclarations: Slice<DeclarationId> = Slice<DeclarationId>()
+  unresolvedRecords: Slice<DeclarationRecord> = Slice<DeclarationRecord>()
+  unresolvedDeclarations: Slice<DeclarationId> = Slice<DeclarationId>()
+  deterministic: bool = true
+}
+
+impl DeclarationSet {
+  pub DeclarationSet(kind: DeclarationKind, count: i64) =
+    This {
+      kind
+      records: Slice(count)
+      declarations: Slice(count)
+      publicRecords: Slice(count)
+      publicDeclarations: Slice(count)
+      unresolvedRecords: Slice<DeclarationRecord>()
+      unresolvedDeclarations: Slice<DeclarationId>()
+    }
+
+  pub fromRecordSlices(
+    kind: DeclarationKind,
+    records: Slice<DeclarationRecord>,
+    declarations: Slice<DeclarationId>,
+    publicRecords: Slice<DeclarationRecord>,
+    publicDeclarations: Slice<DeclarationId>,
+    unresolvedRecords: Slice<DeclarationRecord>,
+    unresolvedDeclarations: Slice<DeclarationId>
+  ) =
+    This {
+      kind
+      records
+      declarations
+      publicRecords
+      publicDeclarations
+      unresolvedRecords
+      unresolvedDeclarations
+    }
+
+  pub fromSlices(
+    kind: DeclarationKind,
+    declarations: Slice<DeclarationId>,
+    publicDeclarations: Slice<DeclarationId>,
+    unresolvedDeclarations: Slice<DeclarationId>
+  ) -> This {
+    let records: Slice<DeclarationRecord> =
+      if declarations.count == 0 {
+        Slice()
+      } else {
+        Slice(declarations.start - 1, declarations.count)
+      }
+
+    let publicRecords: Slice<DeclarationRecord> =
+      if publicDeclarations.count == 0 {
+        Slice()
+      } else {
+        Slice(publicDeclarations.start - 1, publicDeclarations.count)
+      }
+
+    let unresolvedRecords: Slice<DeclarationRecord> =
+      if unresolvedDeclarations.count == 0 {
+        Slice()
+      } else {
+        Slice(unresolvedDeclarations.start - 1, unresolvedDeclarations.count)
+      }
+
+    return This {
+      kind
+      records
+      declarations
+      publicRecords
+      publicDeclarations
+      unresolvedRecords
+      unresolvedDeclarations
+    }
+  }
+}
+
+impl view DeclarationSet {
+  pub count: i64 => records.count
+
+  pub publicCount: i64 => publicRecords.count
+
+  pub unresolvedCount: i64 => unresolvedRecords.count
+
+  pub empty => count == 0
+
+  pub present => count > 0
+
+  pub resolved => unresolvedCount == 0
+
+  pub publicReady => publicCount >= 0 && publicCount <= count
+
+  pub rangesValid =>
+    records.start >= 0 &&
+    records.count >= 0 &&
+    declarations.start >= 0 &&
+    declarations.count >= 0 &&
+    publicRecords.start >= 0 &&
+    publicRecords.count >= 0 &&
+    publicDeclarations.start >= 0 &&
+    publicDeclarations.count >= 0 &&
+    unresolvedRecords.start >= 0 &&
+    unresolvedRecords.count >= 0 &&
+    unresolvedDeclarations.start >= 0 &&
+    unresolvedDeclarations.count >= 0
+
+  pub countsConsistent =>
+    count >= 0 &&
+    publicCount >= 0 &&
+    unresolvedCount >= 0 &&
+    publicCount <= count &&
+    declarations.count == count &&
+    publicDeclarations.count == publicCount &&
+    unresolvedDeclarations.count == unresolvedCount
+
+  pub valid =>
+    deterministic &&
+    rangesValid &&
+    countsConsistent &&
+    resolved &&
+    kind != DeclarationKind.Unknown
+}

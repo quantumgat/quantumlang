@@ -1,0 +1,57 @@
+pub BackendDiagnosticReport {
+  diagnosticCount: i64
+  errorCount: i64
+  warningCount: i64
+  firstCode: string
+  deterministic: bool = true
+}
+
+impl BackendDiagnosticReport {
+  pub BackendDiagnosticReport(
+    diagnosticCount: i64,
+    errorCount: i64,
+    warningCount: i64,
+    firstCode: string
+  ) =
+    This {
+      diagnosticCount
+      errorCount
+      warningCount
+      firstCode
+    }
+
+  pub empty() =
+    This {
+      diagnosticCount: 0
+      errorCount: 0
+      warningCount: 0
+      firstCode: ""
+    }
+
+  pub fromDiagnostic(diagnostic: BackendDiagnostic) =
+    This {
+      diagnosticCount: 1
+      errorCount: match diagnostic.code.error {
+        true => 1
+        false => 0
+      }
+      warningCount: match diagnostic.code.warning {
+        true => 1
+        false => 0
+      }
+      firstCode: diagnostic.code.code
+      deterministic: diagnostic.valid
+    }
+}
+
+impl view BackendDiagnosticReport {
+  pub valid => diagnosticCount >= 0 &&
+    errorCount >= 0 &&
+    warningCount >= 0 &&
+    diagnosticCount >= errorCount + warningCount &&
+    deterministic
+  pub clean => valid && diagnosticCount == 0
+  pub failed => valid && errorCount > 0
+  pub reportHash => "backend-diag:{diagnosticCount}:{errorCount}:{warningCount}:{firstCode}"
+  pub debugName => "backend.diag.report.{diagnosticCount}.{errorCount}"
+}

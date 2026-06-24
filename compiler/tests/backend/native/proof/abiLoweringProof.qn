@@ -1,0 +1,82 @@
+import backend::native::{*}
+
+pub AbiLoweringProof {
+  callAbiValid: bool
+  aggregateAbiValid: bool
+  sretAbiValid: bool
+  stackArgAbiValid: bool
+  returnValueAbiValid: bool
+  frameConsumesAbi: bool
+  machineConsumesAbi: bool
+  valid: bool
+}
+
+pub abiLoweringProof() -> AbiLoweringProof {
+  let target = TargetIdentity.debugLinux()
+  let callAbi = CallAbi.forTarget(target)
+  let aggregateAbi = AggregateAbi.classify("CompilerStageBuildReport", 64, 8, 8)
+  let sretAbi = SretAbi.forAggregate(aggregateAbi)
+  let stackArgAbi = StackArgAbi.fromCall(callAbi, 8)
+  let returnAbi = ReturnValueAbi.fromAggregate(aggregateAbi, sretAbi)
+  let frame = FrameLayout.fromCallAbi(callAbi, stackArgAbi.stackBytes, 1)
+  let function = MachineFunction("emitCompilerStage", 1, 8, 4, 4).withFrame(frame).withAbi(callAbi, returnAbi)
+
+  let callAbiValid =
+    callAbi.valid &&
+    callAbi.hasIntegerRegisters &&
+    callAbi.stackAligned &&
+    callAbi.callingConvention == "sysv"
+
+  let aggregateAbiValid =
+    aggregateAbi.valid &&
+    aggregateAbi.memoryPassed &&
+    aggregateAbi.needsSret
+
+  let sretAbiValid =
+    sretAbi.valid &&
+    sretAbi.usesSret &&
+    sretAbi.pointerRegisterIndex == callAbi.sretPointerRegisterIndex
+
+  let stackArgAbiValid =
+    stackArgAbi.valid &&
+    stackArgAbi.spillsToStack &&
+    stackArgAbi.stackArgumentCount == 2 &&
+    stackArgAbi.stackBytes == 16
+
+  let returnValueAbiValid =
+    returnAbi.valid &&
+    returnAbi.memoryReturn &&
+    returnAbi.registerCount == 0
+
+  let frameConsumesAbi =
+    frame.valid &&
+    frame.abiAligned(callAbi) &&
+    frame.stackBytes == stackArgAbi.stackBytes
+
+  let machineConsumesAbi =
+    function.valid &&
+    function.abiReady &&
+    function.objectReady &&
+    function.abiHash == callAbi.abiHash &&
+    function.returnAbiHash == returnAbi.abiHash
+
+  let valid =
+    callAbiValid &&
+    aggregateAbiValid &&
+    sretAbiValid &&
+    stackArgAbiValid &&
+    returnValueAbiValid &&
+    frameConsumesAbi &&
+    machineConsumesAbi
+
+  return AbiLoweringProof {
+    callAbiValid
+    aggregateAbiValid
+    sretAbiValid
+    stackArgAbiValid
+    returnValueAbiValid
+    frameConsumesAbi
+    machineConsumesAbi
+    valid
+  }
+}

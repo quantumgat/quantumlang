@@ -1,0 +1,185 @@
+import core::{TextMethodGroup}
+
+pub CoreTextMethodFact {
+  receiverType: string
+  name: string
+  kind: CoreTextMethodKind = Unknown
+  group: TextMethodGroup = TextMethodGroup.Unknown
+  returnType: string = ""
+  compilerNeeded: bool = false
+  importFree: bool = true
+  zeroCopy: bool = false
+  allocates: bool = false
+  compatibilityAlias: bool = false
+  nativeReady: bool = false
+  valid: bool = false
+}
+
+impl CoreTextMethodFact {
+  pub fromReceiver(receiverType: string, name: string) -> This {
+    if receiverType == "string" || receiverType == "str" {
+      return This.string(receiverType, name)
+    }
+    if receiverType == "bytes" || receiverType == "BytesView" || receiverType == "BytesMutView" {
+      return This.bytes(receiverType, name)
+    }
+    if receiverType == "char" {
+      return This.char(name)
+    }
+    if receiverType == "byte" {
+      return This.byte(name)
+    }
+    return This { receiverType, name }
+  }
+
+  pub string(receiverType: string, name: string) -> This {
+    if name == "byteLength" { return This.ready(receiverType, name, CoreTextMethodKind.ByteLength, TextMethodGroup.Measure, "usize", true) }
+    if name == "length" { return This.ready(receiverType, name, CoreTextMethodKind.Length, TextMethodGroup.Measure, "usize", true) }
+    if name == "charLength" { return This.ready(receiverType, name, CoreTextMethodKind.CharLength, TextMethodGroup.Measure, "usize", true) }
+    if name == "graphemeLength" { return This.ready(receiverType, name, CoreTextMethodKind.GraphemeLength, TextMethodGroup.Measure, "usize", true) }
+    if name == "len" { return This.alias(receiverType, name, CoreTextMethodKind.Length, TextMethodGroup.Measure, "usize", true) }
+    if name == "lenBytes" { return This.alias(receiverType, name, CoreTextMethodKind.ByteLength, TextMethodGroup.Measure, "usize", true) }
+    if name == "lenChars" { return This.alias(receiverType, name, CoreTextMethodKind.CharLength, TextMethodGroup.Measure, "usize", true) }
+    if name == "graphemeLen" { return This.alias(receiverType, name, CoreTextMethodKind.GraphemeLength, TextMethodGroup.Measure, "usize", true) }
+    if name == "isEmpty" { return This.ready(receiverType, name, CoreTextMethodKind.IsEmpty, TextMethodGroup.Validate, "bool", true) }
+    if name == "isAscii" { return This.ready(receiverType, name, CoreTextMethodKind.IsAscii, TextMethodGroup.Validate, "bool", true) }
+    if name == "isUtf8" { return This.ready(receiverType, name, CoreTextMethodKind.IsUtf8, TextMethodGroup.Validate, "bool", true) }
+    if name == "eq" { return This.ready(receiverType, name, CoreTextMethodKind.Eq, TextMethodGroup.Compare, "bool", true) }
+    if name == "compare" { return This.ready(receiverType, name, CoreTextMethodKind.Compare, TextMethodGroup.Compare, "i32", true) }
+    if name == "startsWith" { return This.ready(receiverType, name, CoreTextMethodKind.StartsWith, TextMethodGroup.Search, "bool", true) }
+    if name == "endsWith" { return This.ready(receiverType, name, CoreTextMethodKind.EndsWith, TextMethodGroup.Search, "bool", true) }
+    if name == "contains" { return This.ready(receiverType, name, CoreTextMethodKind.Contains, TextMethodGroup.Search, "bool", true) }
+    if name == "startsWithIgnoreCase" { return This.ready(receiverType, name, CoreTextMethodKind.StartsWithIgnoreCase, TextMethodGroup.Search, "bool", true) }
+    if name == "endsWithIgnoreCase" { return This.ready(receiverType, name, CoreTextMethodKind.EndsWithIgnoreCase, TextMethodGroup.Search, "bool", true) }
+    if name == "containsIgnoreCase" { return This.ready(receiverType, name, CoreTextMethodKind.ContainsIgnoreCase, TextMethodGroup.Search, "bool", true) }
+    if name == "find" { return This.ready(receiverType, name, CoreTextMethodKind.Find, TextMethodGroup.Search, "i64", true) }
+    if name == "indexOf" { return This.ready(receiverType, name, CoreTextMethodKind.IndexOf, TextMethodGroup.Search, "i64", true) }
+    if name == "lastIndexOf" { return This.ready(receiverType, name, CoreTextMethodKind.LastIndexOf, TextMethodGroup.Search, "i64", true) }
+    if name == "findIndex" { return This.ready(receiverType, name, CoreTextMethodKind.FindIndex, TextMethodGroup.Search, "usize?", true) }
+    if name == "findLastIndex" { return This.ready(receiverType, name, CoreTextMethodKind.FindLastIndex, TextMethodGroup.Search, "usize?", true) }
+    if name == "findByte" { return This.ready(receiverType, name, CoreTextMethodKind.FindByte, TextMethodGroup.Search, "usize?", true) }
+    if name == "findChar" { return This.ready(receiverType, name, CoreTextMethodKind.FindChar, TextMethodGroup.Search, "usize?", true) }
+    if name == "findGrapheme" { return This.ready(receiverType, name, CoreTextMethodKind.FindGrapheme, TextMethodGroup.Search, "usize?", true) }
+    if name == "findIgnoreCase" { return This.ready(receiverType, name, CoreTextMethodKind.FindIgnoreCase, TextMethodGroup.Search, "usize?", true) }
+    if name == "findInRange" { return This.ready(receiverType, name, CoreTextMethodKind.FindInRange, TextMethodGroup.Search, "usize?", true) }
+    if name == "count" { return This.ready(receiverType, name, CoreTextMethodKind.Count, TextMethodGroup.Search, "usize", true) }
+    if name == "slice" { return This.ready(receiverType, name, CoreTextMethodKind.Slice, TextMethodGroup.Slice, "string", true) }
+    if name == "sliceBytes" { return This.ready(receiverType, name, CoreTextMethodKind.SliceBytes, TextMethodGroup.Slice, "string", true) }
+    if name == "sliceChars" { return This.ready(receiverType, name, CoreTextMethodKind.SliceChars, TextMethodGroup.Slice, "string", true) }
+    if name == "sliceGraphemes" { return This.ready(receiverType, name, CoreTextMethodKind.SliceGraphemes, TextMethodGroup.Slice, "string", true) }
+    if name == "substring" { return This.ready(receiverType, name, CoreTextMethodKind.Substring, TextMethodGroup.Slice, "string", true) }
+    if name == "prefix" { return This.ready(receiverType, name, CoreTextMethodKind.Prefix, TextMethodGroup.Slice, "string", true) }
+    if name == "suffix" { return This.ready(receiverType, name, CoreTextMethodKind.Suffix, TextMethodGroup.Slice, "string", true) }
+    if name == "take" { return This.ready(receiverType, name, CoreTextMethodKind.Take, TextMethodGroup.Slice, "string", true) }
+    if name == "takeLast" { return This.ready(receiverType, name, CoreTextMethodKind.TakeLast, TextMethodGroup.Slice, "string", true) }
+    if name == "drop" { return This.ready(receiverType, name, CoreTextMethodKind.Drop, TextMethodGroup.Slice, "string", true) }
+    if name == "dropLast" { return This.ready(receiverType, name, CoreTextMethodKind.DropLast, TextMethodGroup.Slice, "string", true) }
+    if name == "trim" { return This.ready(receiverType, name, CoreTextMethodKind.Trim, TextMethodGroup.Slice, "string", true) }
+    if name == "trimStart" { return This.ready(receiverType, name, CoreTextMethodKind.TrimStart, TextMethodGroup.Slice, "string", true) }
+    if name == "trimEnd" { return This.ready(receiverType, name, CoreTextMethodKind.TrimEnd, TextMethodGroup.Slice, "string", true) }
+    if name == "splitOnce" { return This.ready(receiverType, name, CoreTextMethodKind.SplitOnce, TextMethodGroup.Slice, "TextSplit?", true) }
+    if name == "rsplitOnce" { return This.ready(receiverType, name, CoreTextMethodKind.RsplitOnce, TextMethodGroup.Slice, "TextSplit?", true) }
+    if name == "concat" { return This.allocated(receiverType, name, CoreTextMethodKind.Concat, TextMethodGroup.Transform, "string", true) }
+    if name == "repeat" { return This.allocated(receiverType, name, CoreTextMethodKind.Repeat, TextMethodGroup.Transform, "string", true) }
+    if name == "replace" { return This.allocated(receiverType, name, CoreTextMethodKind.Replace, TextMethodGroup.Transform, "string", true) }
+    if name == "lower" { return This.allocated(receiverType, name, CoreTextMethodKind.Lower, TextMethodGroup.Transform, "string", true) }
+    if name == "upper" { return This.allocated(receiverType, name, CoreTextMethodKind.Upper, TextMethodGroup.Transform, "string", true) }
+    if name == "asciiLower" { return This.allocated(receiverType, name, CoreTextMethodKind.AsciiLower, TextMethodGroup.Transform, "string", true) }
+    if name == "asciiUpper" { return This.allocated(receiverType, name, CoreTextMethodKind.AsciiUpper, TextMethodGroup.Transform, "string", true) }
+    if name == "capitalize" { return This.allocated(receiverType, name, CoreTextMethodKind.Capitalize, TextMethodGroup.Transform, "string", true) }
+    if name == "title" { return This.allocated(receiverType, name, CoreTextMethodKind.Title, TextMethodGroup.Transform, "string", true) }
+    if name == "caseFold" { return This.allocated(receiverType, name, CoreTextMethodKind.CaseFold, TextMethodGroup.Transform, "string", true) }
+    if name == "normalize" { return This.allocated(receiverType, name, CoreTextMethodKind.Normalize, TextMethodGroup.Transform, "string", true) }
+    if name == "asBytes" { return This.ready(receiverType, name, CoreTextMethodKind.AsBytes, TextMethodGroup.Convert, "BytesView", true) }
+    if name == "toBytes" { return This.allocated(receiverType, name, CoreTextMethodKind.ToBytes, TextMethodGroup.Convert, "bytes", true) }
+    if name == "toString" { return This.ready(receiverType, name, CoreTextMethodKind.ToString, TextMethodGroup.Convert, "string", true) }
+    if name == "displayWidth" { return This.ready(receiverType, name, CoreTextMethodKind.DisplayWidth, TextMethodGroup.Unicode, "usize", true) }
+    if name == "unicodeCategory" { return This.ready(receiverType, name, CoreTextMethodKind.UnicodeCategory, TextMethodGroup.Unicode, "i32", true) }
+    if name == "constantTimeEq" { return This.extension(receiverType, name, CoreTextMethodKind.ConstantTimeEq, TextMethodGroup.Security, "bool", true) }
+    if name == "constantTimeContains" { return This.extension(receiverType, name, CoreTextMethodKind.ConstantTimeContains, TextMethodGroup.Security, "bool", true) }
+    if name == "redact" { return This.extension(receiverType, name, CoreTextMethodKind.Redact, TextMethodGroup.Security, "string", true) }
+    if name == "auditEscape" { return This.extension(receiverType, name, CoreTextMethodKind.AuditEscape, TextMethodGroup.Security, "string", true) }
+    if name == "jsonEscape" { return This.extension(receiverType, name, CoreTextMethodKind.JsonEscape, TextMethodGroup.Codec, "string", true) }
+    if name == "jsonUnescape" { return This.extension(receiverType, name, CoreTextMethodKind.JsonUnescape, TextMethodGroup.Codec, "string", true) }
+    if name == "urlEncode" { return This.extension(receiverType, name, CoreTextMethodKind.UrlEncode, TextMethodGroup.Codec, "string", true) }
+    if name == "urlDecode" { return This.extension(receiverType, name, CoreTextMethodKind.UrlDecode, TextMethodGroup.Codec, "string", true) }
+    if name == "htmlEscape" { return This.extension(receiverType, name, CoreTextMethodKind.HtmlEscape, TextMethodGroup.Codec, "string", true) }
+    if name == "shellEscape" { return This.extension(receiverType, name, CoreTextMethodKind.ShellEscape, TextMethodGroup.Codec, "string", true) }
+    return This { receiverType, name }
+  }
+
+  pub ready(receiverType: string, name: string, kind: CoreTextMethodKind, group: TextMethodGroup, returnType: string, nativeReady: bool) =
+    This { receiverType, name, kind, group, returnType, compilerNeeded: true, zeroCopy: true, nativeReady, valid: true }
+
+  pub allocated(receiverType: string, name: string, kind: CoreTextMethodKind, group: TextMethodGroup, returnType: string, nativeReady: bool) =
+    This { receiverType, name, kind, group, returnType, compilerNeeded: true, allocates: true, nativeReady, valid: true }
+
+  pub alias(receiverType: string, name: string, kind: CoreTextMethodKind, group: TextMethodGroup, returnType: string, nativeReady: bool) =
+    This { receiverType, name, kind, group, returnType, compilerNeeded: true, zeroCopy: true, compatibilityAlias: true, nativeReady, valid: true }
+
+  pub extension(receiverType: string, name: string, kind: CoreTextMethodKind, group: TextMethodGroup, returnType: string, nativeReady: bool) =
+    This { receiverType, name, kind, group, returnType, importFree: false, allocates: returnType == "string", nativeReady, valid: true }
+
+  pub bytes(receiverType: string, name: string) -> This {
+    if name == "length" {
+      return This { receiverType, name, kind: BytesLength, returnType: "usize", compilerNeeded: true, valid: true }
+    }
+    if name == "isEmpty" {
+      return This { receiverType, name, kind: BytesIsEmpty, returnType: "bool", compilerNeeded: true, valid: true }
+    }
+    if name == "byteAt" {
+      return This { receiverType, name, kind: ByteAt, returnType: "byte?", compilerNeeded: true, valid: true }
+    }
+    if name == "slice" {
+      return This { receiverType, name, kind: BytesSlice, returnType: receiverType, compilerNeeded: true, valid: true }
+    }
+    if name == "toString" {
+      return This { receiverType, name, kind: BytesToString, returnType: "string?", compilerNeeded: true, valid: true }
+    }
+    return This { receiverType, name }
+  }
+
+  pub char(name: string) -> This {
+    if name == "isWhitespace" {
+      return This { receiverType: "char", name, kind: CharIsWhitespace, returnType: "bool", compilerNeeded: true, valid: true }
+    }
+    if name == "isDigit" {
+      return This { receiverType: "char", name, kind: CharIsDigit, returnType: "bool", compilerNeeded: true, valid: true }
+    }
+    if name == "isAlpha" {
+      return This { receiverType: "char", name, kind: CharIsAlpha, returnType: "bool", compilerNeeded: true, valid: true }
+    }
+    if name == "isAlphaNum" {
+      return This { receiverType: "char", name, kind: CharIsAlphaNum, returnType: "bool", compilerNeeded: true, valid: true }
+    }
+    if name == "isIdentifierStart" {
+      return This { receiverType: "char", name, kind: CharIsIdentifierStart, returnType: "bool", compilerNeeded: true, valid: true }
+    }
+    if name == "isIdentifierContinue" {
+      return This { receiverType: "char", name, kind: CharIsIdentifierContinue, returnType: "bool", compilerNeeded: true, valid: true }
+    }
+    return This { receiverType: "char", name }
+  }
+
+  pub byte(name: string) -> This {
+    if name == "isAsciiWhitespace" {
+      return This { receiverType: "byte", name, kind: ByteIsAsciiWhitespace, returnType: "bool", compilerNeeded: true, valid: true }
+    }
+    if name == "isAsciiDigit" {
+      return This { receiverType: "byte", name, kind: ByteIsAsciiDigit, returnType: "bool", compilerNeeded: true, valid: true }
+    }
+    if name == "isAsciiAlpha" {
+      return This { receiverType: "byte", name, kind: ByteIsAsciiAlpha, returnType: "bool", compilerNeeded: true, valid: true }
+    }
+    if name == "isAsciiAlphaNum" {
+      return This { receiverType: "byte", name, kind: ByteIsAsciiAlphaNum, returnType: "bool", compilerNeeded: true, valid: true }
+    }
+    return This { receiverType: "byte", name }
+  }
+}
+
+impl view CoreTextMethodFact {
+  pub hasReturn => returnType != ""
+  pub compilerSurface => compilerNeeded && valid
+  pub hotPath => valid && nativeReady
+}

@@ -1,0 +1,106 @@
+pub LinkTargetPlan {
+  packageRoot: string
+  targetTriple: string = "x86_64-unknown-linux-gnu"
+  profile: string = "debug"
+  objectFormat: string = "elf"
+  abi: string = "sysv"
+  outputName: string = "qtlc2"
+  outputPath: string
+  objectUnitCount: i64
+  sortedObjectHash: string
+  runtimeArchiveHash: string
+  linkerScriptHash: string
+  targetOptionsHash: string
+  inputSetHash: string
+}
+
+impl LinkTargetPlan {
+  pub fromContract(contract: InputContract, outputName: string) =
+    This.fromObjects(ObjectSetPlan.fromContract(contract), outputName)
+
+  pub fromContractForTarget(
+    contract: InputContract,
+    target: TargetIdentity,
+    outputName: string
+  ) =
+    This.fromObjects(ObjectSetPlan.fromContractForTarget(contract, target), outputName)
+
+  pub fromObjects(objects: ObjectSetPlan, outputName: string) =
+    This.fromObjectsWithRuntime(objects, LinkRuntimeIdentity.core(), outputName)
+
+  pub fromObjectsWithRuntime(
+    objects: ObjectSetPlan,
+    runtime: LinkRuntimeIdentity,
+    outputName: string
+  ) =
+    This {
+      packageRoot: objects.packageRoot
+      targetTriple: objects.targetTriple
+      profile: objects.profile
+      objectFormat: objects.objectFormat
+      abi: objects.abi
+      outputName
+      outputPath: Layout.forPackage(
+        objects.packageRoot,
+        outputName,
+        objects.profile
+      ).executablePath
+      objectUnitCount: objects.unitCount
+      sortedObjectHash: objects.objectSetHash
+      runtimeArchiveHash: runtime.archiveHash
+      linkerScriptHash: "linker-script:default"
+      targetOptionsHash: TargetIdentity(
+        objects.targetTriple,
+        objects.profile,
+        objects.objectFormat,
+        objects.abi
+      ).targetOptionsHash
+      inputSetHash: "link:{objects.objectSetHash}:{runtime.archiveHash}:target:{objects.targetTriple}:{objects.profile}"
+    }
+}
+
+impl view LinkTargetPlan {
+  pub inputSet() =
+    LinkInputSet(
+      objectUnitCount,
+      sortedObjectHash,
+      runtimeArchiveHash,
+      linkerScriptHash,
+      targetOptionsHash,
+      inputSetHash
+    )
+
+  pub plan() =
+    LinkPlan.relink(
+      objectUnitCount,
+      inputSetHash,
+      targetTriple,
+      profile,
+      outputPath
+    )
+
+  pub result() =
+    LinkResult.linked(
+      outputPath,
+      "exe:{inputSetHash}",
+      "qtlc1-native-link-planned"
+    )
+
+  pub identityValid: bool =>
+    packageRoot != "" &&
+    targetTriple != "" &&
+    objectFormat != "" &&
+    abi != "" &&
+    outputName != "" &&
+    outputPath != "" &&
+    sortedObjectHash != "" &&
+    runtimeArchiveHash != "" &&
+    linkerScriptHash != "" &&
+    targetOptionsHash != "" &&
+    inputSetHash != ""
+
+  pub valid: bool => identityValid && inputSet().valid && plan().valid && result().valid
+  pub deterministic: bool => inputSet().deterministic && result().deterministic
+  pub runnable: bool => result().runnable
+  pub fingerprint => inputSetHash
+}

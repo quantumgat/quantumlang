@@ -1,0 +1,46 @@
+pub LoopSyntaxFact {
+  syntaxKind: LoopSyntaxKind
+  loopKind: LoopKind
+  transferKind: LoopTransferKind
+  labelAllowed: bool = false
+  patternBinding: bool = false
+  rangeBased: bool = false
+  valid: bool = false
+}
+
+impl LoopSyntaxFact {
+  pub LoopSyntaxFact(syntaxKind: LoopSyntaxKind) -> This {
+    if syntaxKind == LoopSyntaxKind.Loop {
+      return This { syntaxKind, loopKind: LoopKind.Loop, transferKind: LoopTransferKind.Return, valid: true }
+    }
+    if syntaxKind == LoopSyntaxKind.While {
+      return This { syntaxKind, loopKind: LoopKind.While, transferKind: LoopTransferKind.Return, valid: true }
+    }
+    if syntaxKind == LoopSyntaxKind.WhileLet {
+      return This { syntaxKind, loopKind: LoopKind.WhileLet, transferKind: LoopTransferKind.Return, patternBinding: true, valid: true }
+    }
+    if syntaxKind == LoopSyntaxKind.ForIn {
+      return This { syntaxKind, loopKind: LoopKind.For, transferKind: LoopTransferKind.Return, patternBinding: true, valid: true }
+    }
+    if syntaxKind == LoopSyntaxKind.ForRange {
+      return This { syntaxKind, loopKind: LoopKind.RangeFor, transferKind: LoopTransferKind.Return, patternBinding: true, rangeBased: true, valid: true }
+    }
+    if syntaxKind == LoopSyntaxKind.Break {
+      return This { syntaxKind, loopKind: LoopKind.Loop, transferKind: LoopTransferKind.Break, valid: true }
+    }
+    if syntaxKind == LoopSyntaxKind.Continue {
+      return This { syntaxKind, loopKind: LoopKind.Loop, transferKind: LoopTransferKind.Continue, valid: true }
+    }
+    if syntaxKind == LoopSyntaxKind.LabeledBreak {
+      return This { syntaxKind, loopKind: LoopKind.Loop, transferKind: LoopTransferKind.Break, labelAllowed: true, valid: true }
+    }
+    if syntaxKind == LoopSyntaxKind.LabeledContinue {
+      return This { syntaxKind, loopKind: LoopKind.Loop, transferKind: LoopTransferKind.Continue, labelAllowed: true, valid: true }
+    }
+    This { syntaxKind, loopKind: LoopKind.Loop, transferKind: LoopTransferKind.Return }
+  }
+
+  isValid() = valid
+
+  allowsLabel() = labelAllowed
+}

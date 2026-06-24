@@ -1,0 +1,3 @@
+pub EffectSet {
+  count: i64
+}

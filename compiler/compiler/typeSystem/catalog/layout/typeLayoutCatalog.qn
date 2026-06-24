@@ -1,0 +1,59 @@
+pub builtinLayoutFact(name: string) -> BuiltinLayoutFact {
+  let canonical = canonicalTypeAliasName(name)
+  let primitive = primitiveTypeFact(canonical)
+  if primitive.valid {
+    return BuiltinLayoutFact {
+      typeName: primitive.name,
+      sizeBytes: primitive.sizeBytes,
+      alignBytes: primitive.alignBytes,
+      pointerSized: primitive.pointerSized,
+      sret: primitive.abiReturn == PrimitiveAbiReturnKind.Sret,
+    }
+  }
+  return coreLayoutFact(canonical)
+}
+
+coreLayoutFact(name: string) -> BuiltinLayoutFact {
+  let canonical = canonicalTypeAliasName(name)
+  if canonical == "dec64" {
+    return layoutValue(canonical, 16, 8, false, true)
+  }
+  if canonical == "dec" || canonical == "dec128" {
+    return layoutValue(canonical, 24, 8, false, true)
+  }
+  if canonical == "dec256" {
+    return layoutValue(canonical, 40, 8, false, true)
+  }
+  if canonical == "complex64" {
+    return layoutValue(canonical, 8, 4, false, true)
+  }
+  if canonical == "complex128" {
+    return layoutValue(canonical, 16, 8, false, true)
+  }
+  if canonical == "complex256" {
+    return layoutValue(canonical, 32, 16, false, true)
+  }
+  if canonical == "string" || canonical == "str" ||
+    canonical == "bytes" || canonical == "BytesView" ||
+    canonical == "BytesMutView" || canonical == "BigInt" ||
+    canonical == "BigUint" {
+    return layoutValue(canonical, 0, 0, true, false)
+  }
+  return layoutValue(canonical, 0, 0, false, false)
+}
+
+layoutValue(
+  typeName: string,
+  sizeBytes: usize,
+  alignBytes: usize,
+  pointerSized: bool,
+  sret: bool
+) -> BuiltinLayoutFact {
+  return BuiltinLayoutFact {
+    typeName: typeName,
+    sizeBytes: sizeBytes,
+    alignBytes: alignBytes,
+    pointerSized: pointerSized,
+    sret: sret,
+  }
+}

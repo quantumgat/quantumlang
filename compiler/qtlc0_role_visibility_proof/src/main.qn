@@ -1,0 +1,100 @@
+pub Account {
+  balance: i64
+}
+
+pub User {
+  id: i64
+  balance: i64
+}
+
+pub role AccountAccess {
+  deposit(amount: i64) -> User
+  currentBalance() -> i64
+  roleProof() -> i64
+}
+
+role Auditable {
+  auditCode() -> i64
+}
+
+role Secret {
+  secretCode() -> i64
+}
+
+role Serializable {
+  encodedSize() -> i64
+}
+
+role Inspectable {
+  inspectionCode() -> i64
+}
+
+extend User :
+  pub AccountAccess,
+  Auditable,
+  protected Inspectable,
+  private Secret,
+  internal Serializable
+{
+  deposit(amount: i64) -> User {
+    this {
+      balance: balance + amount
+    }
+  }
+
+  currentBalance() -> i64 {
+    balance
+  }
+
+  roleProof() -> i64 {
+    auditCode() + inspectionCode() + secretCode() + encodedSize()
+  }
+
+  auditCode() -> i64 {
+    id + balance
+  }
+
+  secretCode() -> i64 {
+    4
+  }
+
+  inspectionCode() -> i64 {
+    8
+  }
+
+  encodedSize() -> i64 {
+    16
+  }
+}
+
+pub role Identified<T> {
+  identity() -> T
+}
+
+pub RoleBox<T> {
+  value: T
+}
+
+extend RoleBox<T> : pub Identified<T> {
+  identity() -> T {
+    value
+  }
+}
+
+main() -> i64 {
+  let user = User { id: 7, balance: 10 }
+  let updated = user.deposit(5)
+  let box = RoleBox<i64>(42)
+  let remote = remoteUser(91)
+
+  if updated.currentBalance() != 15 { return 1 }
+  if updated.roleProof() != 50 { return 2 }
+  if updated.encodedSize() != 16 { return 3 }
+  if box.identity() != 42 { return 4 }
+  if remote.remoteValue() != 91 { return 5 }
+  if remote.internalValue() != 92 { return 6 }
+
+  println("role visibility proof: ok")
+  return 0
+}
+import roleProvider::{RemoteAccess, RemoteUser, remoteUser}

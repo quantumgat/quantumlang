@@ -1,0 +1,812 @@
+import core::{FileId, ScopeId, Vec}
+import declaration::{DeclarationKind, DeclarationRecord, DeclarationVisibility}
+import source::{SourceSpan}
+import syntax::{AstCallArgument, AstGenericParameter, AstNode, AstNodeKind, AstRoleConformance, AstRoleVisibility}
+import typeSystem::{*}
+
+pub RealExpressionTypecheckProof {
+  literalsTyped: bool
+  operatorsTyped: bool
+  propagationTyped: bool
+  assignmentsTyped: bool
+  callsResolved: bool
+  memberCallsResolved: bool
+  thisMemberCallsResolved: bool
+  memberOverloadsResolved: bool
+  memberValuesResolved: bool
+  deepReceiverChainsResolved: bool
+  genericMembersSpecialized: bool
+  chainedGenericFieldAccessResolved: bool
+  roleBoundThisMemberCallsResolved: bool
+  blanketExtensionResolved: bool
+  constructorsResolved: bool
+  carriersTyped: bool
+  collectionsTyped: bool
+  communicationTyped: bool
+  parallelAtomicTyped: bool
+  stableIdsStored: bool
+  diagnosticsStructured: bool
+  valid: bool
+}
+
+pub realExpressionTypecheckProof() -> RealExpressionTypecheckProof {
+  let fileId = FileId(1, 7, 1)
+  let userRecord = DeclarationRecord(
+    2,
+    DeclarationKind.Type,
+    "proof",
+    "User",
+    fileId,
+    2,
+    3,
+    DeclarationVisibility.Public
+  )
+  let loadRecord = DeclarationRecord(
+    3,
+    DeclarationKind.Function,
+    "proof",
+    "loadUser",
+    fileId,
+    4,
+    5,
+    DeclarationVisibility.Public
+  )
+  loadRecord.returnTypeName = "Result<User,LoadError>"
+  loadRecord.parameters = ["id"]
+  let formatRecord = DeclarationRecord(
+    4,
+    DeclarationKind.Function,
+    "proof",
+    "format",
+    fileId,
+    6,
+    7,
+    DeclarationVisibility.Public
+  )
+  formatRecord.ownerTypeName = "User"
+  formatRecord.memberKind = "method"
+  formatRecord.returnTypeName = "string"
+  formatRecord.parameters = ["style"]
+  let formatExactRecord = DeclarationRecord(
+    5,
+    DeclarationKind.Function,
+    "proof",
+    "format",
+    fileId,
+    8,
+    9,
+    DeclarationVisibility.Public
+  )
+  formatExactRecord.ownerTypeName = "User"
+  formatExactRecord.memberKind = "method"
+  formatExactRecord.returnTypeName = "bytes"
+  formatExactRecord.parameters = ["style", "mode"]
+  let profileRecord = DeclarationRecord(
+    6,
+    DeclarationKind.Type,
+    "proof",
+    "Profile",
+    fileId,
+    9,
+    10,
+    DeclarationVisibility.Public
+  )
+  let profileField = DeclarationRecord(
+    7,
+    DeclarationKind.Function,
+    "proof",
+    "profile",
+    fileId,
+    10,
+    11,
+    DeclarationVisibility.Public
+  )
+  profileField.ownerTypeName = "User"
+  profileField.memberKind = "field"
+  profileField.returnTypeName = "Profile"
+  let nameField = DeclarationRecord(
+    8,
+    DeclarationKind.Function,
+    "proof",
+    "name",
+    fileId,
+    11,
+    12,
+    DeclarationVisibility.Public
+  )
+  nameField.ownerTypeName = "Profile"
+  nameField.memberKind = "field"
+  nameField.returnTypeName = "string"
+  let labelProperty = DeclarationRecord(
+    9,
+    DeclarationKind.Function,
+    "proof",
+    "label",
+    fileId,
+    12,
+    13,
+    DeclarationVisibility.Public
+  )
+  labelProperty.ownerTypeName = "User"
+  labelProperty.memberKind = "property"
+  labelProperty.returnTypeName = "string"
+  let boxRecord = DeclarationRecord(
+    10,
+    DeclarationKind.Type,
+    "proof",
+    "Box",
+    fileId,
+    13,
+    14,
+    DeclarationVisibility.Public
+  )
+  boxRecord.genericParameterCount = 1
+  boxRecord.genericParameters = ["T"]
+  let boxValue = DeclarationRecord(
+    11,
+    DeclarationKind.Function,
+    "proof",
+    "value",
+    fileId,
+    14,
+    15,
+    DeclarationVisibility.Public
+  )
+  boxValue.ownerTypeName = "Box<T>"
+  boxValue.memberKind = "field"
+  boxValue.returnTypeName = "T"
+  let boxMaybe = DeclarationRecord(
+    12,
+    DeclarationKind.Function,
+    "proof",
+    "maybe",
+    fileId,
+    15,
+    16,
+    DeclarationVisibility.Public
+  )
+  boxMaybe.ownerTypeName = "Box<T>"
+  boxMaybe.memberKind = "property"
+  boxMaybe.returnTypeName = "Option<T>"
+  let rangeRecord = DeclarationRecord(
+    13,
+    DeclarationKind.Type,
+    "proof",
+    "Range",
+    fileId,
+    16,
+    17,
+    DeclarationVisibility.Public
+  )
+  rangeRecord.genericParameterCount = 1
+  rangeRecord.genericParameters = ["T"]
+  let rangeStart = DeclarationRecord(
+    14,
+    DeclarationKind.Function,
+    "proof",
+    "start",
+    fileId,
+    17,
+    18,
+    DeclarationVisibility.Public
+  )
+  rangeStart.ownerTypeName = "Range<T>"
+  rangeStart.memberKind = "field"
+  rangeStart.returnTypeName = "i64"
+  let arrayRecord = DeclarationRecord(
+    15,
+    DeclarationKind.Type,
+    "proof",
+    "Array",
+    fileId,
+    18,
+    19,
+    DeclarationVisibility.Public
+  )
+  arrayRecord.genericParameterCount = 2
+  arrayRecord.genericParameters = ["T", "N"]
+  let arrayRows = DeclarationRecord(
+    16,
+    DeclarationKind.Function,
+    "proof",
+    "rows",
+    fileId,
+    19,
+    20,
+    DeclarationVisibility.Private
+  )
+  arrayRows.ownerTypeName = "Array<T,N>"
+  arrayRows.memberKind = "field"
+  arrayRows.returnTypeName = "Range<T>"
+  let arrayStart = DeclarationRecord(
+    17,
+    DeclarationKind.Function,
+    "proof",
+    "start",
+    fileId,
+    20,
+    21,
+    DeclarationVisibility.Public
+  )
+  arrayStart.ownerTypeName = "Array<T,N>"
+  arrayStart.memberKind = "property"
+  arrayStart.returnTypeName = "i64"
+  let roleParameter = AstGenericParameter {
+    position: 0
+    name: "T"
+    span: SourceSpan(fileId, 21, 22)
+  }
+  let byteCodecRecord = DeclarationRecord(
+    18,
+    DeclarationKind.Role,
+    "proof",
+    "ByteCodec",
+    fileId,
+    21,
+    22,
+    DeclarationVisibility.Public
+  )
+  byteCodecRecord.genericParameterCount = 1
+  byteCodecRecord.genericParameters = ["T"]
+  byteCodecRecord.genericParameterRows = [roleParameter]
+  let byteSizeRecord = DeclarationRecord(
+    19,
+    DeclarationKind.Function,
+    "proof",
+    "byteSize",
+    fileId,
+    22,
+    23,
+    DeclarationVisibility.Public
+  )
+  byteSizeRecord.ownerTypeName = "ByteCodec"
+  byteSizeRecord.memberKind = "method"
+  byteSizeRecord.returnTypeName = "usize"
+  let extendParameter = AstGenericParameter {
+    position: 0
+    name: "T"
+    bounds: ["ByteCodec<T>"]
+    span: SourceSpan(fileId, 23, 24)
+  }
+  let codecExtendRecord = DeclarationRecord(
+    20,
+    DeclarationKind.Extend,
+    "proof",
+    "T",
+    fileId,
+    23,
+    24,
+    DeclarationVisibility.Public
+  )
+  codecExtendRecord.genericParameterCount = 1
+  codecExtendRecord.genericParameters = ["T"]
+  codecExtendRecord.genericParameterRows = [extendParameter]
+  let toBytesRecord = DeclarationRecord(
+    21,
+    DeclarationKind.Function,
+    "proof",
+    "toBytes",
+    fileId,
+    24,
+    25,
+    DeclarationVisibility.Public
+  )
+  toBytesRecord.ownerTypeName = "T"
+  toBytesRecord.memberKind = "method"
+  toBytesRecord.returnTypeName = "bytes"
+  let userCodecConformance = AstRoleConformance {
+    roleName: "ByteCodec<User>"
+    visibility: AstRoleVisibility.Public
+    span: SourceSpan(FileId(1, 8, 1), 1, 2)
+  }
+  let userCodecRecord = DeclarationRecord(
+    22,
+    DeclarationKind.Extend,
+    "proof.codec",
+    "User",
+    FileId(1, 8, 1),
+    1,
+    2,
+    DeclarationVisibility.Public
+  )
+  userCodecRecord.roleConformances = [userCodecConformance]
+  let records: Vec<DeclarationRecord> = [
+    DeclarationRecord(
+      1,
+      DeclarationKind.Module,
+      "proof",
+      "proof",
+      fileId,
+      0,
+      1,
+      DeclarationVisibility.Public
+    ),
+    userRecord,
+    loadRecord,
+    formatRecord,
+    formatExactRecord,
+    profileRecord,
+    profileField,
+    nameField,
+    labelProperty,
+    boxRecord,
+    boxValue,
+    boxMaybe,
+    rangeRecord,
+    rangeStart,
+    arrayRecord,
+    arrayRows,
+    arrayStart,
+    byteCodecRecord,
+    byteSizeRecord,
+    codecExtendRecord,
+    toBytesRecord,
+    userCodecRecord,
+  ]
+  let symbols = TypeSymbolTable.fromRecords(records, true)
+  let scopes = TypeScopeTable.fromSymbols(symbols)
+  let candidates = CandidateIndexBuilder.build(symbols, scopes)
+  let scope = ScopeId(1, 7, 7, 1)
+  let resolver = ExpressionResolver()
+
+  let integer = AstNode.token(
+    1,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 10, 11),
+    "10",
+    "literal",
+    "i64"
+  )
+  let right = AstNode.token(
+    2,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 12, 13),
+    "2",
+    "literal",
+    "i64"
+  )
+  let plus = AstNode.token(
+    3,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 11, 12),
+    "+",
+    "operator",
+    "operator"
+  )
+  let assign = AstNode.token(
+    4,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 13, 14),
+    "=",
+    "operator",
+    "operator"
+  )
+  let propagate = AstNode.token(
+    17,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 18, 19),
+    "?",
+    "operator",
+    "operator"
+  )
+  let userCall = AstNode.token(
+    5,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 20, 24),
+    "User",
+    "call",
+    "callable-result"
+  )
+  userCall.argumentCount = 2
+  let loadCall = AstNode.token(
+    6,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 25, 33),
+    "loadUser",
+    "call",
+    "callable-result"
+  )
+  loadCall.argumentCount = 1
+  loadCall.callArguments = [
+    AstCallArgument.positional(
+      0,
+      "7",
+      "i64",
+      SourceSpan(fileId, 26, 27)
+    ),
+  ]
+  let optionCall = AstNode.token(
+    7,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 34, 38),
+    "Some",
+    "call",
+    "callable-result"
+  )
+  optionCall.argumentCount = 1
+  let vecCall = AstNode.token(
+    8,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 39, 42),
+    "Vec",
+    "call",
+    "callable-result"
+  )
+  vecCall.genericArgumentCount = 1
+  let channelCall = AstNode.token(
+    9,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 43, 50),
+    "channel",
+    "call",
+    "callable-result"
+  )
+  channelCall.genericArgumentCount = 1
+  let parallel = AstNode.token(
+    10,
+    AstNodeKind.Statement,
+    SourceSpan(fileId, 51, 59),
+    "parallel",
+    "parallel-workers",
+    "void"
+  )
+  let atomic = AstNode.token(
+    11,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 60, 66),
+    "atomic",
+    "atomic-type",
+    "atomic<T>"
+  )
+  let memberCall = AstNode.token(
+    12,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 67, 73),
+    "format",
+    "call",
+    "callable-result"
+  )
+  memberCall.receiverName = "User"
+  memberCall.receiverPath = ["User"]
+  memberCall.argumentCount = 1
+  memberCall.callArguments = [
+    AstCallArgument.positional(
+      0,
+      "1",
+      "i64",
+      SourceSpan(fileId, 70, 71)
+    ),
+  ]
+  let thisMemberCall = AstNode.token(
+    18,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 72, 78),
+    "format",
+    "call",
+    "callable-result"
+  )
+  thisMemberCall.receiverName = "this"
+  thisMemberCall.receiverPath = ["this"]
+  thisMemberCall.argumentCount = 1
+  thisMemberCall.callArguments = memberCall.callArguments
+  let profileAccess = AstNode.token(
+    13,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 74, 81),
+    "profile",
+    "name",
+    ""
+  )
+  profileAccess.receiverName = "User"
+  profileAccess.receiverPath = ["User"]
+  let deepNameAccess = AstNode.token(
+    14,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 82, 86),
+    "name",
+    "name",
+    ""
+  )
+  deepNameAccess.receiverName = "User.profile"
+  deepNameAccess.receiverPath = ["User", "profile"]
+  let labelAccess = AstNode.token(
+    15,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 87, 92),
+    "label",
+    "name",
+    ""
+  )
+  labelAccess.receiverName = "User"
+  labelAccess.receiverPath = ["User"]
+  let genericValue = symbols.symbolValueForMember("Box<User>", "value")
+  let genericMaybe = symbols.symbolValueForMember("Box<User>", "maybe")
+  let rowsStartAccess = AstNode.token(
+    19,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 93, 98),
+    "start",
+    "name",
+    ""
+  )
+  rowsStartAccess.receiverName = "rows"
+  rowsStartAccess.receiverPath = ["rows"]
+  let roleByteSizeCall = AstNode.token(
+    20,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 99, 107),
+    "byteSize",
+    "call",
+    "callable-result"
+  )
+  roleByteSizeCall.receiverName = "this"
+  roleByteSizeCall.receiverPath = ["this"]
+  let blanketToBytesCall = AstNode.token(
+    21,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 108, 115),
+    "toBytes",
+    "call",
+    "callable-result"
+  )
+  blanketToBytesCall.receiverName = "User"
+  blanketToBytesCall.receiverPath = ["User"]
+
+  let empty = AstNode(0, AstNodeKind.Unknown, SourceSpan(), 0)
+  let literalFact = resolver.resolve(integer, empty, empty, scope, symbols, scopes, candidates)
+  let operatorFact = resolver.resolve(plus, integer, right, scope, symbols, scopes, candidates)
+  let propagationFact = resolver.resolve(
+    propagate,
+    loadCall,
+    empty,
+    scope,
+    symbols,
+    scopes,
+    candidates
+  )
+  let assignmentFact = resolver.resolve(assign, integer, right, scope, symbols, scopes, candidates)
+  let constructorFact = resolver.resolve(userCall, empty, empty, scope, symbols, scopes, candidates)
+  let callFact = resolver.resolve(loadCall, empty, empty, scope, symbols, scopes, candidates)
+  let carrierFact = resolver.resolve(optionCall, empty, empty, scope, symbols, scopes, candidates)
+  let collectionFact = resolver.resolve(vecCall, empty, empty, scope, symbols, scopes, candidates)
+  let communicationFact = resolver.resolve(channelCall, empty, empty, scope, symbols, scopes, candidates)
+  let parallelFact = resolver.resolve(parallel, empty, empty, scope, symbols, scopes, candidates)
+  let atomicFact = resolver.resolve(atomic, empty, empty, scope, symbols, scopes, candidates)
+  let memberFact = resolver.resolve(
+    memberCall,
+    empty,
+    empty,
+    scope,
+    symbols,
+    scopes,
+    candidates
+  )
+  let userScope = scopes.scopeForSymbol(
+    symbols.symbolValueForName("User").id
+  )
+  let thisMemberFact = resolver.resolve(
+    thisMemberCall,
+    empty,
+    empty,
+    userScope,
+    symbols,
+    scopes,
+    candidates
+  )
+  let exactMember = symbols.symbolValueForMemberCall("User", "format", 2, 0)
+  let profileFact = resolver.resolve(
+    profileAccess,
+    empty,
+    empty,
+    scope,
+    symbols,
+    scopes,
+    candidates
+  )
+  let deepNameFact = resolver.resolve(
+    deepNameAccess,
+    empty,
+    empty,
+    scope,
+    symbols,
+    scopes,
+    candidates
+  )
+  let labelFact = resolver.resolve(
+    labelAccess,
+    empty,
+    empty,
+    scope,
+    symbols,
+    scopes,
+    candidates
+  )
+  let arrayStartScope = scopes.scopeForSymbol(
+    symbols.symbolValueForMember("Array<T,N>", "start").id
+  )
+  let rowsStartFact = resolver.resolve(
+    rowsStartAccess,
+    empty,
+    empty,
+    arrayStartScope,
+    symbols,
+    scopes,
+    candidates
+  )
+  let toBytesScope = scopes.scopeForSymbol(
+    symbols.symbolValueForMemberCall("T", "toBytes", 0, 0).id
+  )
+  let roleByteSizeFact = resolver.resolve(
+    roleByteSizeCall,
+    empty,
+    empty,
+    toBytesScope,
+    symbols,
+    scopes,
+    candidates
+  )
+  let blanketToBytesFact = resolver.resolve(
+    blanketToBytesCall,
+    empty,
+    empty,
+    scope,
+    symbols,
+    scopes,
+    candidates
+  )
+  let typed = TypedNodeFact.fromExpression(
+    loadCall,
+    empty,
+    empty,
+    scope,
+    symbols,
+    scopes,
+    candidates
+  )
+  let invalid = resolver.resolve(
+    AstNode.token(
+      16,
+      AstNodeKind.Expression,
+      SourceSpan(fileId, 67, 70),
+      "%%",
+      "operator",
+      "operator"
+    ),
+    integer,
+    right,
+    scope,
+    symbols,
+    scopes,
+    candidates
+  )
+
+  let literalsTyped = literalFact.typeName == "i64"
+  let operatorsTyped =
+    operatorFact.kind == ExpressionKind.BinaryOperator &&
+    operatorFact.typeName == "i64"
+  let propagationTyped =
+    propagationFact.kind == ExpressionKind.PropagateOperator &&
+    propagationFact.propagation &&
+    propagationFact.typeName == "Result<User,LoadError>"
+  let assignmentsTyped =
+    assignmentFact.assignment &&
+    assignmentFact.typeName == "i64"
+  let callsResolved =
+    callFact.symbolId.valid &&
+    callFact.typeName == "Result<User,LoadError>" &&
+    callFact.argumentCount == 1
+  let memberCallsResolved =
+    memberFact.member &&
+    memberFact.symbolId.valid &&
+    memberFact.receiverTypeName == "User" &&
+    memberFact.typeName == "string"
+  let thisMemberCallsResolved =
+    thisMemberFact.member &&
+    thisMemberFact.symbolId.valid &&
+    thisMemberFact.receiverTypeName == "User" &&
+    thisMemberFact.typeName == "string"
+  let memberOverloadsResolved =
+    exactMember.id.valid &&
+    exactMember.returnTypeName == "bytes" &&
+    exactMember.parameters.count == 2
+  let memberValuesResolved =
+    profileFact.member &&
+    profileFact.typeName == "Profile" &&
+    labelFact.member &&
+    labelFact.typeName == "string"
+  let deepReceiverChainsResolved =
+    deepNameFact.member &&
+    deepNameFact.receiverTypeName == "Profile" &&
+    deepNameFact.typeName == "string"
+  let genericMembersSpecialized =
+    genericValue.id.valid &&
+    genericValue.typeName == "User" &&
+    genericValue.ownerTypeName == "Box<User>" &&
+    genericMaybe.id.valid &&
+    genericMaybe.typeName == "Option<User>"
+  let chainedGenericFieldAccessResolved =
+    rowsStartFact.member &&
+    rowsStartFact.symbolId.valid &&
+    rowsStartFact.receiverTypeName == "Range<T>" &&
+    rowsStartFact.typeName == "i64"
+  let roleBoundThisMemberCallsResolved =
+    roleByteSizeFact.member &&
+    roleByteSizeFact.symbolId.valid &&
+    roleByteSizeFact.receiverTypeName == "T" &&
+    roleByteSizeFact.typeName == "usize"
+  let blanketExtensionResolved =
+    blanketToBytesFact.member &&
+    blanketToBytesFact.symbolId.valid &&
+    blanketToBytesFact.receiverTypeName == "User" &&
+    blanketToBytesFact.typeName == "bytes"
+  let constructorsResolved =
+    constructorFact.constructor &&
+    constructorFact.typeName == "User"
+  let carriersTyped = carrierFact.typeName == "Option<T>"
+  let collectionsTyped =
+    collectionFact.constructor &&
+    collectionFact.typeName == "Vec<T>"
+  let communicationTyped =
+    communicationFact.communication &&
+    communicationFact.typeName == "channel<T>"
+  let parallelAtomicTyped =
+    parallelFact.parallel &&
+    parallelFact.typeName == "void" &&
+    atomicFact.atomic &&
+    atomicFact.typeName == "atomic<T>"
+  let stableIdsStored =
+    typed.nodeId.valid &&
+    typed.symbolId.valid &&
+    typed.typeId.valid &&
+    typed.expressionKind == ExpressionKind.CallAccess
+  let diagnosticsStructured =
+    invalid.diagnosticCode == "QTTYPE0001" &&
+    invalid.diagnosticMessage != ""
+  let valid =
+    literalsTyped &&
+    operatorsTyped &&
+    propagationTyped &&
+    assignmentsTyped &&
+    callsResolved &&
+    memberCallsResolved &&
+    thisMemberCallsResolved &&
+    memberOverloadsResolved &&
+    memberValuesResolved &&
+    deepReceiverChainsResolved &&
+    genericMembersSpecialized &&
+    chainedGenericFieldAccessResolved &&
+    roleBoundThisMemberCallsResolved &&
+    blanketExtensionResolved &&
+    constructorsResolved &&
+    carriersTyped &&
+    collectionsTyped &&
+    communicationTyped &&
+    parallelAtomicTyped &&
+    stableIdsStored &&
+    diagnosticsStructured
+
+  return RealExpressionTypecheckProof {
+    literalsTyped
+    operatorsTyped
+    propagationTyped
+    assignmentsTyped
+    callsResolved
+    memberCallsResolved
+    thisMemberCallsResolved
+    memberOverloadsResolved
+    memberValuesResolved
+    deepReceiverChainsResolved
+    genericMembersSpecialized
+    chainedGenericFieldAccessResolved
+    roleBoundThisMemberCallsResolved
+    blanketExtensionResolved
+    constructorsResolved
+    carriersTyped
+    collectionsTyped
+    communicationTyped
+    parallelAtomicTyped
+    stableIdsStored
+    diagnosticsStructured
+    valid
+  }
+}

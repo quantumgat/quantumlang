@@ -1,0 +1,6 @@
+pub enum FunctionDiagnosticCode {
+  Unknown
+  MissingExpressionType
+  MissingReturn
+  BlockReturnInferenceRequiresType
+}

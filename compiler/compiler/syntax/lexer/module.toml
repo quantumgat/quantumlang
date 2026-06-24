@@ -1,0 +1,9 @@
+[module]
+name = "lexer"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/syntax/lexer"
+role = "syntax-lexer"
+
+[dependencies]
+modules = ["core", "source", "syntax.token"]

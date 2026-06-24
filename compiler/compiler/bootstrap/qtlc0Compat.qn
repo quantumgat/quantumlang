@@ -1,0 +1,3 @@
+pub Qtlc0Compat {
+  required: bool
+}

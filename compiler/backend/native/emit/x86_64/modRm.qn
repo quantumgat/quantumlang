@@ -1,0 +1,28 @@
+pub X86ModRm {
+  mode: i64
+  reg: i64
+  rm: i64
+  diagnosticCode: string = ""
+}
+
+impl X86ModRm {
+  pub X86ModRm(mode: i64, reg: i64, rm: i64) =
+    This { mode, reg, rm }
+
+  pub register(reg: X86RegisterEncoding, rm: X86RegisterEncoding) =
+    This(3, reg.low3, rm.low3)
+}
+
+impl view X86ModRm {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    mode >= 0 &&
+    mode <= 3 &&
+    reg >= 0 &&
+    reg <= 7 &&
+    rm >= 0 &&
+    rm <= 7
+
+  pub byteValue: i64 => mode * 64 + reg * 8 + rm
+  pub debugName: string => "x86.modrm.{byteValue}"
+}

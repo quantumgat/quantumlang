@@ -1,0 +1,87 @@
+pub DeclarationParserRecordSamples {
+  moduleRecord: DeclarationRecord
+  typeRecord: DeclarationRecord
+  implRecord: DeclarationRecord
+  viewRecord: DeclarationRecord
+  roleRecord: DeclarationRecord
+  functionRecord: DeclarationRecord
+  importRecord: DeclarationRecord
+  contextRecord: DeclarationRecord
+  extractRecord: DeclarationRecord
+  extendRecord: DeclarationRecord
+  parserProduced: bool = true
+  deterministic: bool = true
+}
+
+impl DeclarationParserRecordSamples {
+  pub DeclarationParserRecordSamples(
+    moduleRecord: DeclarationRecord,
+    typeRecord: DeclarationRecord,
+    implRecord: DeclarationRecord,
+    viewRecord: DeclarationRecord,
+    roleRecord: DeclarationRecord,
+    functionRecord: DeclarationRecord,
+    importRecord: DeclarationRecord,
+    contextRecord: DeclarationRecord,
+    extractRecord: DeclarationRecord,
+    extendRecord: DeclarationRecord
+  ) =
+    This {
+      moduleRecord
+      typeRecord
+      implRecord
+      viewRecord
+      roleRecord
+      functionRecord
+      importRecord
+      contextRecord
+      extractRecord
+      extendRecord
+    }
+
+  pub fromRows(rows: DeclarationParserRows) =
+    This {
+      moduleRecord: rows.modules.firstRecord()
+      typeRecord: rows.types.firstRecord()
+      implRecord: rows.impls.firstRecord()
+      viewRecord: rows.views.firstRecord()
+      roleRecord: rows.roles.firstRecord()
+      functionRecord: rows.functions.firstRecord()
+      importRecord: rows.imports.firstRecord()
+      contextRecord: rows.contexts.firstRecord()
+      extractRecord: rows.extracts.firstRecord()
+      extendRecord: rows.extends.firstRecord()
+    }
+}
+
+impl view DeclarationParserRecordSamples {
+  pub recordsValid =>
+    moduleRecord.valid &&
+    typeRecord.valid &&
+    implRecord.valid &&
+    viewRecord.valid &&
+    roleRecord.valid &&
+    functionRecord.valid &&
+    importRecord.valid &&
+    contextRecord.valid &&
+    extractRecord.valid &&
+    extendRecord.valid
+
+  pub parserRecords =>
+    moduleRecord.parserRecord &&
+    typeRecord.parserRecord &&
+    implRecord.parserRecord &&
+    viewRecord.parserRecord &&
+    roleRecord.parserRecord &&
+    functionRecord.parserRecord &&
+    importRecord.parserRecord &&
+    contextRecord.parserRecord &&
+    extractRecord.parserRecord &&
+    extendRecord.parserRecord
+
+  pub valid =>
+    deterministic &&
+    parserProduced &&
+    recordsValid &&
+    parserRecords
+}

@@ -1,0 +1,34 @@
+pub ProcessCommandStatus {
+  noArgs: i64 = 0
+  help: i64 = 0
+  version: i64 = 0
+  unknownCommand: i64 = 2
+  checkBoundary: i64 = 3
+  buildBoundary: i64 = 4
+  checkMissingPackage: i64 = 5
+  checkPackageAccepted: i64 = 6
+}
+
+impl ProcessCommandStatus {
+  pub compilerDriver() =
+    This {}
+}
+
+impl view ProcessCommandStatus {
+  pub valid: bool =>
+    noArgs == 0 &&
+    help == 0 &&
+    version == 0 &&
+    unknownCommand > 0 &&
+    checkBoundary > unknownCommand &&
+    buildBoundary > checkBoundary &&
+    checkMissingPackage > buildBoundary &&
+    checkPackageAccepted > checkMissingPackage
+
+  pub commandDecodeReady: bool => valid
+  pub commandBoundaryReady: bool =>
+    checkBoundary != 0 &&
+    buildBoundary != 0 &&
+    checkMissingPackage != 0 &&
+    checkPackageAccepted != 0
+}

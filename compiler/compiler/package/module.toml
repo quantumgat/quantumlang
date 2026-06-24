@@ -1,0 +1,9 @@
+[module]
+name = "package"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/package"
+role = "package-resolution"
+
+[dependencies]
+modules = ["core", "diagnostics", "host", "source"]

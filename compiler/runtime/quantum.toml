@@ -1,0 +1,15 @@
+[package]
+name = "qtlc-runtime"
+version = "0.1.0"
+edition = "2026"
+
+[library]
+importRoot = "runtime"
+
+[source]
+root = "."
+
+[runtime]
+abiVersion = "qtlc-runtime-abi-v1"
+startupSymbol = "qtlc2_runtime_start"
+purpose = "minimal-qtlc2-startup-link-boundary"

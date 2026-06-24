@@ -1,0 +1,621 @@
+import core::{Allocator, ArenaOwner, Atomic, AtomicOrdering, Borrow, BorrowMut, Buffer, Cell, Foreign, ForeignBuffer, Global, Handle, Lazy, MemoryErrorKind, Mutex, Once, OwnershipContract, Permanent, Pin, RwLock, SyncPolicy, Unique}
+
+pub SmartOwnerPayload {
+  value: i64 = 0
+  name: string = ""
+}
+
+pub SmartOwnerCapabilityProof {
+  uniqueValid: bool
+  sharedValid: bool
+  pinValid: bool
+  arenaValid: bool
+  allocatorValid: bool
+  globalValid: bool
+  permanentValid: bool
+  handleValid: bool
+  syncValid: bool
+  lazyValid: bool
+  foreignValid: bool
+}
+
+impl view SmartOwnerCapabilityProof {
+  pub valid =>
+    uniqueValid &&
+    sharedValid &&
+    pinValid &&
+    arenaValid &&
+    allocatorValid &&
+    globalValid &&
+    permanentValid &&
+    handleValid &&
+    syncValid &&
+    lazyValid &&
+    foreignValid
+}
+
+pub smartOwnerCapabilityProof() -> SmartOwnerCapabilityProof {
+  let payload: SmartOwnerPayload = { value: 1, name: "one" }
+  let replacement: SmartOwnerPayload = { value: 2, name: "two" }
+
+  let unique = Unique<SmartOwnerPayload>(payload)
+  let uniqueBorrow = unique.borrow()
+  let uniqueBorrowMut = unique.borrowMut()
+  let replaced = unique.replace(replacement)
+  let reset = replaced.reset({ value: 3, name: "three" })
+  let cleared = reset.clear()
+  let shared = reset.intoShared()
+  let pinned = reset.intoPin()
+  let permanent = reset.intoPermanent()
+
+  let sharedAlias = shared.alias()
+  let weak = sharedAlias.weak()
+  let refreshedWeak = weak.refresh(sharedAlias)
+  let clearedWeak = refreshedWeak.clear()
+  let sharedBorrow = shared.borrow()
+  let sharedBorrowMut = shared.borrowMut()
+  let resetShared = shared.reset({ value: 24, name: "shared-reset" })
+  let clearedShared = resetShared.clear()
+  let uniqueFromShared = shared.tryUnique()
+  let uniqueMade = sharedAlias.makeUnique()
+
+  let pinnedProjected = pinned.project("value")
+  let pinnedBorrow = pinned.borrow()
+  let pinnedBorrowMut = pinned.borrowMut()
+  let resetPinned = pinned.reset({ value: 25, name: "pin-reset" })
+  let unpinned = pinned.unpin()
+
+  let arena = ArenaOwner<SmartOwnerPayload>(4)
+  let arenaPtr = arena.alloc({ value: 4, name: "arena" })
+  let arenaAliasPtr = arena.alloc({ value: 14, name: "arena-alias" })
+  let arenaRef = arenaPtr.asRef()
+  let lease = arena.lease()
+  let arenaMark = arena.mark()
+  let arenaCheckpoint = arena.checkpoint()
+  let arenaSnapshot = arena.snapshot()
+  let arenaStats = arena.stats()
+  let arenaMany = arena.allocMany(2)
+  let arenaBytes = arena.allocBytes(32)
+  let arenaBorrowed = arena.borrow(arenaRef.pointer)
+  let arenaBorrowedMut = arena.borrow(arenaPtr.pointer)
+  let arenaMade = arena.make({ value: 15, name: "arena-made" })
+  let arenaMadeRef = arena.makeRef({ value: 16, name: "arena-made-ref" })
+  let arenaMadeLease = arena.makeLease({ value: 17, name: "arena-made-lease" })
+  let rewoundArena = arena.rewind(arenaMark)
+  let rolledArena = arena.rollback(arenaCheckpoint)
+  let clearedArena = arena.clear()
+  let sealedArena = arena.seal()
+  let unsealedArena = sealedArena.unseal()
+  let resetArena = arena.reset()
+
+  let globalOwner = Global<SmartOwnerPayload>({ value: 5, name: "global" })
+  let orderedGlobal = globalOwner.order(10)
+  let globalBorrow = orderedGlobal.borrow()
+  let globalBorrowMut = orderedGlobal.borrowMut()
+  let replacedGlobal = orderedGlobal.replace({ value: 21, name: "global-replaced" })
+  let resetGlobal = replacedGlobal.reset({ value: 22, name: "global-reset" })
+  let shutdownGlobal = globalOwner.shutdown()
+
+  let permanentOwner = Permanent<SmartOwnerPayload>(
+    { value: 6, name: "permanent" },
+    "compiler-proof",
+    "test"
+  )
+  let permanentBorrow = permanentOwner.borrow()
+  let permanentBorrowMut = permanentOwner.borrowMut()
+  let auditedPermanent = Permanent<SmartOwnerPayload>(
+    { value: 26, name: "permanent-audit" }
+  ).audit("audit", "memory")
+
+  let handle = Handle<SmartOwnerPayload>({ value: 7, name: "handle" })
+  let kindedHandle = handle.kind("proof-resource").policy("idempotent")
+  let flushedHandle = kindedHandle.flush().sync()
+  let resetHandle = flushedHandle.reset({ value: 23, name: "handle-reset" })
+  let handleNative = resetHandle.native()
+  let closed = resetHandle.close()
+  let closedAgain = closed.closeOnce()
+
+  let cell = Cell<i64>(1).set(2)
+  let swappedCell = cell.swap(3)
+  let replacedCell = swappedCell.replace(4)
+  let resetCell = replacedCell.reset(5)
+  let cellBorrow = replacedCell.borrow()
+  let cellBorrowMut = replacedCell.borrowMut()
+  let releasedCell = replacedCell.release()
+  let atomic = Atomic<i64>(1, AtomicOrdering.SeqCst)
+    .store(2, AtomicOrdering.Release)
+    .swap(3, AtomicOrdering.AcqRel)
+    .cmp(3, 4)
+    .tryCmp(4, 5, AtomicOrdering.SeqCst, AtomicOrdering.Acquire)
+    .add(6)
+    .sub(7)
+    .and(8)
+    .or(9)
+    .xor(10)
+    .min(11)
+    .max(12)
+    .set()
+    .clear()
+    .toggle()
+  let atomicFence = atomic.fence(AtomicOrdering.SeqCst)
+  let cFence = atomic.cfence(AtomicOrdering.Acquire)
+  let lockedMutex = Mutex<i64>(1).lock()
+  let mutexBorrow = lockedMutex.borrow()
+  let mutexBorrowMut = lockedMutex.borrowMut()
+  let updatedMutex = lockedMutex.set(2)
+  let mutex = updatedMutex.unlock()
+  let rwRead = RwLock<i64>(1).readLock()
+  let rwReadBorrow = rwRead.borrow()
+  let rwReadReleased = rwRead.readUnlock()
+  let rwWrite = RwLock<i64>(1).writeLock()
+  let rwWriteBorrow = rwWrite.borrowMut()
+  let rwUpdated = rwWrite.set(3)
+  let rw = rwUpdated.writeUnlock()
+  let syncPolicy = SyncPolicy(true, true, false)
+  let protectedSync = syncPolicy.shared().protect()
+  let mergedSync = protectedSync.merge(SyncPolicy(false, true, true))
+
+  let once = Once<i64>().set(1)
+  let onceReset = once.reset(3)
+  let onceCleared = onceReset.clear()
+  let onceReinit = onceCleared.init(4)
+  let lazy = Lazy<i64>().force(2)
+  let lazyReset = lazy.reset(5)
+  let lazyCleared = lazyReset.clear()
+  let lazyRefilled = lazyCleared.set(6)
+  let ownershipContract = OwnershipContract(1, 0, 0, 0, 0)
+    .addView()
+    .addWritable()
+    .addRelease()
+  let mergedContract = ownershipContract.merge(
+    OwnershipContract(1, 1, 0, 1, 1)
+  )
+  let contractedDrop = mergedContract
+    .dropReadOnly()
+    .dropWritable()
+    .dropOwner()
+    .dropView()
+    .requireSafe()
+
+  let allocator = Allocator { name: "foreign-proof", safeBoundary: true }
+  let tunedAllocator = Allocator("core-proof", true)
+    .withLimit(4096)
+    .withAlign(16)
+    .withTag("smart-owner")
+    .withDebug(true)
+    .withZeroFill(true)
+    .withGuard(true)
+    .shared()
+    .locked()
+    .commit(1024)
+  let allocatorLayout = tunedAllocator.layout(64, 16)
+  let allocatorMark = tunedAllocator.mark()
+  let allocatorCheckpoint = tunedAllocator.checkpoint()
+  let allocatorSnapshot = tunedAllocator.snapshot()
+  let allocatorStats = tunedAllocator.atomicStats()
+  let allocatorNative = tunedAllocator.nativeHandle()
+  let allocatorUnique = tunedAllocator.make<SmartOwnerPayload>(
+    { value: 10, name: "allocated-unique" }
+  )
+  let allocatorShared = tunedAllocator.makeShared<SmartOwnerPayload>(
+    { value: 11, name: "allocated-shared" }
+  )
+  let allocatorPinned = tunedAllocator.makePin<SmartOwnerPayload>(
+    { value: 12, name: "allocated-pin" }
+  )
+  let allocatorBuffer = tunedAllocator.makeBuffer<SmartOwnerPayload>(
+    { value: 13, name: "allocated-buffer" },
+    2
+  )
+  let allocatorArena = tunedAllocator.makeArena<SmartOwnerPayload>(2)
+  let rewoundAllocator = tunedAllocator.rewind(allocatorMark)
+  let rolledAllocator = tunedAllocator.rollback(allocatorCheckpoint)
+  let releasedAllocator = tunedAllocator.release()
+  let foreign = Foreign<SmartOwnerPayload>(
+    { value: 8, name: "foreign" },
+    allocator
+  )
+  let taggedForeign = foreign.tag("ffi")
+  let writableForeign = taggedForeign.withWrite(true)
+  let resetForeign = writableForeign.reset({ value: 20, name: "foreign-reset" })
+  let foreignBorrow = writableForeign.borrow()
+  let foreignBorrowMut = writableForeign.borrowMut()
+  let releasedForeign = writableForeign.release()
+  let buffer = Buffer<SmartOwnerPayload>({ value: 9, name: "buffer" }, 4)
+  let bufferBorrow = buffer.borrow()
+  let bufferBorrowMut = buffer.borrowMut()
+  let bufferBorrowFrozen = bufferBorrowMut.freeze()
+  let grownBuffer = buffer.reserve(2).grow(8)
+  let pushedBuffer = grownBuffer.push({ value: 18, name: "buffer-pushed" })
+  let poppedBuffer = pushedBuffer.pop()
+  let shrunkBuffer = poppedBuffer.shrink(2)
+  let clearedBuffer = shrunkBuffer.clear()
+  let resetBuffer = clearedBuffer.reset({ value: 19, name: "buffer-reset" })
+  let releasedBuffer = resetBuffer.release()
+  let directBorrow = Borrow<SmartOwnerPayload>(buffer.cptr())
+  let directBorrowWithEmptyOwner = Borrow<SmartOwnerPayload>(
+    buffer.cptr(),
+    {},
+    buffer.generation
+  )
+  let directBorrowMut = BorrowMut<SmartOwnerPayload>(buffer.ptr())
+  let foreignBuffer = ForeignBuffer<SmartOwnerPayload> {
+    pointer: foreign.cptr()
+    len: 1
+    cap: 1
+    allocator
+  }
+  let foreignBufferBorrow = foreignBuffer.borrow()
+  let slicedForeignBuffer = foreignBuffer.slice(0, 1)
+  let takenForeignBuffer = foreignBuffer.take(1)
+  let droppedForeignBuffer = foreignBuffer.drop(0)
+  let clearedForeignBuffer = foreignBuffer.clear()
+  let resetForeignBuffer = clearedForeignBuffer.reset(foreign.cptr(), 1)
+  let releasedForeignBuffer = foreignBuffer.release()
+
+  return SmartOwnerCapabilityProof {
+    uniqueValid: unique.valid &&
+      unique.readable &&
+      unique.writable &&
+      unique.unique &&
+      uniqueBorrow.valid &&
+      uniqueBorrowMut.valid &&
+      unique.liveFor(unique.generation) &&
+      unique.sameGen(unique.generation) &&
+      unique.sameOwner({}) &&
+      replaced.value.value == 2 &&
+      reset.value.value == 3 &&
+      cleared.empty &&
+      shared.valid &&
+      pinned.valid &&
+      permanent.valid
+    sharedValid: sharedAlias.shared &&
+      weak.canUpgrade(sharedAlias) &&
+      refreshedWeak.matches(sharedAlias) &&
+      clearedWeak.expired &&
+      sharedBorrow.valid &&
+      sharedBorrowMut.valid &&
+      shared.readable &&
+      shared.writable &&
+      shared.weakable &&
+      shared.address.valid &&
+      shared.liveFor(shared.generation) &&
+      shared.sameGen(shared.generation) &&
+      shared.sameOwner({}) &&
+      resetShared.value.value == 24 &&
+      clearedShared.empty &&
+      uniqueFromShared.valid &&
+      uniqueMade.valid
+    pinValid: pinnedProjected.valid &&
+      pinnedProjected.liveFor(pinned.generation) &&
+      pinnedProjected.sameGen(pinned.generation) &&
+      pinnedProjected.sameOwner({}) &&
+      pinnedBorrow.valid &&
+      pinnedBorrowMut.valid &&
+      pinned.pinned &&
+      pinned.stable &&
+      pinned.address.valid &&
+      pinned.liveFor(pinned.generation) &&
+      pinned.sameGen(pinned.generation) &&
+      pinned.sameOwner({}) &&
+      resetPinned.valid &&
+      unpinned.empty
+    arenaValid: arenaPtr.valid &&
+      arenaAliasPtr.valid &&
+      arenaRef.valid &&
+      arenaPtr.readable &&
+      arenaPtr.writable &&
+      arenaPtr.ptr().valid &&
+      arenaPtr.cptr().valid &&
+      arenaPtr.liveFor(arena.generation) &&
+      arenaPtr.sameOwner(arenaRef) &&
+      arenaPtr.sameGen(arenaRef) &&
+      arenaPtr.expired(arena) == false &&
+      arenaRef.readable &&
+      arenaRef.writable == false &&
+      arenaRef.ptr().valid &&
+      arenaRef.cptr().valid &&
+      arenaRef.liveFor(arena.generation) &&
+      arenaRef.sameOwner(arenaPtr) &&
+      arenaRef.sameGen(arenaPtr) &&
+      arenaRef.expired(arena) == false &&
+      lease.covers(arenaPtr) &&
+      lease.covers(arenaRef) &&
+      lease.covers(arena) &&
+      lease.readOnly &&
+      lease.writable &&
+      lease.expired(arena.generation) == false &&
+      lease.sameOwner(arena.owner) &&
+      arenaMark.valid &&
+      arenaCheckpoint.valid &&
+      arenaSnapshot.valid &&
+      arenaStats.valid &&
+      arenaMany.valid &&
+      arenaBytes.valid &&
+      arenaBorrowed.valid &&
+      arenaBorrowedMut.valid &&
+      arenaMade.valid &&
+      arenaMadeRef.valid &&
+      arenaMadeLease.valid &&
+      rewoundArena.valid &&
+      rolledArena.valid &&
+      clearedArena.empty &&
+      sealedArena.sealed &&
+      unsealedArena.sealed == false &&
+      arena.live &&
+      arena.empty &&
+      arena.hasCapacity &&
+      arena.canAllocate &&
+      arena.ownsStorage &&
+      arena.regionOwner &&
+      arena.tracked == false &&
+      arena.fits(1) &&
+      arena.fitsBytes(32) &&
+      arena.exceeds(100) &&
+      arena.accepts(arenaPtr) &&
+      arena.accepts(arenaRef) &&
+      arena.accepts(lease) &&
+      arena.sameRegion(arena) &&
+      resetArena.allocCount == 0
+    allocatorValid: tunedAllocator.valid &&
+      tunedAllocator.live &&
+      tunedAllocator.empty &&
+      tunedAllocator.used == 0 &&
+      tunedAllocator.hasLimit &&
+      tunedAllocator.bounded &&
+      tunedAllocator.unbounded == false &&
+      tunedAllocator.remaining == 5120 &&
+      tunedAllocator.full == false &&
+      tunedAllocator.overLimit == false &&
+      tunedAllocator.canAllocate &&
+      tunedAllocator.hasAllocations == false &&
+      tunedAllocator.hasFrees == false &&
+      tunedAllocator.balanced &&
+      tunedAllocator.leaked == false &&
+      tunedAllocator.tracked == false &&
+      tunedAllocator.aligned &&
+      tunedAllocator.powerOfTwoAlign &&
+      tunedAllocator.guarded &&
+      tunedAllocator.debugMode &&
+      tunedAllocator.zeroFilled &&
+      tunedAllocator.tagged &&
+      tunedAllocator.safe &&
+      tunedAllocator.unsafeBoundary == false &&
+      tunedAllocator.threadLocalPolicy == false &&
+      tunedAllocator.sharedPolicy &&
+      tunedAllocator.locked &&
+      tunedAllocator.lockRequired == false &&
+      tunedAllocator.nativeBacked == false &&
+      tunedAllocator.hasNativeHandle == false &&
+      tunedAllocator.abiStable == false &&
+      tunedAllocator.pageAligned &&
+      tunedAllocator.hasError == false &&
+      tunedAllocator.clean &&
+      tunedAllocator.diagnosticFree &&
+      tunedAllocator.failed == false &&
+      tunedAllocator.recoverable == false &&
+      allocatorLayout.valid &&
+      tunedAllocator.fits(allocatorLayout) &&
+      tunedAllocator.fits(64) &&
+      tunedAllocator.fits(64, 16) &&
+      tunedAllocator.wouldOverflow(64) == false &&
+      tunedAllocator.wouldExceed(64) == false &&
+      tunedAllocator.accepts(allocatorLayout) &&
+      tunedAllocator.acceptsAlign(16) &&
+      tunedAllocator.ownsLayout(allocatorLayout) &&
+      tunedAllocator.errorKind(MemoryErrorKind.None) &&
+      tunedAllocator.fits(allocatorLayout) &&
+      allocatorMark.valid &&
+      allocatorCheckpoint.valid &&
+      allocatorSnapshot.valid &&
+      allocatorStats.valid &&
+      allocatorNative.valid == false &&
+      allocatorUnique.valid &&
+      allocatorShared.valid &&
+      allocatorPinned.valid &&
+      allocatorBuffer.valid &&
+      allocatorArena.valid &&
+      rewoundAllocator.valid &&
+      rolledAllocator.valid &&
+      releasedAllocator.live == false
+    globalValid: globalOwner.valid &&
+      orderedGlobal.shutdownOrder == 10 &&
+      orderedGlobal.dependsOn(1) &&
+      orderedGlobal.live &&
+      orderedGlobal.readable &&
+      orderedGlobal.writable == false &&
+      orderedGlobal.ownsStorage &&
+      orderedGlobal.globalOwner &&
+      orderedGlobal.stableLifetime &&
+      orderedGlobal.address.valid &&
+      orderedGlobal.liveFor(orderedGlobal.generation) &&
+      orderedGlobal.sameGen(orderedGlobal.generation) &&
+      orderedGlobal.sameOwner({}) &&
+      globalBorrow.valid &&
+      globalBorrowMut.valid &&
+      replacedGlobal.value.value == 21 &&
+      resetGlobal.value.value == 22 &&
+      shutdownGlobal.live == false &&
+      shutdownGlobal.shutdownComplete
+    permanentValid: permanentOwner.valid &&
+      permanentOwner.audited &&
+      permanentOwner.normalDrop == false &&
+      permanentOwner.permanentOwner &&
+      permanentOwner.stableLifetime &&
+      permanentOwner.address.valid &&
+      permanentOwner.liveFor(permanentOwner.generation) &&
+      permanentOwner.sameGen(permanentOwner.generation) &&
+      permanentOwner.sameOwner({}) &&
+      permanentBorrow.valid &&
+      permanentBorrowMut.valid &&
+      auditedPermanent.valid
+    handleValid: handle.valid &&
+      kindedHandle.kinded &&
+      flushedHandle.valid &&
+      resetHandle.live &&
+      resetHandle.canClose &&
+      resetHandle.safeClose &&
+      resetHandle.idempotentClose &&
+      resetHandle.externalHandle &&
+      resetHandle.ownsStorage &&
+      resetHandle.liveFor(resetHandle.generation) &&
+      resetHandle.sameGen(resetHandle.generation) &&
+      resetHandle.sameOwner({}) &&
+      handleNative.value == 23 &&
+      closed.open == false &&
+      closed.closed &&
+      closed.closedOnce &&
+      closedAgain.closeCount == 1
+    syncValid: cell.get() == 2 &&
+      cell.live &&
+      cell.readable &&
+      cell.writable &&
+      cell.ptr().valid &&
+      cell.cptr().valid &&
+      cellBorrow.valid &&
+      cellBorrowMut.valid &&
+      swappedCell.get() == 3 &&
+      replacedCell.get() == 4 &&
+      resetCell.get() == 5 &&
+      resetCell.liveFor(resetCell.generation) &&
+      resetCell.sameGen(resetCell.generation) &&
+      resetCell.sameOwner({}) &&
+      releasedCell.live == false &&
+      atomic.valid &&
+      atomic.load(AtomicOrdering.Acquire) == 12 &&
+      atomic.loadPtr() == 12 &&
+      atomicFence.valid &&
+      cFence.valid &&
+      lockedMutex.lockedState &&
+      lockedMutex.canUnlock &&
+      lockedMutex.ptr().valid &&
+      lockedMutex.cptr().valid &&
+      mutexBorrow.valid &&
+      mutexBorrowMut.valid &&
+      updatedMutex.value == 2 &&
+      mutex.valid &&
+      mutex.unlocked &&
+      mutex.canLock &&
+      rwRead.reading &&
+      rwRead.readable &&
+      rwRead.cptr().valid &&
+      rwReadBorrow.valid &&
+      rwReadReleased.idle &&
+      rwWrite.writing &&
+      rwWrite.writable &&
+      rwWrite.ptr().valid &&
+      rwWriteBorrow.valid &&
+      rwUpdated.value == 3 &&
+      rw.valid &&
+      rw.idle &&
+      rw.canWrite &&
+      protectedSync.valid &&
+      protectedSync.sharedAccess &&
+      protectedSync.allowsWritableSharedAccess &&
+      mergedSync.safe
+    lazyValid: once.ready &&
+      once.get() == 1 &&
+      onceReset.get() == 3 &&
+      onceCleared.pending &&
+      onceReinit.get() == 4 &&
+      onceReinit.liveFor(onceReinit.generation) &&
+      lazy.ready &&
+      lazy.get() == 2 &&
+      lazyReset.get() == 5 &&
+      lazyCleared.pending &&
+      lazyRefilled.get() == 6 &&
+      lazyRefilled.liveFor(lazyRefilled.generation) &&
+      ownershipContract.valid &&
+      mergedContract.valid &&
+      mergedContract.hasOwners &&
+      mergedContract.hasViews &&
+      mergedContract.hasWritable &&
+      mergedContract.hasReadOnly &&
+      mergedContract.viewsOk &&
+      mergedContract.countsOk &&
+      mergedContract.safeDrop &&
+      mergedContract.noManualFree &&
+      contractedDrop.safe
+    foreignValid: foreign.valid &&
+      foreign.external &&
+      foreign.owned == false &&
+      foreign.readable &&
+      foreign.cptr().valid &&
+      taggedForeign.tagged &&
+      taggedForeign.label == "ffi" &&
+      writableForeign.writable &&
+      writableForeign.ptr().valid &&
+      writableForeign.mutable &&
+      resetForeign.value.value == 20 &&
+      resetForeign.liveFor(resetForeign.generation) &&
+      resetForeign.sameGen(resetForeign.generation) &&
+      resetForeign.sameOwner({}) &&
+      foreignBorrow.valid &&
+      foreignBorrowMut.valid &&
+      releasedForeign.live == false &&
+      buffer.valid &&
+      buffer.live &&
+      buffer.readable &&
+      buffer.writable &&
+      buffer.len == 1 &&
+      buffer.cap == 4 &&
+      buffer.remaining == 3 &&
+      buffer.canPush &&
+      buffer.canPop &&
+      buffer.fits(2) &&
+      buffer.exceeds(8) &&
+      buffer.ptr().valid &&
+      buffer.cptr().valid &&
+      bufferBorrow.valid &&
+      bufferBorrow.readable &&
+      bufferBorrow.writable == false &&
+      bufferBorrow.ptr().valid &&
+      bufferBorrow.cptr().valid &&
+      bufferBorrow.liveFor(buffer.generation) &&
+      bufferBorrow.stale(buffer.generation) == false &&
+      bufferBorrow.expired(buffer.generation) == false &&
+      bufferBorrow.sameOwner({}) &&
+      bufferBorrowFrozen.valid &&
+      bufferBorrowMut.valid &&
+      bufferBorrowMut.readable &&
+      bufferBorrowMut.writable &&
+      bufferBorrowMut.ptr().valid &&
+      bufferBorrowMut.cptr().valid &&
+      bufferBorrowMut.liveFor(buffer.generation) &&
+      bufferBorrowMut.stale(buffer.generation) == false &&
+      bufferBorrowMut.expired(buffer.generation) == false &&
+      bufferBorrowMut.sameOwner({}) &&
+      directBorrow.valid &&
+      directBorrowWithEmptyOwner.valid &&
+      directBorrowWithEmptyOwner.sameOwner({}) &&
+      directBorrowWithEmptyOwner.sameGen(buffer.generation) &&
+      directBorrowMut.valid &&
+      grownBuffer.cap == 8 &&
+      pushedBuffer.len == 2 &&
+      poppedBuffer.len == 1 &&
+      shrunkBuffer.cap == 2 &&
+      clearedBuffer.empty &&
+      resetBuffer.len == 1 &&
+      releasedBuffer.live == false &&
+      foreignBuffer.valid &&
+      foreignBuffer.live &&
+      foreignBuffer.readable &&
+      foreignBuffer.writable == false &&
+      foreignBuffer.len == 1 &&
+      foreignBuffer.cap == 1 &&
+      foreignBuffer.remaining == 0 &&
+      foreignBuffer.cptr().valid &&
+      foreignBufferBorrow.valid &&
+      foreignBuffer.liveFor(foreignBuffer.generation) &&
+      foreignBuffer.sameGen(foreignBuffer.generation) &&
+      foreignBuffer.sameOwner({}) &&
+      foreignBuffer.fits(0) &&
+      foreignBuffer.exceeds(2) &&
+      slicedForeignBuffer.valid &&
+      takenForeignBuffer.valid &&
+      droppedForeignBuffer.valid &&
+      clearedForeignBuffer.empty &&
+      resetForeignBuffer.valid &&
+      releasedForeignBuffer.live == false
+  }
+}

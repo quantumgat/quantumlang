@@ -1,0 +1,26 @@
+pub X86CallEncoding {
+  targetSymbol: string
+  opcode: i64 = 0xe8
+  byteCount: i64 = 5
+  relocationKind: string = "pc-relative"
+  diagnosticCode: string = ""
+}
+
+impl X86CallEncoding {
+  pub X86CallEncoding(targetSymbol: string) =
+    This { targetSymbol }
+
+  pub relocation(offset: i64) =
+    ObjectRelocation.pcRelative(".text", offset + 1, targetSymbol, -4)
+}
+
+impl view X86CallEncoding {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetSymbol != "" &&
+    opcode == 0xe8 &&
+    byteCount == 5
+
+  pub needsRelocation: bool => valid
+  pub debugName: string => "x86.call.{targetSymbol}"
+}

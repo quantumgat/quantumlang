@@ -1,0 +1,99 @@
+pub CallAbi {
+  targetName: string
+  callingConvention: string
+  integerRegisterCount: i64
+  floatRegisterCount: i64
+  stackAlignBytes: i64
+  shadowSpaceBytes: i64 = 0
+  sretPointerRegisterIndex: i64 = 0
+  diagnosticCode: string = ""
+}
+
+impl CallAbi {
+  pub CallAbi(
+    targetName: string,
+    callingConvention: string,
+    integerRegisterCount: i64,
+    floatRegisterCount: i64,
+    stackAlignBytes: i64
+  ) =
+    This {
+      targetName
+      callingConvention
+      integerRegisterCount
+      floatRegisterCount
+      stackAlignBytes
+    }
+
+  pub forTarget(target: TargetIdentity) -> This {
+    if target.valid == false {
+      return This {
+        targetName: target.targetTriple
+        callingConvention: target.abi
+        integerRegisterCount: 0
+        floatRegisterCount: 0
+        stackAlignBytes: 0
+        diagnosticCode: "QNATIVE0601"
+      }
+    }
+
+    if target.abi == "sysv" {
+      return This {
+        targetName: target.targetTriple
+        callingConvention: target.abi
+        integerRegisterCount: 6
+        floatRegisterCount: 8
+        stackAlignBytes: 16
+        sretPointerRegisterIndex: 0
+      }
+    }
+
+    if target.abi == "win64" {
+      return This {
+        targetName: target.targetTriple
+        callingConvention: target.abi
+        integerRegisterCount: 4
+        floatRegisterCount: 4
+        stackAlignBytes: 16
+        shadowSpaceBytes: 32
+        sretPointerRegisterIndex: 0
+      }
+    }
+
+    if target.abi == "darwin" {
+      return This {
+        targetName: target.targetTriple
+        callingConvention: target.abi
+        integerRegisterCount: 6
+        floatRegisterCount: 8
+        stackAlignBytes: 16
+        sretPointerRegisterIndex: 0
+      }
+    }
+
+    return This {
+      targetName: target.targetTriple
+      callingConvention: target.abi
+      integerRegisterCount: 0
+      floatRegisterCount: 0
+      stackAlignBytes: 0
+      diagnosticCode: "QNATIVE0602"
+    }
+  }
+}
+
+impl view CallAbi {
+  pub valid => diagnosticCode == "" &&
+    targetName != "" &&
+    callingConvention != "" &&
+    integerRegisterCount > 0 &&
+    floatRegisterCount >= 0 &&
+    stackAlignBytes > 0 &&
+    sretPointerRegisterIndex >= 0
+  pub hasIntegerRegisters => integerRegisterCount > 0
+  pub hasFloatRegisters => floatRegisterCount > 0
+  pub usesShadowSpace => shadowSpaceBytes > 0
+  pub stackAligned => stackAlignBytes == 16
+  pub abiHash => "callabi:{targetName}:{callingConvention}:{integerRegisterCount}:{floatRegisterCount}:{stackAlignBytes}:{shadowSpaceBytes}"
+  pub debugName => "callabi.{targetName}.{callingConvention}"
+}

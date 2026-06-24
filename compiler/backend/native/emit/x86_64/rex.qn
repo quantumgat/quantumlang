@@ -1,0 +1,27 @@
+pub X86Rex {
+  w: bool = true
+  r: bool = false
+  x: bool = false
+  b: bool = false
+  diagnosticCode: string = ""
+}
+
+impl X86Rex {
+  pub X86Rex(w: bool, r: bool, x: bool, b: bool) =
+    This { w, r, x, b }
+
+  pub forRegister(register: X86RegisterEncoding) =
+    This(true, false, false, register.rexBit)
+}
+
+impl view X86Rex {
+  pub valid: bool => diagnosticCode == ""
+  pub byteValue: i64 =>
+    64 +
+    match w { true => 8 false => 0 } +
+    match r { true => 4 false => 0 } +
+    match x { true => 2 false => 0 } +
+    match b { true => 1 false => 0 }
+  pub required: bool => w || r || x || b
+  pub debugName: string => "x86.rex.{byteValue}"
+}

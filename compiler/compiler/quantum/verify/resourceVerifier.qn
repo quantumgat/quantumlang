@@ -1,0 +1,27 @@
+pub QuantumResourceVerifier {
+  checked: i64
+  accepted: bool
+  diagnosticCode: string
+}
+
+impl QuantumResourceVerifier {
+  pub QuantumResourceVerifier(lifetime: QuantumLifetime, reset: QuantumReset, release: QuantumRelease) {
+    let accepted = lifetime.valid && reset.valid && release.valid
+    if accepted {
+      return This {
+        checked: 3
+        accepted: true
+        diagnosticCode: ""
+      }
+    }
+    This {
+      checked: 3
+      accepted: false
+      diagnosticCode: "QTQUANTUM0101"
+    }
+  }
+}
+
+impl view QuantumResourceVerifier {
+  pub rejected => accepted == false
+}

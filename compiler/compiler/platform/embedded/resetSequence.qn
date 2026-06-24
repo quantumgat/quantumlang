@@ -1,0 +1,35 @@
+pub ResetSequence {
+  handlerName: string
+  initializesStack: bool
+  initializesData: bool
+  zerosBss: bool
+  callsConstructors: bool
+  callsMain: bool
+}
+
+impl ResetSequence {
+  pub ResetSequence(
+    handlerName: string,
+    initializesStack: bool,
+    initializesData: bool,
+    zerosBss: bool,
+    callsConstructors: bool,
+    callsMain: bool
+  ) =
+    This {
+      handlerName
+      initializesStack
+      initializesData
+      zerosBss
+      callsConstructors
+      callsMain
+    }
+
+  pub standard(handlerName: string) =
+    This(handlerName, true, true, true, true, true)
+}
+
+impl view ResetSequence {
+  pub valid => handlerName != "" && initializesStack && initializesData && zerosBss && callsMain
+  pub runtimeReady => valid && callsConstructors
+}

@@ -1,0 +1,95 @@
+import declaration::{DeclarationParserRows, DeclarationRecordBatch, DeclarationRecordSource, DeclarationRecordTable, DeclarationTable}
+
+pub DeclarationParserBridge {
+  table: DeclarationTable
+  recordTable: DeclarationRecordTable
+  parserSummaryReady: bool
+  parserRecordsReady: bool = false
+  deterministic: bool = true
+}
+
+impl DeclarationParserBridge {
+  pub fromParserSummary(table: DeclarationTable) =
+    This {
+      table
+      recordTable: DeclarationRecordTable.fromParserSummary(table)
+      parserSummaryReady: table.valid
+  }
+
+  pub fromParserRows(table: DeclarationTable) -> This {
+    let parserRows = DeclarationParserRows.fromTable(table)
+    let source = DeclarationRecordSource.fromParserRows(parserRows)
+    let batch = DeclarationRecordBatch.fromSource(source)
+    let parserRecordsReady = batch.valid && parserRows.countsMatch(table)
+
+    return This {
+      table
+      recordTable: DeclarationRecordTable.fromBatch(table, batch)
+      parserSummaryReady: table.valid
+      parserRecordsReady
+    }
+  }
+
+  pub fromRuntimeScan(moduleCount: i64, scan: RuntimeFrontendScan) -> This {
+    let parserRows = declarationRowsFromRuntimeScan(moduleCount, scan)
+    let source = DeclarationRecordSource.fromRuntimeRows(parserRows)
+    let batch = DeclarationRecordBatch.fromSource(source)
+    let table = DeclarationTable.fromBatch(batch)
+    let parserRecordsReady = batch.valid && parserRows.countsMatch(table)
+
+    return This {
+      table
+      recordTable: DeclarationRecordTable.fromBatch(table, batch)
+      parserSummaryReady: table.valid
+      parserRecordsReady
+    }
+  }
+}
+
+declarationRowsFromRuntimeScan(
+  moduleCount: i64,
+  scan: RuntimeFrontendScan
+) -> DeclarationParserRows {
+  let rows = DeclarationParserRows.fromCounts(
+    moduleCount,
+    scan.typeDeclarationCount,
+    scan.implDeclarationCount,
+    scan.viewDeclarationCount,
+    scan.roleDeclarationCount,
+    scan.functionCount,
+    scan.importDeclarationCount,
+    scan.contextDeclarationCount,
+    scan.extractDeclarationCount,
+    scan.extendDeclarationCount
+  )
+
+  return DeclarationParserRows {
+    modules: rows.modules.sampled(scan.primaryModulePath, scan.primaryModulePath)
+    types: rows.types.sampled(scan.primaryModulePath, scan.firstTypeDeclarationName)
+    impls: rows.impls.sampled(scan.primaryModulePath, "impl")
+    views: rows.views.sampled(scan.primaryModulePath, "view")
+    roles: rows.roles.sampled(scan.primaryModulePath, "role")
+    functions: rows.functions.sampled(scan.primaryModulePath, scan.firstFunctionDeclarationName)
+    imports: rows.imports.sampled(scan.primaryModulePath, scan.firstImportDeclarationName)
+    contexts: rows.contexts.sampled(scan.primaryModulePath, "context")
+    extracts: rows.extracts.sampled(scan.primaryModulePath, "extract")
+    extends: rows.extends.sampled(scan.primaryModulePath, "extend")
+  }
+}
+
+impl view DeclarationParserBridge {
+  pub parserSummaryBacked => recordTable.parserSummaryBacked
+
+  pub parserBacked => recordTable.parserBacked
+
+  pub bootstrapBacked => recordTable.bootstrapBacked
+
+  pub ready =>
+    deterministic &&
+    table.valid &&
+    parserSummaryReady &&
+    parserRecordsReady &&
+    recordTable.valid
+
+  pub valid => ready
+}

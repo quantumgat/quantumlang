@@ -1,0 +1,239 @@
+import qtlc1::core::{FileId, ModuleId, Vec}
+import qtlc1::frontend::{DeclarationKind, DeclarationRecord, DeclarationVisibility}
+import qtlc1::source::{SourceSpan}
+import qtlc1::syntax::{AstCallArgument, AstCallableParameter, AstGenericParameter, AstNode, AstNodeKind}
+import qtlc1::typeSystem::{CandidateIndexBuilder, ConversionKind, GenericInferenceSource, OverloadResolver, TypeScopeTable, TypeSymbolTable}
+
+callableRecord(
+  id: i64,
+  name: string,
+  parameterType: string,
+  resultType: string,
+  fileId: FileId,
+  start: i64
+) -> DeclarationRecord {
+  let record = DeclarationRecord(
+    id,
+    DeclarationKind.Function,
+    "proof",
+    name,
+    fileId,
+    start,
+    start + 1,
+    DeclarationVisibility.Public
+  )
+  record.parameters = ["value"]
+  record.parameterRows = [
+    AstCallableParameter {
+      position: 0
+      name: "value"
+      typeName: parameterType
+      span: SourceSpan(fileId, start, start + 1)
+    },
+  ]
+  record.returnTypeName = resultType
+  return record
+}
+
+defaultedRecord(fileId: FileId) -> DeclarationRecord {
+  let record = callableRecord(6, "format", "i64", "string", fileId, 10)
+  record.parameters.push("mode")
+  record.parameterRows.push(AstCallableParameter {
+    position: 1
+    name: "mode"
+    typeName: "i64"
+    defaultValueText: "1"
+    span: SourceSpan(fileId, 11, 12)
+    defaulted: true
+  })
+  return record
+}
+
+variadicRecord(fileId: FileId) -> DeclarationRecord {
+  let record = callableRecord(7, "sum", "i64", "i64", fileId, 12)
+  record.parameterRows[0].variadic = true
+  return record
+}
+
+genericRecord(fileId: FileId) -> DeclarationRecord {
+  let record = callableRecord(8, "identity", "T", "T", fileId, 14)
+  record.genericParameterCount = 1
+  record.genericParameters = ["T"]
+  record.genericParameterRows = [
+    AstGenericParameter {
+      position: 0
+      name: "T"
+      span: SourceSpan(fileId, 14, 15)
+    },
+  ]
+  return record
+}
+
+callNode(
+  id: i64,
+  name: string,
+  text: string,
+  typeName: string,
+  fileId: FileId
+) -> AstNode {
+  let node = AstNode.token(
+    id,
+    AstNodeKind.Expression,
+    SourceSpan(fileId, 20 + id, 21 + id),
+    name,
+    "call",
+    "callable-result"
+  )
+  node.callArguments = [
+    AstCallArgument.positional(
+      0,
+      text,
+      typeName,
+      SourceSpan(fileId, 20 + id, 21 + id)
+    ),
+  ]
+  node.argumentCount = 1
+  return node
+}
+
+main() -> i64 {
+  let fileId = FileId(1, 44, 1)
+  let records: Vec<DeclarationRecord> = [
+    DeclarationRecord(
+      1,
+      DeclarationKind.Module,
+      "proof",
+      "proof",
+      fileId,
+      0,
+      1,
+      DeclarationVisibility.Public
+    ),
+    callableRecord(2, "encode", "i64", "i64", fileId, 2),
+    callableRecord(3, "encode", "string", "string", fileId, 4),
+    callableRecord(4, "widen", "i64", "i64", fileId, 6),
+    callableRecord(5, "widen", "f64", "f64", fileId, 8),
+    defaultedRecord(fileId),
+    variadicRecord(fileId),
+    genericRecord(fileId),
+    callableRecord(9, "pick", "i64", "i64", fileId, 16),
+    callableRecord(10, "pick", "i64", "u64", fileId, 18),
+  ]
+  let symbols = TypeSymbolTable.fromRecords(records, true)
+  let scopes = TypeScopeTable.fromSymbols(symbols)
+  let candidates = CandidateIndexBuilder.build(symbols, scopes)
+  let scope = scopes.moduleScope(ModuleId(1, 44))
+
+  let encodeResolution = OverloadResolver.resolve(
+    callNode(1, "encode", "hello", "string", fileId),
+    candidates.free("encode"),
+    candidates,
+    symbols,
+    scopes,
+    scope
+  )
+  if !encodeResolution.resolved ||
+     encodeResolution.resultTypeName != "string" ||
+     !encodeResolution.bindings[0].conversion.exact {
+    return 1
+  }
+
+  let widenResolution = OverloadResolver.resolve(
+    callNode(2, "widen", "7", "i64", fileId),
+    candidates.free("widen"),
+    candidates,
+    symbols,
+    scopes,
+    scope
+  )
+  if !widenResolution.resolved ||
+     widenResolution.resultTypeName != "i64" ||
+     widenResolution.bindings[0].conversion.kind != ConversionKind.Exact {
+    return 2
+  }
+
+  let formatResolution = OverloadResolver.resolve(
+    callNode(3, "format", "7", "i64", fileId),
+    candidates.free("format"),
+    candidates,
+    symbols,
+    scopes,
+    scope
+  )
+  if !formatResolution.resolved ||
+     formatResolution.bindings.count != 2 ||
+     !formatResolution.bindings[1].defaulted {
+    return 3
+  }
+
+  let sum = callNode(4, "sum", "1", "i64", fileId)
+  sum.callArguments.push(AstCallArgument.positional(
+    1,
+    "2",
+    "i64",
+    SourceSpan(fileId, 31, 32)
+  ))
+  sum.argumentCount = sum.callArguments.count
+  let sumResolution = OverloadResolver.resolve(
+    sum,
+    candidates.free("sum"),
+    candidates,
+    symbols,
+    scopes,
+    scope
+  )
+  if !sumResolution.resolved ||
+     sumResolution.bindings.count != 2 ||
+     !sumResolution.bindings[0].variadic ||
+     !sumResolution.bindings[1].variadic {
+    return 4
+  }
+
+  let identity = callNode(5, "identity", "9", "i64", fileId)
+  let inferredResolution = OverloadResolver.resolve(
+    identity,
+    candidates.free("identity"),
+    candidates,
+    symbols,
+    scopes,
+    scope
+  )
+  if !inferredResolution.resolved ||
+     inferredResolution.resultTypeName != "i64" ||
+     inferredResolution.substitutions.count != 1 ||
+     inferredResolution.substitutions[0].source != GenericInferenceSource.Argument {
+    return 5
+  }
+
+  identity.genericArguments = ["i64"]
+  identity.genericArgumentCount = 1
+  let explicitResolution = OverloadResolver.resolve(
+    identity,
+    candidates.free("identity"),
+    candidates,
+    symbols,
+    scopes,
+    scope
+  )
+  if !explicitResolution.resolved ||
+     explicitResolution.resultTypeName != "i64" ||
+     explicitResolution.substitutions[0].source != GenericInferenceSource.Explicit {
+    return 6
+  }
+
+  let ambiguousResolution = OverloadResolver.resolve(
+    callNode(6, "pick", "1", "i64", fileId),
+    candidates.free("pick"),
+    candidates,
+    symbols,
+    scopes,
+    scope
+  )
+  if !ambiguousResolution.ambiguous ||
+     ambiguousResolution.diagnostic.code.display != "QTTYPE0401" {
+    return 7
+  }
+
+  println("qtlc1 overload resolution proof: ok")
+  return 0
+}

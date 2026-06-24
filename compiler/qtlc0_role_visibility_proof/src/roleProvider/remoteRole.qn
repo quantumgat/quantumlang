@@ -1,0 +1,25 @@
+pub RemoteUser {
+  value: i64
+}
+
+pub role RemoteAccess {
+  remoteValue() -> i64
+}
+
+role PackageAccess {
+  internalValue() -> i64
+}
+
+extend RemoteUser : pub RemoteAccess, internal PackageAccess {
+  remoteValue() -> i64 {
+    value
+  }
+
+  internalValue() -> i64 {
+    value + 1
+  }
+}
+
+pub remoteUser(value: i64) -> RemoteUser {
+  RemoteUser(value)
+}

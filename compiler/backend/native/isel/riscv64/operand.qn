@@ -1,0 +1,29 @@
+pub Riscv64OperandSelect {
+  operandKind: string
+  widthBits: i64
+  registerClass: string
+  immediate12Allowed: bool = true
+  diagnosticCode: string = ""
+}
+
+impl Riscv64OperandSelect {
+  pub Riscv64OperandSelect(operandKind: string, widthBits: i64, registerClass: string) =
+    This {
+      operandKind
+      widthBits
+      registerClass
+    }
+
+  pub integerRegister(widthBits: i64) =
+    This("register", widthBits, "gpr")
+}
+
+impl view Riscv64OperandSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    operandKind != "" &&
+    widthBits > 0 &&
+    registerClass != ""
+
+  pub debugName: string => "isel.riscv64.operand.{operandKind}.{widthBits}"
+}

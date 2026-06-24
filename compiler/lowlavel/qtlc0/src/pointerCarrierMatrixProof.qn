@@ -1,0 +1,92 @@
+pub CarrierUser {
+  id: i64
+  name: string
+}
+
+pub CarrierError {
+  code: i64
+}
+
+pub CarrierRange<T> {
+  start: i64 = 0
+  count: i64 = 0
+}
+
+impl view CarrierRange<T> {
+  pub end: i64 => start + count
+  pub valid: bool => start >= 0 && count >= 0
+}
+
+pub CarrierSlice<T> {
+  rows: CarrierRange<T> = {}
+}
+
+impl view CarrierSlice<T> {
+  pub start: i64 => rows.start
+  pub count: i64 => rows.count
+  pub end: i64 => rows.end
+}
+
+pub CarrierIndex<K, V> {
+  keys: CarrierRange<K> = {}
+  values: CarrierRange<V> = {}
+}
+
+impl view CarrierIndex<K, V> {
+  pub count: i64 => keys.count
+  pub aligned: bool => keys.count == values.count
+}
+
+pub CarrierPack {
+  user: CarrierUser = {}
+  maybe: Option<CarrierUser> = none
+  result: Result<CarrierUser, CarrierError>
+  values: Vec<i64> = []
+  fixed: Array<i64, 3> = [1, 2, 3]
+  users: Map<string, CarrierUser> = {}
+  rows: CarrierSlice<i64> = {}
+  index: CarrierIndex<string, i64> = {}
+}
+
+impl view CarrierPack {
+  pub userId: i64 => user.id
+  pub rowCount: i64 => rows.count
+  pub rowEnd: i64 => rows.end
+  pub indexCount: i64 => index.count
+  pub indexAligned: bool => index.aligned
+}
+
+pub pointerCarrierMatrixStatus() -> i64 {
+  let pack: CarrierPack = {
+    user: { id: 7, name: "Ali" }
+    maybe: some({ id: 8, name: "Sara" })
+    result: ok({ id: 9, name: "Omar" })
+    values: [1, 2, 3]
+    fixed: [4, 5, 6]
+    users: {
+      "u1": { id: 10, name: "Mona" }
+    }
+    rows: {
+      rows: { start: 3, count: 6 }
+    }
+    index: {
+      keys: { start: 0, count: 4 }
+      values: { start: 0, count: 4 }
+    }
+  }
+  let pointer: *CarrierPack = &pack
+
+  if pointer.valid {
+    pointer.user.id = 11
+    pointer.rows.rows.count = 7
+
+    if pointer.userId != 11 { return 1 }
+    if pointer.rowCount != 7 { return 2 }
+    if pointer.rowEnd != 10 { return 3 }
+    if pointer.indexCount != 4 { return 4 }
+    if pointer.indexAligned != true { return 5 }
+    return 0
+  }
+
+  return 6
+}

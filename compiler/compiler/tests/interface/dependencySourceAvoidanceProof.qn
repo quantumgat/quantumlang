@@ -1,0 +1,53 @@
+pub enum SourceAvoidanceDecision {
+  AvoidSource
+  ReadSource
+  RejectDependency
+}
+
+pub DependencySourceAvoidanceProof {
+  packageName: string
+  qcapPath: string
+  qidxPath: string
+  decision: SourceAvoidanceDecision
+  qcapValid: bool
+  qidxValid: bool
+  mmapUsed: bool
+  sourceFilesRead: usize
+  modulesLoadedFromCapsule: usize
+  symbolsLoadedFromIndex: usize
+  reason: string
+}
+
+impl DependencySourceAvoidanceProof {
+  pub init(
+    packageName: string,
+    qcapPath: string,
+    qidxPath: string,
+    decision: SourceAvoidanceDecision,
+    qcapValid: bool,
+    qidxValid: bool,
+    mmapUsed: bool,
+    sourceFilesRead: usize,
+    modulesLoadedFromCapsule: usize,
+    symbolsLoadedFromIndex: usize,
+    reason: string
+  ) -> DependencySourceAvoidanceProof {
+    return DependencySourceAvoidanceProof {
+      packageName: packageName,
+      qcapPath: qcapPath,
+      qidxPath: qidxPath,
+      decision: decision,
+      qcapValid: qcapValid,
+      qidxValid: qidxValid,
+      mmapUsed: mmapUsed,
+      sourceFilesRead: sourceFilesRead,
+      modulesLoadedFromCapsule: modulesLoadedFromCapsule,
+      symbolsLoadedFromIndex: symbolsLoadedFromIndex,
+      reason: reason,
+    }
+  }
+
+  pub sourceAvoided() -> bool {
+    return decision == SourceAvoidanceDecision.AvoidSource && qcapValid && qidxValid && mmapUsed && sourceFilesRead == 0
+  }
+}

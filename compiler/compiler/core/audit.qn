@@ -1,0 +1,51 @@
+pub enum CoreAuditArea {
+  Source
+  Diagnostics
+  SyntaxAst
+  FrontendDeclarations
+  ModuleSystem
+  TypeSystem
+  Semantic
+  Hir
+  Mir
+  Query
+  Backend
+  BuildSystem
+  Quantum
+  Unknown
+}
+
+pub CoreAudit {
+  area: CoreAuditArea = Unknown
+  rawIdSites: i64 = 0
+  scalarCountSites: i64 = 0
+  stringStatusSites: i64 = 0
+  migrationStep: i64 = 0
+}
+
+impl CoreAudit {
+  pub CoreAudit(
+    area: CoreAuditArea,
+    rawIdSites: i64,
+    scalarCountSites: i64,
+    stringStatusSites: i64,
+    migrationStep: i64
+  ) =
+    This { area, rawIdSites, scalarCountSites, stringStatusSites, migrationStep }
+}
+
+impl view CoreAudit {
+  pub known => area != CoreAuditArea.Unknown
+
+  pub hasRawIds => rawIdSites > 0
+
+  pub hasScalarCounts => scalarCountSites > 0
+
+  pub hasStringStatus => stringStatusSites > 0
+
+  pub migrationNeeded => hasRawIds || hasScalarCounts || hasStringStatus
+
+  pub scheduled => migrationStep > 0
+
+  pub valid => known && scheduled
+}

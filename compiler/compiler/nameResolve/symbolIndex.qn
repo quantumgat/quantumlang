@@ -1,0 +1,113 @@
+import core::{Index, ModuleId, QualifiedName, Slice, SymbolId, Vec}
+
+pub SymbolIndex {
+  index: Index<QualifiedName, SymbolId> = {}
+  names: Slice<QualifiedName> = []
+  symbols: Slice<SymbolId> = []
+  unresolved: Slice<QualifiedName> = []
+  symbolValues: Vec<Symbol> = []
+  nameValues: Vec<string> = []
+  idValues: Vec<SymbolId> = []
+  unresolvedValues: Vec<string> = []
+  deterministic: bool = true
+}
+
+impl SymbolIndex {
+  pub SymbolIndex(count: i64) =
+    This {
+      index: Index<QualifiedName, SymbolId>(count)
+      names: Slice<QualifiedName>(count)
+      symbols: Slice<SymbolId>(count)
+    }
+
+  pub fromCounts(symbolCount: i64, unresolvedCount: i64) =
+    This {
+      index: Index<QualifiedName, SymbolId>(symbolCount)
+      names: Slice<QualifiedName>(symbolCount)
+      symbols: Slice<SymbolId>(symbolCount)
+      unresolved: Slice<QualifiedName>(unresolvedCount)
+    }
+
+  pub add(symbol: Symbol) {
+    symbolValues.push(symbol)
+    nameValues.push(symbol.name)
+    idValues.push(symbol.id)
+    names = Slice(nameValues.count)
+    symbols = Slice(idValues.count)
+    index = Index(idValues.count)
+  }
+
+  pub contains(module: ModuleId, name: string) -> bool {
+    let row: i64 = 0
+    while row < symbolValues.count {
+      let symbol = symbolValues[row]
+      if symbol.module.id.moduleHash == module.id.moduleHash &&
+         symbol.name == name {
+        return true
+      }
+      row = row + 1
+    }
+    return false
+  }
+
+  pub addUnresolved(name: string) {
+    unresolvedValues.push(name)
+    unresolved = Slice(unresolvedValues.count)
+  }
+
+  pub lookup(name: QualifiedName) -> Option<SymbolId> {
+    if !lookupReady || !name.valid {
+      return None
+    }
+
+    let row: i64 = 0
+    while row < symbolValues.count {
+      if symbolValues[row].qualifiedName.fullHash == name.fullHash {
+        return Some(idValues[row])
+      }
+      row = row + 1
+    }
+
+    return None
+  }
+
+  pub lookupName(name: string) -> Option<SymbolId> {
+    let row: i64 = 0
+    while row < nameValues.count {
+      if nameValues[row] == name {
+        return Some(idValues[row])
+      }
+      row = row + 1
+    }
+    return None
+  }
+}
+
+impl view SymbolIndex {
+  pub symbolCount: i64 => symbolValues.count
+
+  pub nameCount: i64 => nameValues.count
+
+  pub unresolvedCount: i64 => unresolvedValues.count
+
+  pub resolved: bool => unresolvedCount == 0
+
+  pub aligned: bool =>
+    index.count == symbolCount &&
+    nameCount == symbolCount &&
+    idValues.count == symbolCount &&
+    symbols.count == symbolCount &&
+    names.count == nameCount
+
+  pub lookupReady: bool =>
+    valid &&
+    symbolCount > 0
+
+  pub valid: bool =>
+    deterministic &&
+    index.valid &&
+    names.valid &&
+    symbols.valid &&
+    unresolved.valid &&
+    aligned
+}

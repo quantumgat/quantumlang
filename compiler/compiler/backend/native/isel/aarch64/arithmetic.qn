@@ -1,0 +1,32 @@
+pub Aarch64ArithmeticSelect {
+  operation: string
+  widthBits: i64
+  selectedOpcode: string
+  flagsFormAllowed: bool = true
+  diagnosticCode: string = ""
+}
+
+impl Aarch64ArithmeticSelect {
+  pub Aarch64ArithmeticSelect(operation: string, widthBits: i64, selectedOpcode: string) =
+    This {
+      operation
+      widthBits
+      selectedOpcode
+    }
+
+  pub add(widthBits: i64) =
+    This("add", widthBits, "add")
+
+  pub sub(widthBits: i64) =
+    This("sub", widthBits, "sub")
+}
+
+impl view Aarch64ArithmeticSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    operation != "" &&
+    widthBits > 0 &&
+    selectedOpcode != ""
+
+  pub debugName: string => "isel.aarch64.arith.{operation}.{widthBits}"
+}

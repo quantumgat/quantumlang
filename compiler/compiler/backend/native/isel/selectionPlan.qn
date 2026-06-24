@@ -1,0 +1,51 @@
+pub SelectionPlan {
+  targetTriple: string
+  functionName: string
+  instructionCount: i64
+  virtualRegisterCount: i64
+  planHash: string
+  diagnosticCode: string = ""
+}
+
+impl SelectionPlan {
+  pub SelectionPlan(
+    targetTriple: string,
+    functionName: string,
+    instructionCount: i64,
+    virtualRegisterCount: i64,
+    planHash: string
+  ) =
+    This {
+      targetTriple
+      functionName
+      instructionCount
+      virtualRegisterCount
+      planHash
+    }
+
+  pub fromMachineFunction(function: MachineFunction, target: TargetIdentity) =
+    This {
+      targetTriple: target.targetTriple
+      functionName: function.name
+      instructionCount: function.instructionCount
+      virtualRegisterCount: function.virtualRegisterCount
+      planHash: "isel-plan:{target.targetOptionsHash}:{function.debugName}"
+      diagnosticCode: match function.valid && target.valid {
+        true => ""
+        false => "QNATIVE0300"
+      }
+    }
+}
+
+impl view SelectionPlan {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetTriple != "" &&
+    functionName != "" &&
+    instructionCount >= 0 &&
+    virtualRegisterCount >= 0 &&
+    planHash != ""
+
+  pub selectable: bool => valid
+  pub debugName: string => "isel.plan.{targetTriple}.{functionName}"
+}

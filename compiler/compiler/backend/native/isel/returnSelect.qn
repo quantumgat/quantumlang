@@ -1,0 +1,27 @@
+pub ReturnSelect {
+  valueCount: i64
+  selectedOpcode: string = "ret"
+  restoresFrame: bool = true
+  diagnosticCode: string = ""
+}
+
+impl ReturnSelect {
+  pub ReturnSelect(valueCount: i64) =
+    This {
+      valueCount
+    }
+
+  pub voidReturn() =
+    This(0)
+}
+
+impl view ReturnSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    valueCount >= 0 &&
+    selectedOpcode != "" &&
+    restoresFrame
+
+  pub terminal: bool => valid
+  pub debugName: string => "isel.return.{valueCount}"
+}

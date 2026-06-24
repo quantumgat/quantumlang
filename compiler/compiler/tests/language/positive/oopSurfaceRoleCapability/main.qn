@@ -1,0 +1,126 @@
+role Capability {
+  capabilityName() -> string
+}
+
+role PackRole<T, ...Caps> {
+  packValue() -> i64
+}
+
+role MainSurfaceRole {
+  mainSurfaceValue() -> i64
+}
+
+role ViewSurfaceRole {
+  viewSurfaceValue() -> i64
+}
+
+role ContextSurfaceRole {
+  contextSurfaceValue() -> i64
+}
+
+role ExtractSurfaceRole {
+  extractSurfaceValue() -> i64
+}
+
+role ExtendSurfaceRole {
+  extendedSurfaceValue() -> i64
+}
+
+AuthUser {
+  id: i64 = 0
+}
+
+CsrfToken {
+  value: string = ""
+}
+
+Session<T> {
+  value: T
+}
+
+HttpCtx<T, ...Caps> {
+  value: i64 = 0
+}
+
+SurfaceCounter {
+  value: i64 = 0
+}
+
+extend AuthUser : pub Capability {
+  pub capabilityName() -> string {
+    return "auth-user"
+  }
+}
+
+extend<T> Session<T> : pub Capability {
+  pub capabilityName() -> string {
+    return "session"
+  }
+}
+
+extend CsrfToken : pub Capability {
+  pub capabilityName() -> string {
+    return "csrf-token"
+  }
+}
+
+impl<T, ...Caps> HttpCtx<T, ...Caps> :
+  pub PackRole<T, ...Caps>
+where
+  T: Capability,
+  ...Caps: Capability
+{
+  pub packValue() -> i64 {
+    return this.value
+  }
+}
+
+impl SurfaceCounter : pub MainSurfaceRole {
+  pub mainSurfaceValue() -> i64 {
+    return this.value
+  }
+}
+
+impl view SurfaceCounter : pub ViewSurfaceRole {
+  pub viewSurfaceValue() -> i64 {
+    return this.value + 1
+  }
+}
+
+context SurfaceCounter : pub ContextSurfaceRole {
+  pub contextSurfaceValue() -> i64 {
+    return value + 2
+  }
+}
+
+extract SurfaceCounter : pub ExtractSurfaceRole {
+  pub extractSurfaceValue() -> i64 {
+    return value + 3
+  }
+}
+
+extend SurfaceCounter : pub ExtendSurfaceRole {
+  pub extendedSurfaceValue() -> i64 {
+    return this.value + 4
+  }
+}
+
+surfaceRoleProof() -> bool {
+  const counter: SurfaceCounter = { value: 10 }
+  return counter.mainSurfaceValue() == 10 &&
+    counter.viewSurfaceValue() == 11 &&
+    counter.contextSurfaceValue() == 12 &&
+    counter.extractSurfaceValue() == 13 &&
+    counter.extendedSurfaceValue() == 14
+}
+
+main() -> i64 {
+  const ctx: HttpCtx<AuthUser, Session<AuthUser>, CsrfToken> = { value: 7 }
+  if ctx.packValue() != 7 {
+    return 1
+  }
+  if !surfaceRoleProof() {
+    return 2
+  }
+  return 0
+}

@@ -1,0 +1,9 @@
+module stage
+
+mod {
+  bootstrapMaterializer
+}
+
+export {
+  bootstrapMaterializer.{BootstrapMaterializer}
+}

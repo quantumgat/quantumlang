@@ -1,0 +1,22 @@
+pub BootImage {
+  flash: FlashImage
+  startup: StartupObject
+  reset: ResetSequence
+  linkerScript: LinkerScript
+}
+
+impl BootImage {
+  pub BootImage(flash: FlashImage, startup: StartupObject, reset: ResetSequence, linkerScript: LinkerScript) =
+    This {
+      flash
+      startup
+      reset
+      linkerScript
+    }
+}
+
+impl view BootImage {
+  pub valid => flash.valid && startup.valid && reset.valid && linkerScript.valid
+  pub flashable => valid && flash.valid
+  pub bootable => valid && startup.valid && reset.valid && reset.callsConstructors
+}

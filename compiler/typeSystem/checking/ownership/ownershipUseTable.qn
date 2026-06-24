@@ -1,0 +1,217 @@
+import core::{Vec}
+
+pub OwnershipUseTable {
+  rowCount: i64 = 0
+  diagnosticCount: i64 = 0
+  copyRejectCount: i64 = 0
+  writeRejectCount: i64 = 0
+  escapeRejectCount: i64 = 0
+  manualReleaseRejectCount: i64 = 0
+  rows: Vec<OwnershipUseRow> = []
+  diagnostics: Vec<OwnershipRuleDiagnosticRow> = []
+  deterministic: bool = true
+}
+
+impl OwnershipUseTable {
+  pub fromTypedNodes(
+    nodes: Vec<TypedNodeFact>,
+    authorities: OwnershipAuthorityTable
+  ) -> This {
+    let table = This {
+      deterministic: authorities.valid
+    }
+    let index: i64 = 0
+    while index < nodes.count {
+      let node = nodes[index]
+      table.addNode(node, authorities)
+      index = index + 1
+    }
+    return table
+  }
+
+  pub fromRows(rows: Vec<OwnershipUseRow>, deterministic: bool) -> This {
+    let table = This {
+      deterministic
+    }
+    let index: i64 = 0
+    while index < rows.count {
+      table.add(rows[index])
+      index = index + 1
+    }
+    return table
+  }
+
+  pub one(row: OwnershipUseRow) -> This {
+    return This.fromRows([row], true)
+  }
+
+  addNode(node: TypedNodeFact, authorities: OwnershipAuthorityTable) {
+    let authority = authorityForNode(node, authorities)
+    if authority.valid == false {
+      return
+    }
+    if node.manualReleaseOperation && node.text == "free" {
+      add(OwnershipUseRow(
+        rows.count,
+        ManualFree,
+        node.ownershipSubject,
+        authority,
+        authority.addressKind
+      ))
+      return
+    }
+    if node.manualReleaseOperation && node.text == "delete" {
+      add(OwnershipUseRow(
+        rows.count,
+        ManualDelete,
+        node.ownershipSubject,
+        authority,
+        authority.addressKind
+      ))
+      return
+    }
+    if node.moveOperation {
+      add(OwnershipUseRow(
+        rows.count,
+        MoveOwner,
+        node.ownershipSubject,
+        authority,
+        authority.addressKind
+      ))
+      return
+    }
+    if node.addressOperation {
+      add(OwnershipUseRow(
+        rows.count,
+        BorrowAddress,
+        node.ownershipSubject,
+        authority,
+        authority.addressKind
+      ))
+      return
+    }
+    if node.dereferenceOperation {
+      add(OwnershipUseRow(
+        rows.count,
+        DereferenceAddress,
+        node.ownershipSubject,
+        authority,
+        authority.addressKind
+      ))
+      return
+    }
+    if node.copyOperation &&
+       node.initialization == false &&
+       authority.moveOnly {
+      add(OwnershipUseRow(
+        rows.count,
+        CopyOwner,
+        node.ownershipSubject,
+        authority,
+        authority.addressKind
+      ))
+      return
+    }
+    if node.assigned && authority.addressKind.readOnly {
+      add(OwnershipUseRow(
+        rows.count,
+        WriteThroughView,
+        node.ownershipSubject,
+        authority,
+        authority.addressKind
+      ))
+      return
+    }
+  }
+
+  authorityForNode(
+    node: TypedNodeFact,
+    authorities: OwnershipAuthorityTable
+  ) -> OwnershipAuthorityRow {
+    if node.manualReleaseOperation {
+      let argumentAuthorities = OwnershipArgumentTable.forNode(node, authorities)
+      let argumentAuthority = argumentAuthorities.firstAuthority
+      if argumentAuthority.valid {
+        return argumentAuthority
+      }
+    }
+    let authority = authorities.rowForTypeName(node.typeName)
+    if authority.valid {
+      return authority
+    }
+    authority = authorities.rowForTypeName(node.targetTypeName)
+    if authority.valid {
+      return authority
+    }
+    authority = authorities.rowForTypeName(node.receiverTypeName)
+    if authority.valid {
+      return authority
+    }
+    return OwnershipAuthorityRow()
+  }
+
+  add(row: OwnershipUseRow) {
+    rows.push(row)
+    rowCount = rows.count
+    if row.copyRejected {
+      copyRejectCount = copyRejectCount + 1
+    }
+    if row.writeRejected {
+      writeRejectCount = writeRejectCount + 1
+    }
+    if row.escapeRejected {
+      escapeRejectCount = escapeRejectCount + 1
+    }
+    if row.manualReleaseRejected {
+      manualReleaseRejectCount = manualReleaseRejectCount + 1
+    }
+    if row.rejected {
+      diagnostics.push(OwnershipRuleDiagnosticRow(
+        diagnostics.count,
+        row.diagnosticCode,
+        row.subject,
+        row.diagnosticMessage
+      ))
+    }
+    diagnosticCount = diagnostics.count
+  }
+}
+
+impl view OwnershipUseTable {
+  pub clean => diagnosticCount == 0
+
+  pub rejected => diagnosticCount > 0
+
+  pub firstDiagnosticMessage: string => {
+    if diagnostics.count == 0 {
+      return ""
+    }
+    let diagnostic = diagnostics[0]
+    return "{diagnostic.code}: {diagnostic.message}: {diagnostic.subject}"
+  }
+
+  pub rowsOwned =>
+    rows.valid &&
+    diagnostics.valid &&
+    rows.count == rowCount &&
+    diagnostics.count == diagnosticCount
+
+  pub rejectionCount =>
+    copyRejectCount +
+    writeRejectCount +
+    escapeRejectCount +
+    manualReleaseRejectCount
+
+  pub countsConsistent =>
+    rowCount >= diagnosticCount &&
+    diagnosticCount == rejectionCount &&
+    copyRejectCount >= 0 &&
+    writeRejectCount >= 0 &&
+    escapeRejectCount >= 0 &&
+    manualReleaseRejectCount >= 0
+
+  pub valid =>
+    deterministic &&
+    rowsOwned &&
+    countsConsistent
+}

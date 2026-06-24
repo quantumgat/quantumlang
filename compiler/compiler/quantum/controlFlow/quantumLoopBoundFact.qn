@@ -1,0 +1,39 @@
+pub QuantumLoopBoundFact {
+  maxIterations: i64
+  compileTimeBound: bool
+  runtimeGuardRequired: bool
+  deterministicExit: bool
+  diagnosticCode: string
+  valid: bool
+}
+
+impl QuantumLoopBoundFact {
+  pub QuantumLoopBoundFact(maxIterations: i64, compileTimeBound: bool, deterministicExit: bool) {
+    let valid = maxIterations >= 0 && compileTimeBound && deterministicExit
+
+    if valid {
+      return This {
+        maxIterations
+        compileTimeBound: true
+        runtimeGuardRequired: true
+        deterministicExit: true
+        diagnosticCode: ""
+        valid: true
+      }
+    }
+
+    This {
+      maxIterations
+      compileTimeBound
+      runtimeGuardRequired: true
+      deterministicExit
+      diagnosticCode: "QTQUANTUM0205"
+      valid: false
+    }
+  }
+}
+
+impl view QuantumLoopBoundFact {
+  pub bounded => compileTimeBound && maxIterations >= 0
+  pub deterministic => deterministicExit
+}

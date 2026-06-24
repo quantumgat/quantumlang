@@ -1,0 +1,52 @@
+pub ObjectSetResult {
+  unitCount: i64
+  reusedCount: i64
+  rebuiltCount: i64
+  targetTriple: string
+  profile: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl ObjectSetResult {
+  pub ObjectSetResult(unitCount: i64, reusedCount: i64, rebuiltCount: i64, targetTriple: string, profile: string) =
+    This { unitCount, reusedCount, rebuiltCount, targetTriple, profile }
+
+  pub empty(targetTriple: string, profile: string) =
+    This {
+      unitCount: 0
+      reusedCount: 0
+      rebuiltCount: 0
+      targetTriple
+      profile
+    }
+
+  addReused(count: i64) =
+    this {
+      unitCount: unitCount + count
+      reusedCount: reusedCount + count
+    }
+
+  addRebuilt(count: i64) =
+    this {
+      unitCount: unitCount + count
+      rebuiltCount: rebuiltCount + count
+    }
+}
+
+impl view ObjectSetResult {
+  pub valid => diagnosticCode == "" &&
+    unitCount >= 0 &&
+    reusedCount >= 0 &&
+    rebuiltCount >= 0 &&
+    unitCount == reusedCount + rebuiltCount &&
+    targetTriple != "" &&
+    profile != ""
+
+  pub fullyReused: bool => unitCount > 0 && reusedCount == unitCount
+  pub hasRebuilds: bool => rebuiltCount > 0
+  pub cacheReuseRatio => reusedCount
+  pub linkReady: bool => valid && unitCount > 0
+  pub lowerable: bool => valid
+  pub debugName => "native.object.result.{targetTriple}.{profile}.{unitCount}"
+}

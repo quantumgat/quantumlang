@@ -1,0 +1,55 @@
+pub QueryEpoch {
+  component: QueryComponent
+  value: u64
+  schemaVersion: u64 = 1
+}
+
+impl QueryEpoch {
+  pub forKind(kind: QueryKind) -> This {
+    return This {
+      component: queryComponentFor(kind)
+      value: queryComponentEpoch(queryComponentFor(kind))
+    }
+  }
+}
+
+impl view QueryEpoch {
+  pub valid: bool => value > 0 && schemaVersion > 0
+  pub stableKey: string => "{component}:e{value}:s{schemaVersion}"
+}
+
+queryComponentFor(kind: QueryKind) -> QueryComponent {
+  if kind == QueryKind.SourceFingerprint { return QueryComponent.Source }
+  if kind == QueryKind.Tokens || kind == QueryKind.Ast { return QueryComponent.Syntax }
+  if kind == QueryKind.ExportSurface || kind == QueryKind.ImportGraph {
+    return QueryComponent.Module
+  }
+  if kind == QueryKind.SymbolDependencySet || kind == QueryKind.ResolveSymbol {
+    return QueryComponent.Resolve
+  }
+  if kind == QueryKind.TypeSignature || kind == QueryKind.TypeBody {
+    return QueryComponent.Type
+  }
+  if kind == QueryKind.HirBody { return QueryComponent.Hir }
+  if kind == QueryKind.MirBody { return QueryComponent.Mir }
+  if kind == QueryKind.OptimizedBody { return QueryComponent.Optimize }
+  if kind == QueryKind.GenericInstance { return QueryComponent.Generic }
+  if kind == QueryKind.NativeObject { return QueryComponent.Native }
+  if kind == QueryKind.QuantumArtifact { return QueryComponent.Quantum }
+  return QueryComponent.Link
+}
+
+queryComponentEpoch(component: QueryComponent) -> u64 {
+  if component == QueryComponent.Source { return 1 }
+  if component == QueryComponent.Syntax { return 1 }
+  if component == QueryComponent.Module { return 1 }
+  if component == QueryComponent.Resolve { return 1 }
+  if component == QueryComponent.Type { return 1 }
+  if component == QueryComponent.Hir { return 1 }
+  if component == QueryComponent.Mir { return 1 }
+  if component == QueryComponent.Optimize { return 1 }
+  if component == QueryComponent.Generic { return 1 }
+  if component == QueryComponent.Native { return 1 }
+  if component == QueryComponent.Quantum { return 1 }
+  return 1
+}

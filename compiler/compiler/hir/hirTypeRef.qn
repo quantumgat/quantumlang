@@ -1,0 +1,48 @@
+pub HirTypeRef {
+  id: i64
+  typeName: string
+  resolved: bool
+  diagnosticCode: string = ""
+}
+
+impl HirTypeRef {
+  pub HirTypeRef(id: i64, typeName: string, resolved: bool) =
+    This { id, typeName, resolved }
+
+  pub unresolved(id: i64, typeName: string) =
+    This {
+      id
+      typeName
+      resolved: false
+    }
+
+  pub unknown(id: i64) =
+    This {
+      id
+      typeName: "Unknown"
+      resolved: false
+      diagnosticCode: "QHIR0601"
+    }
+
+  markResolved() =
+    this {
+      resolved: true
+      diagnosticCode: ""
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QHIR0601"
+    }
+}
+
+impl view HirTypeRef {
+  pub valid => diagnosticCode == "" && validShape && resolved
+  pub validShape => id >= 0 && typeName != ""
+  pub generic => typeName.contains("<")
+  pub unknownType => typeName == "Unknown"
+  pub concrete => resolved && generic == false && unknownType == false
+  pub carrier => typeName.startsWith("Result<") || typeName.startsWith("Option<")
+  pub lowerable => valid
+  pub debugName => "hir.type.{id}.{typeName}"
+}

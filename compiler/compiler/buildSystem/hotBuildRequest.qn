@@ -1,0 +1,45 @@
+pub HotBuildRequest {
+  requestId: u64
+  command: HotBuildCommand
+  packageRoot: string
+  targetName: string
+  targetKey: string
+  profileKey: string
+  dirtyFileCount: usize
+  requestedQueryCount: usize
+  clientProtocolVersion: u64
+}
+
+impl HotBuildRequest {
+  pub HotBuildRequest(
+    requestId: u64,
+    command: HotBuildCommand,
+    packageRoot: string,
+    targetName: string,
+    targetKey: string,
+    profileKey: string,
+    dirtyFileCount: usize,
+    requestedQueryCount: usize,
+    clientProtocolVersion: u64
+  ) =
+    This {
+      requestId
+      command
+      packageRoot
+      targetName
+      targetKey
+      profileKey
+      dirtyFileCount
+      requestedQueryCount
+      clientProtocolVersion
+    }
+}
+
+impl view HotBuildRequest {
+  pub buildCommand => command == HotBuildCommand.Build
+  pub checkCommand => command == HotBuildCommand.Check
+  pub shutdownCommand => command == HotBuildCommand.Shutdown
+  pub dirty => dirtyFileCount > 0
+  pub queryDriven => requestedQueryCount > 0
+  pub valid => requestId > 0 && packageRoot != "" && targetName != "" && clientProtocolVersion > 0
+}

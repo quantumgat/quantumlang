@@ -1,0 +1,26 @@
+pub OopSurfacePolicy {
+  receiverFieldsEnabled: bool = false
+  extensionLookupEnabled: bool = false
+  viewPropertyGettersEnabled: bool = false
+  asyncExtract: bool = false
+  directStaticLowering: bool = true
+}
+
+impl OopSurfacePolicy {
+  pub forKind(kind: OopSurfaceKind) =
+    This {
+      receiverFieldsEnabled: kind == OopSurfaceKind.Context || kind == OopSurfaceKind.Extract
+      extensionLookupEnabled: kind == OopSurfaceKind.Extend
+      viewPropertyGettersEnabled: kind == OopSurfaceKind.ImplView
+      asyncExtract: false
+      directStaticLowering: kind != OopSurfaceKind.Unknown
+    }
+}
+
+impl view OopSurfacePolicy {
+  pub valid => directStaticLowering
+
+  pub centralized =>
+    directStaticLowering &&
+    !(extensionLookupEnabled && viewPropertyGettersEnabled)
+}

@@ -1,0 +1,24 @@
+pub LayoutVerification {
+  layoutValid: bool
+  classValid: bool
+  targetValid: bool
+  fingerprintValid: bool
+}
+
+impl LayoutVerification {
+  pub verify(product: LayoutProduct) =
+    This {
+      layoutValid: product.typeLayout.valid
+      classValid: product.layoutClass.valid
+      targetValid: product.context.valid
+      fingerprintValid: product.fingerprint.valid
+    }
+}
+
+impl view LayoutVerification {
+  pub valid: bool =>
+    layoutValid &&
+    classValid &&
+    targetValid &&
+    fingerprintValid
+}

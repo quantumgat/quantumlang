@@ -1,0 +1,20 @@
+import core::{Hash256, HashDomain, HashError, StableHash, StableHashWriter}
+
+impl ObjectUnitKey {
+  pub stableHash() -> Result<Hash256, HashError> {
+    let out = StableHashWriter(HashDomain.Object)
+    this.stableHashInto(out)?
+    return out.finish()
+  }
+
+  stableHashInto(out: StableHashWriter) -> Result<void, HashError> {
+    out.begin("backend.native.ObjectUnitKey", 1)?
+    out.writeString("stableUnitId", stableUnitId)?
+    out.writeString("targetTriple", targetTriple)?
+    out.writeString("profile", profile)?
+    out.writeString("abiHash", abiHash)?
+    out.writeString("mirHash", mirHash)?
+    out.writeString("backendHash", backendHash)?
+    return out.end()
+  }
+}

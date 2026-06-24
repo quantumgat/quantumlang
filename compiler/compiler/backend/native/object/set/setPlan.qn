@@ -1,0 +1,139 @@
+pub ObjectSetPlan {
+  packageRoot: string
+  targetTriple: string = "x86_64-unknown-linux-gnu"
+  profile: string = "debug"
+  objectFormat: string = "elf"
+  abi: string = "sysv"
+  unitCount: i64
+  reusedCount: i64
+  rebuiltCount: i64
+  stableUnitPrefix: string
+  abiHash: string
+  mirHash: string
+  backendHash: string
+  objectSetHash: string
+  outputPath: string
+}
+
+impl ObjectSetPlan {
+  pub fromContract(contract: InputContract) =
+    This.fromContractForTarget(contract, TargetIdentity.hostDefault())
+
+  pub fromContractForTarget(
+    contract: InputContract,
+    target: TargetIdentity
+  ) =
+    This {
+      packageRoot: contract.source.packageRoot
+      targetTriple: target.targetTriple
+      profile: target.profile
+      objectFormat: target.objectFormat
+      abi: target.abi
+      unitCount: contract.source.sourceFileCount
+      reusedCount: 0
+      rebuiltCount: contract.source.sourceFileCount
+      stableUnitPrefix: contract.stableUnitPrefix
+      abiHash: contract.abiHash
+      mirHash: contract.mirHash
+      backendHash: target.backendHash
+      objectSetHash: contract.objectSetHash
+      outputPath: Layout.forPackage(
+        contract.source.packageRoot,
+        "qtlc2",
+        target.profile
+      ).objectSetPath
+    }
+
+  pub fromSummary(summary: InputSummary) =
+    This.fromSummaryForTarget(summary, TargetIdentity.hostDefault())
+
+  pub fromSummaryForTarget(
+    summary: InputSummary,
+    target: TargetIdentity
+  ) =
+    This {
+      packageRoot: summary.packageRoot
+      targetTriple: target.targetTriple
+      profile: target.profile
+      objectFormat: target.objectFormat
+      abi: target.abi
+      unitCount: summary.sourceFileCount
+      reusedCount: 0
+      rebuiltCount: summary.sourceFileCount
+      stableUnitPrefix: summary.stableUnitPrefix
+      abiHash: summary.abiHash
+      mirHash: summary.mirHash
+      backendHash: target.backendHash
+      objectSetHash: summary.objectSetHash
+      outputPath: Layout.forPackage(
+        summary.packageRoot,
+        "qtlc2",
+        target.profile
+      ).objectSetPath
+    }
+
+  pub fromBuildInputs(
+    packageRoot: string,
+    sourceFileCount: i64,
+    declarationRecordCount: i64,
+    typeCount: i64,
+    functionCount: i64,
+    behavioralCount: i64,
+    astNodeCount: i64,
+    typedNodeCount: i64,
+    typeContextCount: i64,
+    typeFactCount: i64
+  ) =
+    This.fromSummary(
+      InputSummary(
+        packageRoot,
+        sourceFileCount,
+        declarationRecordCount,
+        typeCount,
+        functionCount,
+        behavioralCount,
+        astNodeCount,
+        typedNodeCount,
+        typeContextCount,
+        typeFactCount
+      )
+    )
+}
+
+context ObjectSetPlan {
+  pub unitKeyAt(index: i64) -> ObjectUnitKey {
+    return ObjectUnitKey(
+      "{stableUnitPrefix}:{index}",
+      targetTriple,
+      profile,
+      abiHash,
+      "{mirHash}:{index}",
+      backendHash
+    )
+  }
+}
+
+impl view ObjectSetPlan {
+  pub objectResult() =
+    ObjectSetResult(unitCount, reusedCount, rebuiltCount, targetTriple, profile)
+
+  pub emission() =
+    ObjectEmission(unitCount, reusedCount, rebuiltCount)
+
+  pub identityValid: bool =>
+    packageRoot != "" &&
+    targetTriple != "" &&
+    objectFormat != "" &&
+    abi != "" &&
+    stableUnitPrefix != "" &&
+    abiHash != "" &&
+    mirHash != "" &&
+    backendHash != "" &&
+    objectSetHash != "" &&
+    outputPath != ""
+
+  pub valid: bool => identityValid && objectResult().valid && emission().valid
+  pub deterministic: bool => objectResult().deterministic && emission().deterministic
+  pub linkReady: bool => objectResult().linkReady
+  pub fingerprint => objectSetHash
+}

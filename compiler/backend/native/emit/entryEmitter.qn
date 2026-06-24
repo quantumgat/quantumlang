@@ -1,0 +1,36 @@
+pub EntryEmitter {
+  symbolName: string
+  sectionName: string = ".text"
+  offset: i64 = 0
+  byteCount: i64 = 0
+  diagnosticCode: string = ""
+}
+
+impl EntryEmitter {
+  pub EntryEmitter(symbolName: string, byteCount: i64) =
+    This {
+      symbolName
+      byteCount
+    }
+
+  pub appMain(byteCount: i64) =
+    This("main", byteCount)
+
+  pub programMain(byteCount: i64) =
+    This("main", byteCount)
+
+  pub symbol() =
+    ObjectSymbol.function(symbolName, sectionName, offset, byteCount)
+}
+
+impl view EntryEmitter {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    symbolName != "" &&
+    sectionName != "" &&
+    offset >= 0 &&
+    byteCount >= 0
+
+  pub linkEntryReady: bool => valid && symbolName == "main"
+  pub debugName: string => "emit.entry.{symbolName}.{byteCount}"
+}

@@ -1,0 +1,9 @@
+[module]
+name = "native"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/backend/native"
+role = "native-backend"
+
+[dependencies]
+modules = ["mir", "machine"]

@@ -1,0 +1,67 @@
+import frontend::{FrontendProduct}
+
+pub TypecheckSymbolState {
+  fileSymbolCount: i64
+  moduleSymbolCount: i64
+  functionSymbolCount: i64
+  importSymbolCount: i64
+  publicSymbolCount: i64
+  privateSymbolCount: i64 = 0
+  diagnosticCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl TypecheckSymbolState {
+  pub forFrontend(frontend: FrontendProduct) =
+    This.forEnvironment(TypeEnvironment.forFrontend(frontend))
+
+  pub forEnvironment(environment: TypeEnvironment) =
+    This {
+      fileSymbolCount: environment.fileScopeCount
+      moduleSymbolCount: environment.moduleScopeCount
+      functionSymbolCount: environment.functionSymbolCount
+      importSymbolCount: environment.importEdgeCount
+      publicSymbolCount: environment.publicSymbolCount
+      privateSymbolCount: environment.privateSymbolCount
+      diagnosticCount: environment.diagnosticCount
+      deterministic: environment.deterministic
+    }
+}
+
+impl view TypecheckSymbolState {
+  pub symbolCount =>
+    fileSymbolCount +
+    moduleSymbolCount +
+    functionSymbolCount +
+    importSymbolCount +
+    publicSymbolCount +
+    privateSymbolCount
+
+  pub hasFiles => fileSymbolCount > 0
+
+  pub hasModules => moduleSymbolCount > 0
+
+  pub hasFunctions => functionSymbolCount > 0
+
+  pub hasPublicApi => publicSymbolCount > 0
+
+  pub clean => diagnosticCount == 0
+
+  pub countsConsistent =>
+    fileSymbolCount >= 0 &&
+    moduleSymbolCount >= 0 &&
+    functionSymbolCount >= 0 &&
+    importSymbolCount >= 0 &&
+    publicSymbolCount >= 0 &&
+    privateSymbolCount >= 0 &&
+    diagnosticCount >= 0
+
+  pub valid =>
+    deterministic &&
+    clean &&
+    countsConsistent &&
+    hasFiles &&
+    hasModules &&
+    hasFunctions &&
+    hasPublicApi
+}

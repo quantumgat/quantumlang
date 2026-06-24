@@ -1,0 +1,6 @@
+[module]
+name = "core"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/core"
+role = "compiler-owned-data-contracts"

@@ -1,0 +1,33 @@
+import core::{FileId}
+import source::{SourceSpan}
+
+pub ItemParser {
+  cursor: i64
+  fileId: FileId = {}
+}
+
+impl ItemParser {
+  pub ItemParser(fileId: FileId) =
+    This {
+      cursor: 0
+      fileId
+    }
+
+  pub ItemParser(fileId: u64) =
+    This(FileId(0, 0, fileId))
+
+  pub parseImport() -> AstItem {
+    let node = AstNode(10, AstNodeKind.Import, SourceSpan(fileId, cursor, cursor + 1), 1)
+    return AstItem(10, AstItemKind.ImportDecl, node)
+  }
+
+  pub parseExport() -> AstItem {
+    let node = AstNode(11, AstNodeKind.Export, SourceSpan(fileId, cursor, cursor + 1), 1)
+    return AstItem(11, AstItemKind.ExportDecl, node)
+  }
+
+  pub parseFunction() -> AstItem {
+    let node = AstNode(12, AstNodeKind.FunctionDecl, SourceSpan(fileId, cursor, cursor + 1), 3)
+    return AstItem(12, AstItemKind.FunctionDecl, node)
+  }
+}

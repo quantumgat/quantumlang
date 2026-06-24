@@ -1,0 +1,20 @@
+pub QanyType {
+  preservesOwnership: bool
+  typeErased: bool
+  noClonePreserved: bool
+  valid: bool
+}
+
+impl QanyType {
+  pub QanyType() =
+    This {
+      preservesOwnership: true
+      typeErased: true
+      noClonePreserved: true
+      valid: true
+    }
+}
+
+impl view QanyType {
+  pub safeErasure => preservesOwnership && noClonePreserved
+}

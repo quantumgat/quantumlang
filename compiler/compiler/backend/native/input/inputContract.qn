@@ -1,0 +1,82 @@
+pub InputContract {
+  source: SourceUnitInput
+  mir: MirInput
+  types: TypeFactInput
+  ownership: OwnershipInput
+  diagnosticCode: string = ""
+}
+
+impl InputContract {
+  pub InputContract(
+    source: SourceUnitInput,
+    mir: MirInput,
+    types: TypeFactInput,
+    ownership: OwnershipInput
+  ) =
+    This {
+      source
+      mir
+      types
+      ownership
+    }
+
+  pub fromSummary(summary: InputSummary) =
+    This(
+      SourceUnitInput(
+        summary.packageRoot,
+        summary.sourceFileCount,
+        summary.declarationRecordCount,
+        summary.astNodeCount
+      ),
+      MirInput(
+        summary.functionCount,
+        0,
+        0,
+        summary.typedNodeCount,
+        0
+      ),
+      TypeFactInput(
+        summary.typeCount,
+        summary.functionCount,
+        summary.behavioralCount,
+        summary.typedNodeCount,
+        summary.typeContextCount,
+        summary.typeFactCount
+      ),
+      OwnershipInput(0, 0, 0, 0, 0, true, summary.valid)
+    )
+}
+
+impl view InputContract {
+  pub valid: bool => {
+    diagnosticCode == "" &&
+      source.valid &&
+      mir.valid &&
+      types.valid &&
+      ownership.valid
+  }
+
+  pub lowerable => valid && mir.lowerable
+
+  pub summary() =
+    InputSummary(
+      source.packageRoot,
+      source.sourceFileCount,
+      source.declarationRecordCount,
+      types.typeCount,
+      types.functionCount,
+      types.behavioralCount,
+      source.astNodeCount,
+      types.typedNodeCount,
+      types.typeContextCount,
+      types.typeFactCount
+    )
+
+  pub authorityPlan() = ownership.authorityPlan()
+
+  pub stableUnitPrefix => source.stableUnitPrefix
+  pub abiHash => "{types.abiHash}:{ownership.ownershipHash}"
+  pub mirHash => mir.mirHash
+  pub objectSetHash => "{source.objectSetHash}:{types.typeHash}:{mir.mirHash}:{ownership.ownershipHash}"
+  pub inputHash => "native-input:{source.sourceHash}:{types.typeHash}:{mir.mirHash}:{ownership.ownershipHash}"
+}

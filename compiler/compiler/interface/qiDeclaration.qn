@@ -1,0 +1,18 @@
+pub QiDeclaration {
+  modulePath: string
+  symbolName: string
+  kind: string
+  signatureHash: string
+  public: bool
+}
+
+impl QiDeclaration {
+  pub QiDeclaration(modulePath: string, symbolName: string, kind: string, signatureHash: string, public: bool) =
+    This { modulePath, symbolName, kind, signatureHash, public }
+}
+
+impl view QiDeclaration {
+  pub exported => public
+  pub hasSignature => signatureHash != ""
+  pub valid => modulePath != "" && symbolName != "" && kind != "" && hasSignature && exported
+}

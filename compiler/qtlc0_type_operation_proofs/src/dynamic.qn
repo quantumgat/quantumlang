@@ -1,0 +1,7 @@
+pub proof_dynamic() -> i64 {
+  let value: any = 42
+  println("dynamic ok: {value}")
+  let qsource: any = 7
+  let qvalue: qany = qsource
+  return 0
+}

@@ -1,0 +1,131 @@
+import core::{FileId}
+import core::{DeclarationId, Slice}
+
+pub DeclarationRecordRange {
+  kind: DeclarationKind
+  firstId: i64
+  count: i64
+  modulePath: string
+  namePrefix: string
+  sampleName: string = ""
+  parserProduced: bool = true
+  deterministic: bool = true
+}
+
+impl DeclarationRecordRange {
+  pub DeclarationRecordRange(
+    kind: DeclarationKind,
+    firstId: i64,
+    count: i64,
+    modulePath: string,
+    namePrefix: string
+  ) =
+    This { kind, firstId, count, modulePath, namePrefix }
+
+  pub sampled(modulePath: string, sampleName: string) -> This {
+    return this {
+      modulePath: modulePath
+      sampleName: sampleName
+    }
+  }
+
+  pub firstRecord() -> DeclarationRecord {
+    return DeclarationRecord.parser(
+      firstId,
+      kind,
+      modulePath,
+      firstName,
+      FileId(1, 1, 1),
+      firstId,
+      firstId + 1,
+      DeclarationVisibility.Public
+    )
+  }
+
+  pub declarationIds() -> Slice<DeclarationId> {
+    if empty {
+      return Slice()
+    }
+
+    return Slice(firstId, count)
+  }
+
+  pub records() -> Slice<DeclarationRecord> {
+    if empty {
+      return Slice()
+    }
+
+    return Slice(firstId - 1, count)
+  }
+
+  pub publicRecords() -> Slice<DeclarationRecord> {
+    return records()
+  }
+
+  pub unresolvedRecords() -> Slice<DeclarationRecord> {
+    return Slice()
+  }
+
+  pub publicDeclarationIds() -> Slice<DeclarationId> {
+    return declarationIds()
+  }
+
+  pub unresolvedDeclarationIds() -> Slice<DeclarationId> {
+    return Slice()
+  }
+}
+
+impl view DeclarationRecordRange {
+  pub empty: bool => count == 0
+
+  pub present: bool => count > 0
+
+  pub lastId => firstId + count - 1
+
+  pub firstName: string => {
+    if count == 0 {
+      ""
+    } else if sampleName != "" {
+      sampleName
+    } else {
+      "{namePrefix}:{firstId}"
+    }
+  }
+
+  pub lastName: string => {
+    if count == 0 {
+      ""
+    } else if sampleName != "" && count == 1 {
+      sampleName
+    } else {
+      "{namePrefix}:{lastId}"
+    }
+  }
+
+  pub fullName: string => {
+    if modulePath == "" {
+      firstName
+    } else {
+      "{modulePath}::{firstName}"
+    }
+  }
+
+  pub hasModule: bool => modulePath != ""
+
+  pub hasNamePrefix: bool => namePrefix != ""
+
+  pub hasSampleName: bool => sampleName != ""
+
+  pub hasNames: bool => present && (hasNamePrefix || hasSampleName)
+
+  pub idRangeValid: bool => empty || firstId > 0
+
+  pub valid: bool =>
+    deterministic &&
+    parserProduced &&
+    kind != DeclarationKind.Unknown &&
+    count >= 0 &&
+    idRangeValid &&
+    hasModule &&
+    hasNames
+}

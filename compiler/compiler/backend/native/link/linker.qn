@@ -1,0 +1,59 @@
+pub Linker {
+  planHash: string
+  resolverHash: string
+  linkerHash: string
+  executableHash: string
+  mapHash: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl Linker {
+  pub Linker(
+    planHash: string,
+    resolverHash: string,
+    linkerHash: string,
+    executableHash: string,
+    mapHash: string
+  ) =
+    This {
+      planHash
+      resolverHash
+      linkerHash
+      executableHash
+      mapHash
+    }
+
+  pub fromPlan(
+    plan: LinkPlan,
+    resolver: LinkResolver,
+    systemLinker: SystemLinker,
+    executable: Executable,
+    mapFile: MapFile
+  ) =
+    This {
+      planHash: "{plan.inputSetHash}:{plan.outputPath}:{plan.relinkRequired}"
+      resolverHash: resolver.resolverHash
+      linkerHash: systemLinker.linkerHash
+      executableHash: executable.executableHash
+      mapHash: mapFile.mapHash
+      deterministic: resolver.deterministic && systemLinker.deterministic && executable.deterministic && mapFile.deterministic
+      diagnosticCode: match plan.valid && resolver.resolved && systemLinker.valid && executable.valid && mapFile.valid {
+        true => ""
+        false => "QNATIVE0840"
+      }
+    }
+}
+
+impl view Linker {
+  pub valid => diagnosticCode == "" &&
+    planHash != "" &&
+    resolverHash != "" &&
+    linkerHash != "" &&
+    executableHash != "" &&
+    mapHash != "" &&
+    deterministic
+  pub executableReady => valid
+  pub linkHash => "linker:{planHash}:{resolverHash}:{linkerHash}:{executableHash}:{mapHash}"
+  pub debugName => "linker.{executableHash}"
+}

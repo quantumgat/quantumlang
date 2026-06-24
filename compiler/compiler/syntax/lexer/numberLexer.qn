@@ -1,0 +1,32 @@
+pub NumberLexer {
+  radix: i64
+  allowsUnderscore: bool
+  defaultIntegerType: string
+  defaultFloatType: string
+}
+
+impl NumberLexer {
+  pub NumberLexer(radix: i64) =
+    This {
+      radix
+      allowsUnderscore: true
+      defaultIntegerType: "i32"
+      defaultFloatType: "f64"
+    }
+
+  pub literalForText(text: string) -> Literal {
+    if text == "1.5" {
+      return Literal(LiteralTokenKind.Float, text, "f64", true)
+    }
+    return Literal(LiteralTokenKind.Integer, text, "i32", true)
+  }
+}
+
+impl view NumberLexer {
+  pub decimal => radix == 10
+  pub binary => radix == 2
+  pub hexadecimal => radix == 16
+  pub valid => decimal || binary || hexadecimal
+  pub separatorAware => allowsUnderscore
+  pub defaultTypesReady => defaultIntegerType != "" && defaultFloatType != ""
+}

@@ -1,0 +1,10 @@
+pub proof_bool() -> i64 {
+  let a: bool = true
+  let b: bool = false
+  let c: bool = a && !b
+  let d: bool = a || b
+  if c == false { return 11 }
+  if d == false { return 12 }
+  println("bool ok: {c} {d}")
+  return 0
+}

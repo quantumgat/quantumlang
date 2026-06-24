@@ -1,0 +1,173 @@
+pub QueryKey {
+  kind: QueryKind
+  subject: StableId
+  epoch: QueryEpoch
+  targetKey: string = ""
+  profileKey: string = ""
+  featureKey: string = ""
+}
+
+impl QueryKey {
+  pub init(
+    kind: QueryKind,
+    subject: StableId,
+    targetKey: string,
+    profileKey: string,
+    featureKey: string
+  ) =
+    This {
+      kind
+      subject
+      epoch: QueryEpoch.forKind(kind)
+      targetKey
+      profileKey
+      featureKey
+    }
+
+  pub sourceFingerprint(fileId: StableId) =
+    This.frontend(QueryKind.SourceFingerprint, fileId)
+
+  pub tokens(fileId: StableId) =
+    This.frontend(QueryKind.Tokens, fileId)
+
+  pub ast(fileId: StableId) =
+    This.frontend(QueryKind.Ast, fileId)
+
+  pub exportSurface(moduleId: StableId) =
+    This.frontend(QueryKind.ExportSurface, moduleId)
+
+  pub symbolDependencySet(ownerId: StableId) =
+    This.frontend(QueryKind.SymbolDependencySet, ownerId)
+
+  pub importGraph(moduleId: StableId) =
+    This.frontend(QueryKind.ImportGraph, moduleId)
+
+  pub resolveSymbol(symbolId: StableId) =
+    This.frontend(QueryKind.ResolveSymbol, symbolId)
+
+  pub typeSignature(symbolId: StableId) =
+    This.frontend(QueryKind.TypeSignature, symbolId)
+
+  pub typeBody(bodyId: StableId) =
+    This.frontend(QueryKind.TypeBody, bodyId)
+
+  pub hirBody(bodyId: StableId) =
+    This.frontend(QueryKind.HirBody, bodyId)
+
+  pub mirBody(bodyId: StableId) =
+    This.frontend(QueryKind.MirBody, bodyId)
+
+  pub optimizedBody(
+    bodyId: StableId,
+    targetKey: string,
+    profileKey: string,
+    featureKey: string
+  ) =
+    This.backend(
+      QueryKind.OptimizedBody,
+      bodyId,
+      targetKey,
+      profileKey,
+      featureKey
+    )
+
+  pub genericInstance(instanceId: StableId) =
+    This.frontend(QueryKind.GenericInstance, instanceId)
+
+  pub nativeObject(
+    objectUnitId: StableId,
+    targetKey: string,
+    profileKey: string
+  ) =
+    This.backend(
+      QueryKind.NativeObject,
+      objectUnitId,
+      targetKey,
+      profileKey,
+      ""
+    )
+
+  pub quantumArtifact(
+    artifactId: StableId,
+    targetKey: string,
+    profileKey: string,
+    featureKey: string
+  ) =
+    This.backend(
+      QueryKind.QuantumArtifact,
+      artifactId,
+      targetKey,
+      profileKey,
+      featureKey
+    )
+
+  pub linkedTarget(
+    targetId: StableId,
+    targetKey: string,
+    profileKey: string
+  ) =
+    This.backend(
+      QueryKind.LinkedTarget,
+      targetId,
+      targetKey,
+      profileKey,
+      ""
+    )
+
+  frontend(kind: QueryKind, subject: StableId) =
+    This {
+      kind
+      subject
+      epoch: QueryEpoch.forKind(kind)
+    }
+
+  backend(
+    kind: QueryKind,
+    subject: StableId,
+    targetKey: string,
+    profileKey: string,
+    featureKey: string
+  ) =
+    This {
+      kind
+      subject
+      epoch: QueryEpoch.forKind(kind)
+      targetKey
+      profileKey
+      featureKey
+    }
+}
+
+impl view QueryKey {
+  pub targetSpecific: bool =>
+    targetKey != "" ||
+    profileKey != "" ||
+    featureKey != ""
+
+  pub frontendKind: bool =>
+    kind == QueryKind.SourceFingerprint ||
+    kind == QueryKind.Tokens ||
+    kind == QueryKind.Ast ||
+    kind == QueryKind.ExportSurface ||
+    kind == QueryKind.SymbolDependencySet ||
+    kind == QueryKind.ImportGraph ||
+    kind == QueryKind.ResolveSymbol ||
+    kind == QueryKind.TypeSignature ||
+    kind == QueryKind.TypeBody ||
+    kind == QueryKind.HirBody ||
+    kind == QueryKind.MirBody ||
+    kind == QueryKind.GenericInstance
+
+  pub backendKind: bool => frontendKind == false
+  pub frontendKey: bool => frontendKind && targetSpecific == false
+  pub backendKey: bool => backendKind && targetSpecific
+  pub valid: bool =>
+    subject.valid &&
+    epoch.valid &&
+    (
+      frontendKey ||
+      backendKey
+    )
+  pub stableKey: string =>
+    "{kind}:{subject.stableKey}:{epoch.stableKey}:{targetKey}:{profileKey}:{featureKey}"
+}

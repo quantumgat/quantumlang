@@ -1,0 +1,26 @@
+pub ExpressionTypingContext {
+  targetType: string
+  currentType: string
+  operatorSymbol: string
+  contextClear: bool
+  quotedMapKeys: bool
+}
+
+impl ExpressionTypingContext {
+  pub ExpressionTypingContext(
+    targetType: string,
+    currentType: string,
+    operatorSymbol: string,
+    contextClear: bool,
+    quotedMapKeys: bool
+  ) =
+    This { targetType, currentType, operatorSymbol, contextClear, quotedMapKeys }
+}
+
+impl view ExpressionTypingContext {
+  pub hasTarget => targetType != ""
+  pub hasCurrentType => currentType != ""
+  pub hasOperator => operatorSymbol != ""
+  pub literalTarget: LiteralTargetContext =>
+    LiteralTargetContext(targetType, contextClear, quotedMapKeys)
+}

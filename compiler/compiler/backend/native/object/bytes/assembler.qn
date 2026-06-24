@@ -1,0 +1,99 @@
+import core::{ByteBuffer}
+
+pub ObjectByteAssembler {
+  writer: ObjectByteWriter
+  diagnosticCode: string = ""
+}
+
+impl ObjectByteAssembler {
+  pub ObjectByteAssembler(writer: ObjectByteWriter) =
+    This { writer }
+
+  pub fromWriter(writer: ObjectByteWriter) =
+    This {
+      writer
+      diagnosticCode: match writer.valid {
+        true => ""
+        false => "QNATIVE0761"
+      }
+    }
+
+  pub assemble(segments: ObjectByteSegmentSet) -> ObjectByteAssemblyResult {
+    if valid == false || segments.valid == false {
+      return ObjectByteAssemblyResult.failed(segments, "QNATIVE0762")
+    }
+
+    let out = ByteBuffer.withCapacity(payloadCapacity)
+    if !out.append(segments.header.payload) {
+      return ObjectByteAssemblyResult.failed(segments, "QNATIVE0763")
+    }
+    if !out.append(segments.sectionNames.payload) {
+      return ObjectByteAssemblyResult.failed(segments, "QNATIVE0764")
+    }
+    if !out.align(8) {
+      return ObjectByteAssemblyResult.failed(segments, "QNATIVE0764P")
+    }
+    if !out.append(segments.nullSection.payload) {
+      return ObjectByteAssemblyResult.failed(segments, "QNATIVE0765")
+    }
+    if !out.append(segments.textSection.payload) {
+      return ObjectByteAssemblyResult.failed(segments, "QNATIVE0766")
+    }
+    if !out.append(segments.stringSection.payload) {
+      return ObjectByteAssemblyResult.failed(segments, "QNATIVE0767")
+    }
+
+    return ObjectByteAssemblyResult.fromSegments(segments, out.finish())
+  }
+
+  pub assembleRelocatable(
+    segments: ObjectRelocatableSegmentSet
+  ) -> ObjectRelocatableAssemblyResult {
+    if valid == false || segments.valid == false {
+      return ObjectRelocatableAssemblyResult.failed(segments, "QNATIVE0772")
+    }
+
+    let out = ByteBuffer.withCapacity(payloadCapacity)
+    if !out.append(segments.header.payload) {
+      return ObjectRelocatableAssemblyResult.failed(segments, "QNATIVE0773")
+    }
+    if !out.append(segments.text.payload) {
+      return ObjectRelocatableAssemblyResult.failed(segments, "QNATIVE0774")
+    }
+    if !out.append(segments.rodata.payload) {
+      return ObjectRelocatableAssemblyResult.failed(segments, "QNATIVE0775")
+    }
+    if !out.append(segments.rodataPadding.payload) {
+      return ObjectRelocatableAssemblyResult.failed(segments, "QNATIVE0776")
+    }
+    if !out.append(segments.symbols.payload) {
+      return ObjectRelocatableAssemblyResult.failed(segments, "QNATIVE0777")
+    }
+    if !out.append(segments.strings.payload) {
+      return ObjectRelocatableAssemblyResult.failed(segments, "QNATIVE0778")
+    }
+    if !out.append(segments.stringPadding.payload) {
+      return ObjectRelocatableAssemblyResult.failed(segments, "QNATIVE0779")
+    }
+    if !out.append(segments.relocations.payload) {
+      return ObjectRelocatableAssemblyResult.failed(segments, "QNATIVE0780")
+    }
+    if !out.append(segments.sectionNames.payload) {
+      return ObjectRelocatableAssemblyResult.failed(segments, "QNATIVE0781")
+    }
+    if !out.append(segments.sectionHeaderPadding.payload) {
+      return ObjectRelocatableAssemblyResult.failed(segments, "QNATIVE0782")
+    }
+    if !out.append(segments.sectionHeaders.payload) {
+      return ObjectRelocatableAssemblyResult.failed(segments, "QNATIVE0783")
+    }
+
+    return ObjectRelocatableAssemblyResult.fromSegments(segments, out.finish())
+  }
+}
+
+impl view ObjectByteAssembler {
+  pub payloadCapacity: usize => writer.byteCount as usize
+  pub valid: bool => diagnosticCode == "" && writer.valid
+  pub debugName: string => "object.byte-assembler.{writer.byteCount}.{writer.segmentCount}"
+}

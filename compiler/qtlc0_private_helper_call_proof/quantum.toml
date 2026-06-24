@@ -1,0 +1,12 @@
+[package]
+name = "qtlc0-private-helper-call-proof"
+version = "0.1.0"
+edition = "2026"
+
+[sources]
+roots = ["src"]
+
+[targets.app]
+kind = "bin"
+main = "src/main.qn"
+backend = "native"

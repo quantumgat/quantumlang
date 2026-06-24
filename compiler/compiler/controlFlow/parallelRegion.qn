@@ -1,0 +1,31 @@
+pub ParallelRegionFact {
+  regionId: i64
+  deterministic: bool
+  capturesSharedMutable: bool
+  partitionFingerprint: u64
+  qtlc1Deferred: bool
+  diagnosticCode: string
+}
+
+impl ParallelRegionFact {
+  pub ParallelRegionFact(
+    regionId: i64,
+    deterministic: bool,
+    capturesSharedMutable: bool,
+    partitionFingerprint: u64
+  ) =
+    This {
+      regionId
+      deterministic
+      capturesSharedMutable
+      partitionFingerprint
+      qtlc1Deferred: true
+      diagnosticCode: "QTCFLOW0005"
+    }
+
+  pub qtlc1Deferred() = true
+
+  isDeterministic() = deterministic
+
+  hasSharedMutableCapture() = capturesSharedMutable
+}

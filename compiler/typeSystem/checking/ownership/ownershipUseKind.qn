@@ -1,0 +1,33 @@
+pub enum OwnershipUseKind {
+  CopyOwner
+  MoveOwner
+  WriteThroughView
+  EscapeToGlobal
+  ManualFree
+  ManualDelete
+  CloseHandle
+  BorrowAddress
+  DereferenceAddress
+  Unknown
+}
+
+impl view OwnershipUseKind {
+  pub name: string => match this {
+    CopyOwner => "copy-owner"
+    MoveOwner => "move-owner"
+    WriteThroughView => "write-through-view"
+    EscapeToGlobal => "escape-to-global"
+    ManualFree => "manual-free"
+    ManualDelete => "manual-delete"
+    CloseHandle => "close-handle"
+    BorrowAddress => "borrow-address"
+    DereferenceAddress => "dereference-address"
+    Unknown => "unknown"
+  }
+
+  pub manualRelease => this == ManualFree || this == ManualDelete
+
+  pub requiresWritableAddress => this == WriteThroughView
+
+  pub valid => this != Unknown
+}

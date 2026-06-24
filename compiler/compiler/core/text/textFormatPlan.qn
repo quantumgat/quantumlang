@@ -1,0 +1,25 @@
+pub TextFormatPlan {
+  literalSegmentCount: i64 = 0
+  argumentCount: i64 = 0
+  parsedSpecCount: i64 = 0
+  staticTemplate: bool = true
+  runtimeFormatParsing: bool = false
+}
+
+impl view TextFormatPlan {
+  pub countsValid: bool =>
+    literalSegmentCount >= 0 &&
+    argumentCount >= 0 &&
+    parsedSpecCount >= 0 &&
+    parsedSpecCount <= argumentCount
+
+  pub compileTimeReady: bool =>
+    staticTemplate &&
+    runtimeFormatParsing == false
+
+  pub hotPath: bool =>
+    countsValid &&
+    compileTimeReady
+
+  pub valid: bool => hotPath
+}

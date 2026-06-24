@@ -1,0 +1,117 @@
+import backend::native::{*}
+import machine::{CallingConvention, DataLayout, TargetMachine}
+import mir::{MirBody, MirControlFlowGraph}
+
+pub MachineIrProof {
+  registerFactsValid: bool
+  operandFactsValid: bool
+  instructionFactsValid: bool
+  blockFactsValid: bool
+  functionFactsValid: bool
+  unitFactsValid: bool
+  bridgeFactsValid: bool
+  valid: bool
+}
+
+pub machineIrProof() -> MachineIrProof {
+  let layout = DataLayout(64, "little", 64, 128)
+  let convention = CallingConvention("sysv", "gnu", true, true)
+  let target = TargetMachine("x86_64-unknown-linux-gnu", 2, layout, convention, "elf")
+  let body = MirBody("compileModule", 4, 8, 12)
+  let cfg = MirControlFlowGraph(5, body.blockCount)
+  let lowering = NativeMirLowering(12, body, cfg, target.triple)
+  let selection = InstructionSelection(12, target.triple, true)
+  let allocation = RegisterAllocation(8, 0, true, true)
+  let identity = TargetIdentity.debugLinux()
+  let callAbi = CallAbi.forTarget(identity)
+  let aggregateAbi = AggregateAbi.classify("CompileModuleResult", 24, 8, 3)
+  let sretAbi = SretAbi.forAggregate(aggregateAbi)
+  let returnAbi = ReturnValueAbi.fromAggregate(aggregateAbi, sretAbi)
+  let frame = FrameLayout.fromCallAbi(callAbi, 64, 2)
+
+  let v0 = allocation.virtualRegister(0)
+  let r0 = allocation.physicalRegister(0)
+  let vOperand = Operand.virtualRegister(v0)
+  let rOperand = Operand.physicalRegister(r0, 64)
+  let imm = Operand.immediate(42, 64)
+  let instr = MachineInstruction(0, "add", 3, 1, false)
+  let ret = MachineInstruction(1, "ret", 1, 0, true)
+  let block = MachineBlock(0, 2, 0, 0, true)
+  let function = lowering.machineFunction().withFrame(frame).withAbi(callAbi, returnAbi)
+  let unit = MachineUnit.fromAbiLowering(lowering, selection, allocation, frame, callAbi, returnAbi)
+
+  let registerFactsValid =
+    v0.valid &&
+    v0.scalar &&
+    r0.valid &&
+    r0.allocatable &&
+    r0.callerSaved
+
+  let operandFactsValid =
+    vOperand.valid &&
+    vOperand.register &&
+    rOperand.valid &&
+    rOperand.register &&
+    imm.valid &&
+    imm.constant
+
+  let instructionFactsValid =
+    instr.valid &&
+    instr.schedulable &&
+    instr.pure &&
+    ret.valid &&
+    ret.terminator
+
+  let blockFactsValid =
+    block.valid &&
+    block.entry &&
+    block.exit &&
+    block.scheduled
+
+  let functionFactsValid =
+    function.valid &&
+    function.framed &&
+    function.abiReady &&
+    function.stackBytes == frame.stackBytes &&
+    function.instructionCount == lowering.lowered
+
+  let unitFactsValid =
+    unit.valid &&
+    unit.allocated &&
+    unit.abiReady &&
+    unit.objectReady &&
+    unit.targetName == target.triple &&
+    unit.instructionCount == selection.selected &&
+    unit.machineHash != ""
+
+  let bridgeFactsValid =
+    lowering.valid &&
+    selection.valid &&
+    allocation.valid &&
+    frame.valid &&
+    frame.abiAligned(callAbi) &&
+    callAbi.valid &&
+    returnAbi.valid &&
+    sretAbi.usesSret &&
+    frame.machineFrameBytes == unit.frameBytes
+
+  let valid =
+    registerFactsValid &&
+    operandFactsValid &&
+    instructionFactsValid &&
+    blockFactsValid &&
+    functionFactsValid &&
+    unitFactsValid &&
+    bridgeFactsValid
+
+  return MachineIrProof {
+    registerFactsValid
+    operandFactsValid
+    instructionFactsValid
+    blockFactsValid
+    functionFactsValid
+    unitFactsValid
+    bridgeFactsValid
+    valid
+  }
+}

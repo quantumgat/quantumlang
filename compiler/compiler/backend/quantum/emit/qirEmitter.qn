@@ -1,0 +1,31 @@
+pub QirEmitter {
+  emittedModules: i64
+  moduleHash: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl QirEmitter {
+  pub QirEmitter(emittedModules: i64, moduleHash: string) =
+    This { emittedModules, moduleHash }
+
+  pub empty(moduleHash: string) =
+    This {
+      emittedModules: 0
+      moduleHash
+    }
+
+  addModule() =
+    this {
+      emittedModules: emittedModules + 1
+    }
+}
+
+impl view QirEmitter {
+  pub valid => diagnosticCode == "" && emittedModules >= 0 && moduleHash != ""
+  pub emitted => emittedModules > 0
+  pub artifactFormat => "qir"
+  pub cacheKey => "{artifactFormat}:{moduleHash}:{emittedModules}"
+  pub lowerable => valid && deterministic
+  pub debugName => "quantum.qir.{moduleHash}.{emittedModules}"
+}

@@ -1,0 +1,7 @@
+import core::{Once}
+
+pub onceReinit() -> i64 {
+  let once = Once<i64>().set(1)
+  let second = once.set(2)
+  return second.get()
+}

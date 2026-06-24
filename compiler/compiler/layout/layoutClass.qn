@@ -1,0 +1,19 @@
+pub enum LayoutClassKind {
+  ZeroSized
+  Scalar
+  ScalarPair
+  Aggregate
+  Memory
+}
+
+pub LayoutClass {
+  kind: LayoutClassKind
+  registerCount: i64
+  indirect: bool = false
+}
+
+impl view LayoutClass {
+  pub valid: bool =>
+    registerCount >= 0 &&
+    (kind != LayoutClassKind.Memory || indirect)
+}

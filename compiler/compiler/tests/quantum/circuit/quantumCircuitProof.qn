@@ -1,0 +1,59 @@
+import compiler::quantum::{*}
+pub QuantumCircuitProof {
+  circuitCarriesCounts: bool
+  builderIsDeterministic: bool
+  topologyTargetSupported: bool
+  scheduleRespectsTopology: bool
+  parameterTyped: bool
+  controlProfileBounded: bool
+  valid: bool
+}
+
+pub quantumCircuitProof() -> QuantumCircuitProof {
+  let circuit = QuantumCircuit(4, 8, false)
+  let builder = QuantumCircuitBuilder(4, 8)
+  let topology = QuantumTopology("simulator", 4, 3, true)
+  let schedule = QuantumSchedule(8, true, true)
+  let parameter = QuantumParameter("theta", "f64", true)
+  let profile = QuantumControlFlowProfile("bounded-qloop", true, false, true)
+
+  let circuitCarriesCounts = circuit.valid &&
+    circuit.qubitCount == 4 &&
+    circuit.operationCount == 8
+
+  let builderIsDeterministic = builder.valid &&
+    builder.deterministicOrder
+
+  let topologyTargetSupported = topology.valid &&
+    topology.targetName == "simulator" &&
+    topology.connected
+
+  let scheduleRespectsTopology = schedule.valid &&
+    schedule.respectsDependencies &&
+    schedule.respectsTopology
+
+  let parameterTyped = parameter.valid &&
+    parameter.typeName == "f64" &&
+    parameter.compileTimeKnown
+
+  let controlProfileBounded = profile.valid &&
+    profile.bounded &&
+    !profile.measurementAllowed
+
+  let valid = circuitCarriesCounts &&
+    builderIsDeterministic &&
+    topologyTargetSupported &&
+    scheduleRespectsTopology &&
+    parameterTyped &&
+    controlProfileBounded
+
+  return QuantumCircuitProof {
+    circuitCarriesCounts: circuitCarriesCounts,
+    builderIsDeterministic: builderIsDeterministic,
+    topologyTargetSupported: topologyTargetSupported,
+    scheduleRespectsTopology: scheduleRespectsTopology,
+    parameterTyped: parameterTyped,
+    controlProfileBounded: controlProfileBounded,
+    valid: valid,
+  }
+}

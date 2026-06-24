@@ -1,0 +1,49 @@
+pub enum ProgressPhase {
+  Starting
+  Scanning
+  Frontend
+  Typechecking
+  Planning
+  Lowering
+  Emitting
+  Linking
+  Writing
+  Reporting
+  Finished
+}
+
+impl view ProgressPhase {
+  pub label: string => {
+    if this == ProgressPhase.Starting {
+      return "Starting"
+    }
+    if this == ProgressPhase.Scanning {
+      return "Scanning"
+    }
+    if this == ProgressPhase.Frontend {
+      return "Frontend"
+    }
+    if this == ProgressPhase.Typechecking {
+      return "Typechecking"
+    }
+    if this == ProgressPhase.Planning {
+      return "Planning"
+    }
+    if this == ProgressPhase.Lowering {
+      return "Lowering"
+    }
+    if this == ProgressPhase.Emitting {
+      return "Emitting"
+    }
+    if this == ProgressPhase.Linking {
+      return "Linking"
+    }
+    if this == ProgressPhase.Writing {
+      return "Writing"
+    }
+    if this == ProgressPhase.Reporting {
+      return "Reporting"
+    }
+    return "Finished"
+  }
+}

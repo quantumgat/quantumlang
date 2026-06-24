@@ -1,0 +1,22 @@
+pub Aarch64Immediate {
+  value: i64
+  widthBits: i64
+  diagnosticCode: string = ""
+}
+
+impl Aarch64Immediate {
+  pub Aarch64Immediate(value: i64, widthBits: i64) =
+    This { value, widthBits }
+
+  pub imm12(value: i64) = This(value, 12)
+  pub imm16(value: i64) = This(value, 16)
+}
+
+impl view Aarch64Immediate {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    widthBits > 0 &&
+    widthBits <= 64
+
+  pub debugName: string => "aarch64.imm.{widthBits}.{value}"
+}

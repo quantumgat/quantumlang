@@ -1,0 +1,42 @@
+pub LinkPlan {
+  inputCount: i64
+  inputSetHash: string
+  targetTriple: string
+  profile: string
+  outputPath: string
+  relinkRequired: bool
+  diagnosticCode: string = ""
+}
+
+impl LinkPlan {
+  pub LinkPlan(
+    inputCount: i64,
+    inputSetHash: string,
+    targetTriple: string,
+    profile: string,
+    outputPath: string,
+    relinkRequired: bool
+  ) =
+    This { inputCount, inputSetHash, targetTriple, profile, outputPath, relinkRequired }
+
+  pub reuse(inputCount: i64, inputSetHash: string, targetTriple: string, profile: string, outputPath: string) =
+    This { inputCount, inputSetHash, targetTriple, profile, outputPath, relinkRequired: false }
+
+  pub relink(inputCount: i64, inputSetHash: string, targetTriple: string, profile: string, outputPath: string) =
+    This { inputCount, inputSetHash, targetTriple, profile, outputPath, relinkRequired: true }
+}
+
+impl view LinkPlan {
+  pub valid => diagnosticCode == "" &&
+    inputCount >= 0 &&
+    inputSetHash != "" &&
+    targetTriple != "" &&
+    profile != "" &&
+    outputPath != ""
+
+  pub linkSkipped => valid && relinkRequired == false
+  pub linkNeeded => valid && relinkRequired
+  pub hasInputs => inputCount > 0
+  pub lowerable => valid
+  pub debugName => "native.link.plan.{targetTriple}.{profile}.{inputCount}"
+}

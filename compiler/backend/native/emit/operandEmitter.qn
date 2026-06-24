@@ -1,0 +1,37 @@
+pub OperandEmitter {
+  operandKind: string
+  registerName: string = ""
+  immediateValue: i64 = 0
+  memoryBase: string = ""
+  diagnosticCode: string = ""
+}
+
+impl OperandEmitter {
+  pub OperandEmitter(operandKind: string, registerName: string, immediateValue: i64, memoryBase: string) =
+    This {
+      operandKind
+      registerName
+      immediateValue
+      memoryBase
+    }
+
+  pub register(registerName: string) =
+    This("register", registerName, 0, "")
+
+  pub immediate(value: i64) =
+    This("immediate", "", value, "")
+
+  pub memory(base: string, displacement: i64) =
+    This("memory", "", displacement, base)
+}
+
+impl view OperandEmitter {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    operandKind != ""
+
+  pub registerOperand: bool => valid && operandKind == "register" && registerName != ""
+  pub immediateOperand: bool => valid && operandKind == "immediate"
+  pub memoryOperand: bool => valid && operandKind == "memory" && memoryBase != ""
+  pub debugName: string => "emit.operand.{operandKind}.{registerName}.{immediateValue}"
+}

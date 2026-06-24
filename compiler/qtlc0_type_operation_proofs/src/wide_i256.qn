@@ -1,0 +1,8 @@
+pub proof_wide_i256() -> i64 {
+  let a: i256 = 100
+  let b: i256 = 30
+  let c: i256 = a + b
+  if c != 130 { return 11 }
+  println("i256 ok: {c}")
+  return 0
+}

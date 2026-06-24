@@ -1,0 +1,30 @@
+pub CoreContract {
+  kind: CoreKind = Unknown
+  compilerLocal: bool = true
+  runtimeDependency: bool = false
+  stdlibDependency: bool = false
+  activeProductSafe: bool = true
+}
+
+impl CoreContract {
+  pub compilerLocal(kind: CoreKind) =
+    This {
+      kind
+    }
+
+  pub activeProduct(kind: CoreKind) =
+    This {
+      kind
+      activeProductSafe: true
+    }
+}
+
+impl view CoreContract {
+  pub known => kind != CoreKind.Unknown
+
+  pub isolated => runtimeDependency == false && stdlibDependency == false
+
+  pub bootstrapSafe => known && compilerLocal && isolated && activeProductSafe
+
+  pub valid => bootstrapSafe
+}

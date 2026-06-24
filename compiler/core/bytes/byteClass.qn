@@ -1,0 +1,27 @@
+pub ByteClass {
+  value: i64 = 0
+}
+
+impl ByteClass {
+  pub ByteClass(value: i64) =
+    This { value }
+}
+
+impl view ByteClass {
+  pub isZero: bool => value == 0
+  pub isAscii: bool => value >= 0 && value <= 127
+  pub isPrintableAscii: bool => value >= 32 && value <= 126
+  pub isWhitespaceAscii: bool => value == 32 || value == 9 || value == 10 || value == 13
+  pub isDelimiterAscii: bool => {
+    value == 40 ||
+    value == 41 ||
+    value == 91 ||
+    value == 93 ||
+    value == 123 ||
+    value == 125 ||
+    value == 44 ||
+    value == 59
+  }
+
+  pub valid: bool => value >= 0 && value <= 255
+}

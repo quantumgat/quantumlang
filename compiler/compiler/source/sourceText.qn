@@ -1,0 +1,23 @@
+pub SourceText {
+  text: string
+  byteLength: u64
+  fingerprintHigh: u64
+  fingerprintLow: u64
+}
+
+impl SourceText {
+  pub SourceText(text: string, byteLength: u64, fingerprintHigh: u64, fingerprintLow: u64) =
+    This {
+      text,
+      byteLength,
+      fingerprintHigh,
+      fingerprintLow,
+    }
+}
+
+impl view SourceText {
+  pub empty => byteLength == 0
+  pub valid => byteLength > 0 && text != ""
+  pub fingerprintStable => fingerprintHigh != 0 || fingerprintLow != 0
+  pub cacheIdentity => "{fingerprintHigh}:{fingerprintLow}:{byteLength}"
+}

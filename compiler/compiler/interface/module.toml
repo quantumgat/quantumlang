@@ -1,0 +1,6 @@
+[module]
+name = "interface"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/interface"
+role = "interface-artifacts"

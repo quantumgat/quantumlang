@@ -1,0 +1,9 @@
+[module]
+name = "symbol"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/typeSystem/checking/symbol"
+role = "type-symbol-indexes"
+
+[dependencies]
+modules = ["core", "declaration", "diagnostics", "frontend", "host", "source", "syntax"]

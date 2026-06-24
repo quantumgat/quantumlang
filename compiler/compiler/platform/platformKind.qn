@@ -1,0 +1,48 @@
+pub enum PlatformKind {
+  Hosted
+  Embedded
+  BareMetal
+  Wasm
+  Simulator
+  Unknown
+}
+
+pub PlatformFamily {
+  kind: PlatformKind = PlatformKind.Unknown
+  name: string = "unknown"
+}
+
+impl PlatformFamily {
+  pub hosted() =
+    This {
+      kind: PlatformKind.Hosted
+      name: "hosted"
+    }
+
+  pub embedded() =
+    This {
+      kind: PlatformKind.Embedded
+      name: "embedded"
+    }
+
+  pub bareMetal() =
+    This {
+      kind: PlatformKind.BareMetal
+      name: "bare-metal"
+    }
+
+  pub wasm() =
+    This {
+      kind: PlatformKind.Wasm
+      name: "wasm"
+    }
+}
+
+impl view PlatformFamily {
+  pub hosted => kind == PlatformKind.Hosted
+  pub embedded => kind == PlatformKind.Embedded
+  pub bareMetal => kind == PlatformKind.BareMetal
+  pub wasm => kind == PlatformKind.Wasm
+  pub known => kind != PlatformKind.Unknown
+  pub valid => known && name != ""
+}

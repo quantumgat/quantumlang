@@ -1,0 +1,89 @@
+import core::{Index, Map, ModuleId, NameId, ScopeId, Slice, SymbolId, Vec}
+
+pub Scope {
+  id: ScopeId = {}
+  parent: ScopeId = {}
+  module: ModuleId = {}
+  depth: i64 = 0
+  entries: Slice<ScopeEntry> = []
+  symbols: Slice<SymbolId> = []
+  localNames: Slice<NameId> = []
+  lookup: Map<NameId, SymbolId> = {}
+  entryValues: Vec<ScopeEntry> = []
+  symbolValues: Vec<SymbolId> = []
+  nameValues: Vec<NameId> = []
+  deterministic: bool = true
+}
+
+impl Scope {
+  pub Scope(depth: i64) =
+    This {
+      id: ScopeId(1)
+      depth
+      entries: Slice<ScopeEntry>()
+      symbols: Slice<SymbolId>()
+      localNames: Slice<NameId>()
+      lookup: Map<NameId, SymbolId>(Index<NameId, SymbolId>(0))
+    }
+
+  pub Scope(id: ScopeId, parent: ScopeId, depth: i64, entryCount: i64) =
+    This {
+      id
+      parent
+      depth
+      entries: Slice(entryCount)
+      symbols: Slice(entryCount)
+      localNames: Slice(entryCount)
+      lookup: Map<NameId, SymbolId>(Index<NameId, SymbolId>(entryCount))
+    }
+
+  pub forModule(id: ScopeId, module: ModuleId, entryCount: i64) =
+    This {
+      id
+      module
+      depth: 0
+      entries: Slice<ScopeEntry>(entryCount)
+      symbols: Slice<SymbolId>(entryCount)
+      localNames: Slice<NameId>(entryCount)
+      lookup: Map<NameId, SymbolId>(Index<NameId, SymbolId>(entryCount))
+    }
+
+  pub add(entry: ScopeEntry) {
+    entryValues.push(entry)
+    symbolValues.push(entry.symbol)
+    nameValues.push(entry.name)
+    entries = Slice(entryValues.count)
+    symbols = Slice(symbolValues.count)
+    localNames = Slice(nameValues.count)
+    lookup = Map(Index(entryValues.count))
+  }
+}
+
+impl view Scope {
+  pub root: bool => depth == 0
+
+  pub entryCount: i64 => entryValues.count
+
+  pub symbolCount: i64 => symbolValues.count
+
+  pub nameCount: i64 => nameValues.count
+
+  pub hasParent: bool => parent.valid
+
+  pub moduleScope: bool => module.valid
+
+  pub entriesAligned: bool =>
+    entryCount == symbolCount &&
+    symbolCount == nameCount &&
+    lookup.count == entryCount
+
+  pub valid: bool =>
+    deterministic &&
+    id.valid &&
+    depth >= 0 &&
+    entries.valid &&
+    symbols.valid &&
+    localNames.valid &&
+    lookup.valid &&
+    entriesAligned
+}

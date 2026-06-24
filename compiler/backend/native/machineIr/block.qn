@@ -1,0 +1,32 @@
+pub MachineBlock {
+  id: i64
+  instructionCount: i64
+  predecessorCount: i64
+  successorCount: i64
+  hasTerminator: bool
+}
+
+impl MachineBlock {
+  pub MachineBlock(
+    id: i64,
+    instructionCount: i64,
+    predecessorCount: i64,
+    successorCount: i64,
+    hasTerminator: bool
+  ) =
+    This {
+      id
+      instructionCount
+      predecessorCount
+      successorCount
+      hasTerminator
+    }
+}
+
+impl view MachineBlock {
+  pub valid => id >= 0 && instructionCount >= 0 && predecessorCount >= 0 && successorCount >= 0 && hasTerminator
+  pub entry => predecessorCount == 0
+  pub exit => successorCount == 0
+  pub scheduled => valid
+  pub debugName => "mbb{id}"
+}

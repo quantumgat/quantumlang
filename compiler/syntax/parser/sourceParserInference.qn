@@ -1,0 +1,157 @@
+import syntax::{IdentifierText}
+import syntax::parser::sourceAnalysis::{callOpenIndex, inferredTypeForToken}
+
+pub SourceParserInference {
+  input: LexProduct = {}
+}
+
+impl SourceParserInference {
+  pub SourceParserInference(input: LexProduct) =
+    This { input }
+
+  pub memberValueTypeNameAt(
+    index: i64,
+    ownerTypeName: string
+  ) -> string {
+    if index + 1 >= input.tokenCount ||
+       input.tokenAt(index + 1).text != ":" {
+      let inferred = this.expressionTypeNameAt(index + 1, ownerTypeName)
+      return match inferred == "" {
+        true => "value"
+        false => inferred
+      }
+    }
+
+    let cursor = index + 2
+    let result = ""
+    let depth: i64 = 0
+    while cursor < input.tokenCount {
+      let token = input.tokenAt(cursor)
+      if depth == 0 &&
+         (token.text == "=" || token.text == "=>" ||
+          token.text == "{" || token.text == "}" ||
+          token.text == ",") {
+        break
+      }
+      if depth == 0 && result != "" &&
+         token.text != "<" && token.text != "?" &&
+         token.text != "::" && token.text != "[" {
+        break
+      }
+      result = "{result}{token.text}"
+      if token.text == "<" || token.text == "(" || token.text == "[" {
+        depth = depth + 1
+      } else if (token.text == ">" || token.text == ")" || token.text == "]") &&
+                depth > 0 {
+        depth = depth - 1
+      }
+      cursor = cursor + 1
+    }
+    if result == "" {
+      return "value"
+    }
+    return result
+  }
+
+  pub callableReturnTypeNameAt(
+    index: i64,
+    ownerTypeName: string
+  ) -> string {
+    let cursor = callOpenIndex(input, index)
+    if cursor < 0 {
+      return ""
+    }
+
+    let depth: i64 = 1
+    cursor = cursor + 1
+    while cursor < input.tokenCount && depth > 0 {
+      let token = input.tokenAt(cursor)
+      if token.text == "(" {
+        depth = depth + 1
+      } else if token.text == ")" {
+        depth = depth - 1
+      }
+      cursor = cursor + 1
+    }
+    return this.expressionTypeNameAt(cursor, ownerTypeName)
+  }
+
+  expressionTypeNameAt(
+    index: i64,
+    ownerTypeName: string
+  ) -> string {
+    let cursor = index
+    while cursor < input.tokenCount &&
+          (input.tokenAt(cursor).text == "=" ||
+           input.tokenAt(cursor).text == "=>" ||
+           input.tokenAt(cursor).text == ">" ||
+           input.tokenAt(cursor).text == "\n") {
+      cursor = cursor + 1
+    }
+    if cursor >= input.tokenCount {
+      return ""
+    }
+
+    let token = input.tokenAt(cursor)
+    if token.text == "This" {
+      return ownerTypeName
+    }
+    if token.kind.keyword == KeywordKind.Match {
+      return this.matchResultTypeNameAt(cursor)
+    }
+    if token.kind.identifierToken &&
+       cursor + 1 < input.tokenCount &&
+       input.tokenAt(cursor + 1).text == "{" {
+      return token.text
+    }
+    if token.kind.identifierToken &&
+       cursor + 1 < input.tokenCount &&
+       input.tokenAt(cursor + 1).text == "(" {
+      if IdentifierText(token.text).isTypeName() {
+        return token.text
+      }
+    }
+
+    let inferred = inferredTypeForToken(input, cursor)
+    if inferred == "operator" || inferred == "callable-result" {
+      return ""
+    }
+    return inferred
+  }
+
+  matchResultTypeNameAt(index: i64) -> string {
+    let cursor = index
+    while cursor < input.tokenCount &&
+          input.tokenAt(cursor).text != "{" {
+      cursor = cursor + 1
+    }
+    if cursor >= input.tokenCount {
+      return ""
+    }
+
+    let depth: i64 = 1
+    let result = ""
+    cursor = cursor + 1
+    while cursor < input.tokenCount && depth > 0 {
+      let token = input.tokenAt(cursor)
+      if token.text == "{" {
+        depth = depth + 1
+      } else if token.text == "}" {
+        depth = depth - 1
+      } else {
+        let inferred = inferredTypeForToken(input, cursor)
+        if inferred != "" &&
+           inferred != "operator" &&
+           inferred != "callable-result" {
+          if result == "" {
+            result = inferred
+          } else if result != inferred {
+            return ""
+          }
+        }
+      }
+      cursor = cursor + 1
+    }
+    return result
+  }
+}

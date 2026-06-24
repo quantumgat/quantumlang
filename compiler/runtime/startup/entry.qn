@@ -1,0 +1,40 @@
+pub RuntimeStartup {
+  symbolName: string
+  returnTypeName: string
+  parameterCount: i64
+  contractHash: string
+}
+
+impl RuntimeStartup {
+  pub RuntimeStartup(
+    symbolName: string,
+    returnTypeName: string,
+    parameterCount: i64,
+    contractHash: string
+  ) =
+    This {
+      symbolName
+      returnTypeName
+      parameterCount
+      contractHash
+    }
+
+  pub entry() =
+    This {
+      symbolName: "qtlc2_runtime_start"
+      returnTypeName: "i32"
+      parameterCount: 0
+      contractHash: "runtime.start:qtlc2_runtime_start:i32:0"
+    }
+}
+
+impl view RuntimeStartup {
+  pub valid: bool =>
+    symbolName != "" &&
+    returnTypeName != "" &&
+    parameterCount >= 0 &&
+    contractHash != ""
+
+  pub exported: bool => valid
+  pub debugName: string => "runtime.startup.{symbolName}"
+}

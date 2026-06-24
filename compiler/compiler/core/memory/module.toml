@@ -1,0 +1,6 @@
+[module]
+name = "memory"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/core/memory"
+role = "compiler-memory-ownership-contracts"

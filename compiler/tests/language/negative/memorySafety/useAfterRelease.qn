@@ -1,0 +1,11 @@
+import core::{Unique}
+
+pub ReleasedUser {
+  name: string = ""
+}
+
+pub useAfterRelease() -> string {
+  let owner = Unique<ReleasedUser>({ name: "A" })
+  let released = owner.release()
+  return released.ref().name
+}

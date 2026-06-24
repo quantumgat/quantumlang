@@ -1,0 +1,23 @@
+pub X86Immediate {
+  value: i64
+  widthBits: i64
+  signed: bool = true
+  diagnosticCode: string = ""
+}
+
+impl X86Immediate {
+  pub X86Immediate(value: i64, widthBits: i64) =
+    This { value, widthBits }
+
+  pub i32(value: i64) = This(value, 32)
+  pub i8(value: i64) = This(value, 8)
+}
+
+impl view X86Immediate {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    (widthBits == 8 || widthBits == 16 || widthBits == 32 || widthBits == 64)
+
+  pub byteCount: i64 => widthBits / 8
+  pub debugName: string => "x86.imm.{widthBits}.{value}"
+}

@@ -1,0 +1,14 @@
+pub extend string {
+  pub uncheckedByteAt(index: i64) -> i64 {
+    return compilerTextByteAt(this, index)
+  }
+
+  pub checkedByteAt(index: i64) -> i64 {
+    if index < 0 || index >= this.byteLength() as i64 {
+      return -1
+    }
+    return this.uncheckedByteAt(index)
+  }
+}
+
+compilerTextByteAt(text: string, index: i64) -> i64

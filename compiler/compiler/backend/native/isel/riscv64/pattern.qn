@@ -1,0 +1,26 @@
+pub Riscv64Pattern {
+  sourceOpcode: string
+  selectedOpcode: string
+  operandCount: i64
+  compressedAllowed: bool = false
+  diagnosticCode: string = ""
+}
+
+impl Riscv64Pattern {
+  pub Riscv64Pattern(sourceOpcode: string, selectedOpcode: string, operandCount: i64) =
+    This {
+      sourceOpcode
+      selectedOpcode
+      operandCount
+    }
+}
+
+impl view Riscv64Pattern {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    sourceOpcode != "" &&
+    selectedOpcode != "" &&
+    operandCount >= 0
+
+  pub debugName: string => "isel.riscv64.pattern.{sourceOpcode}.{selectedOpcode}"
+}

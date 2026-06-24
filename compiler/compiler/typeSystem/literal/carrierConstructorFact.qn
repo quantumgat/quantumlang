@@ -1,0 +1,70 @@
+pub CarrierConstructorFact {
+  kind: CarrierConstructorKind = Unknown
+  name: string = ""
+  carrierType: string = ""
+  payloadRole: string = ""
+  requiresTargetType: bool = true
+  valid: bool = false
+}
+
+impl CarrierConstructorFact {
+  pub fromName(name: string) -> This {
+    if name == "none" || name == "None" {
+      return This {
+        kind: None
+        name
+        carrierType: "Option<T>"
+        payloadRole: "none"
+        requiresTargetType: true
+        valid: true
+      }
+    }
+    if name == "some" || name == "Some" {
+      return This {
+        kind: Some
+        name
+        carrierType: "Option<T>"
+        payloadRole: "option-value"
+        requiresTargetType: true
+        valid: true
+      }
+    }
+    if name == "present" {
+      return This {
+        kind: Present
+        name
+        carrierType: "Option<T>"
+        payloadRole: "option-value"
+        requiresTargetType: true
+        valid: true
+      }
+    }
+    if name == "Ok" || name == "ok" {
+      return This {
+        kind: Ok
+        name
+        carrierType: "Result<T,E>"
+        payloadRole: "result-value"
+        requiresTargetType: true
+        valid: true
+      }
+    }
+    if name == "Err" || name == "err" {
+      return This {
+        kind: Err
+        name
+        carrierType: "Result<T,E>"
+        payloadRole: "result-error"
+        requiresTargetType: true
+        valid: true
+      }
+    }
+    return This { name: name }
+  }
+}
+
+impl view CarrierConstructorFact {
+  pub optionCarrier => carrierType == "Option<T>"
+  pub resultCarrier => carrierType == "Result<T,E>"
+  pub hasPayload => payloadRole != "none" && payloadRole != ""
+}

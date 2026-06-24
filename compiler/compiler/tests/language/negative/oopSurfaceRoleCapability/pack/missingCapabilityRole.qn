@@ -1,0 +1,5 @@
+pub missingCapabilityRole(
+  ctx: HttpCtx<AuthUser, i64, JsonBody<CreateUserBody>>
+) -> bool {
+  return ctx.extend.allHttpCapabilities()
+}

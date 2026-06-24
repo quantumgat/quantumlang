@@ -1,0 +1,25 @@
+pub LinkRuntimeIdentity {
+  runtimeName: string
+  archiveHash: string
+  diagnosticCode: string = ""
+}
+
+impl LinkRuntimeIdentity {
+  pub LinkRuntimeIdentity(runtimeName: string, archiveHash: string) =
+    This {
+      runtimeName
+      archiveHash
+    }
+
+  pub core() =
+    This {
+      runtimeName: "qtlc-runtime-core"
+      archiveHash: "runtime:qtlc-runtime-core"
+    }
+}
+
+impl view LinkRuntimeIdentity {
+  pub valid => diagnosticCode == "" && runtimeName != "" && archiveHash != ""
+  pub lowerable => valid
+  pub debugName => "native.runtime.{runtimeName}"
+}

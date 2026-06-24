@@ -1,0 +1,38 @@
+pub enum AstStmtKind {
+  Let
+  Expr
+  Return
+  If
+  Match
+  Loop
+  While
+  WhileLet
+  For
+  ForRange
+  Qif
+  Qfor
+  Qwhile
+  Qloop
+  Break
+  Continue
+  Block
+  Unknown
+}
+
+pub AstStmt {
+  id: i64
+  node: AstNode
+  kind: AstStmtKind
+}
+
+impl AstStmt {
+  pub AstStmt(id: i64, kind: AstStmtKind, node: AstNode) =
+    This { id, node, kind }
+}
+
+impl view AstStmt {
+  pub valid => id > 0 && node.valid && kind != AstStmtKind.Unknown
+  pub controlFlow => kind == AstStmtKind.If || kind == AstStmtKind.Match || kind == AstStmtKind.Loop || kind == AstStmtKind.While || kind == AstStmtKind.For
+  pub quantumControlFlow => kind == AstStmtKind.Qif || kind == AstStmtKind.Qfor || kind == AstStmtKind.Qwhile || kind == AstStmtKind.Qloop
+  pub exitsBlock => kind == AstStmtKind.Return || kind == AstStmtKind.Break || kind == AstStmtKind.Continue
+}

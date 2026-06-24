@@ -1,0 +1,88 @@
+pub ExecutablePayloadPlan {
+  outputPath: string
+  executableHash: string
+  inputSetHash: string
+  objectPath: string
+  objectPayloadHash: string
+  runtimeObjectPath: string = ""
+  runtimePayloadHash: string = ""
+  linkerHash: string
+  payloadReady: bool = false
+  diagnosticCode: string = ""
+}
+
+impl ExecutablePayloadPlan {
+  pub ExecutablePayloadPlan(
+    outputPath: string,
+    executableHash: string,
+    inputSetHash: string,
+    objectPath: string,
+    objectPayloadHash: string,
+    runtimeObjectPath: string,
+    runtimePayloadHash: string,
+    linkerHash: string,
+    payloadReady: bool
+  ) =
+    This {
+      outputPath
+      executableHash
+      inputSetHash
+      objectPath
+      objectPayloadHash
+      runtimeObjectPath
+      runtimePayloadHash
+      linkerHash
+      payloadReady
+    }
+
+  pub fromPipeline(
+    plan: PipelinePlan,
+    result: PipelineResult,
+    objectPayload: ObjectPayload,
+    runtimePayload: ObjectPayload
+  ) =
+    This {
+      outputPath: result.outputPath
+      executableHash: result.executableHash
+      inputSetHash: plan.linkStage.inputSetHash
+      objectPath: objectPayload.objectPath
+      objectPayloadHash: objectPayload.payloadHash
+      runtimeObjectPath: runtimePayload.objectPath
+      runtimePayloadHash: runtimePayload.payloadHash
+      linkerHash: "linker-payload:{plan.linkStage.inputSetHash}:{result.executableHash}:{runtimePayload.payloadHash}"
+      payloadReady: false
+      diagnosticCode: match plan.valid && result.valid && objectPayload.valid && runtimePayload.valid {
+        true => ""
+        false => "QNATIVE0870"
+      }
+    }
+}
+
+impl view ExecutablePayloadPlan {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    outputPath != "" &&
+    executableHash != "" &&
+    inputSetHash != "" &&
+    objectPath != "" &&
+    objectPayloadHash != "" &&
+    runtimeObjectPath != "" &&
+    runtimePayloadHash != "" &&
+    linkerHash != ""
+
+  pub blocked: bool =>
+    valid &&
+    payloadReady == false
+
+  pub blockReason: string => match true {
+    valid == false => diagnosticCode
+    payloadReady == false => "qtlc1-executable-payload-writer-missing"
+    _ => ""
+  }
+
+  pub planHash: string =>
+    "executable-payload-plan:{outputPath}:{executableHash}:{inputSetHash}:{objectPayloadHash}:{runtimePayloadHash}:{linkerHash}:{payloadReady}"
+
+  pub debugName: string =>
+    "executable.payload.plan.{outputPath}.{payloadReady}"
+}

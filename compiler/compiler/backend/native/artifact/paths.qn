@@ -1,0 +1,52 @@
+pub ArtifactPaths {
+  packageRoot: string
+  outputDir: string
+  objectSetPath: string
+  executablePath: string
+  buildPlanPath: string
+}
+
+impl ArtifactPaths {
+  pub ArtifactPaths(
+    packageRoot: string,
+    outputDir: string,
+    objectSetPath: string,
+    executablePath: string,
+    buildPlanPath: string
+  ) =
+    This {
+      packageRoot
+      outputDir
+      objectSetPath
+      executablePath
+      buildPlanPath
+    }
+
+  pub fromNaming(
+    packageRoot: string,
+    profile: ArtifactProfile,
+    naming: ArtifactNaming
+  ) -> This {
+    let outputDir = match packageRoot != "" {
+      true => "{packageRoot}/{profile.outputDir}"
+      false => profile.outputDir
+    }
+    return This {
+      packageRoot
+      outputDir
+      objectSetPath: "{outputDir}/{naming.objectSetName}"
+      executablePath: "{outputDir}/{naming.executableName}"
+      buildPlanPath: "{outputDir}/{naming.buildPlanName}"
+    }
+  }
+}
+
+impl view ArtifactPaths {
+  pub valid: bool =>
+    outputDir != "" &&
+    objectSetPath != "" &&
+    executablePath != "" &&
+    buildPlanPath != ""
+
+  pub pathHash: string => "artifact.paths:{packageRoot}:{outputDir}:{objectSetPath}:{executablePath}:{buildPlanPath}"
+}

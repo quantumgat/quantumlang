@@ -1,0 +1,86 @@
+pub ObjectImage {
+  writer: ObjectByteWriter
+  objectFile: ObjectFile
+  textSection: ObjectSection
+  rodataSection: ObjectSection
+  segments: ObjectRelocatableSegmentSet
+  payload: bytes = []
+  diagnosticCode: string = ""
+}
+
+impl ObjectImage {
+  pub normalizedArgs(writer: ObjectByteWriter, objectFile: ObjectFile) -> This {
+    let textSection = ObjectSection.text(450)
+    let rodataSection = ObjectSection.rodata(514, 162)
+    let rows = ElfRelocatableByteRows.fromWriter(writer)
+    let headerSegment = rows.headerSegment()
+    let textSegment = rows.textSegment(64)
+    let rodataSegment = rows.rodataSegment(514)
+    let rodataPaddingSegment = rows.zeroSegment("elf.rodata.padding", 676, 4, 0)
+    let symbolSegment = rows.symbolTableSegment(680)
+    let stringSegment = rows.stringTableSegment(968)
+    let stringPaddingSegment = rows.zeroSegment("elf.strtab.padding", 1146, 6, 0)
+    let relocationSegment = rows.relocationTableSegment(1152)
+    let sectionNameSegment = rows.sectionNamesSegment(1656)
+    let sectionHeaderPaddingSegment = rows.zeroSegment(
+      "elf.section-header.padding",
+      1713,
+      7,
+      0
+    )
+    let sectionHeaderSegment = rows.sectionHeadersSegment(
+      rodataSection,
+      sectionNameSegment
+    )
+    let segments = ObjectRelocatableSegmentSet.elf64(
+      headerSegment,
+      textSegment,
+      rodataSegment,
+      rodataPaddingSegment,
+      symbolSegment,
+      stringSegment,
+      stringPaddingSegment,
+      relocationSegment,
+      sectionNameSegment,
+      sectionHeaderPaddingSegment,
+      sectionHeaderSegment
+    )
+    let assembler = ObjectByteAssembler.fromWriter(writer)
+    let assembly = assembler.assembleRelocatable(segments)
+    return This {
+      writer
+      objectFile
+      textSection
+      rodataSection
+      segments: assembly.segments
+      payload: assembly.payload
+      diagnosticCode: match writer.payloadReady &&
+        objectFile.valid &&
+        textSection.valid &&
+        rodataSection.valid &&
+        rows.valid &&
+        segments.valid &&
+        assembler.valid &&
+        assembly.payloadReady &&
+        assembly.byteCount == 2296 {
+        true => ""
+        false => "QNATIVE0784"
+      }
+    }
+  }
+}
+
+impl view ObjectImage {
+  pub valid: bool => diagnosticCode == "" &&
+    writer.payloadReady &&
+    objectFile.valid &&
+    textSection.valid &&
+    rodataSection.valid &&
+    segments.valid &&
+    payload.length() == writer.byteCount &&
+    payload.length() == 2296
+
+  pub byteCount: i64 => payload.length()
+  pub payloadReady: bool => valid && byteCount > 0
+  pub debugName: string => "elf.object.image.{byteCount}.{segments.segmentCount}"
+}

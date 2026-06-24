@@ -1,0 +1,21 @@
+pub DataLayout {
+  pointerBits: i64
+  endian: string
+  integerAlignBits: i64
+  stackAlignBits: i64
+  valid: bool
+}
+
+impl DataLayout {
+  pub DataLayout(pointerBits: i64, endian: string, integerAlignBits: i64, stackAlignBits: i64) =
+    This {
+      pointerBits,
+      endian,
+      integerAlignBits,
+      stackAlignBits,
+      valid: (pointerBits == 32 || pointerBits == 64) &&
+        (endian == "little" || endian == "big") &&
+        integerAlignBits > 0 &&
+        stackAlignBits > 0,
+    }
+}

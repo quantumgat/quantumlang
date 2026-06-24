@@ -1,0 +1,25 @@
+pub X86MemoryOperand {
+  base: X86RegisterEncoding
+  displacement: i64 = 0
+  widthBits: i64 = 64
+  diagnosticCode: string = ""
+}
+
+impl X86MemoryOperand {
+  pub X86MemoryOperand(base: X86RegisterEncoding, displacement: i64, widthBits: i64) =
+    This {
+      base
+      displacement
+      widthBits
+    }
+}
+
+impl view X86MemoryOperand {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    base.valid &&
+    widthBits > 0
+
+  pub hasDisplacement: bool => displacement != 0
+  pub debugName: string => "x86.mem.{base.name}.{displacement}"
+}

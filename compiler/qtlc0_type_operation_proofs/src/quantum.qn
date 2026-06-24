@@ -1,0 +1,23 @@
+
+pub quantum_bits() -> i64 {
+  let explicitQ = qubit |0>
+  let explicitR = qreg<4> |0000>
+  let explicitB = bit 1
+  let explicitBs = bits<8> 0b10101010
+
+  let q: qubit = |0>
+  let r: qreg<4> = |0000>
+  let b: bit = 1
+  let bs: bits<8> = 0b10101010
+
+  println("Hello Quantum")
+
+  return 0
+}
+
+main ()-> i64{
+   
+  quantum_bits()
+  
+  return 0
+}

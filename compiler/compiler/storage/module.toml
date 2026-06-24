@@ -1,0 +1,9 @@
+[module]
+name = "storage"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/storage"
+role = "durable-product-storage"
+
+[dependencies]
+modules = ["core", "host"]

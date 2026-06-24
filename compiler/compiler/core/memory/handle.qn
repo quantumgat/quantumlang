@@ -1,0 +1,153 @@
+pub Handle<T> {
+  native: T
+  owner: CompilerId = {}
+  generation: u64 = 0
+  open: bool = true
+  closeCount: i64 = 0
+  resourceKind: string = ""
+  closePolicy: string = "idempotent"
+}
+
+impl Handle<T> {
+  pub Handle(native: T) =
+    This {
+      native
+    }
+
+  pub Handle(native: T, owner: CompilerId, generation: u64) =
+    This {
+      native
+      owner
+      generation
+    }
+
+  pub close() -> This {
+    if open == false {
+      return this {
+        closeCount: closeCount + 1
+      }
+    }
+    return this {
+      open: false
+      closeCount: closeCount + 1
+      generation: generation + 1
+    }
+  }
+
+  pub closeOnce() -> This {
+    if open == false {
+      return this
+    }
+    return close()
+  }
+
+  pub get() -> T {
+    return native
+  }
+
+  pub native() -> T {
+    return get()
+  }
+
+  pub takeNative() -> T {
+    return ^native
+  }
+
+  pub take() -> T {
+    return takeNative()
+  }
+
+  pub reset(native: T) -> This {
+    return this {
+      native
+      open: true
+      generation: generation + 1
+    }
+  }
+
+  pub kind(value: string) -> This {
+    return this {
+      resourceKind: value
+    }
+  }
+
+  pub policy(value: string) -> This {
+    return this {
+      closePolicy: value
+    }
+  }
+
+  pub flush() -> This {
+    return this
+  }
+
+  pub sync() -> This {
+    return this
+  }
+
+  pub duplicateAllowed: bool => false
+
+  pub release() -> This {
+    return close()
+  }
+}
+
+impl view Handle<T> {
+  pub live => open
+
+  pub empty => open == false
+
+  pub closed => open == false
+
+  pub closeable => open
+
+  pub ownsStorage => open
+
+  pub external => true
+
+  pub externalHandle => true
+
+  pub hasOwner => owner.valid
+
+  pub tracked => generation > 0 || owner.valid || closeCount > 0
+
+  pub idempotentClose => closePolicy == "idempotent"
+
+  pub strictClose => closePolicy == "strict"
+
+  pub manualCloseRequired => closePolicy == "manual"
+
+  pub kinded => resourceKind != ""
+
+  pub leaked => open && closePolicy == "manual"
+
+  pub safeClose => idempotentClose || strictClose
+
+  pub canClose => open && closePolicy != ""
+
+  pub closedOnce => closeCount == 1
+
+  pub doubleClose => closeCount > 1
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return live && generation == currentGeneration
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub expired(currentGeneration: u64) -> bool {
+    return stale(currentGeneration)
+  }
+
+  pub sameOwner(value: CompilerId) -> bool {
+    return owner == value
+  }
+
+  pub sameGen(value: u64) -> bool {
+    return generation == value
+  }
+
+  pub valid => closeCount >= 0 && closePolicy != ""
+}

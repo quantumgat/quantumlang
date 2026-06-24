@@ -1,0 +1,76 @@
+pub SyncPolicy {
+  exclusiveRequired: bool = true
+  deterministic: bool = true
+  ownerProtected: bool = false
+}
+
+impl SyncPolicy {
+  pub SyncPolicy(exclusiveRequired: bool, deterministic: bool, ownerProtected: bool) =
+    This {
+      exclusiveRequired
+      deterministic
+      ownerProtected
+    }
+
+  pub exclusive() -> This {
+    return this {
+      exclusiveRequired: true
+    }
+  }
+
+  pub shared() -> This {
+    return this {
+      exclusiveRequired: false
+    }
+  }
+
+  pub protect() -> This {
+    return this {
+      ownerProtected: true
+    }
+  }
+
+  pub unprotect() -> This {
+    return this {
+      ownerProtected: false
+    }
+  }
+
+  pub deterministicOnly() -> This {
+    return this {
+      deterministic: true
+    }
+  }
+
+  pub nondeterministic() -> This {
+    return this {
+      deterministic: false
+    }
+  }
+
+  pub merge(other: This) -> This {
+    return This {
+      exclusiveRequired: exclusiveRequired || other.exclusiveRequired
+      deterministic: deterministic && other.deterministic
+      ownerProtected: ownerProtected || other.ownerProtected
+    }
+  }
+}
+
+impl view SyncPolicy {
+  pub valid => deterministic
+
+  pub exclusive => exclusiveRequired
+
+  pub sharedAccess => exclusiveRequired == false
+
+  pub protected => ownerProtected
+
+  pub unprotected => ownerProtected == false
+
+  pub safe => deterministic && (exclusiveRequired || ownerProtected)
+
+  pub relaxed => exclusiveRequired == false
+
+  pub allowsWritableSharedAccess => ownerProtected
+}

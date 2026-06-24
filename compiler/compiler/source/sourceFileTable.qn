@@ -1,0 +1,96 @@
+import core::{FileId, NameId, Range, Slice}
+import host::{CompilerIo}
+
+pub SourceFileTable {
+  totalBytes: i64 = 0
+  fileIds: Slice<FileId> = []
+  pathIds: Slice<NameId> = []
+  modulePathIds: Slice<NameId> = []
+  byteRanges: Slice<Range<u8>> = []
+  fingerprintRanges: Slice<Range<u8>> = []
+  paths: string = ""
+  modulePaths: string = ""
+  byteLengths: string = ""
+  fingerprints: string = ""
+  deterministic: bool = true
+}
+
+impl SourceFileTable {
+  pub SourceFileTable(
+    count: i64,
+    totalBytes: i64,
+    paths: string,
+    modulePaths: string,
+    byteLengths: string,
+    fingerprints: string
+  ) =
+    This {
+      totalBytes
+      fileIds: Slice(count)
+      pathIds: Slice(count)
+      modulePathIds: Slice(count)
+      byteRanges: Slice(count)
+      fingerprintRanges: Slice(count)
+      paths
+      modulePaths
+      byteLengths
+      fingerprints
+    }
+
+  pub SourceFileTable(target: string) -> This {
+    let runtime = RuntimeSourceScan(target)
+    let io = CompilerIo(target)
+
+    This(
+      runtime.fileCount,
+      runtime.byteCount,
+      io.sourcePaths(),
+      io.sourceModulePaths(),
+      io.sourceByteLengths(),
+      io.sourceFingerprints()
+    )
+  }
+}
+
+impl view SourceFileTable {
+  pub count: i64 => fileIds.count
+
+  pub hasRows => count > 0
+
+  pub hasBytes => totalBytes > 0
+
+  pub fileRowsValid =>
+    fileIds.valid &&
+    pathIds.valid &&
+    modulePathIds.valid &&
+    byteRanges.valid &&
+    fingerprintRanges.valid
+
+  pub typedRowsAligned: bool =>
+    fileIds.count == pathIds.count &&
+    pathIds.count == modulePathIds.count &&
+    modulePathIds.count == byteRanges.count &&
+    byteRanges.count == fingerprintRanges.count
+
+  pub hasPaths => paths != ""
+
+  pub hasModulePaths => modulePaths != ""
+
+  pub hasByteLengths => byteLengths != ""
+
+  pub hasFingerprints => fingerprints != ""
+
+  pub rowDataReady: bool =>
+    hasPaths &&
+    hasModulePaths &&
+    hasByteLengths &&
+    hasFingerprints
+
+  pub valid: bool =>
+    deterministic &&
+    fileRowsValid &&
+    typedRowsAligned &&
+    hasRows &&
+    hasBytes &&
+    rowDataReady
+}

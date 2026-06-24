@@ -1,0 +1,150 @@
+pub ForeignBuffer<T> {
+  pointer: const *T = null
+  len: i64 = 0
+  cap: i64 = 0
+  allocator: Allocator = {}
+  owner: CompilerId = {}
+  generation: u64 = 0
+  released: bool = false
+}
+
+impl ForeignBuffer<T> {
+  pub ForeignBuffer(pointer: const *T, len: i64, allocator: Allocator) =
+    This {
+      pointer
+      len
+      cap: len
+      allocator
+    }
+
+  pub ForeignBuffer(pointer: const *T, len: i64, cap: i64, allocator: Allocator) =
+    This {
+      pointer
+      len
+      cap
+      allocator
+    }
+
+  pub ptr() -> const *T {
+    return cptr()
+  }
+
+  pub cptr() -> const *T {
+    if live == false {
+      return null
+    }
+    return pointer
+  }
+
+  pub borrow() -> Borrow<T> {
+    return Borrow<T>(cptr(), owner, generation)
+  }
+
+  pub slice(start: i64, count: i64) -> This {
+    if start < 0 || count < 0 || start > len {
+      return this
+    }
+    if start + count > len {
+      return this
+    }
+    return this {
+      len: count
+      cap: count
+      generation: generation + 1
+    }
+  }
+
+  pub take(count: i64) -> This {
+    return slice(0, count)
+  }
+
+  pub drop(count: i64) -> This {
+    if count < 0 || count > len {
+      return this
+    }
+    return this {
+      len: len - count
+      cap: cap - count
+      generation: generation + 1
+    }
+  }
+
+  pub clear() -> This {
+    return this {
+      len: 0
+      generation: generation + 1
+    }
+  }
+
+  pub reset(pointer: const *T, len: i64) -> This {
+    return this {
+      pointer
+      len
+      cap: len
+      released: false
+      generation: generation + 1
+    }
+  }
+
+  pub release() -> This {
+    return this {
+      released: true
+      len: 0
+      cap: 0
+      generation: generation + 1
+    }
+  }
+}
+
+impl view ForeignBuffer<T> {
+  pub live => released == false
+
+  pub empty => len == 0
+
+  pub readable => live && pointer.valid && len > 0
+
+  pub writable => false
+
+  pub bounded => cap > 0
+
+  pub unbounded => cap <= 0
+
+  pub remaining: i64 => match cap > len {
+    true => cap - len
+    false => 0
+  }
+
+  pub hasAllocator => allocator.valid
+
+  pub hasOwner => owner.valid
+
+  pub fits(count: i64) -> bool {
+    return count >= 0 && (unbounded || count <= remaining)
+  }
+
+  pub exceeds(count: i64) -> bool {
+    return fits(count) == false
+  }
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return live && generation == currentGeneration
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub expired(currentGeneration: u64) -> bool {
+    return stale(currentGeneration)
+  }
+
+  pub sameOwner(value: CompilerId) -> bool {
+    return owner == value
+  }
+
+  pub sameGen(value: u64) -> bool {
+    return generation == value
+  }
+
+  pub valid => pointer.valid && len >= 0 && cap >= len && allocator.valid
+}

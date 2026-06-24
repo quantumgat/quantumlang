@@ -1,0 +1,52 @@
+import typeSystem::{*}
+pub LiteralTypingProof {
+  primitiveDefaults: bool
+  textBytesDefaults: bool
+  optionRules: bool
+  aggregateRules: bool
+  valid: bool
+}
+
+pub literalTypingProof() -> LiteralTypingProof {
+  let boolFact = LiteralTypeFact.fromKind(TypeLiteralKind.Bool)
+  let integerFact = LiteralTypeFact.fromKind(TypeLiteralKind.Integer)
+  let floatFact = LiteralTypeFact.fromKind(TypeLiteralKind.Float)
+  let stringFact = LiteralTypeFact.fromKind(TypeLiteralKind.String)
+  let bytesFact = LiteralTypeFact.fromKind(TypeLiteralKind.Bytes)
+  let byteFact = LiteralTypeFact.fromKind(TypeLiteralKind.Byte)
+  let noneFact = LiteralTypeFact.fromKind(TypeLiteralKind.None)
+  let arrayFact = LiteralTypeFact.fromKind(TypeLiteralKind.Vec)
+  let mapFact = LiteralTypeFact.fromKind(TypeLiteralKind.Map)
+  let recordFact = LiteralTypeFact.fromKind(TypeLiteralKind.Record)
+
+  let primitiveDefaults = boolFact.defaultType == "bool" &&
+    integerFact.defaultType == "i32" &&
+    floatFact.defaultType == "f64" &&
+    byteFact.defaultType == "byte"
+
+  let textBytesDefaults = stringFact.defaultType == "string" &&
+    bytesFact.defaultType == "bytes"
+
+  let optionRules = noneFact.requiresTargetType &&
+    noneFact.defaultType == "Option<T>"
+
+  let aggregateRules = arrayFact.defaultType == "Vec<T>" &&
+    arrayFact.requiresTargetType &&
+    mapFact.defaultType == "Map<K,V>" &&
+    mapFact.requiresTargetType &&
+    recordFact.defaultType == "record" &&
+    !recordFact.requiresTargetType
+
+  let valid = primitiveDefaults &&
+    textBytesDefaults &&
+    optionRules &&
+    aggregateRules
+
+  return LiteralTypingProof {
+    primitiveDefaults: primitiveDefaults,
+    textBytesDefaults: textBytesDefaults,
+    optionRules: optionRules,
+    aggregateRules: aggregateRules,
+    valid: valid,
+  }
+}

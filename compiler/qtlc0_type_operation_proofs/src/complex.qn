@@ -1,0 +1,7 @@
+pub proof_complex() -> i64 {
+  let a: complex64 = complex64(1.0, 2.0)
+  let b: complex64 = complex64(3.0, 4.0)
+  let c: complex64 = a + b
+  println("complex64 ok: {c}")
+  return 0
+}

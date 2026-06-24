@@ -1,0 +1,141 @@
+pub Unique<T> {
+  value: T
+  owner: CompilerId = {}
+  generation: u64 = 0
+  released: bool = false
+}
+
+impl Unique<T> {
+  pub Unique(value: T) =
+    This {
+      value
+    }
+
+  pub Unique(value: T, owner: CompilerId, generation: u64) =
+    This {
+      value
+      owner
+      generation
+    }
+
+  pub ptr() -> *T {
+    if live == false {
+      return null
+    }
+    return &value
+  }
+
+  pub ref() -> &T {
+    return &value
+  }
+
+  pub borrow() -> Borrow<T> {
+    return Borrow<T>(cptr(), owner, generation)
+  }
+
+  pub borrowMut() -> BorrowMut<T> {
+    return BorrowMut<T>(ptr(), owner, generation)
+  }
+
+  pub take() -> T {
+    return ^value
+  }
+
+  pub replace(value: T) -> This {
+    return this {
+      value
+      generation: generation + 1
+    }
+  }
+
+  pub reset(value: T) -> This {
+    return replace(value)
+  }
+
+  pub clear() -> This {
+    return this {
+      released: true
+      generation: generation + 1
+    }
+  }
+
+  pub release() -> This {
+    return clear()
+  }
+
+  pub swap(other: This) -> This {
+    return this {
+      value: other.value
+      generation: generation + 1
+    }
+  }
+
+  pub intoShared() -> Shared<T> {
+    return Shared<T>(value, owner, generation)
+  }
+
+  pub intoPin() -> Pin<T> {
+    return Pin<T>(value, owner, generation)
+  }
+
+  pub intoPermanent() -> Permanent<T> {
+    return Permanent<T>(value, owner, generation)
+  }
+}
+
+impl view Unique<T> {
+  pub live => released == false
+
+  pub empty => released
+
+  pub readable => live
+
+  pub writable => live
+
+  pub ownsStorage => live
+
+  pub movable => live
+
+  pub unique => live
+
+  pub copyable => false
+
+  pub hasOwner => owner.valid
+
+  pub tracked => generation > 0 || owner.valid
+
+  pub cptr() -> const *T {
+    if live == false {
+      return null
+    }
+    return const *value
+  }
+
+  pub cref() -> const &T {
+    return const &value
+  }
+
+  pub address => cptr()
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return live && generation == currentGeneration
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub expired(currentGeneration: u64) -> bool {
+    return stale(currentGeneration)
+  }
+
+  pub sameOwner(value: CompilerId) -> bool {
+    return owner == value
+  }
+
+  pub sameGen(value: u64) -> bool {
+    return generation == value
+  }
+
+  pub valid => live
+}

@@ -1,0 +1,20 @@
+pub QuantumOperation {
+  name: string
+  gate: QuantumGate
+  effect: QuantumEffect
+  valid: bool
+}
+
+impl QuantumOperation {
+  pub QuantumOperation(name: string, gate: QuantumGate, effect: QuantumEffect) =
+    This {
+      name
+      gate
+      effect
+      valid: name != "" && gate.valid && effect.valid
+    }
+}
+
+impl view QuantumOperation {
+  pub lowerable => valid && gate.valid && effect.valid
+}

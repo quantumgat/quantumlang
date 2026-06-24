@@ -1,0 +1,31 @@
+pub PeripheralMap {
+  gpioCount: i64
+  uartCount: i64
+  spiCount: i64
+  i2cCount: i64
+  timerCount: i64
+}
+
+impl PeripheralMap {
+  pub PeripheralMap(gpioCount: i64, uartCount: i64, spiCount: i64, i2cCount: i64, timerCount: i64) =
+    This {
+      gpioCount
+      uartCount
+      spiCount
+      i2cCount
+      timerCount
+    }
+
+  pub minimal() =
+    This(1, 1, 0, 0, 1)
+
+  pub boardIo() =
+    This(4, 3, 2, 2, 8)
+}
+
+impl view PeripheralMap {
+  pub valid => gpioCount >= 0 && uartCount >= 0 && spiCount >= 0 && i2cCount >= 0 && timerCount >= 0
+  pub serialReady => uartCount > 0
+  pub timingReady => timerCount > 0
+  pub boardReady => valid && serialReady && timingReady
+}

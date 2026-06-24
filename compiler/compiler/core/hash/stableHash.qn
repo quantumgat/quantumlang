@@ -1,0 +1,251 @@
+pub role StableHash<T> {
+  stableHashInto(out: StableHashWriter) -> Result<void, HashError>
+}
+
+pub StableHashWriter {
+  domain: HashDomain = HashDomain.Semantic
+  buffer: ByteBuffer = {}
+  recordDepth: i64 = 0
+  fieldCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl StableHashWriter {
+  pub StableHashWriter(domain: HashDomain) =
+    This {
+      domain
+      buffer: ByteBuffer.withCapacity(256)
+    }
+
+  pub begin(typeName: string, schemaVersion: u64) -> Result<void, HashError> {
+    writeRawString("quantum.stable-hash")?
+    writeRawU64(1)?
+    writeRawI64(domainOrdinal(domain))?
+    writeRawString(typeName)?
+    writeRawU64(schemaVersion)?
+    recordDepth = recordDepth + 1
+    return Ok(0)
+  }
+
+  pub end() -> Result<void, HashError> {
+    if recordDepth <= 0 {
+      return Err(HashError { kind: HashErrorKind.EncodingFailed })
+    }
+    writeRawU8(255)?
+    recordDepth = recordDepth - 1
+    return Ok(0)
+  }
+
+  pub writeBool(name: string, value: bool) -> Result<void, HashError> {
+    writeField(name, 1)?
+    writeRawU8(match value {
+      true => 1
+      false => 0
+    })?
+    return Ok(0)
+  }
+
+  pub writeI64(name: string, value: i64) -> Result<void, HashError> {
+    writeField(name, 2)?
+    return accept(buffer.i64le(value))
+  }
+
+  pub writeU64(name: string, value: u64) -> Result<void, HashError> {
+    writeField(name, 3)?
+    return writeRawU64(value)
+  }
+
+  pub writeUsize(name: string, value: usize) -> Result<void, HashError> {
+    writeField(name, 4)?
+    return writeRawU64(value)
+  }
+
+  pub writeString(name: string, value: string) -> Result<void, HashError> {
+    writeField(name, 5)?
+    return writeRawString(value)
+  }
+
+  pub writeBytes(name: string, value: bytes) -> Result<void, HashError> {
+    writeField(name, 6)?
+    match buffer.varU64(value.length()) {
+      Ok(result) => {}
+      Err(error) => return Err(HashError { kind: HashErrorKind.EncodingFailed })
+    }
+    return accept(buffer.append(value))
+  }
+
+  pub writeCompilerId(name: string, value: CompilerId) -> Result<void, HashError> {
+    writeField(name, 7)?
+    writeRawI64(compilerIdKindOrdinal(value.kind))?
+    writeRawU64(value.value)?
+    writeRawU64(value.packageHash)?
+    writeRawU64(value.moduleHash)?
+    writeRawU64(value.localHash)?
+    writeRawU64(value.disambiguator)?
+    return Ok(0)
+  }
+
+  pub writeRange(
+    name: string,
+    start: i64,
+    count: i64
+  ) -> Result<void, HashError> {
+    writeField(name, 8)?
+    match buffer.i64le(start) {
+      Ok(result) => {}
+      Err(error) => return Err(HashError { kind: HashErrorKind.EncodingFailed })
+    }
+    return accept(buffer.i64le(count))
+  }
+
+  pub writeCount(name: string, count: i64) -> Result<void, HashError> {
+    writeField(name, 9)?
+    return accept(buffer.i64le(count))
+  }
+
+  pub beginList(name: string, count: i64) -> Result<void, HashError> {
+    writeField(name, 10)?
+    match buffer.i64le(count) {
+      Ok(result) => {}
+      Err(error) => return Err(HashError { kind: HashErrorKind.EncodingFailed })
+    }
+    recordDepth = recordDepth + 1
+    return Ok(0)
+  }
+
+  pub endList() -> Result<void, HashError> {
+    return end()
+  }
+
+  pub writeItemBool(value: bool) -> Result<void, HashError> {
+    writeRawU8(1)?
+    return writeRawU8(match value {
+      true => 1
+      false => 0
+    })
+  }
+
+  pub writeItemI64(value: i64) -> Result<void, HashError> {
+    writeRawU8(2)?
+    return accept(buffer.i64le(value))
+  }
+
+  pub writeItemU64(value: u64) -> Result<void, HashError> {
+    writeRawU8(3)?
+    return writeRawU64(value)
+  }
+
+  pub writeItemString(value: string) -> Result<void, HashError> {
+    writeRawU8(5)?
+    return writeRawString(value)
+  }
+
+  pub writeItemCompilerId(value: CompilerId) -> Result<void, HashError> {
+    writeRawU8(7)?
+    writeRawI64(compilerIdKindOrdinal(value.kind))?
+    writeRawU64(value.value)?
+    writeRawU64(value.packageHash)?
+    writeRawU64(value.moduleHash)?
+    writeRawU64(value.localHash)?
+    writeRawU64(value.disambiguator)?
+    return Ok(0)
+  }
+
+  pub finish() -> Result<Hash256, HashError> {
+    if !valid || recordDepth != 0 {
+      return Err(HashError { kind: HashErrorKind.EncodingFailed })
+    }
+    let hasher = Hasher.forDomain(domain)
+    match hasher.write(buffer.finish()) {
+      Ok(result) => return hasher.finish256()
+      Err(error) => return Err(HashError { kind: HashErrorKind.EncodingFailed })
+    }
+  }
+
+  writeField(name: string, tag: u8) -> Result<void, HashError> {
+    writeRawU8(tag)?
+    writeRawString(name)?
+    fieldCount = fieldCount + 1
+    return Ok(0)
+  }
+
+  writeRawU8(value: u8) -> Result<void, HashError> {
+    return accept(buffer.u8(value))
+  }
+
+  writeRawU64(value: u64) -> Result<void, HashError> {
+    return accept(buffer.u64le(value))
+  }
+
+  writeRawI64(value: i64) -> Result<void, HashError> {
+    return accept(buffer.i64le(value))
+  }
+
+  writeRawString(value: string) -> Result<void, HashError> {
+    return accept(buffer.varStr(value))
+  }
+
+  accept(result: Result<void, ByteError>) -> Result<void, HashError> {
+    match result {
+      Ok(value) => return Ok(0)
+      Err(error) => {
+        return Err(HashError { kind: HashErrorKind.EncodingFailed })
+      }
+    }
+  }
+}
+
+impl view StableHashWriter {
+  pub valid: bool =>
+    domain.valid &&
+    buffer.valid &&
+    recordDepth >= 0 &&
+    fieldCount >= 0 &&
+    deterministic
+}
+
+extend CompilerId : internal StableHash<CompilerId> {
+  stableHashInto(out: StableHashWriter) -> Result<void, HashError> {
+    out.begin("core.CompilerId", 1)?
+    out.writeCompilerId("id", this)?
+    return out.end()
+  }
+}
+compilerIdKindOrdinal(kind: CompilerIdKind) -> i64 {
+  if kind == CompilerIdKind.Package { return 1 }
+  if kind == CompilerIdKind.Module { return 2 }
+  if kind == CompilerIdKind.File { return 3 }
+  if kind == CompilerIdKind.Node { return 4 }
+  if kind == CompilerIdKind.Declaration { return 5 }
+  if kind == CompilerIdKind.Symbol { return 6 }
+  if kind == CompilerIdKind.Type { return 7 }
+  if kind == CompilerIdKind.Diagnostic { return 8 }
+  if kind == CompilerIdKind.QueryProduct { return 9 }
+  if kind == CompilerIdKind.Scope { return 10 }
+  if kind == CompilerIdKind.Body { return 11 }
+  if kind == CompilerIdKind.Block { return 12 }
+  if kind == CompilerIdKind.Value { return 13 }
+  if kind == CompilerIdKind.ObjectUnit { return 14 }
+  if kind == CompilerIdKind.LinkTarget { return 15 }
+  if kind == CompilerIdKind.Name { return 16 }
+  return 0
+}
+
+domainOrdinal(domain: HashDomain) -> i64 {
+  if domain == HashDomain.Value { return 1 }
+  if domain == HashDomain.Source { return 2 }
+  if domain == HashDomain.Syntax { return 3 }
+  if domain == HashDomain.Semantic { return 4 }
+  if domain == HashDomain.Action { return 5 }
+  if domain == HashDomain.Content { return 6 }
+  if domain == HashDomain.Query { return 7 }
+  if domain == HashDomain.Product { return 8 }
+  if domain == HashDomain.Object { return 9 }
+  if domain == HashDomain.Link { return 10 }
+  if domain == HashDomain.Abi { return 11 }
+  if domain == HashDomain.Package { return 12 }
+  if domain == HashDomain.Toolchain { return 13 }
+  if domain == HashDomain.Quantum { return 14 }
+  if domain == HashDomain.Security { return 15 }
+  return 0
+}

@@ -1,0 +1,9 @@
+pub proof_i64() -> i64 {
+  let a: i64 = 144
+  let b: i64 = 12
+  let c: i64 = a / b
+  let d: i64 = c * 3
+  if d != 36 { return 11 }
+  println("i64 ok: {d}")
+  return 0
+}

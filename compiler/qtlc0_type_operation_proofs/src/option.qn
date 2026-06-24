@@ -1,0 +1,20 @@
+pub OptionUser {
+  id: i64
+  name: string
+}
+
+pub proof_option() -> i64 {
+  let user: OptionUser = { id: 7, name: "Ali" }
+  let maybe: Option<OptionUser> = some(user)
+  match maybe {
+    Some(value) => {
+      if value.id != 7 { return 11 }
+      if value.name != "Ali" { return 12 }
+      println("option ok: {value.name}")
+      return 0
+    }
+    None => {
+      return 13
+    }
+  }
+}

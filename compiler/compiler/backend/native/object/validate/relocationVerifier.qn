@@ -1,0 +1,35 @@
+pub ObjectRelocationVerifier {
+  relocations: ObjectRelocationLayout
+  issueCount: i64
+  diagnosticCode: string = ""
+}
+
+impl ObjectRelocationVerifier {
+  pub ObjectRelocationVerifier(relocations: ObjectRelocationLayout, issueCount: i64, diagnosticCode: string) =
+    This {
+      relocations
+      issueCount
+      diagnosticCode
+    }
+
+  pub fromLayout(relocations: ObjectRelocationLayout) =
+    This {
+      relocations
+      issueCount: match relocations.valid {
+        true => 0
+        false => 1
+      }
+      diagnosticCode: match relocations.valid {
+        true => ""
+        false => "QNATIVE0743"
+      }
+    }
+}
+
+impl view ObjectRelocationVerifier {
+  pub valid: bool => diagnosticCode == "" &&
+    issueCount == 0 &&
+    relocations.valid
+  pub failed: bool => !valid
+  pub debugName: string => "object.relocation.verify.{relocations.relocationCount}.{issueCount}"
+}

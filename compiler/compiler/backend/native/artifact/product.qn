@@ -1,0 +1,39 @@
+pub ArtifactProduct {
+  packageName: string
+  profile: ArtifactProfile
+  paths: ArtifactPaths
+  cacheScope: ArtifactCacheScope
+}
+
+impl ArtifactProduct {
+  pub ArtifactProduct(
+    packageName: string,
+    profile: ArtifactProfile,
+    paths: ArtifactPaths,
+    cacheScope: ArtifactCacheScope
+  ) =
+    This {
+      packageName
+      profile
+      paths
+      cacheScope
+    }
+
+  pub fromLayout(layout: Layout) =
+    This {
+      packageName: layout.packageName
+      profile: layout.profileInfo
+      paths: layout.paths
+      cacheScope: layout.cacheScope
+    }
+}
+
+impl view ArtifactProduct {
+  pub valid: bool =>
+    packageName != "" &&
+    profile.valid &&
+    paths.valid &&
+    cacheScope.valid
+
+  pub productHash: string => "artifact.product:{packageName}:{profile.profileHash}:{paths.pathHash}:{cacheScope.cacheHash}"
+}

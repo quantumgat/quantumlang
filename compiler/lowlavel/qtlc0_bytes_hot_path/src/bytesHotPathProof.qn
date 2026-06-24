@@ -1,0 +1,272 @@
+pub enum HotByteOrder {
+  LittleEndian
+  BigEndian
+  NativeEndian
+}
+
+pub enum HotByteErrorKind {
+  EndOfInput
+  OutOfBounds
+  BufferOverflow
+}
+
+pub ByteError {
+  kind: HotByteErrorKind
+  offset: usize = 0
+  requested: usize = 0
+  available: usize = 0
+}
+
+pub extend bytes {
+  length() -> usize
+}
+
+pub extend BytesView {
+  length() -> usize
+}
+
+pub ByteBuffer {
+  value: bytes = []
+  length: usize = 0
+  capacity: usize = 0
+}
+
+impl ByteBuffer {
+  pub withCapacity(capacity: usize) -> This
+
+  pub reserve(extra: usize) -> Result<void, ByteError> mut
+
+  pub clear() mut
+
+  pub u8(value: u8) -> Result<void, ByteError> mut
+
+  pub u16le(value: u16) -> Result<void, ByteError> mut
+
+  pub u16be(value: u16) -> Result<void, ByteError> mut
+
+  pub u32le(value: u32) -> Result<void, ByteError> mut
+
+  pub u64le(value: u64) -> Result<void, ByteError> mut
+
+  pub u128be(value: u128) -> Result<void, ByteError> mut
+
+  pub varU64(value: u64) -> Result<void, ByteError> mut
+
+  pub varI64(value: i64) -> Result<void, ByteError> mut
+
+  pub append(value: bytes) -> Result<void, ByteError> mut
+
+  pub bytes16be(value: bytes) -> Result<void, ByteError> mut
+
+  pub bytes64be(value: bytes) -> Result<void, ByteError> mut
+
+  pub varBytes(value: bytes) -> Result<void, ByteError> mut
+
+  pub str8(value: string) -> Result<void, ByteError> mut
+
+  pub str64le(value: string) -> Result<void, ByteError> mut
+
+  pub varStr(value: string) -> Result<void, ByteError> mut
+
+  pub cstring(value: string) -> Result<void, ByteError> mut
+
+  pub align(alignment: usize) -> Result<void, ByteError> mut
+
+  pub finish() -> bytes
+}
+
+pub ByteView {
+  value: bytes = b""
+  offset: usize = 0
+  length: usize = 0
+}
+
+impl ByteView {
+  pub ByteView(value: bytes) =
+    This { value, length: value.length() }
+
+}
+
+pub ByteCursor {
+  view: ByteView = {}
+  position: usize = 0
+}
+
+impl ByteCursor {
+  pub ByteCursor(value: bytes) =
+    This { view: ByteView(value) }
+
+  pub u8() -> Result<u8, ByteError> mut
+
+  pub u16le() -> Result<u16, ByteError> mut
+
+  pub u16be() -> Result<u16, ByteError> mut
+
+  pub u32le() -> Result<u32, ByteError> mut
+
+  pub u64le() -> Result<u64, ByteError> mut
+
+  pub u128be() -> Result<u128, ByteError> mut
+
+  pub varU64() -> Result<u64, ByteError> mut
+
+  pub varI64() -> Result<i64, ByteError> mut
+
+  pub read(count: usize) -> Result<ByteView, ByteError> mut
+
+  pub bytes16be() -> Result<ByteView, ByteError> mut
+
+  pub bytes64be() -> Result<ByteView, ByteError> mut
+
+  pub varBytes() -> Result<ByteView, ByteError> mut
+
+  pub str8() -> Result<string, ByteError> mut
+
+  pub str64le() -> Result<string, ByteError> mut
+
+  pub varStr() -> Result<string, ByteError> mut
+
+  pub cstring() -> Result<string, ByteError> mut
+
+  pub utf8(count: usize) -> Result<string, ByteError> mut
+
+  pub expect(value: bytes) -> Result<void, ByteError> mut
+
+  pub magic(value: bytes) -> Result<void, ByteError> mut
+
+  pub require(count: usize) -> Result<void, ByteError>
+
+  pub seek(position: usize) -> Result<void, ByteError> mut
+
+  pub skip(count: usize) -> Result<void, ByteError> mut
+
+  pub align(alignment: usize) -> Result<void, ByteError> mut
+
+  pub checksum32() -> u32
+}
+
+pub bytesHotPathStatus() -> Result<i64, ByteError> {
+  // Native bytes proof: direct stores, loads, swaps, and one bounds guard.
+  let scratch = ByteBuffer.withCapacity(4)
+  scratch.u8(0xff)?
+  scratch.clear()
+  scratch.reserve(40)?
+
+  let out = ByteBuffer.withCapacity(160)
+  out.u8(0x51)?
+  out.align(4)?
+  out.append(b"AB")?
+  out.u16be(0x5042)?
+  out.u32le(0x01020304)?
+  out.u64le(0x1112131415161718)?
+  out.u128be(123456)?
+  out.bytes16be(b"XY")?
+  out.bytes64be(b"HASH")?
+  out.varBytes(b"compact")?
+  out.str8("hi")?
+  out.str64le("large text")?
+  out.varStr("variable text")?
+  out.cstring("ok")?
+  out.varU64(300)?
+  out.varI64(-123)?
+  let encoded: bytes = out.finish()
+
+  let cur = ByteCursor(encoded)
+  cur.require(1)?
+  let first: u8 = cur.u8()?
+  if first != 0x51 {
+    return Ok(2)
+  }
+
+  cur.align(4)?
+  let bytePair: ByteView = cur.read(2)?
+  if bytePair.length != 2 {
+    return Ok(3)
+  }
+
+  let marker: u16 = cur.u16be()?
+  if marker != 0x5042 {
+    return Ok(4)
+  }
+
+  let count: u32 = cur.u32le()?
+  if count != 0x01020304 {
+    return Ok(5)
+  }
+
+  let wide: u64 = cur.u64le()?
+  if wide != 0x1112131415161718 {
+    return Ok(6)
+  }
+
+  let veryWide: u128 = cur.u128be()?
+  if veryWide != 123456 {
+    return Ok(7)
+  }
+
+  let framedBytes: ByteView = cur.bytes16be()?
+  if framedBytes.length != 2 {
+    return Ok(8)
+  }
+
+  let largeBytes: ByteView = cur.bytes64be()?
+  if largeBytes.length != 4 {
+    return Ok(9)
+  }
+
+  let compactBytes: ByteView = cur.varBytes()?
+  if compactBytes.length != 7 {
+    return Ok(10)
+  }
+
+  let framedText: string = cur.str8()?
+  if framedText != "hi" {
+    return Ok(11)
+  }
+
+  let largeText: string = cur.str64le()?
+  if largeText != "large text" {
+    return Ok(12)
+  }
+
+  let variableText: string = cur.varStr()?
+  if variableText != "variable text" {
+    return Ok(13)
+  }
+
+  let terminatedText: string = cur.cstring()?
+  if terminatedText != "ok" {
+    return Ok(14)
+  }
+
+  let unsignedVar: u64 = cur.varU64()?
+  if unsignedVar != 300 {
+    return Ok(15)
+  }
+
+  let signedVar: i64 = cur.varI64()?
+  if signedVar != -123 {
+    return Ok(16)
+  }
+
+  cur.seek(0)?
+  cur.magic(b"Q")?
+  cur.seek(0)?
+  let firstText: string = cur.utf8(1)?
+  if firstText != "Q" {
+    return Ok(17)
+  }
+  cur.seek(0)?
+  cur.expect(b"Q")?
+  cur.skip(1)?
+  if cur.checksum32() == 0 {
+    return Ok(18)
+  }
+
+  cur.seek(encoded.length())?
+  if cur.u8().isErr() == false {
+    return Ok(19)
+  }
+
+  return Ok(0)
+}

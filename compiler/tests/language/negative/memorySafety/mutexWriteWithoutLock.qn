@@ -1,0 +1,7 @@
+import core::{Mutex}
+
+pub mutexWriteWithoutLock() -> i64 {
+  let mutex = Mutex<i64>(1)
+  let changed = mutex.set(2)
+  return changed.ref()
+}

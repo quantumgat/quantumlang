@@ -1,0 +1,75 @@
+pub LiteralTypeFact {
+  kind: TypeLiteralKind = Unknown
+  defaultType: string = ""
+  requiresTargetType: bool = false
+  valid: bool = false
+}
+
+impl LiteralTypeFact {
+  pub fromKind(kind: TypeLiteralKind) -> This {
+    let policy = LiteralTypingPolicy.quantum
+    if kind == TypeLiteralKind.Bool {
+      return This { kind, defaultType: policy.boolLiteralType, valid: true }
+    }
+    if kind == TypeLiteralKind.Integer {
+      return This { kind, defaultType: policy.defaultIntegerType, valid: true }
+    }
+    if kind == TypeLiteralKind.Float {
+      return This { kind, defaultType: policy.defaultFloatType, valid: true }
+    }
+    if kind == TypeLiteralKind.String {
+      return This { kind, defaultType: policy.stringLiteralType, valid: true }
+    }
+    if kind == TypeLiteralKind.Bytes {
+      return This { kind, defaultType: policy.bytesLiteralType, valid: true }
+    }
+    if kind == TypeLiteralKind.Byte {
+      return This { kind, defaultType: policy.byteLiteralType, valid: true }
+    }
+    if kind == TypeLiteralKind.None {
+      return This { kind, defaultType: "Option<T>", requiresTargetType: policy.optionNoneRequiresTarget, valid: true }
+    }
+    if kind == TypeLiteralKind.Record {
+      return This { kind, defaultType: policy.recordLiteralAnonymousType, valid: true }
+    }
+    if kind == TypeLiteralKind.Vec {
+      return This { kind, defaultType: "Vec<T>", requiresTargetType: policy.emptyArrayRequiresTarget, valid: true }
+    }
+    if kind == TypeLiteralKind.FixedArray {
+      return This { kind, defaultType: "Array<T,N>", requiresTargetType: true, valid: true }
+    }
+    if kind == TypeLiteralKind.Map {
+      return This { kind, defaultType: "Map<K,V>", requiresTargetType: policy.mapRequiresQuotedKeysOrTarget, valid: true }
+    }
+    if kind == TypeLiteralKind.Set {
+      return This { kind, defaultType: "Set<T>", requiresTargetType: policy.emptySetRequiresTarget, valid: true }
+    }
+    if kind == TypeLiteralKind.Tuple {
+      return This { kind, defaultType: "Tuple<...T>", valid: true }
+    }
+    if kind == TypeLiteralKind.Range {
+      return This { kind, defaultType: "Range<T>", requiresTargetType: policy.rangeRequiresTypedBounds, valid: true }
+    }
+    if kind == TypeLiteralKind.HalfOpenRange {
+      return This { kind, defaultType: "Range<T>", requiresTargetType: policy.rangeRequiresTypedBounds, valid: true }
+    }
+    if kind == TypeLiteralKind.RangeFrom {
+      return This { kind, defaultType: "RangeFrom<T>", requiresTargetType: policy.rangeRequiresTypedBounds, valid: true }
+    }
+    if kind == TypeLiteralKind.RangeTo {
+      return This { kind, defaultType: "RangeTo<T>", requiresTargetType: policy.rangeRequiresTypedBounds, valid: true }
+    }
+    if kind == TypeLiteralKind.RangeToInclusive {
+      return This { kind, defaultType: "RangeToInclusive<T>", requiresTargetType: policy.rangeRequiresTypedBounds, valid: true }
+    }
+    if kind == TypeLiteralKind.RangeFull {
+      return This { kind, defaultType: "RangeFull", valid: true }
+    }
+    return This { kind }
+  }
+}
+
+impl view LiteralTypeFact {
+  pub hasDefault => defaultType != ""
+  pub needsTarget => requiresTargetType
+}

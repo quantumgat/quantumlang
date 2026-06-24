@@ -1,0 +1,29 @@
+import core::{TypeId, Vec}
+
+pub SubstitutionRow {
+  parameter: TypeId
+  argument: TypeId
+}
+
+impl view SubstitutionRow {
+  pub valid: bool => parameter.id.valid && argument.id.valid
+}
+
+pub Substitution {
+  rows: Vec<SubstitutionRow> = []
+  deterministic: bool = true
+}
+
+impl Substitution {
+  pub Substitution(rows: Vec<SubstitutionRow>) =
+    This { rows }
+}
+
+impl view Substitution {
+  pub count: i64 => rows.count
+
+  pub valid: bool =>
+    rows.valid &&
+    count > 0 &&
+    deterministic
+}

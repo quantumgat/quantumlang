@@ -1,0 +1,20 @@
+pub QuantumMirLowering {
+  lowered: i64
+  qmirProduct: Qmir
+  qtirProduct: Qtir
+  backendReady: bool
+}
+
+impl QuantumMirLowering {
+  pub QuantumMirLowering(lowered: i64, qmirProduct: Qmir, qtirProduct: Qtir) =
+    This {
+      lowered
+      qmirProduct
+      qtirProduct
+      backendReady: qmirProduct.deterministic && qtirProduct.deterministic
+    }
+}
+
+impl view QuantumMirLowering {
+  pub valid => lowered >= 0 && backendReady
+}

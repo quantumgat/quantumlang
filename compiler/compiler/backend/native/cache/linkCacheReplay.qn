@@ -1,0 +1,39 @@
+pub LinkCacheReplay {
+  entry: LinkCacheEntry
+  restored: bool
+  replayReason: string
+  diagnosticCode: string = ""
+}
+
+impl LinkCacheReplay {
+  pub LinkCacheReplay(entry: LinkCacheEntry, restored: bool, replayReason: string) =
+    This {
+      entry
+      restored
+      replayReason
+    }
+
+  pub hit(entry: LinkCacheEntry) =
+    This {
+      entry
+      restored: true
+      replayReason: "link-cache-hit"
+    }
+
+  pub miss(entry: LinkCacheEntry, replayReason: string) =
+    This {
+      entry
+      restored: false
+      replayReason
+    }
+}
+
+impl view LinkCacheReplay {
+  pub valid: bool => diagnosticCode == "" &&
+    entry.valid &&
+    replayReason != ""
+  pub restoredExecutable: bool => valid && restored
+  pub needsLink: bool => valid && restored == false
+  pub replayHash => "link-cache-replay:{entry.entryHash}:{restored}:{replayReason}"
+  pub debugName => "link.cache.replay.{restored}"
+}

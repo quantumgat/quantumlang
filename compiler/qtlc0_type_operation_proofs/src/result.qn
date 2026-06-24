@@ -1,0 +1,25 @@
+pub ResultUser {
+  id: i64
+  name: string
+}
+
+pub ResultError {
+  code: i64
+}
+
+pub proof_result() -> i64 {
+  let user: ResultUser = { id: 8, name: "Sara" }
+  let result: Result<ResultUser, ResultError> = ok(user)
+  match result {
+    Ok(value) => {
+      if value.id != 8 { return 11 }
+      if value.name != "Sara" { return 12 }
+      println("result ok: {value.name}")
+      return 0
+    }
+    Err(error) => {
+      println("result error: {error.code}")
+      return 13
+    }
+  }
+}

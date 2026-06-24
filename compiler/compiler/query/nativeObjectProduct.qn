@@ -1,0 +1,65 @@
+pub enum NativeObjectStatus {
+  Missing
+  Emitted
+  Restored
+  BlockedByMirBody
+  Failed
+}
+
+pub NativeObjectProduct {
+  objectUnitId: StableId
+  key: QueryKey
+  mirFingerprint: Fingerprint
+  objectFingerprint: Fingerprint
+  targetKey: string
+  profileKey: string
+  objectPath: string
+  status: NativeObjectStatus
+  symbolCount: usize
+  relocationCount: usize
+  byteSize: usize
+  diagnosticCount: usize = 0
+  schemaVersion: u64 = 1
+}
+
+impl NativeObjectProduct {
+  pub init(
+    objectUnitId: StableId,
+    mirFingerprint: Fingerprint,
+    objectFingerprint: Fingerprint,
+    targetKey: string,
+    profileKey: string,
+    objectPath: string,
+    status: NativeObjectStatus,
+    symbolCount: usize,
+    relocationCount: usize,
+    byteSize: usize,
+    diagnosticCount: usize
+  ) =
+    This {
+      objectUnitId
+      key: QueryKey.nativeObject(objectUnitId, targetKey, profileKey)
+      mirFingerprint
+      objectFingerprint
+      targetKey
+      profileKey
+      objectPath
+      status
+      symbolCount
+      relocationCount
+      byteSize
+      diagnosticCount
+    }
+
+  pub productFingerprint() =
+    ProductFingerprint(mirFingerprint, objectFingerprint)
+}
+
+impl view NativeObjectProduct {
+  pub emitted => status == NativeObjectStatus.Emitted
+  pub restored => status == NativeObjectStatus.Restored
+  pub blocked => status == NativeObjectStatus.BlockedByMirBody
+  pub failed => status == NativeObjectStatus.Failed || diagnosticCount > 0
+  pub replayable => failed == false && blocked == false && objectPath != ""
+  pub materialized => emitted || restored
+}

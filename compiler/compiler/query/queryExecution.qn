@@ -1,0 +1,25 @@
+pub QueryExecution {
+  key: QueryKey
+  lookup: ProductLookup
+  result: QueryResult
+  recomputed: bool = false
+  blocked: bool = false
+}
+
+impl QueryExecution {
+  pub cacheHit(key: QueryKey, lookup: ProductLookup, result: QueryResult) =
+    This { key, lookup, result }
+
+  pub recomputed(key: QueryKey, lookup: ProductLookup, result: QueryResult) =
+    This { key, lookup, result, recomputed: true }
+
+  pub blocked(key: QueryKey, lookup: ProductLookup, result: QueryResult) =
+    This { key, lookup, result, blocked: true }
+}
+
+impl view QueryExecution {
+  pub cacheHitExecution => lookup.usable && result.cacheHit
+  pub rejected => lookup.cacheReject || result.rejectedResult
+  pub successful => blocked == false && result.valid
+  pub needsWrite => recomputed && successful
+}

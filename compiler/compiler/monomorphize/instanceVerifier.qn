@@ -1,0 +1,27 @@
+pub InstanceVerification {
+  keyValid: bool
+  substitutionValid: bool
+  ownerValid: bool
+  bodyCount: i64
+  deterministic: bool
+}
+
+impl InstanceVerification {
+  pub verify(product: InstanceProduct) =
+    This {
+      keyValid: product.key.valid
+      substitutionValid: product.substitution.valid
+      ownerValid: product.owner.valid
+      bodyCount: product.bodyCount
+      deterministic: product.deterministic
+    }
+}
+
+impl view InstanceVerification {
+  pub valid: bool =>
+    keyValid &&
+    substitutionValid &&
+    ownerValid &&
+    bodyCount > 0 &&
+    deterministic
+}

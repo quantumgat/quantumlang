@@ -1,0 +1,26 @@
+pub ProcessContext {
+  args: Args = {}
+  env: ProcessEnv = {}
+  io: ProcessIo = {}
+  exitCode: ProcessExitCode = {}
+}
+
+impl ProcessContext {
+  pub host(args: Args) =
+    This {
+      args
+      env: ProcessEnv.host()
+      io: ProcessIo.standard()
+      exitCode: ProcessExitCode.core()
+    }
+}
+
+impl view ProcessContext {
+  pub valid: bool =>
+    args.valid &&
+    env.valid &&
+    io.valid &&
+    exitCode.valid
+
+  pub commandReady: bool => valid && args.decodeReady
+}

@@ -1,0 +1,36 @@
+pub ElfStringTable {
+  payload: bytes = []
+  byteCount: i64 = 0
+  nameCount: i64 = 0
+  diagnosticCode: string = ""
+}
+
+impl ElfStringTable {
+  pub ElfStringTable(payload: bytes, byteCount: i64, nameCount: i64) =
+    This {
+      payload
+      byteCount
+      nameCount
+    }
+
+  pub minimalSectionNames() =
+    This {
+      payload: [
+        0x00, 0x2e, 0x74, 0x65, 0x78, 0x74, 0x00, 0x2e,
+        0x73, 0x68, 0x73, 0x74, 0x72, 0x74, 0x61, 0x62,
+        0x00
+      ]
+      byteCount: 17
+      nameCount: 2
+    }
+}
+
+impl view ElfStringTable {
+  pub valid: bool => diagnosticCode == "" &&
+    byteCount == payload.length() &&
+    byteCount == 17 &&
+    nameCount == 2
+  pub textNameOffset: i64 => 1
+  pub sectionStringNameOffset: i64 => 7
+  pub debugName: string => "elf.shstrtab.{byteCount}.{nameCount}"
+}

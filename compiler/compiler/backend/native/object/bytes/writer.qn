@@ -1,0 +1,49 @@
+pub ObjectByteWriter {
+  layout: ObjectLayout
+  verifier: ObjectVerifier
+  endian: ObjectEndian
+  byteCount: i64
+  segmentCount: i64
+  diagnosticCode: string = ""
+}
+
+impl ObjectByteWriter {
+  pub ObjectByteWriter(
+    layout: ObjectLayout,
+    verifier: ObjectVerifier,
+    endian: ObjectEndian,
+    byteCount: i64,
+    segmentCount: i64
+  ) =
+    This {
+      layout
+      verifier
+      endian
+      byteCount
+      segmentCount
+    }
+
+  pub fromLayout(layout: ObjectLayout) =
+    This {
+      layout
+      verifier: ObjectVerifier.fromLayout(layout)
+      endian: ObjectEndian.little()
+      byteCount: layout.fileSize
+      segmentCount: 6
+      diagnosticCode: match layout.payloadReady {
+        true => ""
+        false => "QNATIVE0752"
+      }
+    }
+}
+
+impl view ObjectByteWriter {
+  pub valid: bool => diagnosticCode == "" &&
+    verifier.payloadReady &&
+    endian.valid &&
+    byteCount == layout.fileSize &&
+    segmentCount > 0
+  pub payloadReady: bool => valid
+  pub deterministic: bool => valid && layout.deterministic
+  pub debugName: string => "object.writer.{layout.objectHash}.{byteCount}"
+}

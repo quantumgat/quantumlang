@@ -1,0 +1,34 @@
+pub ConstantSelect {
+  constantKind: string
+  widthBits: i64
+  inlineValue: bool
+  selectedOpcode: string
+  diagnosticCode: string = ""
+}
+
+impl ConstantSelect {
+  pub ConstantSelect(constantKind: string, widthBits: i64, inlineValue: bool, selectedOpcode: string) =
+    This {
+      constantKind
+      widthBits
+      inlineValue
+      selectedOpcode
+    }
+
+  pub immediate(widthBits: i64) =
+    This("integer", widthBits, true, "imm")
+
+  pub symbol(widthBits: i64) =
+    This("symbol", widthBits, false, "symbol")
+}
+
+impl view ConstantSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    constantKind != "" &&
+    widthBits > 0 &&
+    selectedOpcode != ""
+
+  pub relocationRequired: bool => valid && inlineValue == false
+  pub debugName: string => "isel.constant.{constantKind}.{widthBits}"
+}

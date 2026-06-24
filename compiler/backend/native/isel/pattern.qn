@@ -1,0 +1,41 @@
+pub SelectionPattern {
+  patternName: string
+  sourceOpcode: string
+  selectedOpcode: string
+  operandCount: i64
+  cost: i64
+  diagnosticCode: string = ""
+}
+
+impl SelectionPattern {
+  pub SelectionPattern(
+    patternName: string,
+    sourceOpcode: string,
+    selectedOpcode: string,
+    operandCount: i64,
+    cost: i64
+  ) =
+    This {
+      patternName
+      sourceOpcode
+      selectedOpcode
+      operandCount
+      cost
+    }
+
+  pub exact(sourceOpcode: string, selectedOpcode: string, operandCount: i64) =
+    This("exact:{sourceOpcode}:{selectedOpcode}", sourceOpcode, selectedOpcode, operandCount, 1)
+}
+
+impl view SelectionPattern {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    patternName != "" &&
+    sourceOpcode != "" &&
+    selectedOpcode != "" &&
+    operandCount >= 0 &&
+    cost >= 0
+
+  pub preferred: bool => valid && cost <= 1
+  pub debugName: string => "isel.pattern.{patternName}"
+}

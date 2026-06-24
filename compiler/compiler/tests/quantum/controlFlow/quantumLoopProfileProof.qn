@@ -1,0 +1,54 @@
+import compiler::quantum::{*}
+pub QuantumLoopProfileProof {
+  qwhileRestricted: bool
+  qloopRestricted: bool
+  boundednessRequired: bool
+  unsupportedProfileRejected: bool
+  unboundedLoopRejected: bool
+  valid: bool
+}
+
+pub quantumLoopProfileProof() -> QuantumLoopProfileProof {
+  let profileFact = QuantumLoopProfileFact("bounded-qasm3", true, true, true)
+  let unsupportedProfile = QuantumLoopProfileFact("bounded-qasm3", true, true, false)
+  let bound = QuantumLoopBoundFact(64, true, true)
+  let unbounded = QuantumLoopBoundFact(-1, false, false)
+  let qwhileFact = QuantumWhile(profileFact.profileName, bound.valid, profileFact.targetSupported)
+  let qloopFact = QuantumLoop(profileFact.profileName, bound.valid, profileFact.targetSupported)
+
+  let qwhileRestricted = profileFact.valid &&
+    profileFact.qwhileAllowed &&
+    qwhileFact.valid &&
+    qwhileFact.bounded
+
+  let qloopRestricted = profileFact.valid &&
+    profileFact.qloopAllowed &&
+    qloopFact.valid &&
+    qloopFact.bounded
+
+  let boundednessRequired = bound.valid &&
+    bound.compileTimeBound &&
+    bound.runtimeGuardRequired &&
+    bound.deterministicExit
+
+  let unsupportedProfileRejected = !unsupportedProfile.valid &&
+    unsupportedProfile.diagnosticCode == "QTQUANTUM0204"
+
+  let unboundedLoopRejected = !unbounded.valid &&
+    unbounded.diagnosticCode == "QTQUANTUM0205"
+
+  let valid = qwhileRestricted &&
+    qloopRestricted &&
+    boundednessRequired &&
+    unsupportedProfileRejected &&
+    unboundedLoopRejected
+
+  return QuantumLoopProfileProof {
+    qwhileRestricted: qwhileRestricted,
+    qloopRestricted: qloopRestricted,
+    boundednessRequired: boundednessRequired,
+    unsupportedProfileRejected: unsupportedProfileRejected,
+    unboundedLoopRejected: unboundedLoopRejected,
+    valid: valid,
+  }
+}

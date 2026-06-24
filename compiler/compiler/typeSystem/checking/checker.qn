@@ -1,0 +1,3 @@
+pub TypeChecker {
+  checked: i64
+}

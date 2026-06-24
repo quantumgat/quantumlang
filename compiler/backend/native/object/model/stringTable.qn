@@ -1,0 +1,42 @@
+pub ObjectStringTable {
+  stringCount: i64
+  byteCount: i64
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl ObjectStringTable {
+  pub ObjectStringTable(stringCount: i64, byteCount: i64) =
+    This {
+      stringCount
+      byteCount
+    }
+
+  pub empty() =
+    This {
+      stringCount: 0
+      byteCount: 0
+    }
+
+  pub fromObjectCounts(sectionCount: i64, symbolCount: i64) =
+    This {
+      stringCount: sectionCount + symbolCount
+      byteCount: (sectionCount + symbolCount) * 16
+      deterministic: true
+      diagnosticCode: match sectionCount >= 0 && symbolCount >= 0 {
+        true => ""
+        false => "QNATIVE0710"
+      }
+    }
+}
+
+impl view ObjectStringTable {
+  pub valid => diagnosticCode == "" &&
+    stringCount >= 0 &&
+    byteCount >= 0 &&
+    deterministic
+  pub emptyTable => stringCount == 0
+  pub hasStrings => stringCount > 0
+  pub tableHash => "strtab:{stringCount}:{byteCount}:{deterministic}"
+  pub debugName => "strtab.{stringCount}.{byteCount}"
+}

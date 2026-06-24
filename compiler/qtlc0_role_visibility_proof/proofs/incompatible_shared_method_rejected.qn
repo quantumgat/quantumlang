@@ -1,0 +1,17 @@
+pub SharedUser {
+  id: i64
+}
+
+role NumericValue {
+  value() -> i64
+}
+
+role TextValue {
+  value() -> string
+}
+
+extend SharedUser : pub NumericValue, pub TextValue {
+  value() -> i64 {
+    id
+  }
+}

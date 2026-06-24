@@ -1,0 +1,24 @@
+pub QuantumGate {
+  name: string
+  arity: i64
+  unitary: bool
+  targetGated: bool
+  valid: bool
+}
+
+impl QuantumGate {
+  pub QuantumGate(name: string, arity: i64, unitary: bool) =
+    This {
+      name
+      arity
+      unitary
+      targetGated: true
+      valid: name != "" && arity > 0
+    }
+}
+
+impl view QuantumGate {
+  pub named => name != ""
+  pub requiresTarget => targetGated
+  pub usable => valid && unitary
+}

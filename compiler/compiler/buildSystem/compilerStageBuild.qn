@@ -1,0 +1,105 @@
+import backend::{Layout}
+import frontend::{FrontendProduct}
+
+pub CompilerStageBuildReport {
+  inputStage: string
+  outputStage: string
+  outputPath: string
+  artifactStatus: string
+  sourceCheckStatus: string
+  deterministicProductStatus: string
+  products: CompilerStagePipeline
+  exitCode: i64
+}
+
+impl CompilerStageBuildReport {
+  pub CompilerStageBuildReport(
+    inputStage: string,
+    outputStage: string,
+    outputPath: string,
+    artifactStatus: string,
+    sourceCheckStatus: string,
+    deterministicProductStatus: string,
+    products: CompilerStagePipeline,
+    exitCode: i64
+  ) -> CompilerStageBuildReport =
+    This {
+      inputStage,
+      outputStage,
+      outputPath,
+      artifactStatus,
+      sourceCheckStatus,
+      deterministicProductStatus,
+      products,
+      exitCode,
+    }
+
+  pub fromFrontend(
+    frontend: FrontendProduct,
+    sourceCheckStatus: string,
+    sourceExitCode: i64,
+    typedNodeCount: i64,
+    typeFactCount: i64
+  ) -> This {
+    let sourceValidated =
+      sourceExitCode == 0 &&
+      sourceCheckStatus == "ok"
+    let products = CompilerStagePipeline.forNativeObjects(
+      frontend,
+      sourceValidated,
+      typedNodeCount,
+      typeFactCount
+    )
+    This(
+      "qtlc1",
+      "qtlc2",
+      products.outputPath,
+      "qtlc1-product-pipeline",
+      sourceCheckStatus,
+      products.statusText,
+      products,
+      sourceExitCode
+    )
+  }
+
+  pub blocked(target: string, sourceCheckStatus: string, sourceExitCode: i64) -> This {
+    let products = CompilerStagePipeline.blockedBySource(target, sourceCheckStatus)
+    return This(
+      "qtlc1",
+      "qtlc2",
+      Layout.forPackage(target, "qtlc2", "debug").executablePath,
+      "qtlc1-product-pipeline",
+      sourceCheckStatus,
+      products.statusText,
+      products,
+      sourceExitCode
+    )
+  }
+
+}
+
+impl view CompilerStageBuildReport {
+  pub success => exitCode == 0
+  pub materialized => artifactStatus != "" && outputPath != ""
+  pub stageAdvance => inputStage != "" && outputStage != "" && inputStage != outputStage
+  pub sourceChecked => sourceCheckStatus == "ok"
+  pub deterministicProductsReady => products.deterministicProductsReady
+  pub buildable => products.buildable
+  pub readyForMaterialization: bool => {
+    success &&
+      materialized &&
+      stageAdvance &&
+      sourceChecked &&
+      products.readyForMaterialization
+  }
+  pub valid => success && materialized && stageAdvance && sourceChecked
+  pub statusText => sourceCheckStatus
+  pub materializationBlockReason: string => match true {
+    success == false => "source-check-exit-code"
+    materialized == false => "stage-output-path-missing"
+    stageAdvance == false => "stage-advance-invalid"
+    sourceChecked == false => "source-check-failed"
+    products.readyForMaterialization == false => products.statusText
+    _ => "ready"
+  }
+}

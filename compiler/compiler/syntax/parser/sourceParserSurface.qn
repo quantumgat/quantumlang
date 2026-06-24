@@ -1,0 +1,159 @@
+import core::{Vec}
+
+pub SourceParserSurface {
+  input: LexProduct = {}
+}
+
+impl SourceParserSurface {
+  pub SourceParserSurface(input: LexProduct) =
+    This { input }
+
+  pub declarationStart(token: SyntaxToken) -> bool {
+    return token.kind.keyword == KeywordKind.Import ||
+      token.kind.keyword == KeywordKind.Export ||
+      token.kind.keyword == KeywordKind.Pub ||
+      token.kind.keyword == KeywordKind.Private ||
+      token.kind.keyword == KeywordKind.Internal ||
+      token.kind.keyword == KeywordKind.Impl ||
+      token.kind.keyword == KeywordKind.Role ||
+      token.kind.keyword == KeywordKind.Context ||
+      token.kind.keyword == KeywordKind.Extract ||
+      token.kind.keyword == KeywordKind.Extend ||
+      token.kind.keyword == KeywordKind.Enum
+  }
+
+  pub topLevelSurfaceRoleListToken(index: i64, blockDepth: i64) -> bool {
+    if blockDepth != 0 {
+      return false
+    }
+    let cursor = index - 1
+    let seenColon = false
+    while cursor >= 0 {
+      let token = input.tokenAt(cursor)
+      if token.text == "{" || token.text == "}" {
+        return false
+      }
+      if token.text == ":" {
+        seenColon = true
+      }
+      if this.surfaceDeclarationStart(token) {
+        return seenColon
+      }
+      if this.nonVisibilityDeclarationStart(token) {
+        return false
+      }
+      cursor = cursor - 1
+    }
+    return false
+  }
+
+  surfaceDeclarationStart(token: SyntaxToken) -> bool {
+    return token.kind.keyword == KeywordKind.Impl ||
+      token.kind.keyword == KeywordKind.Context ||
+      token.kind.keyword == KeywordKind.Extract ||
+      token.kind.keyword == KeywordKind.Extend
+  }
+
+  nonVisibilityDeclarationStart(token: SyntaxToken) -> bool {
+    return token.kind.keyword == KeywordKind.Import ||
+      token.kind.keyword == KeywordKind.Export ||
+      token.kind.keyword == KeywordKind.Role ||
+      token.kind.keyword == KeywordKind.Enum
+  }
+
+  pub roleConformancesAt(index: i64) -> Vec<AstRoleConformance> {
+    let rows: Vec<AstRoleConformance> = []
+    let cursor = index + 1
+    let seenColon = false
+    let visibility = AstRoleVisibility.Private
+    while cursor < input.tokenCount {
+      let token = input.tokenAt(cursor)
+      if token.text == "{" || token.text == "where" {
+        break
+      }
+      if token.text == "\n" {
+        if seenColon {
+          cursor = cursor + 1
+          continue
+        }
+        break
+      }
+      if token.text == ":" {
+        seenColon = true
+        cursor = cursor + 1
+        continue
+      }
+      if !seenColon {
+        cursor = cursor + 1
+        continue
+      }
+      if token.kind.keyword == KeywordKind.Pub {
+        visibility = AstRoleVisibility.Public
+      } else if token.kind.keyword == KeywordKind.Internal {
+        visibility = AstRoleVisibility.Internal
+      } else if token.kind.keyword == KeywordKind.Protected {
+        visibility = AstRoleVisibility.Protected
+      } else if token.kind.keyword == KeywordKind.Private {
+        visibility = AstRoleVisibility.Private
+      } else if token.kind.identifierToken {
+        let roleName = this.typeNameAt(cursor)
+        rows.push(AstRoleConformance {
+          roleName
+          visibility
+          span: token.span
+        })
+        visibility = AstRoleVisibility.Private
+        cursor = cursor + this.typeNameTokenWidth(cursor)
+        continue
+      }
+      cursor = cursor + 1
+    }
+    return rows
+  }
+
+  typeNameAt(index: i64) -> string {
+    let result = input.tokenAt(index).text
+    let cursor = index + 1
+    let depth: i64 = 0
+    while cursor < input.tokenCount {
+      let token = input.tokenAt(cursor)
+      if depth == 0 &&
+         (token.text == "," ||
+          token.text == "{" ||
+          token.text == "\n" ||
+          token.text == "where") {
+        break
+      }
+      result = "{result}{token.text}"
+      if token.text == "<" {
+        depth = depth + 1
+      } else if token.text == ">" && depth > 0 {
+        depth = depth - 1
+      }
+      cursor = cursor + 1
+    }
+    return result
+  }
+
+  typeNameTokenWidth(index: i64) -> i64 {
+    let cursor = index + 1
+    let depth: i64 = 0
+    while cursor < input.tokenCount {
+      let token = input.tokenAt(cursor)
+      if depth == 0 &&
+         (token.text == "," ||
+          token.text == "{" ||
+          token.text == "\n" ||
+          token.text == "where") {
+        break
+      }
+      if token.text == "<" {
+        depth = depth + 1
+      } else if token.text == ">" && depth > 0 {
+        depth = depth - 1
+      }
+      cursor = cursor + 1
+    }
+    return cursor - index
+  }
+}

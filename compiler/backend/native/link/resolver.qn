@@ -1,0 +1,55 @@
+pub LinkResolver {
+  objectCount: i64
+  runtimeArchiveHash: string
+  linkerScriptHash: string
+  inputSetHash: string
+  unresolvedSymbolCount: i64
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl LinkResolver {
+  pub LinkResolver(
+    objectCount: i64,
+    runtimeArchiveHash: string,
+    linkerScriptHash: string,
+    inputSetHash: string,
+    unresolvedSymbolCount: i64
+  ) =
+    This {
+      objectCount
+      runtimeArchiveHash
+      linkerScriptHash
+      inputSetHash
+      unresolvedSymbolCount
+    }
+
+  pub fromInputSet(inputSet: LinkInputSet) =
+    This {
+      objectCount: inputSet.objectUnitCount
+      runtimeArchiveHash: inputSet.runtimeArchiveHash
+      linkerScriptHash: inputSet.linkerScriptHash
+      inputSetHash: inputSet.inputSetHash
+      unresolvedSymbolCount: 0
+      deterministic: inputSet.deterministic
+      diagnosticCode: match inputSet.valid {
+        true => ""
+        false => "QNATIVE0801"
+      }
+    }
+}
+
+impl view LinkResolver {
+  pub valid => diagnosticCode == "" &&
+    objectCount >= 0 &&
+    runtimeArchiveHash != "" &&
+    linkerScriptHash != "" &&
+    inputSetHash != "" &&
+    unresolvedSymbolCount >= 0 &&
+    deterministic
+  pub resolved => valid && unresolvedSymbolCount == 0
+  pub hasObjects => objectCount > 0
+  pub hasRuntime => runtimeArchiveHash != ""
+  pub resolverHash => "resolver:{objectCount}:{runtimeArchiveHash}:{linkerScriptHash}:{inputSetHash}:{unresolvedSymbolCount}"
+  pub debugName => "link.resolver.{objectCount}.{unresolvedSymbolCount}"
+}

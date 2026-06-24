@@ -1,0 +1,88 @@
+import hir::{HirFunction, HirControlFlowFact}
+
+pub enum LoweringStatus {
+  LoweringOk
+  DiagnosticError
+  Nondeterministic
+  SourceInvalid
+  MirInvalid
+  TerminatorInvalid
+}
+
+pub HirMirLoweringFact {
+  hirFunction: HirFunction
+  controlFlow: HirControlFlowFact
+  mirBody: MirBody
+  cfg: MirControlFlowGraph
+  returnTerminator: MirTerminator
+  branchTerminator: MirTerminator
+  requireTerminator: MirTerminator
+  diagnosticCode: string
+}
+
+impl HirMirLoweringFact {
+  pub HirMirLoweringFact(hirFunction: HirFunction, controlFlow: HirControlFlowFact) -> This {
+    let blockCount = hirFunction.blockCount + 1
+    let body = MirBody("hir", blockCount, hirFunction.parameterCount + 4, blockCount * 2)
+    let cfg = MirControlFlowGraph(blockCount + 1, blockCount)
+    let returnTerminator = MirTerminator("return", 0, controlFlow.hasReturn)
+    let branchTerminator = MirTerminator("branch", 2, false)
+    let requireTerminator = MirTerminator("requireFail", 0, controlFlow.hasRequire)
+    let accepted = hirFunction.valid &&
+      controlFlow.valid &&
+      body.valid &&
+      cfg.deterministic &&
+      returnTerminator.valid &&
+      branchTerminator.valid &&
+      requireTerminator.valid &&
+      body.deterministic &&
+      cfg.deterministic
+
+    if accepted {
+      return This {
+        hirFunction,
+        controlFlow,
+        mirBody: body,
+        cfg,
+        returnTerminator,
+        branchTerminator,
+        requireTerminator,
+        diagnosticCode: "",
+      }
+    }
+
+    return This {
+      hirFunction,
+      controlFlow,
+      mirBody: body,
+      cfg,
+      returnTerminator,
+      branchTerminator,
+      requireTerminator,
+      diagnosticCode: "QTIR0001",
+    }
+  }
+}
+
+impl view HirMirLoweringFact {
+  pub deterministic => mirBody.deterministic && cfg.deterministic
+  pub diagnosticClean => diagnosticCode == ""
+  pub sourceValid => hirFunction.valid && controlFlow.valid
+  pub mirValid => mirBody.valid && cfg.valid
+  pub terminatorsValid => returnTerminator.valid &&
+                            branchTerminator.valid &&
+                            requireTerminator.valid
+                          
+  pub status => match true {
+    diagnosticClean == false => LoweringStatus.DiagnosticError
+    deterministic == false => LoweringStatus.Nondeterministic
+    sourceValid == false => LoweringStatus.SourceInvalid
+    mirValid == false => LoweringStatus.MirInvalid
+    terminatorsValid == false => LoweringStatus.TerminatorInvalid
+    _ => LoweringStatus.LoweringOk
+  }
+  pub valid => status == LoweringStatus.LoweringOk
+  pub ok => valid
+  pub failed => valid == false
+  pub lowerable => valid
+}

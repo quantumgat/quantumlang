@@ -1,0 +1,61 @@
+pub enum GenericInstanceStatus {
+  Pending
+  Instantiated
+  BlockedBySignature
+  BlockedByConstraint
+  Failed
+}
+
+pub GenericInstanceProduct {
+  instanceId: StableId
+  originSymbolId: StableId
+  key: QueryKey
+  argumentFingerprint: Fingerprint
+  signatureFingerprint: Fingerprint
+  bodyFingerprint: Fingerprint
+  status: GenericInstanceStatus
+  argumentCount: usize
+  constraintCount: usize
+  substitutedSymbolCount: usize
+  diagnosticCount: usize = 0
+  schemaVersion: u64 = 1
+}
+
+impl GenericInstanceProduct {
+  pub init(
+    instanceId: StableId,
+    originSymbolId: StableId,
+    argumentFingerprint: Fingerprint,
+    signatureFingerprint: Fingerprint,
+    bodyFingerprint: Fingerprint,
+    status: GenericInstanceStatus,
+    argumentCount: usize,
+    constraintCount: usize,
+    substitutedSymbolCount: usize,
+    diagnosticCount: usize
+  ) =
+    This {
+      instanceId
+      originSymbolId
+      key: QueryKey.genericInstance(instanceId)
+      argumentFingerprint
+      signatureFingerprint
+      bodyFingerprint
+      status
+      argumentCount
+      constraintCount
+      substitutedSymbolCount
+      diagnosticCount
+    }
+
+  pub productFingerprint() =
+    ProductFingerprint(argumentFingerprint, bodyFingerprint)
+}
+
+impl view GenericInstanceProduct {
+  pub instantiated => status == GenericInstanceStatus.Instantiated
+  pub blocked => status == GenericInstanceStatus.BlockedBySignature || status == GenericInstanceStatus.BlockedByConstraint
+  pub failed => status == GenericInstanceStatus.Failed || diagnosticCount > 0
+  pub replayable => failed == false && blocked == false
+  pub constrained => constraintCount > 0
+}

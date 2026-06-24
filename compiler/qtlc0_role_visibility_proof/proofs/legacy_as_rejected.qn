@@ -1,0 +1,13 @@
+pub LegacyUser {
+  id: i64
+}
+
+pub role LegacyRole {
+  idValue() -> i64
+}
+
+extend LegacyUser as LegacyRole {
+  idValue() -> i64 {
+    id
+  }
+}

@@ -1,0 +1,39 @@
+pub ArtifactManifest {
+  product: ArtifactProduct
+  targetTriple: string
+  objectFormat: string
+  abi: string
+}
+
+impl ArtifactManifest {
+  pub ArtifactManifest(
+    product: ArtifactProduct,
+    targetTriple: string,
+    objectFormat: string,
+    abi: string
+  ) =
+    This {
+      product
+      targetTriple
+      objectFormat
+      abi
+    }
+
+  pub forTarget(layout: Layout, target: TargetIdentity) =
+    This {
+      product: ArtifactProduct.fromLayout(layout)
+      targetTriple: target.targetTriple
+      objectFormat: target.objectFormat
+      abi: target.abi
+    }
+}
+
+impl view ArtifactManifest {
+  pub valid: bool =>
+    product.valid &&
+    targetTriple != "" &&
+    objectFormat != "" &&
+    abi != ""
+
+  pub manifestHash: string => "artifact.manifest:{product.productHash}:{targetTriple}:{objectFormat}:{abi}"
+}

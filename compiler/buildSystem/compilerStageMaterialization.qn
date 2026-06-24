@@ -1,0 +1,115 @@
+import backend::{PipelineAdapter}
+import buildSystem::{BootstrapMaterializer}
+import host::{CompilerIo}
+
+pub CompilerStageMaterialization {
+  packageRoot: string
+  outputPath: string
+  pipelineHash: string
+  resultHash: string
+  physicalBridge: BootstrapMaterializer
+  adapter: PipelineAdapter
+  bootstrapBridgeEnabled: bool = false
+  diagnosticCode: string = ""
+}
+
+impl CompilerStageMaterialization {
+  pub CompilerStageMaterialization(
+    packageRoot: string,
+    outputPath: string,
+    pipelineHash: string,
+    resultHash: string,
+    physicalBridge: BootstrapMaterializer,
+    adapter: PipelineAdapter,
+    bootstrapBridgeEnabled: bool
+  ) =
+    This {
+      packageRoot
+      outputPath
+      pipelineHash
+      resultHash
+      physicalBridge
+      adapter
+      bootstrapBridgeEnabled
+    }
+
+  pub fromReport(
+    packageRoot: string,
+    report: CompilerStageBuildReport,
+    bootstrapBridgeEnabled: bool
+  ) =
+    This.fromPipeline(packageRoot, report.products, bootstrapBridgeEnabled)
+
+  pub fromPipeline(
+    packageRoot: string,
+    products: CompilerStagePipeline,
+    bootstrapBridgeEnabled: bool
+  ) =
+    This {
+      packageRoot
+      outputPath: products.nativePipeline.result.outputPath
+      pipelineHash: products.nativePipeline.pipelineHash
+      resultHash: products.nativePipeline.result.resultHash
+      physicalBridge: BootstrapMaterializer(
+        packageRoot,
+        products.nativePipeline.result.outputPath
+      )
+      adapter: PipelineAdapter.fromPipeline(products.nativePipeline)
+      bootstrapBridgeEnabled
+      diagnosticCode: match products.readyForMaterialization && products.nativePipeline.bridgeReady {
+        true => ""
+        false => "QBUILD0201"
+      }
+    }
+}
+
+context CompilerStageMaterialization {
+  pub materializeStatus(io: CompilerIo) -> i64 {
+    if diagnosticCode != "" {
+      return -220
+    }
+    if packageRoot == "" {
+      return -221
+    }
+    if outputPath == "" {
+      return -222
+    }
+    if pipelineHash == "" {
+      return -223
+    }
+    if resultHash == "" {
+      return -224
+    }
+    if bootstrapBridgeEnabled && physicalBridge.valid == false {
+      return -225
+    }
+    if bootstrapBridgeEnabled {
+      return physicalBridge.materializeStatus(io)
+    }
+    return adapter.writeStatus(io)
+  }
+
+  pub materialize(io: CompilerIo) -> bool {
+    return materializeStatus(io) == 0
+  }
+}
+
+impl view CompilerStageMaterialization {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    packageRoot != "" &&
+    outputPath != "" &&
+    pipelineHash != "" &&
+    resultHash != "" &&
+    adapter.valid &&
+    (bootstrapBridgeEnabled == false || physicalBridge.valid)
+
+  pub ready: bool => valid
+  pub materializerName => "qtlc1-native-pipeline"
+  pub physicalBridgeName => match bootstrapBridgeEnabled {
+    true => "bootstrap-native-bridge"
+    false => "qtlc1-native-pipeline-adapter"
+  }
+  pub provenance =>
+    "{materializerName}:{pipelineHash}:{resultHash}:{physicalBridgeName}:{adapter.adapterHash}:{adapter.statusText}:{physicalBridge.provenance}"
+}

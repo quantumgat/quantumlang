@@ -1,0 +1,42 @@
+pub AggregateSelect {
+  operation: string
+  byteCount: i64
+  alignment: i64
+  selectedOpcode: string
+  usesSret: bool = false
+  diagnosticCode: string = ""
+}
+
+impl AggregateSelect {
+  pub AggregateSelect(operation: string, byteCount: i64, alignment: i64, selectedOpcode: string) =
+    This {
+      operation
+      byteCount
+      alignment
+      selectedOpcode
+    }
+
+  pub copy(byteCount: i64, alignment: i64) =
+    This("copy", byteCount, alignment, "aggregate-copy")
+
+  pub sret(byteCount: i64, alignment: i64) =
+    This {
+      operation: "sret"
+      byteCount
+      alignment
+      selectedOpcode: "aggregate-sret"
+      usesSret: true
+    }
+}
+
+impl view AggregateSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    operation != "" &&
+    byteCount >= 0 &&
+    alignment > 0 &&
+    selectedOpcode != ""
+
+  pub copyOperation: bool => valid && operation == "copy"
+  pub debugName: string => "isel.aggregate.{operation}.{byteCount}"
+}

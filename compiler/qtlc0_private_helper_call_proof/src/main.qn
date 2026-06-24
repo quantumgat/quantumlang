@@ -1,0 +1,45 @@
+import analysis::{TokenPair, verifyNested}
+
+pub Token {
+  keyword: string
+  identifier: bool
+}
+
+pub Stream {
+  first: Token
+  second: Token
+  count: i64
+}
+
+constStartsLocalBinding(input: Stream, index: i64) -> bool {
+  return input.first.keyword == "const" &&
+    index + 1 < input.count &&
+    input.second.identifier
+}
+
+surfaceDeclarationStart(input: Stream, index: i64) -> bool {
+  return constStartsLocalBinding(input, index)
+}
+
+pub verify(input: Stream) -> bool {
+  return surfaceDeclarationStart(input, 0)
+}
+
+main() -> i64 {
+  let input: Stream = {
+    first: { keyword: "const", identifier: false }
+    second: { keyword: "name", identifier: true }
+    count: 2
+  }
+  if verify(input) {
+    let nested: TokenPair = {
+      first: "const"
+      second: "name"
+      count: 2
+    }
+    if verifyNested(nested) {
+      return 0
+    }
+  }
+  return 1
+}

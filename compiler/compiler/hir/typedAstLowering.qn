@@ -1,0 +1,112 @@
+import core::{Vec}
+import typeSystem::{TypecheckState, TypedNodeFact, TypedNodeKind}
+
+pub TypedHirProduct {
+  nodes: Vec<HirNode> = []
+  expressions: Vec<HirExpr> = []
+  typedNodeCount: i64 = 0
+  expressionCount: i64 = 0
+  diagnosticCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl TypedHirProduct {
+  pub fromTypecheck(state: TypecheckState) -> This {
+    let product = This {
+      diagnosticCount: state.diagnosticCount
+      deterministic: state.deterministic
+    }
+
+    let row: i64 = 0
+    while row < state.typedNodeCount {
+      product.add(state.typedNodeAt(row))
+      row = row + 1
+    }
+    return product
+  }
+
+  add(fact: TypedNodeFact) {
+    let id = nodes.count + 1
+    nodes.push(HirNode {
+      id
+      kind: hirKindFor(fact)
+      sourceNodeId: id
+      typedNodeId: fact.nodeId
+      typeId: fact.typeId
+      diagnosticCode: fact.diagnosticCode
+    })
+    typedNodeCount = typedNodeCount + 1
+
+    if typedNodeProducesExpression(fact) {
+      let expression = HirExpr(
+        id,
+        hirExpressionKindFor(fact),
+        fact.typeName,
+        fact.literal
+      )
+      expression.typeId = fact.typeId
+      expression.symbolId = fact.symbolId
+      expression.operatorSymbol = fact.operatorSymbol
+      expression.receiverTypeName = fact.receiverTypeName
+      expression.argumentCount = fact.argumentCount
+      expression.genericArgumentCount = fact.genericArgumentCount
+      expression.diagnosticCode = fact.diagnosticCode
+      expressions.push(expression)
+      expressionCount = expressionCount + 1
+    }
+  }
+}
+
+impl view TypedHirProduct {
+  pub clean: bool => diagnosticCount == 0
+
+  pub rowsOwned: bool =>
+    nodes.valid &&
+    expressions.valid &&
+    nodes.count == typedNodeCount &&
+    expressions.count == expressionCount
+
+  pub valid: bool =>
+    deterministic &&
+    clean &&
+    rowsOwned &&
+    typedNodeCount > 0 &&
+    expressionCount > 0
+}
+
+typedNodeProducesExpression(fact: TypedNodeFact) -> bool {
+  return fact.kind == TypedNodeKind.Literal ||
+    fact.kind == TypedNodeKind.Call ||
+    fact.kind == TypedNodeKind.Operator ||
+    fact.kind == TypedNodeKind.Carrier ||
+    fact.kind == TypedNodeKind.Atomic ||
+    fact.kind == TypedNodeKind.Name
+}
+
+hirKindFor(fact: TypedNodeFact) -> string {
+  if fact.kind == TypedNodeKind.Module { return "module" }
+  if fact.kind == TypedNodeKind.Declaration { return "declaration" }
+  if fact.kind == TypedNodeKind.Statement { return "statement" }
+  if fact.kind == TypedNodeKind.Literal { return "literal" }
+  if fact.kind == TypedNodeKind.Call { return "call" }
+  if fact.kind == TypedNodeKind.Operator { return "operator" }
+  if fact.kind == TypedNodeKind.Carrier { return "carrier" }
+  if fact.kind == TypedNodeKind.Parallel { return "parallel" }
+  if fact.kind == TypedNodeKind.Atomic { return "atomic" }
+  if fact.kind == TypedNodeKind.Name { return "name" }
+  return "unknown"
+}
+
+hirExpressionKindFor(fact: TypedNodeFact) -> string {
+  if fact.literal { return "literal" }
+  if fact.call { return "call" }
+  if fact.carrier { return "carrier" }
+  if fact.atomic { return "atomic" }
+  if fact.assignment { return "assignment" }
+  if fact.member { return "member" }
+  if fact.propagation { return "propagate" }
+  if fact.unary { return "unary" }
+  if fact.binary { return "binary" }
+  if fact.kind == TypedNodeKind.Operator { return "operator" }
+  return "name"
+}

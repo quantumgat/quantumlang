@@ -1,0 +1,57 @@
+pub enum CoreCoverageStatus {
+  ExistingInQtlc0
+  ExistingInQtlc1
+  MissingInQtlc1
+  Planned
+  Unknown
+}
+
+pub CoreCoverage {
+  kind: CoreKind = Unknown
+  status: CoreCoverageStatus = Unknown
+  compilerLocal: bool = true
+  activeProductReady: bool = false
+}
+
+impl CoreCoverage {
+  pub qtlc0(kind: CoreKind) =
+    This {
+      kind
+      status: ExistingInQtlc0
+      activeProductReady: false
+    }
+
+  pub qtlc1Scaffold(kind: CoreKind) =
+    This {
+      kind
+      status: ExistingInQtlc1
+      activeProductReady: false
+    }
+
+  pub missing(kind: CoreKind) =
+    This {
+      kind
+      status: MissingInQtlc1
+      activeProductReady: false
+    }
+
+  pub planned(kind: CoreKind) =
+    This {
+      kind
+      status: Planned
+      activeProductReady: false
+    }
+}
+
+impl view CoreCoverage {
+  pub known => kind != CoreKind.Unknown && status != CoreCoverageStatus.Unknown
+
+  pub existing => status == CoreCoverageStatus.ExistingInQtlc0 ||
+    status == CoreCoverageStatus.ExistingInQtlc1
+
+  pub missing => status == CoreCoverageStatus.MissingInQtlc1
+
+  pub migrationNeeded => activeProductReady == false
+
+  pub valid => known && compilerLocal
+}

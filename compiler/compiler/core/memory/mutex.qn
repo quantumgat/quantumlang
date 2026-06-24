@@ -1,0 +1,130 @@
+pub Mutex<T> {
+  value: T
+  owner: CompilerId = {}
+  generation: u64 = 0
+  locked: bool = false
+}
+
+impl Mutex<T> {
+  pub Mutex(value: T) =
+    This {
+      value
+    }
+
+  pub ptr() -> *T {
+    if locked == false {
+      return null
+    }
+    return &value
+  }
+
+  pub cptr() -> const *T {
+    if locked == false {
+      return null
+    }
+    return const *value
+  }
+
+  pub ref() -> &T {
+    return &value
+  }
+
+  pub cref() -> const &T {
+    return const &value
+  }
+
+  pub borrow() -> Borrow<T> {
+    return Borrow<T>(cptr(), owner, generation)
+  }
+
+  pub borrowMut() -> BorrowMut<T> {
+    return BorrowMut<T>(ptr(), owner, generation)
+  }
+
+  pub lock() -> This {
+    if locked {
+      return this
+    }
+    return this {
+      locked: true
+    }
+  }
+
+  pub tryLock() -> This {
+    return lock()
+  }
+
+  pub unlock() -> This {
+    if locked == false {
+      return this
+    }
+    return this {
+      locked: false
+      generation: generation + 1
+    }
+  }
+
+  pub set(value: T) -> This {
+    if locked == false {
+      return this
+    }
+    return this {
+      value
+      generation: generation + 1
+    }
+  }
+
+  pub replace(value: T) -> This {
+    return set(value)
+  }
+}
+
+impl view Mutex<T> {
+  pub live => true
+
+  pub lockedState => locked
+
+  pub unlocked => locked == false
+
+  pub readable => locked
+
+  pub writable => locked
+
+  pub ownsStorage => true
+
+  pub exclusive => locked
+
+  pub contended => false
+
+  pub poisoned => false
+
+  pub hasOwner => owner.valid
+
+  pub tracked => generation > 0 || owner.valid
+
+  pub canLock => locked == false
+
+  pub canUnlock => locked
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return generation == currentGeneration
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub expired(currentGeneration: u64) -> bool {
+    return stale(currentGeneration)
+  }
+
+  pub sameOwner(value: CompilerId) -> bool {
+    return owner == value
+  }
+
+  pub sameGen(value: u64) -> bool {
+    return generation == value
+  }
+
+  pub valid => locked || locked == false
+}

@@ -1,0 +1,22 @@
+pub FlashImage {
+  path: string
+  baseAddress: i64
+  bytes: i64
+  signed: bool
+}
+
+impl FlashImage {
+  pub FlashImage(path: string, baseAddress: i64, bytes: i64, signed: bool) =
+    This {
+      path
+      baseAddress
+      bytes
+      signed
+    }
+}
+
+impl view FlashImage {
+  pub valid => path != "" && baseAddress >= 0 && bytes > 0
+  pub flashable => valid
+  pub authenticated => signed
+}

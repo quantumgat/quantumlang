@@ -1,0 +1,25 @@
+pub OptionValue {
+  name: string = ""
+  value: ArgumentValue = {}
+  repeated: bool = false
+}
+
+impl OptionValue {
+  pub flag(name: string) =
+    This {
+      name
+      value: ArgumentValue.typed("true", "bool", ArgumentValueKind.Bool)
+    }
+
+  pub value(name: string, rawText: string, typeName: string, kind: ArgumentValueKind) =
+    This {
+      name
+      value: ArgumentValue.typed(rawText, typeName, kind)
+    }
+}
+
+impl view OptionValue {
+  pub valid: bool => name != "" && value.valid
+  pub present: bool => value.present
+  pub booleanFlag: bool => value.kind == ArgumentValueKind.Bool
+}

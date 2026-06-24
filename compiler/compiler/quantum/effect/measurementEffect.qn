@@ -1,0 +1,21 @@
+pub MeasurementEffect {
+  collapsesState: bool
+  resultType: string
+  allowedInPureQfunc: bool
+  valid: bool
+}
+
+impl MeasurementEffect {
+  pub MeasurementEffect(axis: string) =
+    This {
+      collapsesState: true
+      resultType: "qresult"
+      allowedInPureQfunc: false
+      valid: axis != ""
+    }
+}
+
+impl view MeasurementEffect {
+  pub producesResult => resultType == "qresult"
+  pub pureSafe => allowedInPureQfunc
+}

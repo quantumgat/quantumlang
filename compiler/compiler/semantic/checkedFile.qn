@@ -1,0 +1,39 @@
+pub CheckedFile {
+  path: string
+  fileId: u64 = 0
+  byteLength: u64 = 0
+  symbolCount: i64 = 0
+  diagnosticCount: i64 = 0
+  fromCache: bool = false
+}
+
+impl CheckedFile {
+  pub CheckedFile(path: string) =
+    This { path }
+}
+
+impl view CheckedFile {
+  pub exists => path != ""
+
+  pub clean => diagnosticCount == 0
+
+  pub failed => diagnosticCount > 0
+
+  pub hasSymbols => symbolCount > 0
+
+  pub stableIdentity => fileId > 0
+
+  pub byteMapped => byteLength > 0
+
+  pub countsConsistent => symbolCount >= 0 && diagnosticCount >= 0
+
+  pub cacheCandidate => exists && clean && byteLength > 0
+
+  pub valid => exists && countsConsistent
+
+  pub status => match true {
+    valid == false => SemanticStatus.InvalidCounts
+    clean == false => SemanticStatus.Dirty
+    _ => SemanticStatus.Ready
+  }
+}

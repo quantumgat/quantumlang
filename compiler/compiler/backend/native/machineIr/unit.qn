@@ -1,0 +1,93 @@
+pub MachineUnit {
+  targetName: string
+  functionCount: i64
+  blockCount: i64
+  instructionCount: i64
+  virtualRegisterCount: i64
+  physicalRegisterCount: i64
+  frameBytes: i64
+  abiHash: string = ""
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl MachineUnit {
+  pub MachineUnit(
+    targetName: string,
+    functionCount: i64,
+    blockCount: i64,
+    instructionCount: i64,
+    virtualRegisterCount: i64,
+    physicalRegisterCount: i64,
+    frameBytes: i64
+  ) =
+    This {
+      targetName
+      functionCount
+      blockCount
+      instructionCount
+      virtualRegisterCount
+      physicalRegisterCount
+      frameBytes
+    }
+
+  pub fromLowering(
+    lowering: NativeMirLowering,
+    selection: InstructionSelection,
+    allocation: RegisterAllocation,
+    frame: FrameLayout
+  ) =
+    This {
+      targetName: lowering.targetName
+      functionCount: 1
+      blockCount: lowering.mirBody.blockCount
+      instructionCount: selection.selected
+      virtualRegisterCount: allocation.registers
+      physicalRegisterCount: allocation.registers
+      frameBytes: frame.stackBytes
+      deterministic: lowering.deterministic && selection.deterministic
+      diagnosticCode: match lowering.valid && selection.valid && allocation.valid && frame.valid {
+        true => ""
+        false => "QNATIVE0501"
+      }
+    }
+
+  pub fromAbiLowering(
+    lowering: NativeMirLowering,
+    selection: InstructionSelection,
+    allocation: RegisterAllocation,
+    frame: FrameLayout,
+    callAbi: CallAbi,
+    returnAbi: ReturnValueAbi
+  ) =
+    This {
+      targetName: lowering.targetName
+      functionCount: 1
+      blockCount: lowering.mirBody.blockCount
+      instructionCount: selection.selected
+      virtualRegisterCount: allocation.registers
+      physicalRegisterCount: allocation.registers
+      frameBytes: frame.stackBytes
+      abiHash: "{callAbi.abiHash}:{returnAbi.abiHash}"
+      deterministic: lowering.deterministic && selection.deterministic
+      diagnosticCode: match lowering.valid && selection.valid && allocation.valid && frame.valid && callAbi.valid && returnAbi.valid {
+        true => ""
+        false => "QNATIVE0502"
+      }
+    }
+}
+
+impl view MachineUnit {
+  pub countsValid => functionCount > 0 &&
+    blockCount > 0 &&
+    instructionCount >= 0 &&
+    virtualRegisterCount >= 0 &&
+    physicalRegisterCount >= 0 &&
+    frameBytes >= 0
+  pub valid => diagnosticCode == "" && targetName != "" && deterministic && countsValid
+  pub allocated => physicalRegisterCount >= virtualRegisterCount
+  pub abiReady => abiHash != ""
+  pub objectReady => valid && allocated && abiReady
+  pub machineHash => "machine:{targetName}:{functionCount}:{blockCount}:{instructionCount}:{physicalRegisterCount}:{frameBytes}:{abiHash}"
+  pub debugName => "machine.{targetName}.{instructionCount}"
+}

@@ -1,0 +1,40 @@
+import core::{Vec}
+import host::{CompilerIo, HostClock, HostEnvironment, HostFileSystem, HostProcess, LinkerTool, OutputTransaction}
+
+pub CompilerIoProof {
+  pathsValid: bool
+  outputValid: bool
+  capabilitiesValid: bool
+  valid: bool
+}
+
+impl CompilerIoProof {
+  pub CompilerIoProof() -> This {
+    let io = CompilerIo("qtlang/compiler")
+    let output = OutputTransaction("qtlang/compiler/build/debug/qtlc2")
+    let process = HostProcess("qtlc", Vec<string>())
+    let environment = HostEnvironment.present("QTLC_PROFILE", "debug")
+    let fileSystem = HostFileSystem("qtlang/compiler")
+    let linker = LinkerTool("cc", "x86_64-unknown-linux-gnu")
+    let clock = HostClock.fixed(1)
+    let capabilitiesValid = process.valid &&
+      environment.valid &&
+      fileSystem.valid &&
+      linker.valid &&
+      clock.valid &&
+      clock.reproducible
+
+    This {
+      pathsValid: io.valid &&
+        io.manifestPath == "qtlang/compiler/quantum.toml" &&
+        io.debugOutputPath == "qtlang/compiler/build/debug"
+      outputValid: output.valid &&
+        output.temporaryPath == "qtlang/compiler/build/debug/qtlc2.tmp"
+      capabilitiesValid
+      valid: io.valid && output.valid && capabilitiesValid
+    }
+  }
+}
+
+pub compilerIoProof() =
+  CompilerIoProof()

@@ -1,0 +1,54 @@
+pub enum HirBodyStatus {
+  NotLowered
+  Lowered
+  BlockedByTypeBody
+  Failed
+}
+
+pub HirBodyProduct {
+  bodyId: StableId
+  key: QueryKey
+  typeBodyFingerprint: Fingerprint
+  hirFingerprint: Fingerprint
+  status: HirBodyStatus
+  nodeCount: usize
+  localCount: usize
+  controlFlowEdgeCount: usize
+  diagnosticCount: usize = 0
+  schemaVersion: u64 = 1
+}
+
+impl HirBodyProduct {
+  pub init(
+    bodyId: StableId,
+    typeBodyFingerprint: Fingerprint,
+    hirFingerprint: Fingerprint,
+    status: HirBodyStatus,
+    nodeCount: usize,
+    localCount: usize,
+    controlFlowEdgeCount: usize,
+    diagnosticCount: usize
+  ) =
+    This {
+      bodyId
+      key: QueryKey.hirBody(bodyId)
+      typeBodyFingerprint
+      hirFingerprint
+      status
+      nodeCount
+      localCount
+      controlFlowEdgeCount
+      diagnosticCount
+    }
+
+  pub productFingerprint() =
+    ProductFingerprint(typeBodyFingerprint, hirFingerprint)
+}
+
+impl view HirBodyProduct {
+  pub lowered => status == HirBodyStatus.Lowered
+  pub blocked => status == HirBodyStatus.BlockedByTypeBody
+  pub failed => status == HirBodyStatus.Failed || diagnosticCount > 0
+  pub replayable => failed == false && blocked == false
+  pub controlFlowKnown => controlFlowEdgeCount > 0
+}

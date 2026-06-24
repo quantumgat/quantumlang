@@ -1,0 +1,29 @@
+pub MirBody {
+  functionName: string
+  blockCount: i64
+  valueCount: i64
+  instructionCount: i64
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl MirBody {
+  pub MirBody(functionName: string, blockCount: i64, valueCount: i64, instructionCount: i64) =
+    This {
+      functionName
+      blockCount
+      valueCount
+      instructionCount
+    }
+}
+
+impl view MirBody {
+  pub valid => diagnosticCode == "" && validShape
+  pub validShape => functionName != "" && blockCount > 0 && valueCount >= 0 && instructionCount >= 0
+  pub empty => instructionCount == 0
+  pub hasBlocks => blockCount > 0
+  pub hasValues => valueCount > 0
+  pub hasInstructions => instructionCount > 0
+  pub lowerable => deterministic && valid
+  pub density => instructionCount + valueCount
+}

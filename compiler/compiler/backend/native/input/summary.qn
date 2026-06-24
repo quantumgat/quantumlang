@@ -1,0 +1,75 @@
+pub InputSummary {
+  packageRoot: string
+  sourceFileCount: i64
+  declarationRecordCount: i64
+  typeCount: i64
+  functionCount: i64
+  behavioralCount: i64
+  astNodeCount: i64
+  typedNodeCount: i64
+  typeContextCount: i64
+  typeFactCount: i64
+  diagnosticCode: string = ""
+}
+
+impl InputSummary {
+  pub InputSummary(
+    packageRoot: string,
+    sourceFileCount: i64,
+    declarationRecordCount: i64,
+    typeCount: i64,
+    functionCount: i64,
+    behavioralCount: i64,
+    astNodeCount: i64,
+    typedNodeCount: i64,
+    typeContextCount: i64,
+    typeFactCount: i64
+  ) =
+    This {
+      packageRoot
+      sourceFileCount
+      declarationRecordCount
+      typeCount
+      functionCount
+      behavioralCount
+      astNodeCount
+      typedNodeCount
+      typeContextCount
+      typeFactCount
+    }
+
+  markInvalid() =
+    this {
+      diagnosticCode: "QNATIVE0003"
+    }
+
+  pub fromContract(contract: InputContract) =
+    contract.summary()
+}
+
+impl view InputSummary {
+  pub countsValid: bool => {
+    sourceFileCount >= 0 &&
+      declarationRecordCount >= 0 &&
+      typeCount >= 0 &&
+      functionCount >= 0 &&
+      behavioralCount >= 0 &&
+      astNodeCount >= 0 &&
+      typedNodeCount >= 0 &&
+      typeContextCount >= 0 &&
+      typeFactCount >= 0
+  }
+
+  pub valid: bool => {
+    diagnosticCode == "" &&
+      packageRoot != "" &&
+      countsValid
+  }
+
+  pub stableUnitPrefix => "source-unit:{packageRoot}:{sourceFileCount}"
+  pub abiHash => "abi:{declarationRecordCount}:{typeCount}:{functionCount}:{behavioralCount}"
+  pub mirHash => "mir:{astNodeCount}:{typedNodeCount}:{typeContextCount}:{typeFactCount}"
+  pub objectSetHash => "objects:{sourceFileCount}:{declarationRecordCount}:{astNodeCount}:{typeFactCount}"
+  pub lowerable => valid
+  pub debugName => "native.input.{packageRoot}.{sourceFileCount}"
+}

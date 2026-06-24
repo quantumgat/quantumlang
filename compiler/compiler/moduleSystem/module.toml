@@ -1,0 +1,9 @@
+[module]
+name = "moduleSystem"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/moduleSystem"
+role = "module-system"
+
+[dependencies]
+modules = ["core", "declaration"]

@@ -1,0 +1,61 @@
+import core::{Vec}
+
+pub OwnershipArgumentTable {
+  rowCount: i64 = 0
+  authorityCount: i64 = 0
+  rows: Vec<OwnershipArgumentRow> = []
+  deterministic: bool = true
+}
+
+impl OwnershipArgumentTable {
+  pub forNode(
+    node: TypedNodeFact,
+    authorities: OwnershipAuthorityTable
+  ) -> This {
+    let table = This {
+      deterministic: authorities.valid
+    }
+    let index: i64 = 0
+    while index < node.argumentTypeNames.count {
+      let typeName = node.argumentTypeNames[index]
+      let authority = authorities.rowForTypeName(typeName)
+      let row = OwnershipArgumentRow(
+        table.rows.count,
+        node.text,
+        index,
+        typeName,
+        authority
+      )
+      table.rows.push(row)
+      table.rowCount = table.rows.count
+      if authority.valid {
+        table.authorityCount = table.authorityCount + 1
+      }
+      index = index + 1
+    }
+    return table
+  }
+}
+
+impl view OwnershipArgumentTable {
+  pub firstAuthority: OwnershipAuthorityRow => {
+    if rows.count == 0 {
+      return OwnershipAuthorityRow()
+    }
+    return rows[0].authority
+  }
+
+  pub rowsOwned =>
+    rows.valid &&
+    rows.count == rowCount
+
+  pub countsConsistent =>
+    rowCount >= authorityCount &&
+    rowCount >= 0 &&
+    authorityCount >= 0
+
+  pub valid =>
+    deterministic &&
+    rowsOwned &&
+    countsConsistent
+}

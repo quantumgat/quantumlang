@@ -1,0 +1,52 @@
+import core::{Arena, CompilerId, FileId, Index, NameId, Range}
+
+pub SourceMap {
+  files: Arena<SourceFile> = {}
+  pathIndex: Index<NameId, FileId> = {}
+  table: SourceFileTable = {}
+}
+
+impl SourceMap {
+  pub SourceMap(fileCount: i64) -> This {
+    let owner: CompilerId = {}
+
+    This {
+      files: Arena(fileCount),
+      pathIndex: Index<NameId, FileId>.fromRows(
+        Range<NameId>(0, fileCount),
+        Range<FileId>(0, fileCount),
+        owner,
+        0
+      ),
+    }
+  }
+
+  pub SourceMap(table: SourceFileTable) -> This {
+    let owner: CompilerId = {}
+
+    This {
+      files: Arena(table.count),
+      pathIndex: Index<NameId, FileId>.fromRows(
+        table.pathIds.rows,
+        table.fileIds.rows,
+        owner,
+        0
+      ),
+      table
+    }
+  }
+}
+
+impl view SourceMap {
+  pub fileCount: i64 => files.count
+
+  pub byteCount: i64 => table.totalBytes
+
+  pub empty => fileCount == 0
+
+  pub indexed => pathIndex.valid
+
+  pub rowsBacked: bool => table.valid && table.count == fileCount
+
+  pub valid: bool => files.valid && indexed && pathIndex.count == fileCount && rowsBacked
+}

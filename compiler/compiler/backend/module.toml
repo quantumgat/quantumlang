@@ -1,0 +1,6 @@
+[module]
+name = "backend"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/backend"
+role = "backend-root"

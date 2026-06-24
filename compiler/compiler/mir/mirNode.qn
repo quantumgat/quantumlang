@@ -1,0 +1,19 @@
+pub MirNode {
+  id: i64
+  kind: string
+  hirNodeId: i64
+}
+
+impl MirNode {
+  pub MirNode(id: i64, kind: string, hirNodeId: i64) =
+    This {
+      id
+      kind
+      hirNodeId
+    }
+}
+
+impl view MirNode {
+  pub valid => validShape
+  pub validShape => id >= 0 && kind != "" && hirNodeId >= 0
+}

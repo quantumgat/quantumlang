@@ -1,0 +1,3 @@
+pub QuantumMachineTopology {
+  couplingEdges: i64
+}

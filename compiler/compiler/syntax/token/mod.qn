@@ -1,0 +1,35 @@
+module token
+
+mod {
+  token
+  tokenKind
+  keywordKind
+  tokenRole
+  primitiveToken
+  operatorTokenFact
+  importFormKind
+  importTokenRule
+  preludeSymbolKind
+  preludeSymbolFact
+  identifierText
+  trivia
+  literal
+}
+
+export {
+  token.SyntaxToken
+  tokenKind.TokenKind
+  keywordKind.{KeywordKind}
+  tokenRole.{TokenRole}
+  primitiveToken.{isPrimitiveTokenText, isNumericLiteralSuffix, numericLiteralSuffixType}
+  primitiveToken.{numericLiteralTypeForText, numericLiteralTypeIsFloat}
+  operatorTokenFact.OperatorTokenFact
+  importFormKind.{ImportFormKind}
+  importTokenRule.ImportTokenRule
+  preludeSymbolKind.{PreludeSymbolKind}
+  preludeSymbolFact.PreludeSymbolFact
+  identifierText.IdentifierText
+  identifierText.*
+  trivia.{Trivia, TriviaKind}
+  literal.{Literal, LiteralTokenKind}
+}

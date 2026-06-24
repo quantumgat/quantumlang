@@ -1,0 +1,44 @@
+pub Selector {
+  targetTriple: string
+  objectFormat: string
+  patternSetHash: string
+  diagnosticCode: string = ""
+}
+
+impl Selector {
+  pub Selector(targetTriple: string, objectFormat: string, patternSetHash: string) =
+    This {
+      targetTriple
+      objectFormat
+      patternSetHash
+    }
+
+  pub forTarget(target: TargetIdentity) =
+    This {
+      targetTriple: target.targetTriple
+      objectFormat: target.objectFormat
+      patternSetHash: "isel-patterns:{target.targetTriple}:{target.objectFormat}"
+      diagnosticCode: match target.valid {
+        true => ""
+        false => "QNATIVE0302"
+      }
+    }
+
+  pub select(plan: SelectionPlan) -> SelectionResult {
+    if valid == false || plan.valid == false {
+      return SelectionResult.fromPlan(plan, 0, 0)
+    }
+    return SelectionResult.fromPlan(plan, plan.instructionCount, plan.instructionCount * 2)
+  }
+}
+
+impl view Selector {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetTriple != "" &&
+    objectFormat != "" &&
+    patternSetHash != ""
+
+  pub dispatchReady: bool => valid
+  pub debugName: string => "isel.selector.{targetTriple}"
+}

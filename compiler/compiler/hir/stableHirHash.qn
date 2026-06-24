@@ -1,0 +1,20 @@
+import core::{Hash256, HashDomain, HashError, StableHash, StableHashWriter}
+
+impl HirNode {
+  pub stableHash() -> Result<Hash256, HashError> {
+    let out = StableHashWriter(HashDomain.Semantic)
+    this.stableHashInto(out)?
+    return out.finish()
+  }
+
+  stableHashInto(out: StableHashWriter) -> Result<void, HashError> {
+    out.begin("hir.HirNode", 1)?
+    out.writeI64("id", id)?
+    out.writeString("kind", kind)?
+    out.writeI64("sourceNodeId", sourceNodeId)?
+    out.writeCompilerId("typedNodeId", typedNodeId.id)?
+    out.writeCompilerId("typeId", typeId.id)?
+    out.writeString("diagnosticCode", diagnosticCode)?
+    return out.end()
+  }
+}

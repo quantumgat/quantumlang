@@ -1,0 +1,33 @@
+pub Riscv64LoadStoreEncoding {
+  base: Riscv64RegisterEncoding
+  target: Riscv64RegisterEncoding
+  offset: i64 = 0
+  load: bool = true
+  byteCount: i64 = 4
+  diagnosticCode: string = ""
+}
+
+impl Riscv64LoadStoreEncoding {
+  pub Riscv64LoadStoreEncoding(
+    base: Riscv64RegisterEncoding,
+    target: Riscv64RegisterEncoding,
+    offset: i64,
+    load: bool
+  ) =
+    This {
+      base
+      target
+      offset
+      load
+    }
+}
+
+impl view Riscv64LoadStoreEncoding {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    base.valid &&
+    target.valid &&
+    byteCount == 4
+
+  pub debugName: string => "riscv64.mem.{target.name}.{base.name}.{offset}"
+}

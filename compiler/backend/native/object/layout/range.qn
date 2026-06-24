@@ -1,0 +1,28 @@
+pub ObjectRange {
+  offset: i64
+  sizeBytes: i64
+  alignBytes: i64 = 1
+  diagnosticCode: string = ""
+}
+
+impl ObjectRange {
+  pub ObjectRange(offset: i64, sizeBytes: i64, alignBytes: i64) =
+    This { offset, sizeBytes, alignBytes }
+
+  pub empty(offset: i64) =
+    This(offset, 0, 1)
+
+  pub fromSection(section: ObjectSection) =
+    This(section.offset, section.sizeBytes, section.alignBytes)
+}
+
+impl view ObjectRange {
+  pub endOffset: i64 => offset + sizeBytes
+  pub valid: bool => diagnosticCode == "" &&
+    offset >= 0 &&
+    sizeBytes >= 0 &&
+    alignBytes > 0
+  pub empty: bool => sizeBytes == 0
+  pub aligned: bool => alignBytes <= 1 || offset % alignBytes == 0
+  pub debugName: string => "object.range.{offset}.{sizeBytes}.{alignBytes}"
+}

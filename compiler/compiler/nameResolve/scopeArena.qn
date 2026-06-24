@@ -1,0 +1,73 @@
+import core::{Arena, Slice, ScopeId, SymbolId, Vec}
+
+pub ScopeArena {
+  scopes: Arena<Scope> = {}
+  ids: Slice<ScopeId> = []
+  entries: Slice<ScopeEntry> = []
+  symbols: Slice<SymbolId> = []
+  scopeValues: Vec<Scope> = []
+  entryValues: Vec<ScopeEntry> = []
+  symbolValues: Vec<SymbolId> = []
+  root: ScopeId = {}
+  deterministic: bool = true
+}
+
+impl ScopeArena {
+  pub ScopeArena(count: i64) =
+    This {
+      scopes: Arena<Scope>(count)
+      ids: Slice<ScopeId>(count)
+      root: ScopeId(1)
+    }
+
+  pub fromCounts(scopeCount: i64, entryCount: i64, symbolCount: i64) =
+    This {
+      scopes: Arena<Scope>(scopeCount)
+      ids: Slice<ScopeId>(scopeCount)
+      entries: Slice<ScopeEntry>(entryCount)
+      symbols: Slice<SymbolId>(symbolCount)
+      root: ScopeId(1)
+    }
+
+  pub addScope(scope: Scope) {
+    scopeValues.push(scope)
+    scopes = Arena(scopeValues.count)
+    ids = Slice(scopeValues.count)
+    if !root.valid {
+      root = scope.id
+    }
+  }
+
+  pub addEntry(entry: ScopeEntry) {
+    entryValues.push(entry)
+    symbolValues.push(entry.symbol)
+    entries = Slice(entryValues.count)
+    symbols = Slice(symbolValues.count)
+  }
+}
+
+impl view ScopeArena {
+  pub count: i64 => scopeValues.count
+
+  pub entryCount: i64 => entryValues.count
+
+  pub symbolCount: i64 => symbolValues.count
+
+  pub empty: bool => count == 0
+
+  pub hasRoot: bool => root.valid
+
+  pub scopesAligned: bool => ids.count == scopes.count
+
+  pub entriesReady: bool => entries.valid
+
+  pub symbolsReady: bool => symbols.valid
+
+  pub valid: bool =>
+    deterministic &&
+    scopes.valid &&
+    ids.valid &&
+    scopesAligned &&
+    entriesReady &&
+    symbolsReady
+}

@@ -1,0 +1,24 @@
+import core::{Slice, Vec}
+
+pub CandidateBucket {
+  key: CandidateKey = {}
+  candidateValues: Vec<CandidateId> = []
+  candidates: Slice<CandidateId> = []
+}
+
+impl CandidateBucket {
+  pub add(candidate: CandidateId) {
+    candidateValues.push(candidate)
+    candidates = Slice(candidateValues.count)
+  }
+}
+
+impl view CandidateBucket {
+  pub count: i64 => candidateValues.count
+
+  pub valid: bool =>
+    key.valid &&
+    candidateValues.valid &&
+    candidates.valid &&
+    candidates.count == count
+}

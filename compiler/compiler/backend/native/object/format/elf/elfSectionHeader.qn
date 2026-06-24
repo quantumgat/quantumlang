@@ -1,0 +1,78 @@
+pub ElfSectionHeader {
+  nameOffset: i64
+  sectionType: i64
+  flags: i64
+  fileOffset: i64
+  sizeBytes: i64
+  alignBytes: i64
+  index: i64
+  diagnosticCode: string = ""
+}
+
+impl ElfSectionHeader {
+  pub ElfSectionHeader(
+    nameOffset: i64,
+    sectionType: i64,
+    flags: i64,
+    fileOffset: i64,
+    sizeBytes: i64,
+    alignBytes: i64,
+    index: i64
+  ) =
+    This {
+      nameOffset
+      sectionType
+      flags
+      fileOffset
+      sizeBytes
+      alignBytes
+      index
+    }
+
+  pub nullHeader() =
+    This(0, 0, 0, 0, 0, 0, 0)
+
+  pub text(layout: ObjectLayout) =
+    This {
+      nameOffset: 1
+      sectionType: ElfTypes.defaults().sectionProgbits
+      flags: ElfTypes.defaults().textFlags
+      fileOffset: layout.text.range.offset
+      sizeBytes: layout.text.range.sizeBytes
+      alignBytes: layout.text.range.alignBytes
+      index: 1
+      diagnosticCode: match layout.valid {
+        true => ""
+        false => "QNATIVE0754"
+      }
+    }
+
+  pub shstrtab(layout: ObjectLayout) =
+    This {
+      nameOffset: 7
+      sectionType: ElfTypes.defaults().sectionStrtab
+      flags: 0
+      fileOffset: layout.strings.range.offset
+      sizeBytes: layout.strings.range.sizeBytes
+      alignBytes: layout.strings.range.alignBytes
+      index: 2
+      diagnosticCode: match layout.valid {
+        true => ""
+        false => "QNATIVE0755"
+      }
+    }
+}
+
+impl view ElfSectionHeader {
+  pub valid: bool => diagnosticCode == "" &&
+    nameOffset >= 0 &&
+    sectionType >= 0 &&
+    flags >= 0 &&
+    fileOffset >= 0 &&
+    sizeBytes >= 0 &&
+    alignBytes >= 0 &&
+    index >= 0
+  pub byteCount: i64 => 64
+  pub named: bool => nameOffset > 0
+  pub debugName: string => "elf.section.{index}.{sectionType}.{fileOffset}.{sizeBytes}"
+}

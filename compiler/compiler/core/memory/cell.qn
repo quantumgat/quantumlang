@@ -1,0 +1,123 @@
+pub Cell<T> {
+  value: T
+  owner: CompilerId = {}
+  generation: u64 = 0
+  released: bool = false
+}
+
+impl Cell<T> {
+  pub Cell(value: T) =
+    This {
+      value
+    }
+
+  pub get() -> T {
+    return value
+  }
+
+  pub ptr() -> *T {
+    if live == false {
+      return null
+    }
+    return &value
+  }
+
+  pub cptr() -> const *T {
+    if live == false {
+      return null
+    }
+    return const *value
+  }
+
+  pub ref() -> &T {
+    return &value
+  }
+
+  pub cref() -> const &T {
+    return const &value
+  }
+
+  pub borrow() -> Borrow<T> {
+    return Borrow<T>(cptr(), owner, generation)
+  }
+
+  pub borrowMut() -> BorrowMut<T> {
+    return BorrowMut<T>(ptr(), owner, generation)
+  }
+
+  pub set(value: T) -> This {
+    return this {
+      value
+      generation: generation + 1
+    }
+  }
+
+  pub swap(value: T) -> This {
+    return set(value)
+  }
+
+  pub replace(value: T) -> This {
+    return set(value)
+  }
+
+  pub reset(value: T) -> This {
+    return this {
+      value
+      released: false
+      generation: generation + 1
+    }
+  }
+
+  pub take() -> T {
+    return ^value
+  }
+
+  pub clear() -> This {
+    return this {
+      released: true
+      generation: generation + 1
+    }
+  }
+
+  pub release() -> This {
+    return clear()
+  }
+}
+
+impl view Cell<T> {
+  pub live => released == false
+
+  pub empty => released
+
+  pub readable => live
+
+  pub writable => live
+
+  pub ownsStorage => live
+
+  pub hasOwner => owner.valid
+
+  pub tracked => generation > 0 || owner.valid
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return live && generation == currentGeneration
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub expired(currentGeneration: u64) -> bool {
+    return stale(currentGeneration)
+  }
+
+  pub sameOwner(value: CompilerId) -> bool {
+    return owner == value
+  }
+
+  pub sameGen(value: u64) -> bool {
+    return generation == value
+  }
+
+  pub valid => released || released == false
+}

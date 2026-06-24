@@ -1,0 +1,63 @@
+import core::{CommunicationPolicy, CommunicationState, DeliveryKind, WaitKind, OverflowKind, OrderingKind, TransferKind, event, operation, stream, channel, signal, sink}
+
+pub CommunicationProofEvent {
+  name: string = ""
+  count: i64 = 0
+}
+
+pub CommunicationProofResult {
+  accepted: bool = false
+}
+
+pub CommunicationServiceProof {
+  onDiagnostic: event<CommunicationProofEvent> = {}
+  validate: operation<CommunicationProofEvent, CommunicationProofResult> = {}
+  diagnostics: stream<CommunicationProofEvent> = {}
+  jobs: channel<CommunicationProofEvent> = {}
+  progress: signal<i64> = {}
+  output: sink<string> = {}
+  callback: Option<(string, i64) -> void> = None
+}
+
+impl view CommunicationServiceProof {
+  pub valid: bool =>
+    onDiagnostic.valid &&
+    validate.valid &&
+    diagnostics.valid &&
+    jobs.valid &&
+    progress.valid &&
+    output.valid
+}
+
+pub communicationModelProof() -> bool {
+  let policy = CommunicationPolicy.bounded(64)
+  let parallelPolicy = CommunicationPolicy.parallel(8)
+  let realtimePolicy = CommunicationPolicy.realtime(1)
+  let service = CommunicationServiceProof {
+    jobs: channel<CommunicationProofEvent> {
+      policy
+    }
+    diagnostics: stream<CommunicationProofEvent> {
+      policy: parallelPolicy
+    }
+    output: sink<string> {
+      policy: realtimePolicy
+    }
+  }
+  let direct = CommunicationPolicy {
+    delivery: DeliveryKind.Immediate
+    wait: WaitKind.None
+    overflow: OverflowKind.Reject
+    ordering: OrderingKind.Global
+    transfer: TransferKind.Borrow
+  }
+  return service.valid &&
+    service.jobs.writable &&
+    service.jobs.state == CommunicationState.Open &&
+    service.diagnostics.active &&
+    service.output.writable &&
+    policy.bounded &&
+    parallelPolicy.lockFreeEligible &&
+    realtimePolicy.lockFreeEligible &&
+    direct.valid
+}

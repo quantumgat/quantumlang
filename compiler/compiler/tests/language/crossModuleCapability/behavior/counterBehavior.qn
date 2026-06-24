@@ -1,0 +1,113 @@
+import model::counter::{BoxReadable, CounterAuditable, CounterDefaultPrivate, CounterInternal, CounterNamed, CounterReadable, CrossModuleBox, CrossModuleCounter}
+
+impl CrossModuleCounter {
+  pub CrossModuleCounter(value: i64, label: string) =
+    This { value, label }
+
+  pub bump(delta: i64) -> CrossModuleCounter {
+    return CrossModuleCounter(this.value + delta, this.label)
+  }
+
+  pub explicitThisValue() -> i64 {
+    return this.value
+  }
+
+  pub implicitThisValue() -> i64 {
+    return value
+  }
+
+  pub readableFunction() -> string {
+    return "{this.label}:{this.value}"
+  }
+
+  pub writableFunction(delta: i64) -> CrossModuleCounter {
+    return CrossModuleCounter(this.value + delta, this.label)
+  }
+
+  pub shadowedValue(value: i64) -> i64 {
+    return value + this.value
+  }
+}
+
+impl view CrossModuleCounter {
+  pub named: bool => this.label != ""
+  pub summary: string => "{this.label}:{this.value}"
+  pub implicitSummary: string => "{label}:{value}"
+  pub readableProperty: string => "{this.label}:{this.value}"
+  pub writableProperty: i64 => this.value + 1
+}
+
+context CrossModuleCounter {
+  pub contextValue(delta: i64) -> i64 {
+    return this.value + delta
+  }
+}
+
+extract CrossModuleCounter {
+  pub extractedValue() -> i64 {
+    return value
+  }
+
+  pub extractedSummary() -> string {
+    return "{label}:{value}"
+  }
+}
+
+pub extend CrossModuleCounter :
+  pub CounterReadable<CrossModuleCounter>,
+  pub CounterNamed<CrossModuleCounter>,
+  internal CounterInternal<CrossModuleCounter>,
+  private CounterAuditable<CrossModuleCounter>,
+  CounterDefaultPrivate<CrossModuleCounter>
+{
+  current() -> i64 {
+    return this.value
+  }
+
+  name() -> string {
+    return this.label
+  }
+
+  internalValue() -> i64 {
+    return this.value + 20
+  }
+
+  auditValue() -> i64 {
+    return this.value + 30
+  }
+
+  defaultPrivateValue() -> i64 {
+    return this.value + 40
+  }
+}
+
+pub design10PrivateAccessProof(counter: CrossModuleCounter) -> bool {
+  return counter.auditValue() == 37 &&
+    counter.defaultPrivateValue() == 47
+}
+
+pub extend<T: CounterReadable<T>> T {
+  doubledCurrent() -> i64 {
+    return this.current() * 2
+  }
+
+  genericReadableFunction() -> i64 {
+    return this.current()
+  }
+
+  genericWritableFunction(delta: i64) -> i64 {
+    return this.current() + delta
+  }
+}
+
+pub extend CrossModuleBox<CrossModuleCounter> : pub BoxReadable<CrossModuleBox<CrossModuleCounter>> {
+  boxCurrent() -> i64 {
+    return this.value.current()
+  }
+}
+
+pub extend<T: BoxReadable<T>> T {
+  doubledBoxCurrent() -> i64 {
+    return this.boxCurrent() * 2
+  }
+}

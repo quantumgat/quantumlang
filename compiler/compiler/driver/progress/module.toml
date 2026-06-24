@@ -1,0 +1,9 @@
+[module]
+name = "progress"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/driver/progress"
+role = "driver-progress-reporting"
+
+[dependencies]
+modules = ["core"]

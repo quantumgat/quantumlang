@@ -1,0 +1,49 @@
+pub enum AstLoweringStatus {
+  LoweringReady
+  NothingLowered
+  ProductMissing
+  Nondeterministic
+}
+
+pub AstLowering {
+  lowered: i64
+  hirProductName: string
+  deterministic: bool = true
+}
+
+impl AstLowering {
+  pub AstLowering(lowered: i64, hirProductName: string) =
+    This { lowered, hirProductName }
+
+  pub empty(hirProductName: string) =
+    This {
+      lowered: 0
+      hirProductName
+    }
+
+  pub invalid() =
+    This {
+      lowered: 0
+      hirProductName: ""
+      deterministic: false
+    }
+
+  addLowered(count: i64) =
+    this {
+      lowered: lowered + count
+    }
+}
+
+impl view AstLowering {
+  pub valid => status == AstLoweringStatus.LoweringReady
+  pub status => match true {
+    deterministic == false => AstLoweringStatus.Nondeterministic
+    hirProductName == "" => AstLoweringStatus.ProductMissing
+    lowered <= 0 => AstLoweringStatus.NothingLowered
+    _ => AstLoweringStatus.LoweringReady
+  }
+  pub produced => lowered > 0
+  pub cacheable => valid && deterministic
+  pub lowerable => valid
+  pub debugName => "hir.astLowering.{hirProductName}.{lowered}"
+}

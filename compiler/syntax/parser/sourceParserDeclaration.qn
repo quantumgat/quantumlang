@@ -1,0 +1,195 @@
+import core::{Vec}
+import source::{SourceSpan}
+import syntax::{TokenRole}
+import syntax::parser::sourceParserImportExport::{SourceParserImportExport}
+import syntax::parser::sourceParserInference::{SourceParserInference}
+import syntax::parser::sourceParserSignature::{SourceParserSignature}
+import syntax::parser::sourceParserSurface::{SourceParserSurface}
+
+pub SourceParserDeclaration {
+  input: LexProduct = {}
+  modulePath: string = "<source>"
+}
+
+impl SourceParserDeclaration {
+  pub SourceParserDeclaration(input: LexProduct, modulePath: string) =
+    This { input, modulePath }
+
+  pub importDeclarationAt(index: i64) -> AstDeclaration {
+    let imports = SourceParserImportExport(input, modulePath)
+    return imports.importDeclarationAt(index)
+  }
+
+  pub exportPathSegmentToken(token: SyntaxToken) -> bool {
+    let imports = SourceParserImportExport(input, modulePath)
+    return imports.exportPathSegmentToken(token)
+  }
+
+  pub exportDeclaration(
+    targetPath: string,
+    selectedSymbol: string,
+    alias: string,
+    wildcard: bool,
+    span: SourceSpan
+  ) -> AstDeclaration {
+    let imports = SourceParserImportExport(input, modulePath)
+    return imports.exportDeclaration(
+      targetPath,
+      selectedSymbol,
+      alias,
+      wildcard,
+      span
+    )
+  }
+
+  pub declarationStart(token: SyntaxToken) -> bool {
+    let surface = SourceParserSurface(input)
+    return surface.declarationStart(token)
+  }
+
+  pub topLevelSurfaceRoleListToken(index: i64, blockDepth: i64) -> bool {
+    let surface = SourceParserSurface(input)
+    return surface.topLevelSurfaceRoleListToken(index, blockDepth)
+  }
+
+  pub roleConformancesAt(index: i64) -> Vec<AstRoleConformance> {
+    let surface = SourceParserSurface(input)
+    return surface.roleConformancesAt(index)
+  }
+
+  pub declarationForToken(
+    index: i64,
+    kind: AstDeclarationKind
+  ) -> AstDeclaration {
+    let signature = SourceParserSignature(input)
+    let nameToken = signature.declarationNameToken(index)
+    let declaration = AstDeclaration(
+      kind,
+      modulePath,
+      nameToken.text,
+      nameToken.span,
+      signature.visibilityAt(index)
+    )
+    declaration.genericParameterRows = signature.genericParametersAt(index)
+    declaration.genericParameterCount = declaration.genericParameterRows.count
+    declaration.genericParameters = signature.genericParameterNamesAt(index)
+    return declaration
+  }
+
+  pub memberValueDeclarationForToken(
+    index: i64,
+    ownerTypeName: string,
+    memberKind: string
+  ) -> AstDeclaration {
+    let token = input.tokenAt(index)
+    let declaration = AstDeclaration(
+      AstDeclarationKind.Function,
+      modulePath,
+      token.text,
+      token.span,
+      SourceParserSignature(input).visibilityAt(index)
+    )
+    let inference = SourceParserInference(input)
+    declaration.returnTypeName =
+      inference.memberValueTypeNameAt(index, ownerTypeName)
+    declaration.ownerTypeName = ownerTypeName
+    declaration.memberKind = memberKind
+    return declaration
+  }
+
+  pub enumVariantDeclarationForToken(
+    index: i64,
+    ownerTypeName: string
+  ) -> AstDeclaration {
+    let token = input.tokenAt(index)
+    let declaration = AstDeclaration(
+      AstDeclarationKind.Function,
+      modulePath,
+      token.text,
+      token.span,
+      AstDeclarationVisibility.Public
+    )
+    declaration.returnTypeName = ownerTypeName
+    declaration.ownerTypeName = ownerTypeName
+    declaration.memberKind = "enum-variant"
+    return declaration
+  }
+
+  pub nextIsTypeAnnotation(index: i64) -> bool {
+    return index + 1 < input.tokenCount &&
+      input.tokenAt(index + 1).text == ":"
+  }
+
+  pub propertyDeclarationAt(index: i64) -> bool {
+    let token = input.tokenAt(index)
+    if index + 1 >= input.tokenCount ||
+       !token.kind.identifierToken ||
+       token.kind.role == TokenRole.PrimitiveType {
+      return false
+    }
+    if index > 0 {
+      let previous = input.tokenAt(index - 1).text
+      if previous == ":" || previous == "::" {
+        return false
+      }
+    }
+    let next = input.tokenAt(index + 1).text
+    if next == ":" || next == "=>" {
+      return true
+    }
+    return next == "=" &&
+      index + 2 < input.tokenCount &&
+      input.tokenAt(index + 2).text == ">"
+  }
+
+  pub declarationNameToken(index: i64) -> SyntaxToken {
+    let signature = SourceParserSignature(input)
+    return signature.declarationNameToken(index)
+  }
+
+  pub genericParameterNamesAt(index: i64) -> Vec<string> {
+    let signature = SourceParserSignature(input)
+    return signature.genericParameterNamesAt(index)
+  }
+
+  pub genericParametersAt(index: i64) -> Vec<AstGenericParameter> {
+    let signature = SourceParserSignature(input)
+    return signature.genericParametersAt(index)
+  }
+
+  pub parameterNamesAt(index: i64) -> Vec<string> {
+    let signature = SourceParserSignature(input)
+    return signature.parameterNamesAt(index)
+  }
+
+  pub callableParametersAt(index: i64) -> Vec<AstCallableParameter> {
+    let signature = SourceParserSignature(input)
+    return signature.callableParametersAt(index)
+  }
+
+  pub returnTypeNameAt(index: i64) -> string {
+    let signature = SourceParserSignature(input)
+    return signature.returnTypeNameAt(index)
+  }
+
+  pub visibilityAt(index: i64) -> AstDeclarationVisibility {
+    let signature = SourceParserSignature(input)
+    return signature.visibilityAt(index)
+  }
+
+  pub nextKeywordIs(index: i64, keyword: KeywordKind) -> bool {
+    let signature = SourceParserSignature(input)
+    return signature.nextKeywordIs(index, keyword)
+  }
+
+  pub inferredCallableReturnTypeNameAt(
+    index: i64,
+    ownerTypeName: string
+  ) -> string {
+    let inference = SourceParserInference(input)
+    return inference.callableReturnTypeNameAt(
+      index,
+      ownerTypeName
+    )
+  }
+}

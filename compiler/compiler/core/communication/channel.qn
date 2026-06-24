@@ -1,0 +1,50 @@
+pub channel<T> {
+  policy: CommunicationPolicy = {}
+  state: CommunicationState = CommunicationState.Open
+  queuedCount: i64 = 0
+  sentCount: i64 = 0
+  receivedCount: i64 = 0
+  closed: bool = false
+}
+
+impl channel<T> {
+  pub send(value: T) -> Result<void, CommunicationError>
+
+  pub trySend(value: T) -> Result<bool, CommunicationError>
+
+  pub receive() -> Result<T, CommunicationError>
+
+  pub tryReceive() -> Result<Option<T>, CommunicationError>
+
+  pub close() -> Result<void, CommunicationError>
+
+  pub cancel() -> Result<void, CommunicationError>
+}
+
+impl view channel<T> {
+  pub readable: bool => queuedCount > 0
+
+  pub writable: bool =>
+    state == CommunicationState.Open &&
+    closed == false &&
+    (policy.capacity == 0 || queuedCount < policy.capacity)
+
+  pub backpressured: bool =>
+    state == CommunicationState.Open &&
+    closed == false &&
+    policy.capacity > 0 &&
+    queuedCount >= policy.capacity
+
+  pub terminal: bool =>
+    closed ||
+    state == CommunicationState.Closed ||
+    state == CommunicationState.Cancelled ||
+    state == CommunicationState.Failed
+
+  pub valid: bool =>
+    policy.valid &&
+    queuedCount >= 0 &&
+    sentCount >= receivedCount &&
+    queuedCount == sentCount - receivedCount &&
+    (state == CommunicationState.Open || terminal)
+}

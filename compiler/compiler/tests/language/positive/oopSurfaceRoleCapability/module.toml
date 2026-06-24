@@ -1,0 +1,9 @@
+[module]
+name = "oopSurfaceRoleCapability"
+visibility = "package"
+root = "mod.qn"
+owner = "quantumlang/tests/language/positive/oopSurfaceRoleCapability"
+role = "oop-surface-role-language-proof"
+
+[dependencies]
+modules = []

@@ -1,0 +1,21 @@
+pub EmbeddedPlatform {
+  target: EmbeddedTarget
+  image: BootImage
+  probe: DebugProbe
+}
+
+impl EmbeddedPlatform {
+  pub EmbeddedPlatform(target: EmbeddedTarget, image: BootImage, probe: DebugProbe) =
+    This {
+      target
+      image
+      probe
+    }
+}
+
+impl view EmbeddedPlatform {
+  pub valid => target.valid && image.valid && probe.valid
+  pub buildable => valid && target.linkable && image.bootable
+  pub deployable => buildable && probe.deployReady && image.flashable
+  pub debuggable => deployable && probe.debugReady
+}

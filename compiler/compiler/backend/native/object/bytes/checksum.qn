@@ -1,0 +1,35 @@
+pub ObjectChecksum {
+  sourceHash: string
+  byteHash: string
+  byteCount: i64
+  diagnosticCode: string = ""
+}
+
+impl ObjectChecksum {
+  pub ObjectChecksum(sourceHash: string, byteHash: string, byteCount: i64) =
+    This {
+      sourceHash
+      byteHash
+      byteCount
+    }
+
+  pub fromWriter(writer: ObjectByteWriter, sourceHash: string) =
+    This {
+      sourceHash
+      byteHash: "object-bytes:{sourceHash}:{writer.layout.objectHash}:{writer.byteCount}:{writer.segmentCount}"
+      byteCount: writer.byteCount
+      diagnosticCode: match writer.valid && sourceHash != "" {
+        true => ""
+        false => "QNATIVE0751"
+      }
+    }
+}
+
+impl view ObjectChecksum {
+  pub valid: bool => diagnosticCode == "" &&
+    sourceHash != "" &&
+    byteHash != "" &&
+    byteCount > 0
+  pub stable: bool => valid
+  pub debugName: string => "object.checksum.{byteCount}"
+}

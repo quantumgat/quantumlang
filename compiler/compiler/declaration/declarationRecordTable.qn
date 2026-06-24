@@ -1,0 +1,186 @@
+import core::{Slice}
+
+pub DeclarationRecordTable {
+  arena: DeclarationArena = {}
+  index: DeclarationIndex = {}
+  parserRecords: Slice<DeclarationRecord> = []
+  recordValues: Vec<DeclarationRecord> = []
+  parserSummaryRecords: Slice<DeclarationRecord> = []
+  syntheticRecords: Slice<DeclarationRecord> = []
+  unresolvedRecords: Slice<DeclarationRecord> = []
+  rowsReady: bool = false
+  samplesReady: bool = false
+  deterministic: bool = true
+}
+
+impl DeclarationRecordTable {
+  pub fromCounts(table: DeclarationTable) =
+    This {
+      arena: table.arena
+      index: table.index
+      syntheticRecords: table.arena.records.asSlice()
+      rowsReady: table.valid
+      samplesReady: table.valid
+    }
+
+  pub fromParserSummary(table: DeclarationTable) =
+    This {
+      arena: table.arena
+      index: table.index
+      parserSummaryRecords: table.arena.records.asSlice()
+      rowsReady: table.valid
+      samplesReady: table.valid
+    }
+
+  pub fromParserRows(table: DeclarationTable, rows: DeclarationParserRows) =
+    This.fromBatch(table, DeclarationRecordBatch.fromRows(rows))
+
+  pub fromParserRowsAndSamples(
+    table: DeclarationTable,
+    rows: DeclarationParserRows,
+    samples: DeclarationParserRecordSamples
+  ) -> This {
+    return This.fromBatch(table, DeclarationRecordBatch.fromRowsAndSamples(rows, samples))
+  }
+
+  pub fromBatch(table: DeclarationTable, batch: DeclarationRecordBatch) -> This {
+    let totalCount = batch.totalCount
+    let parserOwned = batch.realParserRows
+    let runtimeBridge = batch.bridgedRuntimeRows
+    let rowsValid = batch.rows.valid
+    let samplesReady = batch.samplesReady && batch.recordRowsReady
+    let batchValid = batch.valid
+    let recordRows = batch.recordRows
+    let declarationIds = batch.declarationIds
+    let publicDeclarationIds = batch.publicDeclarationIds
+    let index = batch.index
+    let records = batch.records
+    let unresolvedRecords = batch.unresolvedRecords
+    let arena = DeclarationArena.fromRecordRows(
+      totalCount,
+      declarationIds,
+      publicDeclarationIds,
+      recordRows,
+      parserOwned,
+      runtimeBridge,
+      rowsValid,
+      samplesReady
+    )
+    arena.attachRecordValues(batch.recordValues)
+
+    return This {
+      arena
+      index
+      parserRecords: records
+      recordValues: batch.recordValues
+      unresolvedRecords
+      rowsReady: batchValid && totalCount == table.symbolCount
+      samplesReady
+    }
+  }
+
+  pub recordAt(index: i64) -> DeclarationRecord {
+    return recordValues[index]
+  }
+}
+
+impl view DeclarationRecordTable {
+  pub totalRecordCount: i64 => arena.count
+
+  pub expectedSymbolCount: i64 => index.count
+
+  pub declarationIdCount: i64 => arena.ids.count
+
+  pub publicDeclarationIdCount: i64 => arena.publicIds.count
+
+  pub parserRecordCount: i64 => parserRecords.count
+
+  pub concreteRecordCount: i64 => recordValues.count
+
+  pub parserSummaryRecordCount: i64 => parserSummaryRecords.count
+
+  pub syntheticRecordCount: i64 => syntheticRecords.count
+
+  pub unresolvedRecordCount: i64 => unresolvedRecords.count
+
+  pub parserBacked: bool =>
+    parserRecordCount == totalRecordCount &&
+    concreteRecordCount == totalRecordCount &&
+    parserRecords.owner == arena.records.owner &&
+    totalRecordCount > 0
+
+  pub realParserRows: bool =>
+    parserBacked &&
+    arena.realParserRows
+
+  pub runtimeBridgeRows: bool =>
+    parserBacked &&
+    arena.runtimeBridgeRows
+
+  pub parserOwnedRows: bool =>
+    realParserRows &&
+    runtimeBridgeRows == false
+
+  pub runtimeOwnedRows: bool =>
+    runtimeBridgeRows &&
+    realParserRows == false
+
+  pub parserSummaryBacked: bool =>
+    parserSummaryRecordCount == totalRecordCount &&
+    parserSummaryRecords.owner == arena.records.owner &&
+    totalRecordCount > 0
+
+  pub bootstrapBacked: bool =>
+    syntheticRecordCount == totalRecordCount &&
+    syntheticRecords.owner == arena.records.owner &&
+    totalRecordCount > 0
+
+  pub partiallyParserBacked: bool =>
+    parserRecordCount > 0 &&
+    parserRecordCount < totalRecordCount
+
+  pub declarationStateBacked: bool =>
+    parserBacked ||
+    parserSummaryBacked ||
+    bootstrapBacked ||
+    partiallyParserBacked
+
+  pub resolved: bool => unresolvedRecordCount == 0
+
+  pub symbolsMatch: bool => totalRecordCount == expectedSymbolCount
+
+  pub arenaOwned: bool =>
+    arena.valid &&
+    arena.count > 0 &&
+    arena.records.count == totalRecordCount
+
+  pub indexBacked: bool =>
+    index.valid &&
+    index.count == totalRecordCount
+
+  pub idsAligned: bool =>
+    declarationIdCount == totalRecordCount &&
+    publicDeclarationIdCount <= totalRecordCount
+
+  pub countsConsistent: bool =>
+    arenaOwned &&
+    indexBacked &&
+    idsAligned &&
+    parserRecords.valid &&
+    parserSummaryRecords.valid &&
+    syntheticRecords.valid &&
+    unresolvedRecords.valid &&
+    recordValues.valid &&
+    parserRecordCount + parserSummaryRecordCount + syntheticRecordCount == totalRecordCount
+
+  pub valid: bool =>
+    deterministic &&
+    rowsReady &&
+    samplesReady &&
+    symbolsMatch &&
+    resolved &&
+    countsConsistent &&
+    declarationStateBacked &&
+    (parserOwnedRows || runtimeOwnedRows || parserSummaryBacked || bootstrapBacked) &&
+    totalRecordCount > 0
+}

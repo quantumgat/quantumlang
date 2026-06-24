@@ -1,0 +1,39 @@
+pub ObjectCacheReplay {
+  entry: ObjectCacheEntry
+  restored: bool
+  replayReason: string
+  diagnosticCode: string = ""
+}
+
+impl ObjectCacheReplay {
+  pub ObjectCacheReplay(entry: ObjectCacheEntry, restored: bool, replayReason: string) =
+    This {
+      entry
+      restored
+      replayReason
+    }
+
+  pub hit(entry: ObjectCacheEntry) =
+    This {
+      entry
+      restored: true
+      replayReason: "object-cache-hit"
+    }
+
+  pub miss(entry: ObjectCacheEntry, replayReason: string) =
+    This {
+      entry
+      restored: false
+      replayReason
+    }
+}
+
+impl view ObjectCacheReplay {
+  pub valid: bool => diagnosticCode == "" &&
+    entry.valid &&
+    replayReason != ""
+  pub restoredObject: bool => valid && restored
+  pub needsBuild: bool => valid && restored == false
+  pub replayHash => "object-cache-replay:{entry.entryHash}:{restored}:{replayReason}"
+  pub debugName => "object.cache.replay.{restored}"
+}

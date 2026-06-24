@@ -1,0 +1,46 @@
+pub ObjectAlignment {
+  value: i64 = 1
+}
+
+impl ObjectAlignment {
+  pub ObjectAlignment(value: i64) =
+    This { value }
+
+  pub one() =
+    This(1)
+
+  pub pointer() =
+    This(8)
+
+  pub cacheLine() =
+    This(64)
+
+  pub align(offset: i64) -> i64 {
+    if value <= 1 {
+      return offset
+    }
+    let remainder = offset % value
+    if remainder == 0 {
+      return offset
+    }
+    return offset + value - remainder
+  }
+
+  pub padding(offset: i64) -> i64 {
+    return align(offset) - offset
+  }
+}
+
+impl view ObjectAlignment {
+  pub valid: bool => value > 0
+  pub powerOfTwo: bool => value == 1 ||
+    value == 2 ||
+    value == 4 ||
+    value == 8 ||
+    value == 16 ||
+    value == 32 ||
+    value == 64 ||
+    value == 128 ||
+    value == 256
+  pub debugName: string => "object.align.{value}"
+}

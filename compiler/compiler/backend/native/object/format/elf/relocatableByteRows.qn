@@ -1,0 +1,745 @@
+pub ElfSectionHeaderRow {
+  nameOffset: i32
+  sectionType: i32
+  flags: i64
+  address: i64
+  fileOffset: i64
+  sizeBytes: i64
+  link: i32
+  info: i32
+  alignBytes: i64
+  entrySize: i64
+  index: i64
+  diagnosticCode: string = ""
+}
+
+impl ElfSectionHeaderRow {
+  pub ElfSectionHeaderRow(
+    nameOffset: i32,
+    sectionType: i32,
+    flags: i64,
+    address: i64,
+    fileOffset: i64,
+    sizeBytes: i64,
+    link: i32,
+    info: i32,
+    alignBytes: i64,
+    entrySize: i64,
+    index: i64
+  ) =
+    This {
+      nameOffset
+      sectionType
+      flags
+      address
+      fileOffset
+      sizeBytes
+      link
+      info
+      alignBytes
+      entrySize
+      index
+    }
+
+  pub null() =
+    This(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+}
+
+impl view ElfSectionHeaderRow {
+  pub valid: bool => diagnosticCode == "" &&
+    nameOffset >= 0 &&
+    sectionType >= 0 &&
+    flags >= 0 &&
+    address >= 0 &&
+    fileOffset >= 0 &&
+    sizeBytes >= 0 &&
+    link >= 0 &&
+    info >= 0 &&
+    alignBytes >= 0 &&
+    entrySize >= 0 &&
+    index >= 0
+
+  pub byteCount: i64 => 64
+  pub encodedSize: usize => 64
+  pub payloadReady: bool => match emitBytes() {
+    Ok(payload) => true
+    Err(error) => false
+  }
+  pub debugName: string => "elf.section.header.row.{index}.{fileOffset}.{sizeBytes}"
+
+  pub writeTo(out: &BinaryWriter) -> Result<void, EncodeError> {
+    out.reserve(encodedSize)?
+    out.i32le(nameOffset)?
+    out.i32le(sectionType)?
+    out.i64le(flags)?
+    out.i64le(address)?
+    out.i64le(fileOffset)?
+    out.i64le(sizeBytes)?
+    out.i32le(link)?
+    out.i32le(info)?
+    out.i64le(alignBytes)?
+    out.i64le(entrySize)?
+    return Ok(0)
+  }
+
+  pub emitBytes() -> Result<bytes, EncodeError> {
+    let out = BinaryWriter.withCapacity(encodedSize)
+    writeTo(&out)?
+    return out.finish()
+  }
+}
+
+pub ElfSymbolRow {
+  nameOffset: i32
+  info: u8
+  other: u8
+  sectionIndex: u16
+  value: i64
+  sizeBytes: i64
+  index: i64
+  diagnosticCode: string = ""
+}
+
+impl ElfSymbolRow {
+  pub ElfSymbolRow(
+    nameOffset: i32,
+    info: u8,
+    other: u8,
+    sectionIndex: u16,
+    value: i64,
+    sizeBytes: i64,
+    index: i64
+  ) =
+    This {
+      nameOffset
+      info
+      other
+      sectionIndex
+      value
+      sizeBytes
+      index
+    }
+
+  pub null() =
+    This(0, 0, 0, 0, 0, 0, 0)
+
+  pub localSection(sectionIndex: u16, index: i64) =
+    This(0, 3, 0, sectionIndex, 0, 0, index)
+
+  pub globalFunction(
+    nameOffset: i32,
+    sectionIndex: u16,
+    value: i64,
+    sizeBytes: i64,
+    index: i64
+  ) =
+    This(nameOffset, 18, 0, sectionIndex, value, sizeBytes, index)
+
+  pub globalUndefined(nameOffset: i32, index: i64) =
+    This(nameOffset, 16, 0, 0, 0, 0, index)
+}
+
+impl view ElfSymbolRow {
+  pub valid: bool => diagnosticCode == "" &&
+    nameOffset >= 0 &&
+    value >= 0 &&
+    sizeBytes >= 0 &&
+    index >= 0
+
+  pub byteCount: i64 => 24
+  pub encodedSize: usize => 24
+  pub debugName: string => "elf.symbol.row.{index}.{nameOffset}.{value}.{sizeBytes}"
+
+  pub writeTo(out: &BinaryWriter) -> Result<void, EncodeError> {
+    out.reserve(encodedSize)?
+    out.i32le(nameOffset)?
+    out.u8(info)?
+    out.u8(other)?
+    out.u16le(sectionIndex)?
+    out.i64le(value)?
+    out.i64le(sizeBytes)?
+    return Ok(0)
+  }
+}
+
+pub ElfRelocationRow {
+  offset: i64
+  symbolIndex: i32
+  relocationType: i32
+  addendKind: i32
+  addendValue: i32
+  index: i64
+  diagnosticCode: string = ""
+}
+
+impl ElfRelocationRow {
+  pub ElfRelocationRow(
+    offset: i64,
+    symbolIndex: i32,
+    relocationType: i32,
+    addendKind: i32,
+    addendValue: i32,
+    index: i64
+  ) =
+    This {
+      offset
+      symbolIndex
+      relocationType
+      addendKind
+      addendValue
+      index
+    }
+
+  pub pc32Neg4(offset: i64, symbolIndex: i32, index: i64) =
+    This(offset, symbolIndex, 2, 1, 0, index)
+
+  pub pc32Addend32(offset: i64, symbolIndex: i32, addendValue: i32, index: i64) =
+    This(offset, symbolIndex, 2, 2, addendValue, index)
+
+  pub plt32Neg4(offset: i64, symbolIndex: i32, index: i64) =
+    This(offset, symbolIndex, 4, 1, 0, index)
+}
+
+impl view ElfRelocationRow {
+  pub valid: bool => diagnosticCode == "" &&
+    offset >= 0 &&
+    symbolIndex >= 0 &&
+    relocationType >= 0 &&
+    addendKind > 0 &&
+    addendKind <= 2 &&
+    addendValue >= 0 &&
+    index >= 0
+
+  pub byteCount: i64 => 24
+  pub encodedSize: usize => 24
+  pub debugName: string => "elf.relocation.row.{index}.{offset}.{symbolIndex}.{relocationType}"
+
+  pub writeTo(out: &BinaryWriter) -> Result<void, EncodeError> {
+    out.reserve(encodedSize)?
+    out.i64le(offset)?
+    out.i32le(relocationType)?
+    out.i32le(symbolIndex)?
+    if addendKind == 1 {
+      out.u8(0xfc)?
+      out.u8(0xff)?
+      out.u8(0xff)?
+      out.u8(0xff)?
+      out.u8(0xff)?
+      out.u8(0xff)?
+      out.u8(0xff)?
+      out.u8(0xff)?
+      return Ok(0)
+    }
+    out.i32le(addendValue)?
+    out.i32le(0)?
+    return Ok(0)
+  }
+}
+
+pub ElfRelocatableByteRows {
+  writer: ObjectByteWriter
+  layout: ObjectLayout
+  sectionNameIndex: i64
+  diagnosticCode: string = ""
+}
+
+impl ElfRelocatableByteRows {
+  pub ElfRelocatableByteRows(
+    writer: ObjectByteWriter,
+    layout: ObjectLayout,
+    sectionNameIndex: i64
+  ) =
+    This {
+      writer
+      layout
+      sectionNameIndex
+    }
+
+  pub fromWriter(writer: ObjectByteWriter) =
+    This {
+      writer
+      layout: writer.layout
+      sectionNameIndex: 8
+      diagnosticCode: match writer.valid && writer.layout.valid {
+        true => ""
+        false => "QNATIVE0785"
+      }
+    }
+
+  pub failedSegment(
+    name: string,
+    offset: i64,
+    logicalByteCount: i64,
+    diagnosticCode: string
+  ) =
+    ObjectByteSegment {
+      name
+      offset
+      payload: []
+      byteCount: 0
+      logicalByteCount
+      diagnosticCode
+    }
+
+  pub headerSegment() -> ObjectByteSegment {
+    let out = BinaryWriter.withCapacity(64)
+    match writeHeaderTo(&out) {
+      Ok(result) => {}
+      Err(error) => {
+        return failedSegment("elf.header", 0, 64, "QNATIVE0786")
+      }
+    }
+    match out.finish() {
+      Ok(payload) => {
+        return ObjectByteSegment.fromPayload("elf.header", 0, payload, 64)
+      }
+      Err(error) => {
+        return failedSegment("elf.header", 0, 64, "QNATIVE0786")
+      }
+    }
+  }
+
+  pub writeHeaderTo(out: &BinaryWriter) -> Result<void, EncodeError> {
+    out.reserve(64)?
+    out.u8(0x7f)?
+    out.u8(0x45)?
+    out.u8(0x4c)?
+    out.u8(0x46)?
+    out.u8(2)?
+    out.u8(1)?
+    out.u8(1)?
+    out.u8(0)?
+    out.i64le(0)?
+    out.u16le(1)?
+    out.u16le(62)?
+    out.i32le(1)?
+    out.i64le(0)?
+    out.i64le(0)?
+    out.i64le(layout.header.sectionHeaderOffset)?
+    out.i32le(0)?
+    out.u16le(64)?
+    out.u16le(0)?
+    out.u16le(0)?
+    out.u16le(64)?
+    out.u16le(9)?
+    out.u16le(8)?
+    return Ok(0)
+  }
+
+  pub sectionNamesSegment(offset: i64) -> ObjectByteSegment {
+    let out = BinaryWriter.withCapacity(57)
+    match writeSectionNamesTo(&out) {
+      Ok(result) => {}
+      Err(error) => {
+        return failedSegment("elf.shstrtab", offset, 57, "QNATIVE0787")
+      }
+    }
+    match out.finish() {
+      Ok(payload) => {
+        return ObjectByteSegment.fromPayload("elf.shstrtab", offset, payload, 57)
+      }
+      Err(error) => {
+        return failedSegment("elf.shstrtab", offset, 57, "QNATIVE0787")
+      }
+    }
+  }
+
+  pub writeSectionNamesTo(out: &BinaryWriter) -> Result<void, EncodeError> {
+    out.reserve(57)?
+    out.u8(0)?
+    out.append(".symtab")?
+    out.u8(0)?
+    out.append(".strtab")?
+    out.u8(0)?
+    out.append(".shstrtab")?
+    out.u8(0)?
+    out.append(".rela.text")?
+    out.u8(0)?
+    out.append(".data")?
+    out.u8(0)?
+    out.append(".bss")?
+    out.u8(0)?
+    out.append(".rodata")?
+    out.u8(0)?
+    return Ok(0)
+  }
+
+  pub stringTableSegment(offset: i64) -> ObjectByteSegment {
+    let out = BinaryWriter.withCapacity(178)
+    match writeStringTableTo(&out) {
+      Ok(result) => {}
+      Err(error) => {
+        return failedSegment("elf.strtab", offset, 178, "QNATIVE0790")
+      }
+    }
+    match out.finish() {
+      Ok(payload) => {
+        return ObjectByteSegment.fromPayload("elf.strtab", offset, payload, 178)
+      }
+      Err(error) => {
+        return failedSegment("elf.strtab", offset, 178, "QNATIVE0790")
+      }
+    }
+  }
+
+  pub writeStringTableTo(out: &BinaryWriter) -> Result<void, EncodeError> {
+    out.reserve(178)?
+    out.u8(0)?
+    out.append("qtlc2_compiler_entry")?
+    out.u8(0)?
+    out.append("qtlc2_driver_main")?
+    out.u8(0)?
+    out.append("qtlc2_runtime_start")?
+    out.u8(0)?
+    out.append("qtlc2_command_main")?
+    out.u8(0)?
+    out.append("qtlc2_check_command")?
+    out.u8(0)?
+    out.append("qtlc2_build_command")?
+    out.u8(0)?
+    out.append("qtlc2_write_stdout")?
+    out.u8(0)?
+    out.append("qtlc2_first_positional_arg")?
+    out.u8(0)?
+    out.append("qtlc2_strlen")?
+    out.u8(0)?
+    return Ok(0)
+  }
+
+  pub rodataSegment(offset: i64) -> ObjectByteSegment {
+    let out = BinaryWriter.withCapacity(162)
+    match writeRodataTo(&out) {
+      Ok(result) => {}
+      Err(error) => {
+        return failedSegment("elf.rodata", offset, 162, "QNATIVE0793")
+      }
+    }
+    match out.finish() {
+      Ok(payload) => {
+        return ObjectByteSegment.fromPayload("elf.rodata", offset, payload, 162)
+      }
+      Err(error) => {
+        return failedSegment("elf.rodata", offset, 162, "QNATIVE0793")
+      }
+    }
+  }
+
+  pub writeRodataTo(out: &BinaryWriter) -> Result<void, EncodeError> {
+    out.reserve(162)?
+    out.append("qtlc2 compiler 0.1.0\n")?
+    out.append("commands: check build version help\n")?
+    out.append("qtlc2 compiler 0.1.0\n")?
+    out.append("qtlc2 check requires package path\n")?
+    out.append("qtlc2 check package: ")?
+    out.append("qtlc2 build command boundary\n\n")?
+    return Ok(0)
+  }
+
+  pub textSegment(offset: i64) -> ObjectByteSegment {
+    let text = X86TextImage.normalizedArgs()
+    let out = BinaryWriter.withCapacity(text.byteCount)
+    match text.writeTo(&out) {
+      Ok(result) => {}
+      Err(error) => {
+        return failedSegment("elf.text", offset, text.byteCount, "QNATIVE0794")
+      }
+    }
+    match out.finish() {
+      Ok(payload) => {
+        return ObjectByteSegment.fromPayload("elf.text", offset, payload, text.byteCount)
+      }
+      Err(error) => {
+        return failedSegment("elf.text", offset, text.byteCount, "QNATIVE0794")
+      }
+    }
+  }
+
+  pub symbolTableSegment(offset: i64) -> ObjectByteSegment {
+    let out = BinaryWriter.withCapacity(288)
+    match writeSymbolTableTo(&out) {
+      Ok(result) => {}
+      Err(error) => {
+        return failedSegment("elf.symtab", offset, 288, "QNATIVE0791")
+      }
+    }
+    match out.finish() {
+      Ok(payload) => {
+        return ObjectByteSegment.fromPayload("elf.symtab", offset, payload, 288)
+      }
+      Err(error) => {
+        return failedSegment("elf.symtab", offset, 288, "QNATIVE0791")
+      }
+    }
+  }
+
+  pub writeSymbolTableTo(out: &BinaryWriter) -> Result<void, EncodeError> {
+    out.reserve(288)?
+    ElfSymbolRow.null().writeTo(out)?
+    ElfSymbolRow.localSection(5, 1).writeTo(out)?
+    ElfSymbolRow.globalFunction(74, 1, 0, 6, 2).writeTo(out)?
+    ElfSymbolRow.globalFunction(1, 1, 6, 6, 3).writeTo(out)?
+    ElfSymbolRow.globalFunction(22, 1, 12, 19, 4).writeTo(out)?
+    ElfSymbolRow.globalUndefined(40, 5).writeTo(out)?
+    ElfSymbolRow.globalFunction(60, 1, 31, 245, 6).writeTo(out)?
+    ElfSymbolRow.globalFunction(79, 1, 276, 89, 7).writeTo(out)?
+    ElfSymbolRow.globalFunction(99, 1, 365, 23, 8).writeTo(out)?
+    ElfSymbolRow.globalFunction(119, 1, 437, 13, 9).writeTo(out)?
+    ElfSymbolRow.globalFunction(138, 1, 388, 36, 10).writeTo(out)?
+    ElfSymbolRow.globalFunction(165, 1, 424, 13, 11).writeTo(out)?
+    return Ok(0)
+  }
+
+  pub relocationTableSegment(offset: i64) -> ObjectByteSegment {
+    let out = BinaryWriter.withCapacity(504)
+    match writeRelocationTableTo(&out) {
+      Ok(result) => {}
+      Err(error) => {
+        return failedSegment("elf.rela.text", offset, 504, "QNATIVE0792")
+      }
+    }
+    match out.finish() {
+      Ok(payload) => {
+        return ObjectByteSegment.fromPayload("elf.rela.text", offset, payload, 504)
+      }
+      Err(error) => {
+        return failedSegment("elf.rela.text", offset, 504, "QNATIVE0792")
+      }
+    }
+  }
+
+  pub writeRelocationTableTo(out: &BinaryWriter) -> Result<void, EncodeError> {
+    out.reserve(504)?
+    ElfRelocationRow.plt32Neg4(1, 3, 0).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(7, 4, 1).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(15, 5, 2).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(26, 6, 3).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(225, 7, 4).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(231, 8, 5).writeTo(out)?
+    ElfRelocationRow.pc32Neg4(239, 1, 6).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(249, 9, 7).writeTo(out)?
+    ElfRelocationRow.pc32Addend32(259, 1, 52, 8).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(269, 9, 9).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(277, 10, 10).writeTo(out)?
+    ElfRelocationRow.pc32Addend32(290, 1, 107, 11).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(300, 9, 12).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(307, 11, 13).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(315, 9, 14).writeTo(out)?
+    ElfRelocationRow.pc32Addend32(322, 1, 157, 15).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(332, 9, 16).writeTo(out)?
+    ElfRelocationRow.pc32Addend32(345, 1, 73, 17).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(355, 9, 18).writeTo(out)?
+    ElfRelocationRow.pc32Addend32(368, 1, 128, 19).writeTo(out)?
+    ElfRelocationRow.plt32Neg4(378, 9, 20).writeTo(out)?
+    return Ok(0)
+  }
+
+  pub zeroSegment(
+    name: string,
+    offset: i64,
+    byteCount: i64,
+    logicalByteCount: i64
+  ) -> ObjectByteSegment {
+    let out = BinaryWriter.withCapacity(byteCount)
+    match writeZeroTo(&out, byteCount) {
+      Ok(result) => {}
+      Err(error) => {
+        return failedSegment(name, offset, logicalByteCount, "QNATIVE0788")
+      }
+    }
+    match out.finish() {
+      Ok(payload) => {
+        return ObjectByteSegment.fromPayload(name, offset, payload, logicalByteCount)
+      }
+      Err(error) => {
+        return failedSegment(name, offset, logicalByteCount, "QNATIVE0788")
+      }
+    }
+  }
+
+  pub writeZeroTo(out: &BinaryWriter, byteCount: i64) -> Result<void, EncodeError> {
+    out.reserve(byteCount)?
+    let index = 0
+    while index < byteCount {
+      out.u8(0)?
+      index++
+    }
+    return Ok(0)
+  }
+
+  pub sectionHeadersSegment(
+    rodataSection: const &ObjectSection,
+    sectionNames: const &ObjectByteSegment
+  ) -> ObjectByteSegment {
+    let out = BinaryWriter.withCapacity(576)
+    match writeSectionHeadersTo(&out, rodataSection, sectionNames) {
+      Ok(result) => {}
+      Err(error) => {
+        return failedSegment(
+          "elf.section-headers",
+          layout.header.sectionHeaderOffset,
+          576,
+          "QNATIVE0789"
+        )
+      }
+    }
+    match out.finish() {
+      Ok(payload) => {
+        return ObjectByteSegment.fromPayload(
+          "elf.section-headers",
+          layout.header.sectionHeaderOffset,
+          payload,
+          576
+        )
+      }
+      Err(error) => {
+        return failedSegment(
+          "elf.section-headers",
+          layout.header.sectionHeaderOffset,
+          576,
+          "QNATIVE0789"
+        )
+      }
+    }
+  }
+
+  pub writeSectionHeadersTo(
+    out: &BinaryWriter,
+    rodataSection: const &ObjectSection,
+    sectionNames: const &ObjectByteSegment
+  ) -> Result<void, EncodeError> {
+    out.reserve(576)?
+    let nullHeader = ElfSectionHeaderRow.null()
+    nullHeader.writeTo(out)?
+
+    let textHeader = ElfSectionHeaderRow(
+      32,
+      1,
+      6,
+      0,
+      layout.text.range.offset,
+      layout.text.range.sizeBytes,
+      0,
+      0,
+      1,
+      0,
+      1
+    )
+    textHeader.writeTo(out)?
+
+    let relocationHeader = ElfSectionHeaderRow(
+      27,
+      4,
+      64,
+      0,
+      layout.relocations.range.offset,
+      layout.relocations.range.sizeBytes,
+      6,
+      1,
+      8,
+      24,
+      2
+    )
+    relocationHeader.writeTo(out)?
+
+    let dataHeader = ElfSectionHeaderRow(
+      38,
+      1,
+      3,
+      0,
+      rodataSection.offset,
+      0,
+      0,
+      0,
+      1,
+      0,
+      3
+    )
+    dataHeader.writeTo(out)?
+
+    let bssHeader = ElfSectionHeaderRow(
+      44,
+      8,
+      3,
+      0,
+      rodataSection.offset,
+      0,
+      0,
+      0,
+      1,
+      0,
+      4
+    )
+    bssHeader.writeTo(out)?
+
+    let rodataHeader = ElfSectionHeaderRow(
+      49,
+      1,
+      2,
+      0,
+      rodataSection.offset,
+      rodataSection.sizeBytes,
+      0,
+      0,
+      1,
+      0,
+      5
+    )
+    rodataHeader.writeTo(out)?
+
+    let symbolHeader = ElfSectionHeaderRow(
+      1,
+      2,
+      0,
+      0,
+      layout.symbols.range.offset,
+      layout.symbols.range.sizeBytes,
+      7,
+      2,
+      8,
+      24,
+      6
+    )
+    symbolHeader.writeTo(out)?
+
+    let stringHeader = ElfSectionHeaderRow(
+      9,
+      3,
+      0,
+      0,
+      layout.strings.range.offset,
+      layout.strings.range.sizeBytes,
+      0,
+      0,
+      1,
+      0,
+      7
+    )
+    stringHeader.writeTo(out)?
+
+    let sectionNameHeader = ElfSectionHeaderRow(
+      17,
+      3,
+      0,
+      0,
+      sectionNames.offset,
+      sectionNames.byteCount,
+      0,
+      0,
+      1,
+      0,
+      8
+    )
+    sectionNameHeader.writeTo(out)?
+    return Ok(0)
+  }
+}
+
+impl view ElfRelocatableByteRows {
+  pub valid: bool => diagnosticCode == "" &&
+    writer.valid &&
+    layout.valid &&
+    sectionNameIndex > 0
+
+  pub payloadReady: bool => valid && writer.payloadReady
+  pub debugName: string => "elf.relocatable.rows.{layout.objectHash}.{sectionNameIndex}"
+}

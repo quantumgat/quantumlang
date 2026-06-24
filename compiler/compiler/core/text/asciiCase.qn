@@ -1,0 +1,196 @@
+pub extend AsciiByte {
+  pub toLower() -> i64 {
+    if this.isUpper() {
+      return value + 32
+    }
+    return value
+  }
+
+  pub toUpper() -> i64 {
+    if this.isLower() {
+      return value - 32
+    }
+    return value
+  }
+
+  pub fold() -> i64 {
+    return this.toLower()
+  }
+}
+
+pub AsciiText {
+  value: string
+}
+
+impl AsciiText {
+  pub AsciiText(value: string) =
+    This { value }
+
+  pub byteLength() -> i64 {
+    return value.byteLength() as i64
+  }
+
+  pub uncheckedByteAt(index: i64) -> i64 {
+    return value.uncheckedByteAt(index)
+  }
+
+  pub checkedByteAt(index: i64) -> i64 {
+    return value.checkedByteAt(index)
+  }
+
+  pub asciiByteAt(index: i64) -> AsciiByte {
+    return AsciiByte(value.uncheckedByteAt(index))
+  }
+
+  pub isAsciiLowerAt(index: i64) -> bool {
+    return this.asciiByteAt(index).isLower()
+  }
+
+  pub startsUpper() -> bool {
+    return this.startsAsciiUpper()
+  }
+
+  pub startsLower() -> bool {
+    return this.startsAsciiLower()
+  }
+
+  pub startsAlpha() -> bool {
+    return this.startsAsciiAlpha()
+  }
+
+  pub startsAsciiUpper() -> bool {
+    return value.byteLength() > 0 &&
+      AsciiByte(value.uncheckedByteAt(0)).isUpper()
+  }
+
+  pub startsAsciiLower() -> bool {
+    return value.byteLength() > 0 &&
+      this.asciiByteAt(0).isLower()
+  }
+
+  pub startsAsciiAlpha() -> bool {
+    return value.byteLength() > 0 &&
+      AsciiByte(value.uncheckedByteAt(0)).isAlpha()
+  }
+
+  pub isUpper() -> bool {
+    return this.isAsciiUpper()
+  }
+
+  pub isLower() -> bool {
+    return this.isAsciiLower()
+  }
+
+  pub isAlpha() -> bool {
+    return this.isAsciiAlpha()
+  }
+
+  pub isAsciiUpper() -> bool {
+    if value.byteLength() == 0 {
+      return false
+    }
+    let index: i64 = 0
+    while index < value.byteLength() as i64 {
+      if !AsciiByte(value.uncheckedByteAt(index)).isUpper() {
+        return false
+      }
+      index = index + 1
+    }
+    return true
+  }
+
+  pub isAsciiLower() -> bool {
+    if value.byteLength() == 0 {
+      return false
+    }
+    let index: i64 = 0
+    while index < value.byteLength() as i64 {
+      if !this.isAsciiLowerAt(index) {
+        return false
+      }
+      index = index + 1
+    }
+    return true
+  }
+
+  pub isAsciiAlpha() -> bool {
+    if value.byteLength() == 0 {
+      return false
+    }
+    let index: i64 = 0
+    while index < value.byteLength() as i64 {
+      if !AsciiByte(value.uncheckedByteAt(index)).isAlpha() {
+        return false
+      }
+      index = index + 1
+    }
+    return true
+  }
+}
+
+impl view AsciiText {
+  pub empty => value.byteLength() == 0
+  pub nonEmpty => value.byteLength() > 0
+}
+
+pub extend string {
+  pub asciiText() -> AsciiText {
+    return AsciiText(this)
+  }
+
+  pub startsUpper() -> bool {
+    return AsciiText(this).startsUpper()
+  }
+
+  pub startsLower() -> bool {
+    return AsciiText(this).startsLower()
+  }
+
+  pub startsAlpha() -> bool {
+    return AsciiText(this).startsAlpha()
+  }
+
+  pub startsAsciiUpper() -> bool {
+    return AsciiText(this).startsAsciiUpper()
+  }
+
+  pub startsAsciiLower() -> bool {
+    return AsciiText(this).startsAsciiLower()
+  }
+
+  pub startsAsciiAlpha() -> bool {
+    return AsciiText(this).startsAsciiAlpha()
+  }
+
+  pub asciiByteAt(index: i64) -> AsciiByte {
+    return AsciiByte(this.uncheckedByteAt(index))
+  }
+
+  pub isAsciiLowerAt(index: i64) -> bool {
+    return this.asciiByteAt(index).isLower()
+  }
+
+  pub isUpper() -> bool {
+    return AsciiText(this).isUpper()
+  }
+
+  pub isLower() -> bool {
+    return AsciiText(this).isLower()
+  }
+
+  pub isAlpha() -> bool {
+    return AsciiText(this).isAlpha()
+  }
+
+  pub isAsciiUpper() -> bool {
+    return AsciiText(this).isAsciiUpper()
+  }
+
+  pub isAsciiLower() -> bool {
+    return AsciiText(this).isAsciiLower()
+  }
+
+  pub isAsciiAlpha() -> bool {
+    return AsciiText(this).isAsciiAlpha()
+  }
+}

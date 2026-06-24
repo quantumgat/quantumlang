@@ -1,0 +1,12 @@
+import core::{Unique}
+
+pub ConstViewUser {
+  name: string = ""
+}
+
+pub writeThroughConstView() -> string {
+  let owner = Unique<ConstViewUser>({ name: "A" })
+  let view = owner.cref()
+  view.name = "B"
+  return view.name
+}

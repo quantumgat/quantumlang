@@ -1,0 +1,64 @@
+pub ObjectLayout {
+  objectHash: string
+  header: ObjectHeaderLayout
+  text: ObjectSectionLayout
+  strings: ObjectStringLayout
+  symbols: ObjectSymbolLayout
+  relocations: ObjectRelocationLayout
+  fileSize: i64
+  diagnosticCode: string = ""
+}
+
+impl ObjectLayout {
+  pub ObjectLayout(
+    objectHash: string,
+    header: ObjectHeaderLayout,
+    text: ObjectSectionLayout,
+    strings: ObjectStringLayout,
+    symbols: ObjectSymbolLayout,
+    relocations: ObjectRelocationLayout,
+    fileSize: i64
+  ) =
+    This {
+      objectHash
+      header
+      text
+      strings
+      symbols
+      relocations
+      fileSize
+    }
+
+  pub elf64Relocatable(objectFile: ObjectFile, stringTable: ObjectStringTable) =
+    This {
+      objectHash: objectFile.objectHash
+      header: ObjectHeaderLayout.elf64(88, objectFile.sectionCount)
+      text: ObjectSectionLayout(
+        ".text",
+        ObjectRange(64, 0, 1),
+        1
+      )
+      strings: ObjectStringLayout.fromStringTable(stringTable, 64)
+      symbols: ObjectSymbolLayout.elf64(objectFile.symbolCount, 0)
+      relocations: ObjectRelocationLayout.elf64Rela(objectFile.relocationCount, 0)
+      fileSize: 88 + objectFile.sectionCount * 64
+      diagnosticCode: match objectFile.elf && objectFile.valid && stringTable.valid {
+        true => ""
+        false => "QNATIVE0740"
+      }
+    }
+}
+
+impl view ObjectLayout {
+  pub valid: bool => diagnosticCode == "" &&
+    objectHash != "" &&
+    header.valid &&
+    text.valid &&
+    strings.valid &&
+    symbols.valid &&
+    relocations.valid &&
+    fileSize >= header.sectionHeadersEnd
+  pub deterministic: bool => valid
+  pub payloadReady: bool => valid && fileSize > 0
+  pub debugName: string => "object.layout.{objectHash}.{fileSize}"
+}

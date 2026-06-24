@@ -1,0 +1,41 @@
+pub SelectionPatternSet {
+  targetTriple: string
+  patternCount: i64
+  deterministic: bool = true
+  patternSetHash: string
+  diagnosticCode: string = ""
+}
+
+impl SelectionPatternSet {
+  pub SelectionPatternSet(targetTriple: string, patternCount: i64, patternSetHash: string) =
+    This {
+      targetTriple
+      patternCount
+      patternSetHash
+    }
+
+  pub empty(targetTriple: string) =
+    This(targetTriple, 0, "isel-pattern-set:{targetTriple}:0")
+
+  pub withPattern(pattern: SelectionPattern) =
+    this {
+      patternCount: patternCount + 1
+      patternSetHash: "{patternSetHash}:{pattern.debugName}"
+      diagnosticCode: match valid && pattern.valid {
+        true => ""
+        false => "QNATIVE0303"
+      }
+    }
+}
+
+impl view SelectionPatternSet {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetTriple != "" &&
+    patternCount >= 0 &&
+    deterministic &&
+    patternSetHash != ""
+
+  pub emptySet: bool => valid && patternCount == 0
+  pub debugName: string => "isel.patternSet.{targetTriple}.{patternCount}"
+}

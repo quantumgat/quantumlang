@@ -1,0 +1,93 @@
+pub enum IncrementalChangeKind {
+  NoChange
+  PrivateBodyChange
+  PublicApiChange
+  TargetChange
+}
+
+pub IncrementalQueryPlan {
+  revision: u64
+  changeKind: IncrementalChangeKind
+  sourceFiles: usize
+  changedFiles: usize = 0
+  skippedLexParseFiles: usize = 0
+  recomputedLexParseFiles: usize = 0
+  skippedTypeSignatures: usize = 0
+  recomputedTypeSignatures: usize = 0
+  skippedBodies: usize = 0
+  recomputedBodies: usize = 0
+  skippedNativeObjects: usize = 0
+  recomputedNativeObjects: usize = 0
+  relinkRequired: bool = false
+  fullSourceRecheckRequired: bool = false
+}
+
+impl IncrementalQueryPlan {
+  pub IncrementalQueryPlan(
+    revision: u64,
+    changeKind: IncrementalChangeKind,
+    sourceFiles: usize,
+    changedFiles: usize,
+    skippedLexParseFiles: usize,
+    recomputedLexParseFiles: usize,
+    skippedTypeSignatures: usize,
+    recomputedTypeSignatures: usize,
+    skippedBodies: usize,
+    recomputedBodies: usize,
+    skippedNativeObjects: usize,
+    recomputedNativeObjects: usize,
+    relinkRequired: bool,
+    fullSourceRecheckRequired: bool
+  ) =
+    This {
+      revision,
+      changeKind,
+      sourceFiles,
+      changedFiles,
+      skippedLexParseFiles,
+      recomputedLexParseFiles,
+      skippedTypeSignatures,
+      recomputedTypeSignatures,
+      skippedBodies,
+      recomputedBodies,
+      skippedNativeObjects,
+      recomputedNativeObjects,
+      relinkRequired,
+      fullSourceRecheckRequired
+    }
+
+}
+
+impl view IncrementalQueryPlan {
+  pub valid =>
+    sourceFiles == skippedLexParseFiles + recomputedLexParseFiles &&
+    sourceFiles == skippedTypeSignatures + recomputedTypeSignatures &&
+    sourceFiles == skippedBodies + recomputedBodies &&
+    sourceFiles == skippedNativeObjects + recomputedNativeObjects
+
+  pub frontendSkipped => skippedLexParseFiles > 0 && skippedTypeSignatures > 0
+  pub bodySkipped => skippedBodies > 0
+  pub objectSkipped => skippedNativeObjects > 0
+  pub magicFastPath => valid && relinkRequired == false && fullSourceRecheckRequired == false
+
+  pub noSourceWork =>
+    recomputedLexParseFiles == 0 &&
+    recomputedTypeSignatures == 0 &&
+    recomputedBodies == 0
+
+  pub onlyChangedFileFrontendWork =>
+    changedFiles > 0 &&
+    recomputedLexParseFiles == changedFiles &&
+    recomputedBodies == changedFiles &&
+    fullSourceRecheckRequired == false
+
+  pub onlyChangedNativeObjects =>
+    recomputedNativeObjects == changedFiles &&
+    skippedNativeObjects + recomputedNativeObjects == sourceFiles
+
+  pub keepsUnaffectedFilesGreen =>
+    skippedLexParseFiles > 0 &&
+    skippedTypeSignatures > 0 &&
+    skippedBodies > 0 &&
+    skippedNativeObjects > 0
+}

@@ -1,0 +1,98 @@
+import controlFlow::{*}
+import syntax::{AstStmtKind}
+
+pub LoopControlFlowProof {
+  loopFormsClassified: bool
+  whileLetBindsPattern: bool
+  rangeForMarkedRangeBased: bool
+  labeledBreakContinueResolve: bool
+  unresolvedTransferDiagnosed: bool
+  loopResultsTrackBreakValues: bool
+  astBridgeMapsLoops: bool
+  syntaxFactsCoverQtlc1Loops: bool
+  valid: bool
+}
+
+pub loopControlFlowProof() -> LoopControlFlowProof {
+  let plainLoop = LoopFact(1, LoopKind.Loop, "", 101)
+  let whileLoop = LoopFact(2, LoopKind.While, "", 102)
+  let whileLet = LoopFact(3, LoopKind.WhileLet, "", 103)
+  let forLoop = LoopFact(4, LoopKind.For, "items", 104)
+  let rangeFor = LoopFact(5, LoopKind.RangeFor, "range", 105)
+  let labeledBreak = LoopTarget(10, LoopTransferKind.Break, 5, "range")
+  let labeledContinue = LoopTarget(11, LoopTransferKind.Continue, 5, "range")
+  let badBreak = LoopTarget(12, LoopTransferKind.Break, -1, "missing")
+  let result = LoopResultFact(5, true, "i64", 2)
+  let whileBridge = LoopAstBridge(AstStmtKind.While)
+  let whileLetBridge = LoopAstBridge(AstStmtKind.WhileLet)
+  let forBridge = LoopAstBridge(AstStmtKind.For)
+  let rangeBridge = LoopAstBridge(AstStmtKind.ForRange)
+  let loopSyntax = LoopSyntaxFact(LoopSyntaxKind.Loop)
+  let whileSyntax = LoopSyntaxFact(LoopSyntaxKind.While)
+  let whileLetSyntax = LoopSyntaxFact(LoopSyntaxKind.WhileLet)
+  let forInSyntax = LoopSyntaxFact(LoopSyntaxKind.ForIn)
+  let forRangeSyntax = LoopSyntaxFact(LoopSyntaxKind.ForRange)
+  let breakSyntax = LoopSyntaxFact(LoopSyntaxKind.Break)
+  let continueSyntax = LoopSyntaxFact(LoopSyntaxKind.Continue)
+  let labeledBreakSyntax = LoopSyntaxFact(LoopSyntaxKind.LabeledBreak)
+  let labeledContinueSyntax = LoopSyntaxFact(LoopSyntaxKind.LabeledContinue)
+
+  let loopFormsClassified = plainLoop.valid &&
+    whileLoop.conditionRequired &&
+    forLoop.patternBinding
+
+  let whileLetBindsPattern = whileLet.conditionRequired &&
+    whileLet.patternBinding
+
+  let rangeForMarkedRangeBased = rangeFor.rangeBased &&
+    rangeFor.patternBinding
+
+  let labeledBreakContinueResolve = labeledBreak.resolved &&
+    labeledContinue.resolved &&
+    labeledBreak.targetLoopId == 5 &&
+    labeledContinue.targetLoopId == 5
+
+  let unresolvedTransferDiagnosed = !badBreak.resolved &&
+    badBreak.diagnosticCode == "QTCFLOW0002"
+
+  let loopResultsTrackBreakValues = result.hasValue &&
+    result.resultTypeName == "i64" &&
+    result.breakCount == 2 &&
+    result.allBreakValuesCompatible
+
+  let astBridgeMapsLoops = whileBridge.loopKind == LoopKind.While &&
+    whileLetBridge.loopKind == LoopKind.WhileLet &&
+    forBridge.loopKind == LoopKind.For &&
+    rangeBridge.loopKind == LoopKind.RangeFor
+
+  let syntaxFactsCoverQtlc1Loops = loopSyntax.valid &&
+    whileSyntax.loopKind == LoopKind.While &&
+    whileLetSyntax.patternBinding &&
+    forInSyntax.patternBinding &&
+    forRangeSyntax.rangeBased &&
+    breakSyntax.transferKind == LoopTransferKind.Break &&
+    continueSyntax.transferKind == LoopTransferKind.Continue &&
+    labeledBreakSyntax.labelAllowed &&
+    labeledContinueSyntax.labelAllowed
+
+  let valid = loopFormsClassified &&
+    whileLetBindsPattern &&
+    rangeForMarkedRangeBased &&
+    labeledBreakContinueResolve &&
+    unresolvedTransferDiagnosed &&
+    loopResultsTrackBreakValues &&
+    astBridgeMapsLoops &&
+    syntaxFactsCoverQtlc1Loops
+
+  return LoopControlFlowProof {
+    loopFormsClassified: loopFormsClassified,
+    whileLetBindsPattern: whileLetBindsPattern,
+    rangeForMarkedRangeBased: rangeForMarkedRangeBased,
+    labeledBreakContinueResolve: labeledBreakContinueResolve,
+    unresolvedTransferDiagnosed: unresolvedTransferDiagnosed,
+    loopResultsTrackBreakValues: loopResultsTrackBreakValues,
+    astBridgeMapsLoops: astBridgeMapsLoops,
+    syntaxFactsCoverQtlc1Loops: syntaxFactsCoverQtlc1Loops,
+    valid: valid,
+  }
+}

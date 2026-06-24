@@ -1,0 +1,9 @@
+[module]
+name = "source"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/source"
+role = "source-model"
+
+[dependencies]
+modules = ["core", "host"]

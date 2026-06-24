@@ -1,0 +1,64 @@
+pub QdbRevisionRow {
+  revision: u64 = 0
+  parentRevision: u64 = 0
+  firstCommitRow: u64 = 0
+  commitCount: u64 = 0
+  snapshotHash: Fingerprint = {}
+  journalHash: Fingerprint = {}
+  state: QdbRevisionState = QdbRevisionState.Open
+}
+
+impl QdbRevisionRow {
+  pub begin(revision: u64, parentRevision: u64) -> This =
+    This {
+      revision
+      parentRevision
+      firstCommitRow: 1
+      state: QdbRevisionState.Open
+    }
+
+  pub seal(
+    firstCommitRow: u64,
+    commitCount: u64,
+    snapshotHash: Fingerprint,
+    journalHash: Fingerprint
+  ) -> This =
+    this {
+      firstCommitRow
+      commitCount
+      snapshotHash
+      journalHash
+      state: QdbRevisionState.Sealed
+    }
+
+  pub publish() -> This =
+    this { state: QdbRevisionState.Published }
+
+  pub recover() -> This =
+    this { state: QdbRevisionState.Recovered }
+}
+
+impl view QdbRevisionRow {
+  pub root: bool => parentRevision == 0
+  pub ordered: bool => root || parentRevision < revision
+  pub hasCommits: bool => commitCount > 0
+  pub commitRangeValid: bool =>
+    commitCount == 0 ||
+    firstCommitRow > 0
+
+  pub sealed: bool =>
+    state == QdbRevisionState.Sealed ||
+    state == QdbRevisionState.Published ||
+    state == QdbRevisionState.Recovered
+
+  pub published: bool => state == QdbRevisionState.Published
+  pub recoverable: bool => sealed && journalHash.nonzero
+
+  pub valid: bool =>
+    revision > 0 &&
+    ordered &&
+    commitRangeValid &&
+    snapshotHash.nonzero &&
+    journalHash.nonzero &&
+    state != QdbRevisionState.Rejected
+}

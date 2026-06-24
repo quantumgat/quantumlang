@@ -1,0 +1,33 @@
+pub ArtifactCacheScope {
+  privateCache: bool
+  scopeName: string
+  deterministic: bool
+}
+
+impl ArtifactCacheScope {
+  pub ArtifactCacheScope(privateCache: bool, scopeName: string, deterministic: bool) =
+    This {
+      privateCache
+      scopeName
+      deterministic
+    }
+
+  pub private() =
+    This {
+      privateCache: true
+      scopeName: "private"
+      deterministic: true
+    }
+
+  pub public() =
+    This {
+      privateCache: false
+      scopeName: "public"
+      deterministic: true
+    }
+}
+
+impl view ArtifactCacheScope {
+  pub valid: bool => scopeName != "" && deterministic
+  pub cacheHash: string => "artifact.cache:{scopeName}:{privateCache}:{deterministic}"
+}

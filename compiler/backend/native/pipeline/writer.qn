@@ -1,0 +1,115 @@
+import host::{CompilerIo}
+
+pub PipelineWriter {
+  outputPath: string
+  objectPayload: ObjectPayload
+  runtimePayload: ObjectPayload = {}
+  executablePayload: ExecutablePayload
+  diagnosticCode: string = ""
+}
+
+impl PipelineWriter {
+  pub PipelineWriter(
+    outputPath: string,
+    objectPayload: ObjectPayload,
+    runtimePayload: ObjectPayload,
+    executablePayload: ExecutablePayload
+  ) =
+    This {
+      outputPath
+      objectPayload
+      runtimePayload
+      executablePayload
+    }
+
+  pub pending(plan: PipelinePlan, result: PipelineResult) -> This {
+    let objectPayload: ObjectPayload = ElfPayload(plan.objectCacheReplay.entry).relocatable()
+    let runtimePayload: ObjectPayload = RuntimeStartupPayload.forObject(objectPayload).payload()
+    let executablePlan = ExecutablePayloadPlan.fromPipeline(
+      plan,
+      result,
+      objectPayload,
+      runtimePayload
+    )
+    let target = TargetIdentity(
+      plan.linkStage.targetTriple,
+      plan.linkStage.profile,
+      plan.objectStage.objects.objectFormat,
+      plan.objectStage.objects.abi
+    )
+    let linkCommand = LinkCommand.fromPayloadPlan(
+      executablePlan,
+      SystemLinker.forTarget(target)
+    )
+    return This {
+      outputPath: result.outputPath
+      objectPayload
+      runtimePayload
+      executablePayload: ExecutablePayload.fromLinkCommand(executablePlan, linkCommand)
+      diagnosticCode: match plan.valid &&
+                            result.valid {
+        true => ""
+        false => "QNATIVE0862"
+      }
+    }
+  }
+
+  pub fromBytes(outputPath: string, payload: bytes, payloadHash: string) =
+    This {
+      outputPath
+      objectPayload: ObjectPayload()
+      runtimePayload: ObjectPayload()
+      executablePayload: ExecutablePayload.fromBytes(outputPath, payload, payloadHash)
+      diagnosticCode: match outputPath != "" && payloadHash != "" {
+        true => ""
+        false => "QNATIVE0863"
+      }
+    }
+}
+
+context PipelineWriter {
+  pub writeStatus(io: CompilerIo) -> i64 {
+    if diagnosticCode != "" || outputPath == "" {
+      return -231
+    }
+    let objectStatus = objectPayload.writeStatus(io)
+    if objectStatus != 0 {
+      return objectStatus
+    }
+    let runtimeStatus = runtimePayload.writeStatus(io)
+    if runtimeStatus != 0 {
+      return runtimeStatus
+    }
+    let executableStatus = executablePayload.writeStatus(io)
+    if executableStatus != 0 {
+      return executableStatus
+    }
+    return 0
+  }
+
+  pub write(io: CompilerIo) -> bool {
+    return writeStatus(io) == 0
+  }
+}
+
+impl view PipelineWriter {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    outputPath != "" &&
+    objectPayload.valid &&
+    runtimePayload.valid &&
+    executablePayload.valid
+
+  pub payloadReady: bool =>
+    valid &&
+    objectPayload.payloadReady &&
+    runtimePayload.payloadReady &&
+    executablePayload.payloadReady
+
+  pub ready: bool => payloadReady
+
+  pub writerHash: string =>
+    "pipeline-writer:{outputPath}:{objectPayload.payloadId}:{runtimePayload.payloadId}:{executablePayload.payloadId}"
+
+  pub debugName: string => "pipeline.writer.{outputPath}.{payloadReady}"
+}

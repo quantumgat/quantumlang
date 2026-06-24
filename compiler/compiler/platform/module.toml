@@ -1,0 +1,6 @@
+[module]
+name = "platform"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/platform"
+role = "platform-model"

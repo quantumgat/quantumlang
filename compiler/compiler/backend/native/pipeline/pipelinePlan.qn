@@ -1,0 +1,43 @@
+pub PipelinePlan {
+  objectStage: ObjectStage
+  linkStage: LinkStage
+  objectCacheReplay: ObjectCacheReplay
+  linkCacheReplay: LinkCacheReplay
+  diagnosticCode: string = ""
+}
+
+impl PipelinePlan {
+  pub PipelinePlan(
+    objectStage: ObjectStage,
+    linkStage: LinkStage,
+    objectCacheReplay: ObjectCacheReplay,
+    linkCacheReplay: LinkCacheReplay
+  ) =
+    This {
+      objectStage
+      linkStage
+      objectCacheReplay
+      linkCacheReplay
+    }
+
+  pub fromStages(
+    objectStage: ObjectStage,
+    linkStage: LinkStage,
+    objectCacheReplay: ObjectCacheReplay,
+    linkCacheReplay: LinkCacheReplay
+  ) =
+    This(objectStage, linkStage, objectCacheReplay, linkCacheReplay)
+}
+
+impl view PipelinePlan {
+  pub valid: bool => diagnosticCode == "" &&
+    objectStage.valid &&
+    linkStage.valid &&
+    objectCacheReplay.valid &&
+    linkCacheReplay.valid
+  pub objectReady: bool => objectStage.linkReady && (objectCacheReplay.restoredObject || objectCacheReplay.needsBuild)
+  pub linkReady: bool => linkStage.runnable && (linkCacheReplay.restoredExecutable || linkCacheReplay.needsLink)
+  pub needsMaterialization: bool => valid && (objectCacheReplay.needsBuild || linkCacheReplay.needsLink)
+  pub planHash: string => "pipeline-plan:{objectStage.fingerprint}:{linkStage.fingerprint}:{objectCacheReplay.replayHash}:{linkCacheReplay.replayHash}"
+  pub debugName: string => "native.pipeline.plan.{objectStage.unitCount}.{linkStage.outputPath}"
+}

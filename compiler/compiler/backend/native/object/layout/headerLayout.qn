@@ -1,0 +1,35 @@
+pub ObjectHeaderLayout {
+  headerRange: ObjectRange
+  sectionHeaderOffset: i64
+  sectionHeaderCount: i64
+  sectionHeaderSize: i64
+  diagnosticCode: string = ""
+}
+
+impl ObjectHeaderLayout {
+  pub ObjectHeaderLayout(
+    headerRange: ObjectRange,
+    sectionHeaderOffset: i64,
+    sectionHeaderCount: i64,
+    sectionHeaderSize: i64
+  ) =
+    This {
+      headerRange
+      sectionHeaderOffset
+      sectionHeaderCount
+      sectionHeaderSize
+    }
+
+  pub elf64(sectionHeaderOffset: i64, sectionHeaderCount: i64) =
+    This(ObjectRange(0, 64, 8), sectionHeaderOffset, sectionHeaderCount, 64)
+}
+
+impl view ObjectHeaderLayout {
+  pub sectionHeadersEnd: i64 => sectionHeaderOffset + sectionHeaderCount * sectionHeaderSize
+  pub valid: bool => diagnosticCode == "" &&
+    headerRange.valid &&
+    sectionHeaderOffset >= headerRange.endOffset &&
+    sectionHeaderCount > 0 &&
+    sectionHeaderSize > 0
+  pub debugName: string => "object.header.{sectionHeaderOffset}.{sectionHeaderCount}"
+}

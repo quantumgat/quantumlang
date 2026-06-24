@@ -1,0 +1,167 @@
+pub Shared<T> {
+  value: T
+  owner: CompilerId = {}
+  generation: u64 = 0
+  strongCount: i64 = 1
+  weakCount: i64 = 0
+  released: bool = false
+}
+
+impl Shared<T> {
+  pub Shared(value: T) =
+    This {
+      value
+    }
+
+  pub Shared(value: T, owner: CompilerId, generation: u64) =
+    This {
+      value
+      owner
+      generation
+    }
+
+  pub alias() -> This {
+    return this {
+      strongCount: strongCount + 1
+    }
+  }
+
+  pub weak() -> Weak<T> {
+    weakCount = weakCount + 1
+    return Weak<T>(owner, generation, this.live)
+  }
+
+  pub borrow() -> Borrow<T> {
+    return Borrow<T>(cptr(), owner, generation)
+  }
+
+  pub borrowMut() -> BorrowMut<T> {
+    return BorrowMut<T>(ptr(), owner, generation)
+  }
+
+  pub ptr() -> *T {
+    if live == false || unique == false {
+      return null
+    }
+    return &value
+  }
+
+  pub ref() -> &T {
+    return &value
+  }
+
+  pub tryUnique() -> Unique<T> {
+    if unique == false {
+      return Unique<T>(value, owner, generation).clear()
+    }
+    return Unique<T>(value, owner, generation)
+  }
+
+  pub makeUnique() -> Unique<T> {
+    return Unique<T>(value, owner, generation + 1)
+  }
+
+  pub reset(value: T) -> This {
+    if unique == false {
+      return this
+    }
+    return this {
+      value
+      released: false
+      generation: generation + 1
+    }
+  }
+
+  pub clear() -> This {
+    return this {
+      strongCount: 0
+      released: true
+      generation: generation + 1
+    }
+  }
+
+  pub release() -> This {
+    return clear()
+  }
+
+  pub dropAlias() -> This {
+    if strongCount <= 1 {
+      return this {
+        strongCount: 0
+        released: true
+        generation: generation + 1
+      }
+    }
+    return this {
+      strongCount: strongCount - 1
+    }
+  }
+
+}
+
+impl view Shared<T> {
+  pub live => released == false && strongCount > 0
+
+  pub readable => live
+
+  pub writable => live && unique
+
+  pub shared => strongCount > 1
+
+  pub unique => strongCount == 1
+
+  pub weakable => live
+
+  pub ownsStorage => live
+
+  pub hasOwner => owner.valid
+
+  pub tracked => generation > 0 || owner.valid || strongCount > 1 || weakCount > 0
+
+  pub copyable => false
+
+  pub aliasable => live
+
+  pub empty => live == false
+
+  pub address => cptr()
+
+  pub hasWeak => weakCount > 0
+
+  pub cptr() -> const *T {
+    if live == false {
+      return null
+    }
+    return const *value
+  }
+
+  pub cref() -> const &T {
+    return const &value
+  }
+
+  pub strong => strongCount
+
+  pub weakRefs => weakCount
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return live && generation == currentGeneration
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub expired(currentGeneration: u64) -> bool {
+    return stale(currentGeneration)
+  }
+
+  pub sameOwner(value: CompilerId) -> bool {
+    return owner == value
+  }
+
+  pub sameGen(value: u64) -> bool {
+    return generation == value
+  }
+
+  pub valid => strongCount >= 0 && weakCount >= 0
+}

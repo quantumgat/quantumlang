@@ -1,0 +1,95 @@
+import platform::{*}
+
+pub EmbeddedPlatformProof {
+  regionFactsValid: bool
+  targetFactsValid: bool
+  startupFactsValid: bool
+  imageFactsValid: bool
+  probeFactsValid: bool
+  platformFactsValid: bool
+  valid: bool
+}
+
+pub embeddedPlatformProof() -> EmbeddedPlatformProof {
+  let flash = MemoryRegion.flash("flash", 134217728, 2097152)
+  let ram = MemoryRegion.ram("sram", 536870912, 524288)
+  let mmio = MemoryRegion.mmio("peripherals", 1073741824, 1048576)
+  let memory = MemoryMap.fromRegions(flash, ram, mmio)
+
+  let resetHandler = InterruptHandler.reset("Reset_Handler")
+  let vector = InterruptVector.fromReset(resetHandler, 128)
+  let cpu = CpuProfile.cortexM7()
+  let clock = ClockProfile.externalCrystal(25000000)
+  let peripherals = PeripheralMap.boardIo()
+  let device = DeviceProfile("qstm32h7", cpu.arch, memory, vector)
+  let board = BoardProfile("qboard-h7", device.name, true)
+  let target = EmbeddedTarget(board, device, cpu, memory, clock, peripherals)
+
+  let reset = ResetSequence.standard("Reset_Handler")
+  let startupPlan = StartupPlan.fromReset(reset)
+  let startupObject = StartupObject("build/startup.o", startupPlan.entry, true, true)
+  let linker = LinkerScript("memory.ld", true, true)
+  let flashImage = FlashImage("build/app.bin", flash.origin, 98304, false)
+  let bootImage = BootImage(flashImage, startupObject, reset, linker)
+  let probe = DebugProbe(Probe.swd("cmsis-dap", 4000000), true, true, true)
+  let platform = EmbeddedPlatform(target, bootImage, probe)
+
+  let regionFactsValid =
+    flash.code &&
+    ram.data &&
+    mmio.device &&
+    memory.embeddedReady
+
+  let targetFactsValid =
+    target.valid &&
+    target.bootable &&
+    target.deterministic &&
+    device.firmwareReady &&
+    board.deployable &&
+    cpu.bareMetalReady &&
+    clock.ready &&
+    peripherals.boardReady
+
+  let startupFactsValid =
+    reset.runtimeReady &&
+    startupPlan.bootReady &&
+    startupPlan.dataReady &&
+    startupObject.linkable &&
+    vector.tableReady
+
+  let imageFactsValid =
+    linker.firmwareReady &&
+    flashImage.flashable &&
+    bootImage.bootable &&
+    bootImage.flashable
+
+  let probeFactsValid =
+    probe.valid &&
+    probe.deployReady &&
+    probe.debugReady &&
+    probe.probe.swd
+
+  let platformFactsValid =
+    platform.valid &&
+    platform.buildable &&
+    platform.deployable &&
+    platform.debuggable
+
+  let valid =
+    regionFactsValid &&
+    targetFactsValid &&
+    startupFactsValid &&
+    imageFactsValid &&
+    probeFactsValid &&
+    platformFactsValid
+
+  return EmbeddedPlatformProof {
+    regionFactsValid
+    targetFactsValid
+    startupFactsValid
+    imageFactsValid
+    probeFactsValid
+    platformFactsValid
+    valid
+  }
+}

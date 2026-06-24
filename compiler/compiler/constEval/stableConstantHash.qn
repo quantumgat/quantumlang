@@ -1,0 +1,16 @@
+pub StableConstantHash {
+  high: u64
+  low: u64
+}
+
+impl StableConstantHash {
+  pub fromValue(value: ConstantValue) =
+    This {
+      high: value.typeId.id.packageHash + value.typeId.id.moduleHash
+      low: value.typeId.id.localHash + value.typeId.id.disambiguator
+    }
+}
+
+impl view StableConstantHash {
+  pub valid: bool => high != 0 || low != 0
+}

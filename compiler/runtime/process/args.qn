@@ -1,0 +1,80 @@
+pub ProcessArgs {
+  argcName: string
+  argvName: string
+  argcArgument: ProcessMainArgument = {}
+  argvArgument: ProcessMainArgument = {}
+  argcTypeName: string = "i32"
+  argvTypeName: string = "const *const *u8"
+  returnTypeName: string = "i32"
+  available: bool
+}
+
+impl ProcessArgs {
+  pub ProcessArgs(
+    argcName: string,
+    argvName: string,
+    argcTypeName: string,
+    argvTypeName: string,
+    returnTypeName: string,
+    available: bool
+  ) =
+    This {
+      argcName
+      argvName
+      argcArgument: ProcessMainArgument(
+        argcName,
+        argcTypeName,
+        0,
+        0,
+        false
+      )
+      argvArgument: ProcessMainArgument(
+        argvName,
+        argvTypeName,
+        1,
+        2,
+        true
+      )
+      argcTypeName
+      argvTypeName
+      returnTypeName
+      available
+    }
+
+  pub host() =
+    This {
+      argcName: "argc"
+      argvName: "argv"
+      argcArgument: ProcessMainArgument.argc()
+      argvArgument: ProcessMainArgument.argv()
+      available: true
+    }
+}
+
+impl view ProcessArgs {
+  pub valid: bool =>
+    argcName != "" &&
+    argvName != "" &&
+    argcArgument.valid &&
+    argvArgument.valid &&
+    argcTypeName != "" &&
+    argvTypeName != "" &&
+    returnTypeName != ""
+
+  pub readable: bool => valid && available
+  pub mainSignature: string =>
+    "main({argcArgument.signatureText}, {argvArgument.signatureText}) -> {returnTypeName}"
+
+  pub commandSignature: string =>
+    "qtlc2_command_main({argcArgument.signatureText}, {argvArgument.signatureText}) -> {returnTypeName}"
+
+  pub hostedMainReady: bool =>
+    readable &&
+    mainSignature != "" &&
+    commandSignature != ""
+
+  pub commandStatus: ProcessCommandStatus => ProcessCommandStatus.compilerDriver()
+  pub commandDecodeReady: bool =>
+    hostedMainReady &&
+    commandStatus.commandDecodeReady
+}

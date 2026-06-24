@@ -1,0 +1,17 @@
+pub QcapSection {
+  name: string
+  factCount: usize
+  byteOffset: usize
+  byteLength: usize
+}
+
+impl QcapSection {
+  pub QcapSection(name: string, factCount: usize, byteOffset: usize, byteLength: usize) =
+    This { name, factCount, byteOffset, byteLength }
+}
+
+impl view QcapSection {
+  pub empty => factCount == 0 || byteLength == 0
+  pub materialized => byteLength > 0
+  pub valid => name != "" && materialized
+}

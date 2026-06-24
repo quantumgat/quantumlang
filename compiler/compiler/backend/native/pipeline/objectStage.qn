@@ -1,0 +1,41 @@
+pub ObjectStage {
+  objects: ObjectSetPlan
+}
+
+impl ObjectStage {
+  pub fromContract(contract: InputContract) =
+    This {
+      objects: ObjectSetPlan.fromContract(contract)
+    }
+
+  pub fromSummary(summary: InputSummary) =
+    This {
+      objects: ObjectSetPlan.fromSummary(summary)
+    }
+
+  pub unitKeyAt(index: i64) -> ObjectUnitKey {
+    return objects.unitKeyAt(index)
+  }
+}
+
+impl view ObjectStage {
+  pub packageRoot: string => objects.packageRoot
+  pub targetTriple: string => objects.targetTriple
+  pub profile: string => objects.profile
+  pub unitCount: i64 => objects.unitCount
+  pub reusedCount: i64 => objects.reusedCount
+  pub rebuiltCount: i64 => objects.rebuiltCount
+  pub stableUnitPrefix: string => objects.stableUnitPrefix
+  pub abiHash: string => objects.abiHash
+  pub mirHash: string => objects.mirHash
+  pub backendHash: string => objects.backendHash
+  pub objectSetHash: string => objects.objectSetHash
+  pub outputPath: string => objects.outputPath
+  pub objectResult() = objects.objectResult()
+  pub emission() = objects.emission()
+  pub identityValid: bool => objects.identityValid
+  pub valid: bool => objects.valid
+  pub deterministic: bool => objects.deterministic
+  pub linkReady: bool => objects.linkReady
+  pub fingerprint => objects.fingerprint
+}

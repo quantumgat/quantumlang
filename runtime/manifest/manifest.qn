@@ -1,0 +1,45 @@
+pub RuntimeManifest {
+  name: string
+  abiVersion: string
+  targetTriple: string
+  objectFormat: string
+  startupSymbol: string
+}
+
+impl RuntimeManifest {
+  pub RuntimeManifest(
+    name: string,
+    abiVersion: string,
+    targetTriple: string,
+    objectFormat: string,
+    startupSymbol: string
+  ) =
+    This {
+      name
+      abiVersion
+      targetTriple
+      objectFormat
+      startupSymbol
+    }
+
+  pub core() =
+    This {
+      name: "qtlc-runtime"
+      abiVersion: RuntimeAbi.core().version
+      targetTriple: RuntimeTargetSupport.linuxX86_64().targetTriple
+      objectFormat: RuntimeTargetSupport.linuxX86_64().objectFormat
+      startupSymbol: RuntimeStartup.entry().symbolName
+    }
+}
+
+impl view RuntimeManifest {
+  pub valid: bool =>
+    name != "" &&
+    abiVersion != "" &&
+    targetTriple != "" &&
+    objectFormat != "" &&
+    startupSymbol != ""
+
+  pub runtimeHash: string =>
+    "runtime.manifest:{name}:{abiVersion}:{targetTriple}:{objectFormat}:{startupSymbol}"
+}

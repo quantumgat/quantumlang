@@ -1,0 +1,53 @@
+pub PipelineResult {
+  outputPath: string
+  executableHash: string
+  objectCacheHash: string
+  linkCacheHash: string
+  materializeHash: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl PipelineResult {
+  pub PipelineResult(
+    outputPath: string,
+    executableHash: string,
+    objectCacheHash: string,
+    linkCacheHash: string,
+    materializeHash: string
+  ) =
+    This {
+      outputPath
+      executableHash
+      objectCacheHash
+      linkCacheHash
+      materializeHash
+    }
+
+  pub fromMaterialize(materialize: Materialize, linkStage: LinkStage) =
+    This {
+      outputPath: materialize.outputPath
+      executableHash: linkStage.linkTarget.result().executableHash
+      objectCacheHash: materialize.objectCacheHash
+      linkCacheHash: materialize.linkCacheHash
+      materializeHash: materialize.materializeHash
+      deterministic: linkStage.deterministic
+      diagnosticCode: match materialize.ready && linkStage.valid {
+        true => ""
+        false => "QNATIVE0861"
+      }
+    }
+}
+
+impl view PipelineResult {
+  pub valid: bool => diagnosticCode == "" &&
+    outputPath != "" &&
+    executableHash != "" &&
+    objectCacheHash != "" &&
+    linkCacheHash != "" &&
+    materializeHash != "" &&
+    deterministic
+  pub runnable: bool => valid
+  pub resultHash: string => "pipeline-result:{outputPath}:{executableHash}:{objectCacheHash}:{linkCacheHash}:{materializeHash}"
+  pub debugName: string => "native.pipeline.result.{outputPath}"
+}

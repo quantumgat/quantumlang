@@ -1,0 +1,28 @@
+pub Riscv64RegisterEncoding {
+  name: string
+  code: i64
+  widthBits: i64 = 64
+  diagnosticCode: string = ""
+}
+
+impl Riscv64RegisterEncoding {
+  pub Riscv64RegisterEncoding(name: string, code: i64, widthBits: i64) =
+    This { name, code, widthBits }
+
+  pub zero() = This("zero", 0, 64)
+  pub ra() = This("ra", 1, 64)
+  pub sp() = This("sp", 2, 64)
+  pub a0() = This("a0", 10, 64)
+  pub a1() = This("a1", 11, 64)
+}
+
+impl view Riscv64RegisterEncoding {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    name != "" &&
+    code >= 0 &&
+    code <= 31 &&
+    widthBits > 0
+
+  pub debugName: string => "riscv64.reg.{name}.{code}"
+}

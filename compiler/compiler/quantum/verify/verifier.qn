@@ -1,0 +1,28 @@
+pub QuantumVerifier {
+  checked: i64
+  resourceAccepted: bool
+  effectAccepted: bool
+  targetAccepted: bool
+  accepted: bool
+}
+
+impl QuantumVerifier {
+  pub QuantumVerifier(
+    resource: QuantumResourceVerifier,
+    effect: QuantumEffectVerifier,
+    target: QuantumTargetVerifier
+  ) {
+    let accepted = resource.accepted && effect.accepted && target.accepted
+    This {
+      checked: resource.checked + effect.checked + target.checked
+      resourceAccepted: resource.accepted
+      effectAccepted: effect.accepted
+      targetAccepted: target.accepted
+      accepted
+    }
+  }
+}
+
+impl view QuantumVerifier {
+  pub rejected => accepted == false
+}

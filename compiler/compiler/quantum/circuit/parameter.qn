@@ -1,0 +1,21 @@
+pub QuantumParameter {
+  name: string
+  typeName: string
+  compileTimeKnown: bool
+  valid: bool
+}
+
+impl QuantumParameter {
+  pub QuantumParameter(name: string, typeName: string, compileTimeKnown: bool) =
+    This {
+      name
+      typeName
+      compileTimeKnown
+      valid: name != "" && typeName != ""
+    }
+}
+
+impl view QuantumParameter {
+  pub typed => typeName != ""
+  pub staticKnown => compileTimeKnown
+}

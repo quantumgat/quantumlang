@@ -1,0 +1,36 @@
+pub enum ControlFlowRegionKind {
+  Function
+  Block
+  Branch
+  Loop
+  Match
+  Parallel
+  Quantum
+}
+
+pub ControlFlowRegion {
+  id: i64
+  kind: ControlFlowRegionKind
+  ownerBodyId: i64
+  entryNodeId: i64
+  exitNodeId: i64
+}
+
+impl ControlFlowRegion {
+  pub ControlFlowRegion(
+    id: i64,
+    kind: ControlFlowRegionKind,
+    ownerBodyId: i64,
+    entryNodeId: i64,
+    exitNodeId: i64
+  ) =
+    This { id, kind, ownerBodyId, entryNodeId, exitNodeId }
+
+  isLoop() = kind == ControlFlowRegionKind.Loop
+
+  isBranch() = kind == ControlFlowRegionKind.Branch
+
+  isQuantum() = kind == ControlFlowRegionKind.Quantum
+
+  hasExit() = exitNodeId >= 0
+}

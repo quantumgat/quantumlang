@@ -1,0 +1,123 @@
+pub Permanent<T> {
+  value: T
+  owner: CompilerId = {}
+  generation: u64 = 0
+  processLifetime: bool = true
+  reason: string = ""
+  domain: string = ""
+}
+
+impl Permanent<T> {
+  pub Permanent(value: T) =
+    This {
+      value
+    }
+
+  pub Permanent(value: T, owner: CompilerId, generation: u64) =
+    This {
+      value
+      owner
+      generation
+    }
+
+  pub Permanent(value: T, reason: string, domain: string) =
+    This {
+      value
+      reason
+      domain
+    }
+
+  pub ptr() -> *T {
+    return &value
+  }
+
+  pub ref() -> &T {
+    return &value
+  }
+
+  pub borrow() -> Borrow<T> {
+    return Borrow<T>(cptr(), owner, generation)
+  }
+
+  pub borrowMut() -> BorrowMut<T> {
+    return BorrowMut<T>(ptr(), owner, generation)
+  }
+
+  pub audit(reason: string, domain: string) -> This {
+    return this {
+      reason
+      domain
+    }
+  }
+
+  pub tag(reason: string) -> This {
+    return this {
+      reason
+    }
+  }
+
+  pub scope(domain: string) -> This {
+    return this {
+      domain
+    }
+  }
+
+}
+
+impl view Permanent<T> {
+  pub live => processLifetime
+
+  pub empty => processLifetime == false
+
+  pub readable => processLifetime
+
+  pub writable => processLifetime
+
+  pub ownsStorage => processLifetime
+
+  pub permanentOwner => true
+
+  pub stableLifetime => processLifetime
+
+  pub cptr() -> const *T {
+    return const *value
+  }
+
+  pub cref() -> const &T {
+    return const &value
+  }
+
+  pub normalDrop => false
+
+  pub hasOwner => owner.valid
+
+  pub tracked => generation > 0 || owner.valid
+
+  pub audited => reason != "" && domain != ""
+
+  pub unaudited => audited == false
+
+  pub address => cptr()
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return live && generation == currentGeneration
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub expired(currentGeneration: u64) -> bool {
+    return stale(currentGeneration)
+  }
+
+  pub sameOwner(value: CompilerId) -> bool {
+    return owner == value
+  }
+
+  pub sameGen(value: u64) -> bool {
+    return generation == value
+  }
+
+  pub valid => processLifetime && audited
+}

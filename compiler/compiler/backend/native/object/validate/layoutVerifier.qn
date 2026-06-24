@@ -1,0 +1,37 @@
+pub ObjectLayoutVerifier {
+  layout: ObjectLayout
+  issueCount: i64
+  diagnosticCode: string = ""
+}
+
+impl ObjectLayoutVerifier {
+  pub ObjectLayoutVerifier(layout: ObjectLayout, issueCount: i64, diagnosticCode: string) =
+    This {
+      layout
+      issueCount
+      diagnosticCode
+    }
+
+  pub fromLayout(layout: ObjectLayout) =
+    This {
+      layout
+      issueCount: match layout.valid {
+        true => 0
+        false => 1
+      }
+      diagnosticCode: match layout.valid {
+        true => ""
+        false => "QNATIVE0741"
+      }
+    }
+}
+
+impl view ObjectLayoutVerifier {
+  pub valid: bool => diagnosticCode == "" &&
+    issueCount == 0 &&
+    layout.valid &&
+    layout.deterministic &&
+    layout.payloadReady
+  pub failed: bool => !valid
+  pub debugName: string => "object.layout.verify.{layout.objectHash}.{issueCount}"
+}

@@ -1,0 +1,35 @@
+pub Aarch64Selection {
+  targetTriple: string = "aarch64-unknown-linux-gnu"
+  patternSetHash: string
+  selectedInstructionCount: i64
+  diagnosticCode: string = ""
+}
+
+impl Aarch64Selection {
+  pub Aarch64Selection(patternSetHash: string, selectedInstructionCount: i64) =
+    This {
+      patternSetHash
+      selectedInstructionCount
+    }
+
+  pub fromPlan(plan: SelectionPlan) =
+    This {
+      patternSetHash: "aarch64-patterns:{plan.planHash}"
+      selectedInstructionCount: plan.instructionCount
+      diagnosticCode: match plan.valid {
+        true => ""
+        false => "QNATIVE0320"
+      }
+    }
+}
+
+impl view Aarch64Selection {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetTriple != "" &&
+    patternSetHash != "" &&
+    selectedInstructionCount >= 0
+
+  pub emitsToAarch64: bool => valid
+  pub debugName: string => "isel.aarch64.{selectedInstructionCount}"
+}

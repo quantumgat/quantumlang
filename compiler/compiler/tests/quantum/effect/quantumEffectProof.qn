@@ -1,0 +1,57 @@
+import compiler::quantum::{*}
+pub QuantumEffectProof {
+  purityRejectsMeasurement: bool
+  measurementCollapsesToQresult: bool
+  entanglementRequiresMultipleQubits: bool
+  gateOperationIntrinsicValid: bool
+  barrierAndControlValid: bool
+  valid: bool
+}
+
+pub quantumEffectProof() -> QuantumEffectProof {
+  let badPurity = QuantumPurity(true, true, false)
+  let measurement = QuantumMeasurement("z")
+  let entangle = EntanglementEffect(2)
+  let gate = QuantumGate("h", 1, true)
+  let effect = QuantumEffect("unitary", false, false, true)
+  let operation = QuantumOperation("h", gate, effect)
+  let intrinsic = QuantumIntrinsic("__quantum__qis__h__body", "qir.h")
+  let barrier = QuantumBarrier(2)
+  let control = QuantumControl(1, 1)
+
+  let purityRejectsMeasurement = !badPurity.valid &&
+    badPurity.diagnosticCode == "QTQUANTUM0006"
+
+  let measurementCollapsesToQresult = measurement.valid &&
+    measurement.effect.collapsesState &&
+    measurement.resultType == "qresult"
+
+  let entanglementRequiresMultipleQubits = entangle.valid &&
+    entangle.mayEntangle &&
+    entangle.requiresTwoOrMoreQubits
+
+  let gateOperationIntrinsicValid = gate.valid &&
+    operation.valid &&
+    intrinsic.valid &&
+    intrinsic.targetRequired
+
+  let barrierAndControlValid = barrier.valid &&
+    barrier.schedulingFence &&
+    control.valid &&
+    control.entangles
+
+  let valid = purityRejectsMeasurement &&
+    measurementCollapsesToQresult &&
+    entanglementRequiresMultipleQubits &&
+    gateOperationIntrinsicValid &&
+    barrierAndControlValid
+
+  return QuantumEffectProof {
+    purityRejectsMeasurement: purityRejectsMeasurement,
+    measurementCollapsesToQresult: measurementCollapsesToQresult,
+    entanglementRequiresMultipleQubits: entanglementRequiresMultipleQubits,
+    gateOperationIntrinsicValid: gateOperationIntrinsicValid,
+    barrierAndControlValid: barrierAndControlValid,
+    valid: valid,
+  }
+}

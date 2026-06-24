@@ -1,0 +1,59 @@
+pub ElfWriter {
+  targetTriple: string
+  objectHash: string
+  sectionCount: i64
+  symbolCount: i64
+  relocationCount: i64
+  byteCount: i64
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl ElfWriter {
+  pub ElfWriter(
+    targetTriple: string,
+    objectHash: string,
+    sectionCount: i64,
+    symbolCount: i64,
+    relocationCount: i64,
+    byteCount: i64
+  ) =
+    This {
+      targetTriple
+      objectHash
+      sectionCount
+      symbolCount
+      relocationCount
+      byteCount
+    }
+
+  pub fromObjectFile(objectFile: ObjectFile) =
+    This {
+      targetTriple: objectFile.targetTriple
+      objectHash: objectFile.objectHash
+      sectionCount: objectFile.sectionCount
+      symbolCount: objectFile.symbolCount
+      relocationCount: objectFile.relocationCount
+      byteCount: objectFile.byteCount
+      deterministic: objectFile.deterministic
+      diagnosticCode: match objectFile.valid && objectFile.elf {
+        true => ""
+        false => "QNATIVE0720"
+      }
+    }
+}
+
+impl view ElfWriter {
+  pub valid => diagnosticCode == "" &&
+    targetTriple != "" &&
+    objectHash != "" &&
+    sectionCount > 0 &&
+    symbolCount >= 0 &&
+    relocationCount >= 0 &&
+    byteCount > 0 &&
+    deterministic
+  pub writesObject => valid
+  pub hasRelocations => relocationCount > 0
+  pub writerHash => "elf:{targetTriple}:{objectHash}:{sectionCount}:{symbolCount}:{relocationCount}:{byteCount}"
+  pub debugName => "elf.writer.{targetTriple}.{byteCount}"
+}

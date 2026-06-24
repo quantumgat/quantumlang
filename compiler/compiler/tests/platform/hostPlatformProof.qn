@@ -1,0 +1,74 @@
+import platform::{*}
+
+pub HostPlatformProof {
+  linuxHostValid: bool
+  windowsHostValid: bool
+  macosHostValid: bool
+  bareMetalTargetValid: bool
+  platformModelsOwned: bool
+  valid: bool
+}
+
+pub hostPlatformProof() -> HostPlatformProof {
+  let linux = LinuxPlatform().hostDefault(HostArch.x86_64())
+  let windows = WindowsPlatform().hostDefault(HostArch.x86_64())
+  let macos = MacosPlatform().hostDefault(HostArch.aarch64())
+  let bare = NoOsPlatform().hostDefault(HostArch.armv7m())
+
+  let linuxHostValid =
+    linux.valid &&
+    linux.hosted &&
+    linux.objectFormat == "elf" &&
+    linux.abi == "sysv" &&
+    linux.pointerBits == 64 &&
+    linux.executableSuffix == "" &&
+    linux.pathSeparator == "/" &&
+    linux.nativeLinkable
+
+  let windowsHostValid =
+    windows.valid &&
+    windows.hosted &&
+    windows.objectFormat == "coff" &&
+    windows.abi == "win64" &&
+    windows.executableSuffix == ".exe" &&
+    windows.pathSeparator == "\\" &&
+    windows.nativeLinkable
+
+  let macosHostValid =
+    macos.valid &&
+    macos.hosted &&
+    macos.objectFormat == "macho" &&
+    macos.abi == "darwin" &&
+    macos.deployment.bundle &&
+    macos.nativeLinkable
+
+  let bareMetalTargetValid =
+    bare.valid &&
+    bare.hosted == false &&
+    bare.objectFormat == "elf" &&
+    bare.abi == "bare-metal" &&
+    bare.deployment.firmware &&
+    bare.staticLinkable
+
+  let platformModelsOwned =
+    linux.runtime.name == "glibc" &&
+    windows.process.name == "win32" &&
+    macos.threads.name == "darwin-pthread" &&
+    bare.process.name == "none"
+
+  let valid =
+    linuxHostValid &&
+    windowsHostValid &&
+    macosHostValid &&
+    bareMetalTargetValid &&
+    platformModelsOwned
+
+  return HostPlatformProof {
+    linuxHostValid
+    windowsHostValid
+    macosHostValid
+    bareMetalTargetValid
+    platformModelsOwned
+    valid
+  }
+}

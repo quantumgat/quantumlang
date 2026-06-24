@@ -1,0 +1,8 @@
+pub proof_f64() -> i64 {
+  let a: f64 = 1.5
+  let b: f64 = 2.5
+  let c: f64 = a + b
+  if c == a { return 11 }
+  println("f64 ok: {c}")
+  return 0
+}

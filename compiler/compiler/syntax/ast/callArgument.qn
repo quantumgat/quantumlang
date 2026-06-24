@@ -1,0 +1,48 @@
+import source::{SourceSpan}
+
+pub AstCallArgument {
+  position: usize
+  name: string = ""
+  expressionText: string = ""
+  inferredTypeName: string = ""
+  span: SourceSpan = {}
+  named: bool = false
+  spread: bool = false
+}
+
+impl AstCallArgument {
+  pub positional(
+    position: usize,
+    expressionText: string,
+    inferredTypeName: string,
+    span: SourceSpan
+  ) =
+    This { position, expressionText, inferredTypeName, span }
+
+  pub named(
+    position: usize,
+    name: string,
+    expressionText: string,
+    inferredTypeName: string,
+    span: SourceSpan
+  ) =
+    This {
+      position
+      name
+      expressionText
+      inferredTypeName
+      span
+      named: true
+    }
+}
+
+impl view AstCallArgument {
+  pub hasName: bool => name != ""
+
+  pub typed: bool => inferredTypeName != ""
+
+  pub valid: bool =>
+    span.valid &&
+    expressionText != "" &&
+    named == hasName
+}

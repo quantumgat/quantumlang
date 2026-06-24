@@ -1,0 +1,40 @@
+import host::{CompilerIo}
+
+pub BootstrapMaterializer {
+  compilerPath: string = "qtlc/build/compiler/driver/qtlc"
+  packageRoot: string
+  outputPath: string
+  enabled: bool = true
+}
+
+impl BootstrapMaterializer {
+  pub BootstrapMaterializer(packageRoot: string, outputPath: string) =
+    This {
+      packageRoot
+      outputPath
+    }
+}
+
+context BootstrapMaterializer {
+  pub materializeStatus(io: CompilerIo) -> i64 {
+    if !valid {
+      return -10
+    }
+    return io.buildNativeCompiler(compilerPath, packageRoot, outputPath)
+  }
+
+  pub materialize(io: CompilerIo) -> bool {
+    return materializeStatus(io) == 0
+  }
+}
+
+impl view BootstrapMaterializer {
+  pub valid: bool =>
+    enabled &&
+    compilerPath != "" &&
+    packageRoot != "" &&
+    outputPath != ""
+
+  pub provenance: string =>
+    "bootstrap-materializer:{compilerPath}:{packageRoot}:{outputPath}"
+}

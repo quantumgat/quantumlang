@@ -1,0 +1,21 @@
+pub DeclarationKey {
+  kind: DeclarationKind = DeclarationKind.Unknown
+  modulePath: string = ""
+  name: string = ""
+}
+
+impl DeclarationKey {
+  pub DeclarationKey(kind: DeclarationKind, modulePath: string, name: string) =
+    This { kind, modulePath, name }
+}
+
+impl view DeclarationKey {
+  pub hasModule => modulePath != ""
+
+  pub named => name != ""
+
+  pub valid =>
+    kind != DeclarationKind.Unknown &&
+    hasModule &&
+    named
+}

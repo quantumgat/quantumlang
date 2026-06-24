@@ -1,0 +1,19 @@
+import bytesHotPathProof::{HotByteErrorKind, bytesHotPathStatus}
+
+main() -> i64 {
+
+  println("fghdfghd")
+  
+  return match bytesHotPathStatus() {
+    
+    Ok(status) => status
+    Err(error) => match error.kind {
+      HotByteErrorKind.EndOfInput => 100
+      HotByteErrorKind.OutOfBounds => 101
+      HotByteErrorKind.BufferOverflow => 102
+    }
+
+   
+  }
+
+}

@@ -1,0 +1,81 @@
+pub IncrementalQueryEngine {
+  packageId: StableId
+  compilerVersion: u64 = 1
+  schemaVersion: u64 = 1
+  tracksSymbolEdges: bool = true
+  tracksNativeObjects: bool = true
+  parallelReady: bool = true
+}
+
+impl IncrementalQueryEngine {
+  pub IncrementalQueryEngine(packageId: StableId) =
+    This { packageId }
+
+  pub cleanPlan(revision: u64, sourceFiles: usize) =
+    IncrementalQueryPlan {
+      revision
+      changeKind: IncrementalChangeKind.NoChange
+      sourceFiles
+      skippedLexParseFiles: sourceFiles
+      skippedTypeSignatures: sourceFiles
+      skippedBodies: sourceFiles
+      skippedNativeObjects: sourceFiles
+    }
+
+  pub privateBodyChangePlan(revision: u64, sourceFiles: usize, changedFiles: usize) =
+    IncrementalQueryPlan {
+      revision
+      changeKind: IncrementalChangeKind.PrivateBodyChange
+      sourceFiles
+      changedFiles
+      skippedLexParseFiles: sourceFiles - changedFiles
+      recomputedLexParseFiles: changedFiles
+      skippedTypeSignatures: sourceFiles
+      skippedBodies: sourceFiles - changedFiles
+      recomputedBodies: changedFiles
+      skippedNativeObjects: sourceFiles - changedFiles
+      recomputedNativeObjects: changedFiles
+      relinkRequired: true
+    }
+
+  pub publicApiChangePlan(
+    revision: u64,
+    sourceFiles: usize,
+    changedFiles: usize,
+    affectedDependents: usize
+  ) =
+    IncrementalQueryPlan {
+      revision
+      changeKind: IncrementalChangeKind.PublicApiChange
+      sourceFiles
+      changedFiles
+      skippedLexParseFiles: sourceFiles - changedFiles
+      recomputedLexParseFiles: changedFiles
+      skippedTypeSignatures: sourceFiles - changedFiles - affectedDependents
+      recomputedTypeSignatures: changedFiles + affectedDependents
+      skippedBodies: sourceFiles - changedFiles - affectedDependents
+      recomputedBodies: changedFiles + affectedDependents
+      skippedNativeObjects: sourceFiles - changedFiles - affectedDependents
+      recomputedNativeObjects: changedFiles + affectedDependents
+      relinkRequired: true
+    }
+
+  pub targetChangePlan(revision: u64, sourceFiles: usize) =
+    IncrementalQueryPlan {
+      revision
+      changeKind: IncrementalChangeKind.TargetChange
+      sourceFiles
+      skippedLexParseFiles: sourceFiles
+      skippedTypeSignatures: sourceFiles
+      skippedBodies: sourceFiles
+      recomputedNativeObjects: sourceFiles
+      relinkRequired: true
+    }
+}
+
+impl view IncrementalQueryEngine {
+  pub compatible => compilerVersion > 0 && schemaVersion > 0
+  pub tracksFullGraph => tracksSymbolEdges && tracksNativeObjects
+  pub canRunParallel => parallelReady && tracksFullGraph
+  pub cacheSafe => compatible && tracksFullGraph
+}

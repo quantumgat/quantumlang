@@ -1,0 +1,28 @@
+pub Aarch64RegisterEncoding {
+  name: string
+  code: i64
+  widthBits: i64 = 64
+  zeroRegister: bool = false
+  diagnosticCode: string = ""
+}
+
+impl Aarch64RegisterEncoding {
+  pub Aarch64RegisterEncoding(name: string, code: i64, widthBits: i64, zeroRegister: bool) =
+    This { name, code, widthBits, zeroRegister }
+
+  pub x0() = This("x0", 0, 64, false)
+  pub x1() = This("x1", 1, 64, false)
+  pub sp() = This("sp", 31, 64, false)
+  pub xzr() = This("xzr", 31, 64, true)
+}
+
+impl view Aarch64RegisterEncoding {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    name != "" &&
+    code >= 0 &&
+    code <= 31 &&
+    widthBits > 0
+
+  pub debugName: string => "aarch64.reg.{name}.{code}"
+}

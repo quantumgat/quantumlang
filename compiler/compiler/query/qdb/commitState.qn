@@ -1,0 +1,6 @@
+pub enum QdbCommitState {
+  Prepared
+  Durable
+  Published
+  Rejected
+}

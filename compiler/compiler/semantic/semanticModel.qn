@@ -1,0 +1,63 @@
+import typeSystem::{TypecheckProduct}
+
+pub SemanticModel {
+  moduleCount: i64
+  checkedFileCount: i64 = 0
+  checkedModuleCount: i64 = 0
+  publicSymbolCount: i64 = 0
+  diagnosticCount: i64 = 0
+  importEdgeCount: i64 = 0
+  deterministic: bool = true
+}
+
+impl SemanticModel {
+  pub SemanticModel(moduleCount: i64) =
+    This { moduleCount }
+
+  pub fromTypecheck(product: TypecheckProduct) =
+    This {
+      moduleCount: product.moduleCount
+      checkedFileCount: product.fileCount
+      checkedModuleCount: product.moduleCount
+      diagnosticCount: product.diagnosticCount
+      deterministic: product.deterministic
+    }
+}
+
+impl view SemanticModel {
+  pub empty => moduleCount == 0
+
+  pub clean => diagnosticCount == 0
+
+  pub failed => diagnosticCount > 0
+
+  pub hasModules => moduleCount > 0
+
+  pub hasFiles => checkedFileCount > 0
+
+  pub hasCheckedModules => checkedModuleCount > 0
+
+  pub hasPublicApi => publicSymbolCount > 0
+
+  pub hasImports => importEdgeCount > 0
+
+  pub countsConsistent => moduleCount >= 0 &&
+    checkedFileCount >= 0 &&
+    checkedModuleCount >= 0 &&
+    publicSymbolCount >= 0 &&
+    diagnosticCount >= 0 &&
+    importEdgeCount >= 0 &&
+    checkedModuleCount <= moduleCount
+
+  pub readyForHir => deterministic && clean && hasModules
+
+  pub status => match true {
+    countsConsistent == false => SemanticStatus.InvalidCounts
+    deterministic == false => SemanticStatus.Nondeterministic
+    clean == false => SemanticStatus.Dirty
+    empty == true => SemanticStatus.Empty
+    _ => SemanticStatus.Ready
+  }
+
+  pub valid => status == SemanticStatus.Ready
+}

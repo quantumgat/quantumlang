@@ -1,0 +1,24 @@
+pub ObjectSymbolLayout {
+  symbolCount: i64
+  rowSize: i64
+  range: ObjectRange
+  diagnosticCode: string = ""
+}
+
+impl ObjectSymbolLayout {
+  pub ObjectSymbolLayout(symbolCount: i64, rowSize: i64, range: ObjectRange) =
+    This { symbolCount, rowSize, range }
+
+  pub elf64(symbolCount: i64, offset: i64) =
+    This(symbolCount, 24, ObjectRange(offset, symbolCount * 24, 8))
+}
+
+impl view ObjectSymbolLayout {
+  pub valid: bool => diagnosticCode == "" &&
+    symbolCount >= 0 &&
+    rowSize > 0 &&
+    range.valid &&
+    range.aligned
+  pub byteCount: i64 => symbolCount * rowSize
+  pub debugName: string => "object.symbol.layout.{symbolCount}.{rowSize}"
+}

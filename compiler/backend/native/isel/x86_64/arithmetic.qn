@@ -1,0 +1,32 @@
+pub X86ArithmeticSelect {
+  operation: string
+  widthBits: i64
+  selectedOpcode: string
+  immediateFormAllowed: bool = true
+  diagnosticCode: string = ""
+}
+
+impl X86ArithmeticSelect {
+  pub X86ArithmeticSelect(operation: string, widthBits: i64, selectedOpcode: string) =
+    This {
+      operation
+      widthBits
+      selectedOpcode
+    }
+
+  pub add(widthBits: i64) =
+    This("add", widthBits, "add")
+
+  pub sub(widthBits: i64) =
+    This("sub", widthBits, "sub")
+}
+
+impl view X86ArithmeticSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    operation != "" &&
+    widthBits > 0 &&
+    selectedOpcode != ""
+
+  pub debugName: string => "isel.x86_64.arith.{operation}.{widthBits}"
+}

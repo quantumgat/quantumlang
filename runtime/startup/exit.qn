@@ -1,0 +1,26 @@
+pub RuntimeExit {
+  symbolName: string
+  exitCodeType: string
+  deterministic: bool
+}
+
+impl RuntimeExit {
+  pub RuntimeExit(symbolName: string, exitCodeType: string, deterministic: bool) =
+    This {
+      symbolName
+      exitCodeType
+      deterministic
+    }
+
+  pub core() =
+    This {
+      symbolName: "qtlc_runtime_exit"
+      exitCodeType: "i32"
+      deterministic: true
+    }
+}
+
+impl view RuntimeExit {
+  pub valid: bool => symbolName != "" && exitCodeType != "" && deterministic
+  pub exitHash: string => "runtime.exit:{symbolName}:{exitCodeType}:{deterministic}"
+}

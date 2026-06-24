@@ -1,0 +1,61 @@
+import mir::{MirBody, MirControlFlowGraph}
+
+pub MirInput {
+  bodyCount: i64
+  blockCount: i64
+  valueCount: i64
+  instructionCount: i64
+  graphEdgeCount: i64
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl MirInput {
+  pub MirInput(
+    bodyCount: i64,
+    blockCount: i64,
+    valueCount: i64,
+    instructionCount: i64,
+    graphEdgeCount: i64
+  ) =
+    This {
+      bodyCount
+      blockCount
+      valueCount
+      instructionCount
+      graphEdgeCount
+    }
+
+  pub fromBody(body: MirBody, cfg: MirControlFlowGraph) =
+    This {
+      bodyCount: 1
+      blockCount: body.blockCount
+      valueCount: body.valueCount
+      instructionCount: body.instructionCount
+      graphEdgeCount: cfg.edgeCount
+      deterministic: body.deterministic && cfg.deterministic
+      diagnosticCode: match body.valid && cfg.valid {
+        true => ""
+        false => "QNATIVE0101"
+      }
+    }
+}
+
+impl view MirInput {
+  pub countsValid: bool => {
+    bodyCount >= 0 &&
+      blockCount >= 0 &&
+      valueCount >= 0 &&
+      instructionCount >= 0 &&
+      graphEdgeCount >= 0
+  }
+
+  pub valid: bool => {
+    diagnosticCode == "" &&
+      deterministic &&
+      countsValid
+  }
+
+  pub lowerable => valid && bodyCount > 0
+  pub mirHash => "mir:{bodyCount}:{blockCount}:{valueCount}:{instructionCount}:{graphEdgeCount}"
+}

@@ -1,0 +1,48 @@
+pub Arg {
+  index: i64 = -1
+  name: string = ""
+  rawText: string = ""
+  value: ArgumentValue = {}
+  option: bool = false
+  flag: bool = false
+  positional: bool = true
+}
+
+impl Arg {
+  pub Arg(index: i64, rawText: string) =
+    This {
+      index
+      rawText
+      value: ArgumentValue.raw(rawText)
+      option: false
+      flag: false
+      positional: true
+    }
+
+  pub named(index: i64, name: string, rawText: string, value: ArgumentValue) =
+    This {
+      index
+      name
+      rawText
+      value
+      option: name != ""
+      flag: name != "" && rawText == ""
+      positional: name == ""
+    }
+
+  pub asType(typeName: string, kind: ArgumentValueKind) =
+    this {
+      value: ArgumentValue.typed(rawText, typeName, kind)
+    }
+}
+
+impl view Arg {
+  pub valid: bool => index >= 0 && value.valid
+  pub empty: bool => rawText == ""
+  pub hasName: bool => name != ""
+  pub typed: bool => value.typedValue
+  pub displayName: string => match name != "" {
+    true => name
+    false => rawText
+  }
+}

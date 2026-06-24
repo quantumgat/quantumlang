@@ -1,0 +1,54 @@
+pub ProcessMainArgument {
+  name: string
+  typeName: string
+  position: i64
+  pointerDepth: i64 = 0
+  readOnlyTarget: bool = false
+}
+
+impl ProcessMainArgument {
+  pub ProcessMainArgument(
+    name: string,
+    typeName: string,
+    position: i64,
+    pointerDepth: i64,
+    readOnlyTarget: bool
+  ) =
+    This {
+      name
+      typeName
+      position
+      pointerDepth
+      readOnlyTarget
+    }
+
+  pub argc() =
+    This {
+      name: "argc"
+      typeName: "i32"
+      position: 0
+      pointerDepth: 0
+      readOnlyTarget: false
+    }
+
+  pub argv() =
+    This {
+      name: "argv"
+      typeName: "const *const *u8"
+      position: 1
+      pointerDepth: 2
+      readOnlyTarget: true
+    }
+}
+
+impl view ProcessMainArgument {
+  pub valid: bool =>
+    name != "" &&
+    typeName != "" &&
+    position >= 0 &&
+    pointerDepth >= 0
+
+  pub scalar: bool => valid && pointerDepth == 0
+  pub pointer: bool => valid && pointerDepth > 0
+  pub signatureText: string => "{name}: {typeName}"
+}

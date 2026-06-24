@@ -1,0 +1,70 @@
+pub ObjectFile {
+  format: string
+  targetTriple: string
+  sectionCount: i64
+  symbolCount: i64
+  relocationCount: i64
+  stringTableBytes: i64
+  byteCount: i64
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl ObjectFile {
+  pub ObjectFile(
+    format: string,
+    targetTriple: string,
+    sectionCount: i64,
+    symbolCount: i64,
+    relocationCount: i64,
+    stringTableBytes: i64,
+    byteCount: i64
+  ) =
+    This {
+      format
+      targetTriple
+      sectionCount
+      symbolCount
+      relocationCount
+      stringTableBytes
+      byteCount
+    }
+
+  pub fromMachineUnit(
+    unit: MachineUnit,
+    target: TargetIdentity,
+    stringTable: ObjectStringTable
+  ) =
+    This {
+      format: target.objectFormat
+      targetTriple: target.targetTriple
+      sectionCount: 3
+      symbolCount: unit.functionCount
+      relocationCount: 0
+      stringTableBytes: stringTable.byteCount
+      byteCount: unit.instructionCount * 4 + stringTable.byteCount + 64
+      deterministic: unit.deterministic && stringTable.deterministic
+      diagnosticCode: match unit.objectReady && target.valid && stringTable.valid {
+        true => ""
+        false => "QNATIVE0701"
+      }
+    }
+}
+
+impl view ObjectFile {
+  pub valid => diagnosticCode == "" &&
+    format != "" &&
+    targetTriple != "" &&
+    sectionCount > 0 &&
+    symbolCount >= 0 &&
+    relocationCount >= 0 &&
+    stringTableBytes >= 0 &&
+    byteCount > 0 &&
+    deterministic
+  pub elf => format == "elf"
+  pub coff => format == "coff"
+  pub macho => format == "macho"
+  pub linkable => valid && sectionCount > 0
+  pub objectHash => "object:{format}:{targetTriple}:{sectionCount}:{symbolCount}:{relocationCount}:{stringTableBytes}:{byteCount}"
+  pub debugName => "object.{format}.{targetTriple}.{byteCount}"
+}

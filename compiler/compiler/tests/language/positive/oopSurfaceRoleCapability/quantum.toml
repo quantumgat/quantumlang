@@ -1,0 +1,15 @@
+[package]
+name = "oop-surface-role-capability-proof"
+version = "0.1.0"
+edition = "2026"
+
+[library]
+importRoot = "oop_surface_role_capability"
+
+[targets.app]
+kind = "bin"
+main = "main.qn"
+backend = "native"
+
+[source]
+root = "."

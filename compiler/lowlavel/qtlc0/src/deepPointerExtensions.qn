@@ -1,0 +1,40 @@
+import deepPointerModel::{DeepEnvelope}
+
+pub role DeepReadable<T> {
+  read() -> i64
+  available() -> bool
+}
+
+pub role DeepCodec<T> {
+  encoded() -> i64
+}
+
+extend DeepEnvelope<i64> : pub DeepReadable<DeepEnvelope<i64>> {
+  pub read() -> i64 {
+    current
+  }
+
+  pub available() -> bool {
+    ready
+  }
+}
+
+extend DeepEnvelope<i64> : pub DeepCodec<DeepEnvelope<i64>> {
+  pub encoded() -> i64 {
+    read()
+  }
+}
+
+pub extend<T: DeepReadable<T>> T {
+  pub deepValue() -> i64 {
+    this.read()
+  }
+
+  pub deepAvailable() -> bool {
+    this.available()
+  }
+}
+
+pub deepBlanketProof(value: DeepEnvelope<i64>) -> bool {
+  return value.deepValue() == 43 && value.deepAvailable()
+}

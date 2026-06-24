@@ -1,0 +1,53 @@
+pub MachineFunction {
+  name: string
+  blockCount: i64
+  instructionCount: i64
+  virtualRegisterCount: i64
+  physicalRegisterCount: i64
+  stackBytes: i64 = 0
+  abiHash: string = ""
+  returnAbiHash: string = ""
+  deterministic: bool = true
+}
+
+impl MachineFunction {
+  pub MachineFunction(
+    name: string,
+    blockCount: i64,
+    instructionCount: i64,
+    virtualRegisterCount: i64,
+    physicalRegisterCount: i64
+  ) =
+    This {
+      name
+      blockCount
+      instructionCount
+      virtualRegisterCount
+      physicalRegisterCount
+    }
+
+  withFrame(frame: FrameLayout) =
+    this {
+      stackBytes: frame.stackBytes
+    }
+
+  withAbi(callAbi: CallAbi, returnAbi: ReturnValueAbi) =
+    this {
+      abiHash: callAbi.abiHash
+      returnAbiHash: returnAbi.abiHash
+    }
+}
+
+impl view MachineFunction {
+  pub valid => name != "" &&
+    blockCount > 0 &&
+    instructionCount >= 0 &&
+    virtualRegisterCount >= 0 &&
+    physicalRegisterCount >= 0 &&
+    deterministic
+  pub allocated => physicalRegisterCount > 0
+  pub framed => stackBytes >= 0
+  pub abiReady => abiHash != "" && returnAbiHash != ""
+  pub objectReady => valid && allocated && framed && abiReady
+  pub debugName => "mfn.{name}.{instructionCount}"
+}

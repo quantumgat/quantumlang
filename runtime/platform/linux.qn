@@ -1,0 +1,29 @@
+pub LinuxRuntimePlatform {
+  targetTriple: string
+  objectFormat: string
+  abi: string
+  syscallAbi: string
+}
+
+impl LinuxRuntimePlatform {
+  pub LinuxRuntimePlatform(targetTriple: string, objectFormat: string, abi: string, syscallAbi: string) =
+    This {
+      targetTriple
+      objectFormat
+      abi
+      syscallAbi
+    }
+
+  pub x86_64() =
+    This {
+      targetTriple: "x86_64-unknown-linux-gnu"
+      objectFormat: "elf"
+      abi: "sysv"
+      syscallAbi: "linux-x86_64"
+    }
+}
+
+impl view LinuxRuntimePlatform {
+  pub valid: bool => targetTriple != "" && objectFormat == "elf" && abi != "" && syscallAbi != ""
+  pub platformHash: string => "runtime.platform.linux:{targetTriple}:{objectFormat}:{abi}:{syscallAbi}"
+}

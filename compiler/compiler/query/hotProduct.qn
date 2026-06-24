@@ -1,0 +1,32 @@
+import storage::{CacheHash256}
+
+pub HotProduct {
+  content: CacheHash256
+  fingerprint: ProductFingerprint
+  payloadLength: u64 = 0
+  generation: u64 = 0
+  lastUsedRevision: u64 = 0
+  pinned: bool = false
+  validated: bool = false
+}
+
+impl HotProduct {
+  pub touch(revision: u64) -> This =
+    this { lastUsedRevision: revision }
+
+  pub pin() -> This =
+    this { pinned: true }
+}
+
+impl view HotProduct {
+  pub resident: bool =>
+    content.valid &&
+    content.contentHash &&
+    payloadLength > 0 &&
+    generation > 0
+
+  pub usable: bool =>
+    resident &&
+    validated &&
+    fingerprint.cacheable
+}

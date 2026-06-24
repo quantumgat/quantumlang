@@ -1,0 +1,34 @@
+pub X86RegisterEncoding {
+  name: string
+  code: i64
+  widthBits: i64 = 64
+  extended: bool = false
+  diagnosticCode: string = ""
+}
+
+impl X86RegisterEncoding {
+  pub X86RegisterEncoding(name: string, code: i64, widthBits: i64, extended: bool) =
+    This { name, code, widthBits, extended }
+
+  pub rax() = This("rax", 0, 64, false)
+  pub rcx() = This("rcx", 1, 64, false)
+  pub rdx() = This("rdx", 2, 64, false)
+  pub rbx() = This("rbx", 3, 64, false)
+  pub rsp() = This("rsp", 4, 64, false)
+  pub rbp() = This("rbp", 5, 64, false)
+  pub rsi() = This("rsi", 6, 64, false)
+  pub rdi() = This("rdi", 7, 64, false)
+}
+
+impl view X86RegisterEncoding {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    name != "" &&
+    code >= 0 &&
+    code <= 15 &&
+    widthBits > 0
+
+  pub low3: i64 => code % 8
+  pub rexBit: bool => extended || code >= 8
+  pub debugName: string => "x86.reg.{name}.{code}"
+}

@@ -1,0 +1,48 @@
+pub Executable {
+  outputPath: string
+  executableHash: string
+  targetTriple: string
+  byteCount: i64
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl Executable {
+  pub Executable(
+    outputPath: string,
+    executableHash: string,
+    targetTriple: string,
+    byteCount: i64
+  ) =
+    This {
+      outputPath
+      executableHash
+      targetTriple
+      byteCount
+    }
+
+  pub fromLinkResult(result: LinkResult, target: TargetIdentity, byteCount: i64) =
+    This {
+      outputPath: result.outputPath
+      executableHash: result.executableHash
+      targetTriple: target.targetTriple
+      byteCount
+      deterministic: result.deterministic
+      diagnosticCode: match result.valid && target.valid && byteCount > 0 {
+        true => ""
+        false => "QNATIVE0820"
+      }
+    }
+}
+
+impl view Executable {
+  pub valid => diagnosticCode == "" &&
+    outputPath != "" &&
+    executableHash != "" &&
+    targetTriple != "" &&
+    byteCount > 0 &&
+    deterministic
+  pub runnable => valid
+  pub executableIdentity => "{targetTriple}:{outputPath}:{executableHash}:{byteCount}"
+  pub debugName => "exe.{targetTriple}.{byteCount}"
+}

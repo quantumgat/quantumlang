@@ -1,0 +1,102 @@
+// design-only: target native artifact facts for future backend proof.
+//
+// This is not a runtime implementation. It is the source-shaped contract that
+// future compiled fixtures should check against qtlc0/qtlc1 native artifacts.
+
+pub NativeCallFact {
+  name: string = ""
+  direct: bool = false
+  monomorphized: bool = false
+  hiddenAllocation: bool = false
+  roleTableDispatch: bool = false
+}
+
+impl view NativeCallFact {
+  pub staticallyLowered: bool =>
+    direct &&
+    monomorphized &&
+    hiddenAllocation == false &&
+    roleTableDispatch == false
+}
+
+pub NativeSurfaceArtifact {
+  userCall: NativeCallFact = {}
+  bodyCall: NativeCallFact = {}
+  queryCall: NativeCallFact = {}
+  viewGetter: NativeCallFact = {}
+  middlewareCall: NativeCallFact = {}
+  roleObjectConversion: NativeCallFact = {}
+  duplicateNativeSymbolCount: i64 = 0
+  directRoleTableCount: i64 = 0
+}
+
+impl view NativeSurfaceArtifact {
+  pub directDispatchValid: bool => {
+    userCall.staticallyLowered &&
+    bodyCall.staticallyLowered &&
+    queryCall.staticallyLowered &&
+    viewGetter.staticallyLowered &&
+    middlewareCall.staticallyLowered &&
+    directRoleTableCount == 0
+  }
+
+  pub roleObjectConversionValid: bool =>
+    roleObjectConversion.direct == false &&
+    roleObjectConversion.roleTableDispatch
+
+  pub noDuplicateSymbolValid: bool =>
+    duplicateNativeSymbolCount == 0
+}
+
+pub plannedNativeSurfaceArtifact() -> NativeSurfaceArtifact {
+  return NativeSurfaceArtifact {
+    userCall:
+      NativeCallFact {
+        name: "HttpCtx.extend.user"
+        direct: true
+        monomorphized: true
+      }
+
+    bodyCall:
+      NativeCallFact {
+        name: "HttpCtx.extract.body<CreateUserBody>"
+        direct: true
+        monomorphized: true
+      }
+
+    queryCall:
+      NativeCallFact {
+        name: "HttpCtx.extract.query<CreateUserBody>"
+        direct: true
+        monomorphized: true
+      }
+
+    viewGetter:
+      NativeCallFact {
+        name: "HttpCtx.view.path"
+        direct: true
+        monomorphized: true
+      }
+
+    middlewareCall:
+      NativeCallFact {
+        name: "HttpCtx.extend.around"
+        direct: true
+        monomorphized: true
+      }
+
+    roleObjectConversion:
+      NativeCallFact {
+        name: "Authenticated<HttpCtx>.carrier"
+        direct: false
+        monomorphized: true
+        roleTableDispatch: true
+      }
+
+    duplicateNativeSymbolCount:
+      0
+
+    directRoleTableCount:
+      0
+  }
+}

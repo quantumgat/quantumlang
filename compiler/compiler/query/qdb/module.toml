@@ -1,0 +1,6 @@
+[module]
+name = "qdb"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/query/qdb"
+role = "query-database-format"

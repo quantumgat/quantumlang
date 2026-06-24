@@ -1,0 +1,33 @@
+pub SectionEmitter {
+  sectionName: string
+  byteCount: i64
+  alignBytes: i64 = 16
+  executable: bool = true
+  diagnosticCode: string = ""
+}
+
+impl SectionEmitter {
+  pub SectionEmitter(sectionName: string, byteCount: i64, alignBytes: i64) =
+    This {
+      sectionName
+      byteCount
+      alignBytes
+    }
+
+  pub text(byteCount: i64) =
+    This(".text", byteCount, 16)
+
+  pub section() =
+    ObjectSection.text(byteCount)
+}
+
+impl view SectionEmitter {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    sectionName != "" &&
+    byteCount >= 0 &&
+    alignBytes > 0
+
+  pub codeSection: bool => valid && executable && sectionName == ".text"
+  pub debugName: string => "emit.section.{sectionName}.{byteCount}"
+}

@@ -1,0 +1,26 @@
+pub Aarch64CompareSelect {
+  compareKind: string
+  widthBits: i64
+  selectedOpcode: string = "cmp"
+  flagResult: string = "nzcv"
+  diagnosticCode: string = ""
+}
+
+impl Aarch64CompareSelect {
+  pub Aarch64CompareSelect(compareKind: string, widthBits: i64) =
+    This {
+      compareKind
+      widthBits
+    }
+}
+
+impl view Aarch64CompareSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    compareKind != "" &&
+    widthBits > 0 &&
+    selectedOpcode != "" &&
+    flagResult != ""
+
+  pub debugName: string => "isel.aarch64.compare.{compareKind}.{widthBits}"
+}

@@ -1,0 +1,51 @@
+pub FunctionEmitter {
+  functionName: string
+  blockCount: i64
+  instructionCount: i64
+  byteCount: i64
+  relocationCount: i64 = 0
+  diagnosticCode: string = ""
+}
+
+impl FunctionEmitter {
+  pub FunctionEmitter(
+    functionName: string,
+    blockCount: i64,
+    instructionCount: i64,
+    byteCount: i64,
+    relocationCount: i64
+  ) =
+    This {
+      functionName
+      blockCount
+      instructionCount
+      byteCount
+      relocationCount
+    }
+
+  pub fromMachineFunction(function: MachineFunction, byteCount: i64) =
+    This {
+      functionName: function.name
+      blockCount: function.blockCount
+      instructionCount: function.instructionCount
+      byteCount
+      relocationCount: 0
+      diagnosticCode: match function.valid && byteCount >= 0 {
+        true => ""
+        false => "QNATIVE0920"
+      }
+    }
+}
+
+impl view FunctionEmitter {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    functionName != "" &&
+    blockCount > 0 &&
+    instructionCount >= 0 &&
+    byteCount >= 0 &&
+    relocationCount >= 0
+
+  pub hasCode: bool => byteCount > 0
+  pub debugName: string => "emit.function.{functionName}.{byteCount}"
+}

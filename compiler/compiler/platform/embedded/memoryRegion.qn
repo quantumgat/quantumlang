@@ -1,0 +1,37 @@
+pub MemoryRegion {
+  name: string
+  origin: i64
+  sizeBytes: i64
+  readable: bool
+  writable: bool
+  executable: bool
+}
+
+impl MemoryRegion {
+  pub MemoryRegion(name: string, origin: i64, sizeBytes: i64, readable: bool, writable: bool, executable: bool) =
+    This {
+      name
+      origin
+      sizeBytes
+      readable
+      writable
+      executable
+    }
+
+  pub flash(name: string, origin: i64, sizeBytes: i64) =
+    This(name, origin, sizeBytes, true, false, true)
+
+  pub ram(name: string, origin: i64, sizeBytes: i64) =
+    This(name, origin, sizeBytes, true, true, false)
+
+  pub mmio(name: string, origin: i64, sizeBytes: i64) =
+    This(name, origin, sizeBytes, true, true, false)
+}
+
+impl view MemoryRegion {
+  pub valid => name != "" && sizeBytes > 0
+  pub code => valid && readable && executable
+  pub data => valid && readable && writable
+  pub device => valid && writable && executable == false
+  pub linkerVisible => valid && (code || data || device)
+}

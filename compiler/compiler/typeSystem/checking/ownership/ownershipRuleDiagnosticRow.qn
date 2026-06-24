@@ -1,0 +1,31 @@
+pub OwnershipRuleDiagnosticRow {
+  rowId: i64 = 0
+  code: string = ""
+  subject: string = ""
+  message: string = ""
+  blocking: bool = true
+}
+
+impl OwnershipRuleDiagnosticRow {
+  pub OwnershipRuleDiagnosticRow(
+    rowId: i64,
+    code: string,
+    subject: string,
+    message: string
+  ) =
+    This {
+      rowId
+      code
+      subject
+      message
+      blocking: true
+    }
+}
+
+impl view OwnershipRuleDiagnosticRow {
+  pub valid =>
+    rowId >= 0 &&
+    code != "" &&
+    subject != "" &&
+    message != ""
+}

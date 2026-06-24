@@ -1,0 +1,7 @@
+pub proof_float_f16() -> i64 {
+  let a: f16 = 1.5
+  let b: f16 = 2.5
+  let c: f16 = a + b
+  println("f16 ok: {c}")
+  return 0
+}

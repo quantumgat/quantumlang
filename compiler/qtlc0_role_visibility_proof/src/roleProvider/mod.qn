@@ -1,0 +1,9 @@
+module roleProvider
+
+mod {
+  remoteRole
+}
+
+export {
+  remoteRole.{RemoteUser, RemoteAccess, remoteUser}
+}

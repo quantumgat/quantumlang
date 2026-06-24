@@ -1,0 +1,177 @@
+import storage::{CacheActionContentLink, CacheAtomicWrite, CacheHash256, CacheLease, CacheObjectContract, CacheObjectFormat, CacheProductKind, CacheQuarantine, CacheSafetyContract, CacheSchemaMigration, CacheValidation}
+import query::{BuildDatabase, Fingerprint, HotProduct, ProductAddress, ProductFingerprint, ProductStore, ProductWriteBack, QdbCommitRow, QdbJournal, QueryKey, StableBodyId, StoredProduct}
+
+pub ProductStoreProof {
+  globalCasPath: bool
+  validatedGlobalLookup: bool
+  hotMemoryPreferred: bool
+  atomicWriteBack: bool
+  journalCommitted: bool
+  invalidWriteRejected: bool
+  valid: bool
+}
+
+pub productStoreProof() -> ProductStoreProof {
+  let action = CacheHash256.action(
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  )
+  let content = CacheHash256.content(
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  )
+  let input = Fingerprint.fromParts(11, 12)
+  let output = Fingerprint.fromParts(21, 22)
+  let fingerprint = ProductFingerprint(input, output)
+  let address = ProductAddress.global(
+    "~/.cache/qtlc",
+    "bb",
+    content,
+    CacheProductKind.Metadata
+  )
+  let link = CacheActionContentLink {
+    action
+    content
+    productKind: CacheProductKind.Metadata
+  }
+  let format = CacheObjectFormat.metadata()
+  let contract = CacheObjectContract.forPayload(
+    format,
+    4096,
+    content.digest,
+    "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  )
+  let validation = CacheValidation.accepted()
+  let stored = StoredProduct {
+    address
+    actionLink: link
+    fingerprint
+    contract
+    validation
+    payloadLength: 4096
+    revision: 9
+  }
+  let hot = HotProduct {
+    content
+    fingerprint
+    payloadLength: 4096
+    generation: 1
+    lastUsedRevision: 9
+    validated: true
+  }
+  let lease = CacheLease {
+    action
+    owner: "qtlc1-worker-1"
+    expiresAt: 200
+    currentTime: 100
+  }
+  let atomicWrite = CacheAtomicWrite {
+    temporaryPath: "~/.cache/qtlc/.tmp/product.part"
+    finalPath: address.globalPath
+    content
+    payloadWritten: true
+    payloadSynced: true
+    directorySynced: true
+    atomicRename: true
+  }
+  let migration = CacheSchemaMigration {
+    sourceVersion: 1
+    targetVersion: 1
+    readerCompatible: true
+  }
+  let quarantine = CacheQuarantine {
+    sourcePath: ""
+    quarantinePath: ""
+    validation
+  }
+  let safety = CacheSafetyContract {
+    lease
+    validation
+    write: atomicWrite
+    migration
+    quarantine
+  }
+  let writeBack = ProductWriteBack.prepare(
+    link,
+    contract,
+    safety,
+    fingerprint,
+    9
+  ).publish()
+  let key = QueryKey.typeBody(StableBodyId(1, 2, 3, 0).id)
+  let globalStore = ProductStore("~/.cache/qtlc")
+  globalStore.addProduct(stored)
+  let globalLookup = globalStore.lookup(key, content, fingerprint)
+
+  let hotStore = ProductStore("~/.cache/qtlc")
+  hotStore.addProduct(stored)
+  hotStore.addHot(hot)
+  let hotLookup = hotStore.lookup(key, content, fingerprint)
+
+  let commitRow = QdbCommitRow.completed(
+    9,
+    1,
+    1,
+    1,
+    output,
+    Fingerprint.fromParts(31, 32),
+    Fingerprint.fromParts(41, 42)
+  )
+  let database = BuildDatabase.clean(
+    9,
+    "~/.cache/qtlc"
+  ).withJournal(
+    QdbJournal(
+      0,
+      0,
+      0,
+      8,
+      8,
+      Fingerprint.fromParts(31, 32)
+    )
+  ).writeBackProduct(stored, hot, writeBack, commitRow)
+
+  let rejected = ProductStore("~/.cache/qtlc").writeBack(
+    stored,
+    hot,
+    ProductWriteBack()
+  )
+  let globalCasPath =
+    address.valid &&
+    address.globalPath ==
+      "~/.cache/qtlc/bb/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.qcm"
+  let validatedGlobalLookup =
+    globalLookup.usable &&
+    globalLookup.globalContent &&
+    globalLookup.path == address.globalPath
+  let hotMemoryPreferred =
+    hotLookup.usable &&
+    hotLookup.hotMemory &&
+    hotLookup.path == ""
+  let atomicWriteBack =
+    writeBack.durable &&
+    database.store.productsIndexed == 1 &&
+    database.store.hotProductCount == 1 &&
+    database.store.writes == 1
+  let journalCommitted =
+    database.journal.commitCount == 1 &&
+    database.journal.durableRevision == 9
+  let invalidWriteRejected =
+    rejected.rejects == 1 &&
+    rejected.productsIndexed == 0
+  let valid =
+    globalCasPath &&
+    validatedGlobalLookup &&
+    hotMemoryPreferred &&
+    atomicWriteBack &&
+    journalCommitted &&
+    invalidWriteRejected
+
+  return ProductStoreProof {
+    globalCasPath
+    validatedGlobalLookup
+    hotMemoryPreferred
+    atomicWriteBack
+    journalCommitted
+    invalidWriteRejected
+    valid
+  }
+}

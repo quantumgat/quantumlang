@@ -1,0 +1,26 @@
+pub Owner {
+  value: i64
+}
+
+pub badReferenceUpgrade() -> i64 {
+  let owner: Owner = { value: 1 }
+  let readonly: const &Owner = const &owner
+  let writable: &Owner = readonly
+  writable.value = 2
+  return writable.value
+}
+
+pub badPointerUpgrade() -> i64 {
+  let owner: Owner = { value: 3 }
+  let readonly: const *Owner = const *owner
+  let writable: *Owner = readonly
+  if writable.valid {
+    writable.value = 4
+    return writable.value
+  }
+  return 0
+}
+
+pub main() -> i64 {
+  return badReferenceUpgrade() + badPointerUpgrade()
+}

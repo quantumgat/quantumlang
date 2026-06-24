@@ -1,0 +1,49 @@
+pub TypeFactInput {
+  typeCount: i64
+  functionCount: i64
+  behavioralCount: i64
+  typedNodeCount: i64
+  typeContextCount: i64
+  typeFactCount: i64
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl TypeFactInput {
+  pub TypeFactInput(
+    typeCount: i64,
+    functionCount: i64,
+    behavioralCount: i64,
+    typedNodeCount: i64,
+    typeContextCount: i64,
+    typeFactCount: i64
+  ) =
+    This {
+      typeCount
+      functionCount
+      behavioralCount
+      typedNodeCount
+      typeContextCount
+      typeFactCount
+    }
+}
+
+impl view TypeFactInput {
+  pub countsValid: bool => {
+    typeCount >= 0 &&
+      functionCount >= 0 &&
+      behavioralCount >= 0 &&
+      typedNodeCount >= 0 &&
+      typeContextCount >= 0 &&
+      typeFactCount >= 0
+  }
+
+  pub valid: bool => {
+    diagnosticCode == "" &&
+      deterministic &&
+      countsValid
+  }
+
+  pub abiHash => "abi:{typeCount}:{functionCount}:{behavioralCount}"
+  pub typeHash => "types:{typeCount}:{typedNodeCount}:{typeContextCount}:{typeFactCount}"
+}

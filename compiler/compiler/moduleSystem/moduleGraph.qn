@@ -1,0 +1,446 @@
+import core::{DeclarationId, Index, ModuleId, QualifiedName, SymbolId, Vec}
+import declaration::{DeclarationKind, DeclarationRecord, DeclarationRecordTable, DeclarationSet, DeclarationTable, DeclarationVisibility}
+
+pub ModuleGraph {
+  arena: ModuleArena = {}
+  edges: Vec<ModuleEdge> = []
+  lookup: Index<QualifiedName, ModuleId> = {}
+  records: Vec<DeclarationRecord> = []
+  moduleNames: Vec<string> = []
+  moduleIds: Vec<ModuleId> = []
+  edgeValues: Vec<ModuleEdge> = []
+  importIndex: ImportIndex = {}
+  exports: ExportSurface = {}
+  rootModule: ModuleId = {}
+  rootName: QualifiedName = {}
+  nodeCount: i64 = 0
+  edgeCount: i64 = 0
+  boundaryCount: i64 = 0
+  unresolvedImportCount: i64 = 0
+  cycleCount: i64 = 0
+  duplicateModuleCount: i64 = 0
+  duplicateDeclarationCount: i64 = 0
+  diagnosticValues: Vec<ModuleResolutionDiagnostic> = []
+  valid: bool = true
+}
+
+impl ModuleGraph {
+  pub ModuleGraph(nodeCount: i64, edgeCount: i64) =
+    This.fromCounts(nodeCount, edgeCount, nodeCount, 0, 0)
+
+  pub ModuleGraph(
+    nodeCount: i64,
+    edgeCount: i64,
+    boundaryCount: i64,
+    unresolvedImportCount: i64,
+    cycleCount: i64
+  ) =
+    This.fromCounts(nodeCount, edgeCount, boundaryCount, unresolvedImportCount, cycleCount)
+
+  pub fromCounts(
+    nodeCount: i64,
+    edgeCount: i64,
+    boundaryCount: i64,
+    unresolvedImportCount: i64,
+    cycleCount: i64
+  ) =
+    This {
+      arena: ModuleArena(nodeCount)
+      edges: Vec(edgeCount)
+      lookup: Index(nodeCount)
+      importIndex: ImportIndex(edgeCount, unresolvedImportCount)
+      exports: ExportSurface(boundaryCount)
+      rootModule: ModuleId(1, 1)
+      nodeCount
+      edgeCount
+      boundaryCount
+      unresolvedImportCount
+      cycleCount
+    }
+
+  pub fromDeclarations(table: DeclarationTable) =
+    This.fromDeclarationSets(
+      table.modules,
+      table.imports,
+      table.functions,
+      table.valid
+    )
+
+  pub fromDeclarationSets(
+    modules: DeclarationSet,
+    imports: DeclarationSet,
+    exports: DeclarationSet,
+    declarationsValid: bool
+  ) =
+    This {
+      arena: ModuleArena(modules.count)
+      edges: Vec(imports.count)
+      lookup: Index(modules.count)
+      importIndex: ImportIndex.fromDeclarations(imports)
+      exports: ExportSurface.fromDeclarations(exports)
+      rootModule: ModuleId(1, 1)
+      nodeCount: modules.count
+      edgeCount: imports.count
+      boundaryCount: modules.count
+      unresolvedImportCount: imports.unresolvedCount
+      cycleCount: 0
+      valid: declarationsValid && modules.valid && imports.valid && exports.valid
+    }
+
+  pub fromRecords(table: DeclarationRecordTable) -> This {
+    return This.fromRecordValues(table.recordValues, table.valid)
+  }
+
+  pub fromRecordValues(
+    recordValues: Vec<DeclarationRecord>
+  ) =
+    This.fromRecordValues(recordValues, true)
+
+  pub fromRecordValues(
+    recordValues: Vec<DeclarationRecord>,
+    recordsValid: bool
+  ) -> This {
+    let graph = This {
+      valid: recordsValid
+    }
+
+    let row: i64 = 0
+    while row < recordValues.count {
+      let record = recordValues[row]
+      if record.kind == DeclarationKind.Module {
+        graph.addRecord(record)
+      }
+      row = row + 1
+    }
+
+    row = 0
+    while row < recordValues.count {
+      let record = recordValues[row]
+      if record.kind != DeclarationKind.Module {
+        graph.addRecord(record)
+      }
+      row = row + 1
+    }
+
+    graph.nodeCount = graph.moduleIds.count
+    graph.edgeCount = graph.edgeValues.count
+    graph.boundaryCount = graph.moduleIds.count
+    graph.unresolvedImportCount = graph.importIndex.unresolvedCount
+    graph.lookup = Index(graph.moduleIds.count)
+    graph.edges = Vec(graph.edgeValues.count)
+    if graph.moduleIds.count > 0 {
+      graph.rootModule = graph.moduleIds[0]
+    }
+    graph.valid = recordsValid &&
+      graph.moduleIds.count > 0 &&
+      graph.duplicateModuleCount == 0 &&
+      graph.duplicateDeclarationCount == 0
+    return graph
+  }
+
+  addRecord(record: DeclarationRecord) {
+    if duplicateConstrained(record.kind) &&
+       declarationExists(record.modulePath, record.name, record.kind) {
+      duplicateDeclarationCount = duplicateDeclarationCount + 1
+      diagnosticValues.push(
+        ModuleResolutionDiagnostic.duplicateDeclaration(
+          record.modulePath,
+          record.name
+        )
+      )
+      return
+    }
+
+    records.push(record)
+
+    if record.kind == DeclarationKind.Module {
+      addModule(record)
+      return
+    }
+
+    if record.kind == DeclarationKind.Import {
+      addImport(record)
+    }
+
+    if record.publicVisible {
+      let module = moduleIdForPath(record.modulePath)
+      let declaration = DeclarationId(
+        module.id.packageHash,
+        module.id.moduleHash,
+        record.id,
+        0
+      )
+      let symbol = SymbolId(
+        module.id.packageHash,
+        module.id.moduleHash,
+        record.id,
+        0
+      )
+      this.exports.add(module, record.name, declaration, symbol)
+      if record.wildcardImport {
+        this.exports.addWildcard(declaration)
+      }
+      if record.importAlias != "" {
+        this.exports.addAlias(declaration)
+      }
+      if record.excludedSymbolCount > 0 {
+        this.exports.addExcept(declaration)
+      }
+    }
+  }
+
+  addModule(record: DeclarationRecord) {
+    if moduleIdForPath(record.modulePath).valid {
+      duplicateModuleCount = duplicateModuleCount + 1
+      diagnosticValues.push(
+        ModuleResolutionDiagnostic.duplicateModule(record.modulePath)
+      )
+      return
+    }
+
+    let id = match record.fileId.valid {
+      true => ModuleId(
+        record.fileId.id.packageHash,
+        record.fileId.id.moduleHash
+      )
+      false => ModuleId(1, moduleIds.count + 1)
+    }
+    let node = ModuleNode.fromRecord(id, record)
+    arena.add(node)
+    moduleNames.push(record.modulePath)
+    moduleIds.push(id)
+  }
+
+  addImport(record: DeclarationRecord) {
+    let path = ImportPath.module(record.name, record.name)
+    if record.wildcardImport {
+      path = ImportPath.star(record.name, record.name)
+    } else if record.selectedSymbol != "" {
+      path = ImportPath.selected(
+        record.name,
+        record.name,
+        record.selectedSymbol
+      )
+    } else if record.importAlias != "" {
+      path = ImportPath.aliased(
+        record.name,
+        record.name,
+        record.importAlias
+      )
+    }
+    let from = moduleIdForPath(record.modulePath)
+    let to = moduleIdForImport(record.name)
+
+    if from.valid && to.valid {
+      if path.aliasedImport && importIndex.aliasExists(path.alias) {
+        diagnosticValues.push(
+          ModuleResolutionDiagnostic.aliasConflict(
+            record.modulePath,
+            path.alias
+          )
+        )
+        return
+      }
+      let edgeKind = match record.visibility {
+        DeclarationVisibility.Exported => ModuleEdgeKind.Export
+        _ => ModuleEdgeKind.Import
+      }
+      edgeValues.push(ModuleEdge(from, to, edgeKind))
+      importIndex.add(path, to)
+    } else {
+      importIndex.addUnresolved(path)
+      diagnosticValues.push(
+        ModuleResolutionDiagnostic.unresolvedImport(
+          record.modulePath,
+          record.name
+        )
+      )
+    }
+  }
+
+  pub declarationExists(
+    modulePath: string,
+    name: string,
+    kind: DeclarationKind
+  ) -> bool {
+    let row: i64 = 0
+    while row < records.count {
+      let record = records[row]
+      if record.modulePath == modulePath &&
+         record.name == name &&
+         record.kind == kind {
+        return true
+      }
+      row = row + 1
+    }
+    return false
+  }
+
+  pub duplicateConstrained(kind: DeclarationKind) -> bool {
+    return kind == DeclarationKind.Type ||
+      kind == DeclarationKind.Role
+  }
+
+  pub moduleIdForPath(path: string) -> ModuleId {
+    let row: i64 = 0
+    while row < moduleNames.count {
+      if moduleNames[row] == path {
+        return moduleIds[row]
+      }
+      row = row + 1
+    }
+    return ModuleId()
+  }
+
+  pub moduleIdForImport(name: string) -> ModuleId {
+    let row: i64 = 0
+    while row < moduleNames.count {
+      let modulePath = moduleNames[row]
+      if modulePath == name ||
+         modulePath.startsWith("{name}/") ||
+         modulePath.startsWith("{name}::") {
+        return moduleIds[row]
+      }
+      row = row + 1
+    }
+    return ModuleId()
+  }
+
+  pub moduleAt(index: i64) -> ModuleNode {
+    return arena.moduleAt(index)
+  }
+
+  pub edgeAt(index: i64) -> ModuleEdge {
+    return edgeValues[index]
+  }
+
+  pub lookupModule(name: QualifiedName) -> Option<ModuleId> {
+    if !moduleLookupReady || !name.valid {
+      return None
+    }
+
+    if indexModuleLookupReady && sampleModuleLookupReady == false {
+      return None
+    }
+
+    if rootName.valid && name.fullHash == rootName.fullHash {
+      return Some(rootModule)
+    }
+
+    if nodeCount == 1 {
+      return Some(rootModule)
+    }
+
+    return None
+  }
+
+  pub lookupModulePath(path: string) -> Option<ModuleId> {
+    let id = moduleIdForPath(path)
+    if id.valid {
+      return Some(id)
+    }
+    return None
+  }
+
+  pub resolveImport(path: ImportPath) -> Option<ModuleId> {
+    if !importIndex.lookupReady {
+      return None
+    }
+
+    return importIndex.lookup(path)
+  }
+
+  pub resolveAlias(alias: string) -> Option<ModuleId> {
+    return importIndex.lookupAlias(alias)
+  }
+
+  pub resolveExport(module: ModuleId, name: string) -> Option<SymbolId> {
+    return this.exports.lookup(module, name)
+  }
+
+  pub diagnosticAt(index: i64) -> ModuleResolutionDiagnostic {
+    return diagnosticValues[index]
+  }
+}
+
+impl view ModuleGraph {
+  pub graphNodeCount: i64 => moduleIds.count
+
+  pub graphEdgeCount: i64 => edgeValues.count
+
+  pub lookupCount: i64 => lookup.count
+
+  pub recordCount: i64 => records.count
+
+  pub diagnosticCount: i64 => diagnosticValues.count
+
+  pub unresolvedCount: i64 => unresolvedImportCount
+
+  pub cycles: i64 => cycleCount
+
+  pub empty => graphNodeCount == 0
+
+  pub cycleFree => cycleCount == 0
+
+  pub importsResolved => importIndex.resolved && unresolvedImportCount == 0
+
+  pub declarationsUnique =>
+    duplicateModuleCount == 0 &&
+    duplicateDeclarationCount == 0
+
+  pub hasBoundaries => boundaryCount > 0 && exports.publicApiReady
+
+  pub arenaBacked: bool =>
+    arena.valid &&
+    graphNodeCount == nodeCount
+
+  pub edgeBacked: bool =>
+    edges.valid &&
+    graphEdgeCount == edgeCount &&
+    edgeValues.valid
+
+  pub lookupBacked: bool =>
+    lookup.valid &&
+    lookupCount == nodeCount
+
+  pub importBacked: bool =>
+    importIndex.valid &&
+    importIndex.count == edgeCount
+
+  pub graphBacked: bool =>
+    arenaBacked &&
+    edgeBacked &&
+    lookupBacked &&
+    importBacked
+
+  pub recordsBacked: bool =>
+    records.valid &&
+    recordCount >= graphNodeCount
+
+  pub rootReady: bool =>
+    nodeCount == 0 ||
+    rootModule.valid
+
+  pub moduleLookupReady: bool =>
+    indexModuleLookupReady ||
+    sampleModuleLookupReady
+
+  pub indexModuleLookupReady: bool =>
+    graphBacked &&
+    lookupBacked &&
+    nodeCount > 0
+
+  pub sampleModuleLookupReady: bool =>
+    graphBacked &&
+    rootReady &&
+    nodeCount == 1
+
+  pub incrementalReady =>
+    valid &&
+    graphBacked &&
+    recordsBacked &&
+    cycleFree &&
+    importsResolved &&
+    declarationsUnique &&
+    diagnosticCount == 0
+}

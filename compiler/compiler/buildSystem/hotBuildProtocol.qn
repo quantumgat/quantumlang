@@ -1,0 +1,41 @@
+pub enum HotBuildCommand {
+  Start
+  Build
+  Check
+  Shutdown
+}
+
+pub HotBuildProtocol {
+  name: string
+  version: u64
+  minClientVersion: u64
+  supportsDirtySet: bool
+  supportsChangedProductReport: bool
+  supportsMmapCapsules: bool
+}
+
+impl HotBuildProtocol {
+  pub HotBuildProtocol(
+    name: string,
+    version: u64,
+    minClientVersion: u64,
+    supportsDirtySet: bool,
+    supportsChangedProductReport: bool,
+    supportsMmapCapsules: bool
+  ) =
+    This {
+      name
+      version
+      minClientVersion
+      supportsDirtySet
+      supportsChangedProductReport
+      supportsMmapCapsules
+    }
+}
+
+impl view HotBuildProtocol {
+  pub compatible => version >= minClientVersion
+  pub supportsFastDelta => supportsDirtySet && supportsChangedProductReport
+  pub supportsHotCapsules => supportsMmapCapsules
+  pub valid => name != "" && version > 0 && compatible
+}

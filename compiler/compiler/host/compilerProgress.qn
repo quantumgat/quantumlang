@@ -1,0 +1,28 @@
+import host::compilerIntrinsics::{CompilerIntrinsics}
+
+pub CompilerProgress {
+  intrinsics: CompilerIntrinsics = CompilerIntrinsics()
+}
+
+context CompilerProgress {
+  pub advance(
+    phase: string,
+    completed: i64,
+    total: i64,
+    moduleName: string,
+    diagnosticCount: i64,
+    tokenCount: i64,
+    symbolCount: i64,
+    scopeCount: i64
+  ) -> i64 =
+    intrinsics.advanceProgress(
+      phase,
+      completed,
+      total,
+      moduleName,
+      diagnosticCount,
+      tokenCount,
+      symbolCount,
+      scopeCount
+    )
+}

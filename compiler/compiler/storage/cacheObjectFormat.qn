@@ -1,0 +1,156 @@
+pub enum CacheObjectRole {
+  ActionMapping
+  ContentProduct
+}
+
+pub CacheObjectFormat {
+  kind: CacheProductKind
+  role: CacheObjectRole
+  extension: string
+  magic: string
+  schemaVersion: u64 = 1
+  payloadRequired: bool = true
+  checksumRequired: bool = true
+  deterministic: bool = true
+}
+
+impl CacheObjectFormat {
+  pub actionIndex() =
+    This {
+      kind: CacheProductKind.ActionIndex
+      role: CacheObjectRole.ActionMapping
+      extension: ".qci"
+      magic: "QCI1"
+    }
+
+  pub metadata() =
+    This {
+      kind: CacheProductKind.Metadata
+      role: CacheObjectRole.ContentProduct
+      extension: ".qcm"
+      magic: "QCM1"
+    }
+
+  pub nativeObject() =
+    This {
+      kind: CacheProductKind.NativeObject
+      role: CacheObjectRole.ContentProduct
+      extension: ".qco"
+      magic: "QCO1"
+    }
+
+  pub nativeArchive() =
+    This {
+      kind: CacheProductKind.NativeArchive
+      role: CacheObjectRole.ContentProduct
+      extension: ".qca"
+      magic: "QCA1"
+    }
+
+  pub executable() =
+    This {
+      kind: CacheProductKind.Executable
+      role: CacheObjectRole.ContentProduct
+      extension: ".qcx"
+      magic: "QCX1"
+    }
+
+  pub diagnostic() =
+    This {
+      kind: CacheProductKind.Diagnostic
+      role: CacheObjectRole.ContentProduct
+      extension: ".qcd"
+      magic: "QCD1"
+    }
+}
+
+impl view CacheObjectFormat {
+  pub actionIndexed: bool => role == CacheObjectRole.ActionMapping
+
+  pub contentAddressed: bool => role == CacheObjectRole.ContentProduct
+
+  pub binaryContract: bool =>
+    extension != "" &&
+    magic.length() == 4 &&
+    schemaVersion > 0
+
+  pub integrityProtected: bool =>
+    checksumRequired &&
+    deterministic
+
+  pub valid: bool =>
+    binaryContract &&
+    payloadRequired &&
+    integrityProtected
+}
+
+pub CacheObjectHeader {
+  magic: string
+  schemaVersion: u64
+  flags: u64 = 0
+  payloadLength: u64
+  contentHash: string
+  checksum: string
+}
+
+impl CacheObjectHeader {
+  pub forPayload(
+    format: CacheObjectFormat,
+    payloadLength: u64,
+    contentHash: string,
+    checksum: string
+  ) =
+    This {
+      magic: format.magic
+      schemaVersion: format.schemaVersion
+      payloadLength
+      contentHash
+      checksum
+    }
+}
+
+impl view CacheObjectHeader {
+  pub hasIdentity: bool => contentHash != ""
+
+  pub hasIntegrity: bool => checksum != ""
+
+  pub valid: bool =>
+    magic.length() == 4 &&
+    schemaVersion > 0 &&
+    hasIdentity &&
+    hasIntegrity
+}
+
+pub CacheObjectContract {
+  format: CacheObjectFormat
+  header: CacheObjectHeader
+}
+
+impl CacheObjectContract {
+  pub forPayload(
+    format: CacheObjectFormat,
+    payloadLength: u64,
+    contentHash: string,
+    checksum: string
+  ) =
+    This {
+      format
+      header: CacheObjectHeader.forPayload(
+        format,
+        payloadLength,
+        contentHash,
+        checksum
+      )
+    }
+}
+
+impl view CacheObjectContract {
+  pub schemaMatches: bool =>
+    header.magic == format.magic &&
+    header.schemaVersion == format.schemaVersion
+
+  pub valid: bool =>
+    format.valid &&
+    header.valid &&
+    schemaMatches
+}

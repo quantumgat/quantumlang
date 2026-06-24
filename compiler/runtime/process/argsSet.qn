@@ -1,0 +1,38 @@
+pub Args {
+  program: string = ""
+  count: i64 = 0
+  command: CommandArgs = {}
+  options: OptionSet = {}
+  source: ProcessArgs = {}
+}
+
+impl Args {
+  pub empty() =
+    This {
+      command: CommandArgs.fromCount("", "", 0)
+      options: OptionSet.empty()
+    }
+
+  pub host(source: ProcessArgs, program: string, command: string, count: i64) =
+    This {
+      program
+      count
+      command: CommandArgs.fromCount(program, command, count)
+      options: OptionSet.empty()
+      source
+    }
+}
+
+impl view Args {
+  pub valid: bool =>
+    count >= 0 &&
+    source.valid &&
+    command.valid &&
+    options.valid
+
+  pub emptyArgs: bool => count <= 1
+  pub hasCommand: bool => command.hasCommand
+  pub decodeReady: bool => valid && source.commandDecodeReady
+  pub cursor: ArgCursor => ArgCursor(ArgSpan.all(count))
+  pub commandSpan: ArgSpan => ArgSpan.afterCommand(count)
+}

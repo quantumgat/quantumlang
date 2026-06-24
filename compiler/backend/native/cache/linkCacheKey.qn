@@ -1,0 +1,39 @@
+pub LinkCacheKey {
+  inputSetHash: string
+  executableHash: string
+  targetTriple: string
+  cacheKey: string
+  diagnosticCode: string = ""
+}
+
+impl LinkCacheKey {
+  pub LinkCacheKey(inputSetHash: string, executableHash: string, targetTriple: string, cacheKey: string) =
+    This {
+      inputSetHash
+      executableHash
+      targetTriple
+      cacheKey
+    }
+
+  pub fromLinker(inputSet: LinkInputSet, executable: Executable) =
+    This {
+      inputSetHash: inputSet.inputSetHash
+      executableHash: executable.executableHash
+      targetTriple: executable.targetTriple
+      cacheKey: "native-link-cache:{inputSet.inputSetHash}:{executable.executableHash}:{executable.targetTriple}"
+      diagnosticCode: match inputSet.valid && executable.valid {
+        true => ""
+        false => "QNATIVE0850"
+      }
+    }
+}
+
+impl view LinkCacheKey {
+  pub valid => diagnosticCode == "" &&
+    inputSetHash != "" &&
+    executableHash != "" &&
+    targetTriple != "" &&
+    cacheKey != ""
+  pub stable => valid
+  pub debugName => "link.cache.key.{targetTriple}"
+}

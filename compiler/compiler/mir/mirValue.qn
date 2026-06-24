@@ -1,0 +1,23 @@
+pub MirValue {
+  id: i64
+  typeName: string
+  local: bool
+  diagnosticCode: string = ""
+}
+
+impl MirValue {
+  pub MirValue(id: i64, typeName: string, local: bool) =
+    This {
+      id
+      typeName
+      local
+    }
+}
+
+impl view MirValue {
+  pub valid => diagnosticCode == "" && validShape
+  pub isLocal => local
+  pub validShape => id >= 0 && typeName != ""
+  pub typed => typeName != ""
+  pub temporary => local == false
+}

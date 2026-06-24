@@ -1,0 +1,35 @@
+pub BranchSelect {
+  conditionKind: string
+  trueTarget: string
+  falseTarget: string = ""
+  selectedOpcode: string
+  patchRequired: bool = true
+  diagnosticCode: string = ""
+}
+
+impl BranchSelect {
+  pub BranchSelect(conditionKind: string, trueTarget: string, falseTarget: string, selectedOpcode: string) =
+    This {
+      conditionKind
+      trueTarget
+      falseTarget
+      selectedOpcode
+    }
+
+  pub unconditional(target: string) =
+    This("always", target, "", "jmp")
+
+  pub conditional(conditionKind: string, trueTarget: string, falseTarget: string) =
+    This(conditionKind, trueTarget, falseTarget, "branch")
+}
+
+impl view BranchSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    conditionKind != "" &&
+    trueTarget != "" &&
+    selectedOpcode != ""
+
+  pub conditionalBranch: bool => valid && falseTarget != ""
+  pub debugName: string => "isel.branch.{conditionKind}.{trueTarget}"
+}

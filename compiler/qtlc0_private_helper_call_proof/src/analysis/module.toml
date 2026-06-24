@@ -1,0 +1,9 @@
+[module]
+name = "analysis"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/qtlc0_private_helper_call_proof/src/analysis"
+role = "private-helper-proof"
+
+[dependencies]
+modules = []

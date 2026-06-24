@@ -1,0 +1,23 @@
+pub QuantumType {
+  name: string
+  linear: bool
+  resourceManaged: bool
+  classicalCarrier: string
+  valid: bool
+}
+
+impl QuantumType {
+  pub QuantumType(name: string, linear: bool, resourceManaged: bool, classicalCarrier: string) =
+    This {
+      name
+      linear
+      resourceManaged
+      classicalCarrier
+      valid: name != ""
+    }
+}
+
+impl view QuantumType {
+  pub quantumResource => linear && resourceManaged
+  pub hasClassicalCarrier => classicalCarrier != ""
+}

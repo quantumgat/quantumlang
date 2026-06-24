@@ -1,0 +1,14 @@
+pub enum DeclarationKind {
+  Module
+  Type
+  Enum
+  Impl
+  View
+  Role
+  Function
+  Import
+  Context
+  Extract
+  Extend
+  Unknown
+}

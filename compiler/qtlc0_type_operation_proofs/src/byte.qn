@@ -1,0 +1,8 @@
+pub proof_byte() -> i64 {
+  let a: byte = 65
+  let b: byte = 1
+  let c: byte = a + b
+  if c != 66 { return 11 }
+  println("byte ok: {c}")
+  return 0
+}

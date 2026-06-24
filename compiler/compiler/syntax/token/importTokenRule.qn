@@ -1,0 +1,45 @@
+pub ImportTokenRule {
+  formKind: ImportFormKind
+  localName: string
+  diagnosticCode: string
+  valid: bool
+}
+
+impl ImportTokenRule {
+  pub ImportTokenRule(formKind: ImportFormKind, localName: string, diagnosticCode: string, valid: bool) =
+    This { formKind, localName, diagnosticCode, valid }
+
+  pub fromImport(
+    pathSeparator: string,
+    selectedSymbols: bool,
+    aliasName: string,
+    lastSegment: string,
+    usedInCall: bool
+  ) -> This {
+    if usedInCall && pathSeparator == "::" {
+      return This(ImportFormKind.CallPathRejected, "", "QTIMPORT0002", false)
+    }
+    if pathSeparator == "." {
+      return This(ImportFormKind.DotPathRejected, "", "QTIMPORT0001", false)
+    }
+    if pathSeparator != "::" {
+      return This(ImportFormKind.Unknown, "", "QTIMPORT9999", false)
+    }
+    if selectedSymbols {
+      return This(ImportFormKind.SelectedSymbols, "", "", true)
+    }
+    if aliasName != "" {
+      return This(ImportFormKind.ModuleAlias, aliasName, "", true)
+    }
+    return This(ImportFormKind.ModuleDefaultName, lastSegment, "", lastSegment != "")
+  }
+}
+
+impl view ImportTokenRule {
+  pub rejected => valid == false
+  pub selectedSymbols => formKind == ImportFormKind.SelectedSymbols
+  pub moduleAlias => formKind == ImportFormKind.ModuleAlias
+  pub moduleDefaultName => formKind == ImportFormKind.ModuleDefaultName
+  pub hasLocalName => localName != ""
+  pub diagnosticClean => diagnosticCode == ""
+}

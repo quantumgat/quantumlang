@@ -1,0 +1,81 @@
+pub DeepLeaf<T> {
+  value: T
+  revision: i64 = 1
+}
+
+pub DeepBranch<T> {
+  leaf: DeepLeaf<T>
+  enabled: bool = true
+}
+
+pub DeepRoot<T> {
+  branch: DeepBranch<T>
+  labelText: string
+}
+
+pub DeepEnvelope<T> {
+  root: DeepRoot<T>
+  generation: i64 = 1
+}
+
+impl DeepLeaf<T> {
+  pub withValue(value: T) =
+    this { value }
+}
+
+impl DeepBranch<T> {
+  pub withLeaf(leaf: DeepLeaf<T>) =
+    this { leaf }
+}
+
+impl DeepRoot<T> {
+  pub withBranch(branch: DeepBranch<T>) =
+    this { branch }
+}
+
+impl DeepEnvelope<T> {
+  pub withRoot(root: DeepRoot<T>) =
+    this { root }
+}
+
+impl view DeepLeaf<T> {
+  pub current => value
+  pub stable: bool => revision > 0
+}
+
+impl view DeepBranch<T> {
+  pub current => leaf.current
+  pub ready: bool => enabled && leaf.stable
+}
+
+impl view DeepRoot<T> {
+  pub current => branch.current
+  pub ready: bool => branch.ready
+  pub label: string => labelText
+}
+
+impl view DeepEnvelope<T> {
+  pub current => root.current
+  pub ready: bool => root.ready
+  pub label: string => root.label
+}
+
+context DeepEnvelope<i64> {
+  pub contextValue() -> i64 {
+    current
+  }
+
+  pub contextReady() -> bool {
+    ready
+  }
+}
+
+extract DeepEnvelope<i64> {
+  pub extractedValue() -> i64 {
+    current
+  }
+
+  pub extractedLabel() -> string {
+    label
+  }
+}

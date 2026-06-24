@@ -1,0 +1,74 @@
+pub LinkCommand {
+  toolName: string
+  objectPath: string
+  runtimeObjectPath: string = ""
+  outputPath: string
+  targetTriple: string
+  objectFormat: string
+  commandLine: string
+  commandHash: string
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl LinkCommand {
+  pub LinkCommand(
+    toolName: string,
+    objectPath: string,
+    runtimeObjectPath: string,
+    outputPath: string,
+    targetTriple: string,
+    objectFormat: string,
+    commandLine: string,
+    commandHash: string
+  ) =
+    This {
+      toolName
+      objectPath
+      runtimeObjectPath
+      outputPath
+      targetTriple
+      objectFormat
+      commandLine
+      commandHash
+    }
+
+  pub fromPayloadPlan(
+    plan: ExecutablePayloadPlan,
+    linker: SystemLinker
+  ) =
+    This {
+      toolName: linker.toolName
+      objectPath: plan.objectPath
+      runtimeObjectPath: plan.runtimeObjectPath
+      outputPath: plan.outputPath
+      targetTriple: linker.targetTriple
+      objectFormat: linker.objectFormat
+      commandLine: "{linker.toolName} -Wl,-z,noexecstack {plan.objectPath} {plan.runtimeObjectPath} -o {plan.outputPath}"
+      commandHash: "link-command:{plan.planHash}:{linker.linkerHash}"
+      deterministic: plan.valid && linker.deterministic
+      diagnosticCode: match plan.valid && linker.valid {
+        true => ""
+        false => "QNATIVE0871"
+      }
+    }
+}
+
+impl view LinkCommand {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    toolName != "" &&
+    objectPath != "" &&
+    runtimeObjectPath != "" &&
+    outputPath != "" &&
+    targetTriple != "" &&
+    objectFormat != "" &&
+    commandLine != "" &&
+    commandHash != "" &&
+    deterministic
+
+  pub executableMaterializer: bool => valid
+
+  pub debugName: string =>
+    "link.command.{toolName}.{objectFormat}.{outputPath}"
+}

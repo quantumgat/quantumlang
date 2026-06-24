@@ -1,0 +1,27 @@
+pub QdbProductRow {
+  queryRow: u64 = 0
+  inputHash: Fingerprint = {}
+  outputHash: Fingerprint = {}
+  contentHash: Fingerprint = {}
+  metadataOffset: u64 = 0
+  metadataLength: u64 = 0
+  flags: u64 = 0
+}
+
+impl view QdbProductRow {
+  pub cacheable: bool =>
+    inputHash.nonzero ||
+    outputHash.nonzero
+
+  pub contentAddressed: bool => contentHash.nonzero
+
+  pub metadataBounded: bool =>
+    metadataLength == 0 ||
+    metadataOffset > 0
+
+  pub valid: bool =>
+    queryRow > 0 &&
+    cacheable &&
+    contentAddressed &&
+    metadataBounded
+}

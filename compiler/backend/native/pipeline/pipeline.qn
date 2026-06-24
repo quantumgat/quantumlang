@@ -1,0 +1,77 @@
+pub Pipeline {
+  plan: PipelinePlan
+  materialize: Materialize
+  result: PipelineResult
+  diagnosticCode: string = ""
+}
+
+impl Pipeline {
+  pub Pipeline(plan: PipelinePlan, materialize: Materialize, result: PipelineResult) =
+    This {
+      plan
+      materialize
+      result
+    }
+
+  pub fromPlan(plan: PipelinePlan) =
+    This {
+      plan
+      materialize: Materialize.fromPlan(plan)
+      result: PipelineResult.fromMaterialize(Materialize.fromPlan(plan), plan.linkStage)
+    }
+
+  pub fromStages(objectStage: ObjectStage, linkStage: LinkStage) -> This {
+    let objectBytes = ObjectBytes(
+      objectStage.objectSetHash,
+      objectStage.unitCount * 32,
+      objectStage.unitCount * 24,
+      0,
+      objectStage.unitCount * 16,
+      objectStage.unitCount * 72 + 64,
+      "object-bytes:{objectStage.objectSetHash}:{objectStage.targetTriple}:{objectStage.unitCount}"
+    )
+    let objectKey = ObjectCacheKey.fromObjectBytes(
+      objectStage.unitKeyAt(0),
+      objectBytes,
+      objectStage.objects.objectFormat
+    )
+    let objectEntry = ObjectCacheEntry.fromBytes(
+      objectKey,
+      objectStage.outputPath,
+      objectBytes
+    )
+    let objectReplay = ObjectCacheReplay.miss(
+      objectEntry,
+      "qtlc1-native-object-materialization-required"
+    )
+    let target = TargetIdentity(
+      linkStage.targetTriple,
+      linkStage.profile,
+      objectStage.objects.objectFormat,
+      objectStage.objects.abi
+    )
+    let executable = Executable.fromLinkResult(
+      linkStage.result,
+      target,
+      objectBytes.byteCount + 4096
+    )
+    let linkKey = LinkCacheKey.fromLinker(linkStage.inputSet, executable)
+    let linkEntry = LinkCacheEntry.fromExecutable(linkKey, executable)
+    let linkReplay = LinkCacheReplay.miss(
+      linkEntry,
+      "qtlc1-native-link-materialization-required"
+    )
+    let plan = PipelinePlan.fromStages(objectStage, linkStage, objectReplay, linkReplay)
+    return This.fromPlan(plan)
+  }
+}
+
+impl view Pipeline {
+  pub valid: bool => diagnosticCode == "" &&
+    plan.valid &&
+    materialize.valid &&
+    result.valid
+  pub bridgeReady: bool => valid && materialize.ready && result.runnable
+  pub pipelineHash: string => "pipeline:{plan.planHash}:{materialize.materializeHash}:{result.resultHash}"
+  pub debugName: string => "native.pipeline.{bridgeReady}"
+}

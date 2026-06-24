@@ -1,0 +1,58 @@
+pub QtlcdState {
+  running: bool
+  protocolVersion: u64
+  workspaceGraphHot: bool
+  sourceTableHot: bool
+  qcapHandlesHot: bool
+  qidxHandlesHot: bool
+  syntaxCacheHot: bool
+  symbolIndexHot: bool
+  queryDatabaseHot: bool
+  typeCacheHot: bool
+  diagnosticCacheHot: bool
+  objectLinkCacheHot: bool
+  activeRequestCount: usize
+}
+
+impl QtlcdState {
+  pub QtlcdState(
+    running: bool,
+    protocolVersion: u64,
+    workspaceGraphHot: bool,
+    sourceTableHot: bool,
+    qcapHandlesHot: bool,
+    qidxHandlesHot: bool,
+    syntaxCacheHot: bool,
+    symbolIndexHot: bool,
+    queryDatabaseHot: bool,
+    typeCacheHot: bool,
+    diagnosticCacheHot: bool,
+    objectLinkCacheHot: bool,
+    activeRequestCount: usize
+  ) =
+    This {
+      running
+      protocolVersion
+      workspaceGraphHot
+      sourceTableHot
+      qcapHandlesHot
+      qidxHandlesHot
+      syntaxCacheHot
+      symbolIndexHot
+      queryDatabaseHot
+      typeCacheHot
+      diagnosticCacheHot
+      objectLinkCacheHot
+      activeRequestCount
+    }
+}
+
+impl view QtlcdState {
+  pub capsuleStateHot => qcapHandlesHot && qidxHandlesHot
+  pub frontendStateHot => workspaceGraphHot && sourceTableHot && syntaxCacheHot && symbolIndexHot
+  pub semanticStateHot => queryDatabaseHot && typeCacheHot && diagnosticCacheHot
+  pub backendStateHot => objectLinkCacheHot
+  pub idle => activeRequestCount == 0
+  pub readyForHotBuild => running && frontendStateHot && capsuleStateHot && semanticStateHot && backendStateHot
+  pub valid => protocolVersion > 0
+}

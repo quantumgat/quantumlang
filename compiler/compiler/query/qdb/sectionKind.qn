@@ -1,0 +1,9 @@
+pub enum QdbSectionKind {
+  QueryRows
+  ProductRows
+  DependencyRows
+  JournalRows
+  StringBytes
+  Diagnostics
+  Unknown
+}

@@ -1,0 +1,26 @@
+pub Aarch64CallSelect {
+  targetSymbol: string
+  argumentCount: i64
+  selectedOpcode: string = "bl"
+  relocationKind: string = "branch26"
+  diagnosticCode: string = ""
+}
+
+impl Aarch64CallSelect {
+  pub Aarch64CallSelect(targetSymbol: string, argumentCount: i64) =
+    This {
+      targetSymbol
+      argumentCount
+    }
+}
+
+impl view Aarch64CallSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    targetSymbol != "" &&
+    argumentCount >= 0 &&
+    selectedOpcode != "" &&
+    relocationKind != ""
+
+  pub debugName: string => "isel.aarch64.call.{targetSymbol}"
+}

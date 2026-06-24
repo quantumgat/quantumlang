@@ -1,0 +1,106 @@
+import controlFlow::{*}
+pub ParallelDeferredProof {
+  parallelDeferredInQtlc1: bool
+  sharedMutableCaptureRejected: bool
+  deterministicCaptureTrackedForLater: bool
+  parForContractValid: bool
+  shardForContractValid: bool
+  stableIdsTracked: bool
+  reductionPolicyTracked: bool
+  workerRegionValid: bool
+  atomicSharedStateValid: bool
+  invalidAtomicOrderRejected: bool
+  valid: bool
+}
+
+pub parallelDeferredProof() -> ParallelDeferredProof {
+  let deferred = ParallelRegionFact(1, true, false, 44)
+  let badCapture = ParallelRegionFact(2, false, true, 45)
+  let parLoop = ParallelLoopContract.parFor(10, 11, 12, 13)
+  let shardLoop = ParallelLoopContract
+    .shardFor(20, 21, 22, 23, 8)
+    .withReduction(ParallelReductionKind.Ordered)
+  let badLoop = parLoop.withCapture(ParallelCaptureKind.SharedMutable)
+  let workers = ParallelWorkerContract.workers(30, 8, 31, 32)
+  let atomicCounter = AtomicSharedState.scalar(
+    "u64",
+    AtomicSharedOperation.Add
+  )
+  let invalidAtomicOrder = AtomicSharedState.ordered(
+    "u64",
+    AtomicSharedOperation.Load,
+    AtomicMemoryOrder.Release
+  )
+
+  let parallelDeferredInQtlc1 = ParallelRegionFact.qtlc1Deferred() &&
+    deferred.qtlc1Deferred &&
+    deferred.diagnosticCode == "QTCFLOW0005"
+
+  let sharedMutableCaptureRejected = badCapture.capturesSharedMutable &&
+    badCapture.qtlc1Deferred &&
+    badCapture.diagnosticCode == "QTCFLOW0005"
+
+  let deterministicCaptureTrackedForLater = deferred.deterministic &&
+    deferred.partitionFingerprint == 44
+
+  let parForContractValid = parLoop.valid &&
+    parLoop.kind == ParallelLoopKind.ParFor &&
+    parLoop.implicitJoin &&
+    parLoop.cancellable &&
+    parLoop.backpressured
+
+  let shardForContractValid = shardLoop.valid &&
+    shardLoop.kind == ParallelLoopKind.ShardFor &&
+    shardLoop.captureKind == ParallelCaptureKind.ShardLocal &&
+    shardLoop.partitionCount == 8
+
+  let stableIdsTracked = parLoop.stableIds &&
+    parLoop.bodyId == 11 &&
+    parLoop.partitionId == 12 &&
+    parLoop.joinId == 13
+
+  let reductionPolicyTracked =
+    shardLoop.reductionKind == ParallelReductionKind.Ordered &&
+    shardLoop.deterministic &&
+    badLoop.captureValid == false &&
+    badLoop.diagnosticCode == "QTCFLOW0006"
+
+  let workerRegionValid =
+    workers.valid &&
+    workers.workerCount == 8 &&
+    workers.sequentialBodyLoops
+
+  let atomicSharedStateValid =
+    atomicCounter.valid &&
+    atomicCounter.defaultSafeOrder &&
+    atomicCounter.intentionalSharedMutation
+
+  let invalidAtomicOrderRejected =
+    invalidAtomicOrder.valid == false &&
+    invalidAtomicOrder.diagnosticCode == "QTCFLOW0008"
+
+  let valid = parallelDeferredInQtlc1 &&
+    sharedMutableCaptureRejected &&
+    deterministicCaptureTrackedForLater &&
+    parForContractValid &&
+    shardForContractValid &&
+    stableIdsTracked &&
+    reductionPolicyTracked &&
+    workerRegionValid &&
+    atomicSharedStateValid &&
+    invalidAtomicOrderRejected
+
+  return ParallelDeferredProof {
+    parallelDeferredInQtlc1
+    sharedMutableCaptureRejected
+    deterministicCaptureTrackedForLater
+    parForContractValid
+    shardForContractValid
+    stableIdsTracked
+    reductionPolicyTracked
+    workerRegionValid
+    atomicSharedStateValid
+    invalidAtomicOrderRejected
+    valid
+  }
+}

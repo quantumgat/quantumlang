@@ -1,0 +1,40 @@
+pub RuntimeStartupObject {
+  startup: RuntimeStartup
+  init: RuntimeInit
+  exit: RuntimeExit
+  objectPath: string
+}
+
+impl RuntimeStartupObject {
+  pub RuntimeStartupObject(
+    startup: RuntimeStartup,
+    init: RuntimeInit,
+    exit: RuntimeExit,
+    objectPath: string
+  ) =
+    This {
+      startup
+      init
+      exit
+      objectPath
+    }
+
+  pub core(objectPath: string) =
+    This {
+      startup: RuntimeStartup.entry()
+      init: RuntimeInit.core()
+      exit: RuntimeExit.core()
+      objectPath
+    }
+}
+
+impl view RuntimeStartupObject {
+  pub valid: bool =>
+    startup.valid &&
+    init.valid &&
+    exit.valid &&
+    objectPath != ""
+
+  pub objectHash: string =>
+    "runtime.startup.object:{startup.contractHash}:{init.initHash}:{exit.exitHash}:{objectPath}"
+}

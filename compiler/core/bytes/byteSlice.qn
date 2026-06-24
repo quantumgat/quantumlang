@@ -1,0 +1,53 @@
+pub extend ByteView {
+  pub checkedOffset(offset: usize) -> bool {
+    return offset <= length
+  }
+
+  pub checkedRange(start: usize, count: usize) -> bool {
+    return start <= length && count <= length - start
+  }
+
+  pub clampRange(start: usize, count: usize) -> ByteView {
+    if start >= length {
+      return ByteView(value, end, 0)
+    }
+    if count > length - start {
+      return ByteView(value, offset + start, length - start)
+    }
+    return ByteView(value, offset + start, count)
+  }
+
+  pub byteAt(index: usize) -> Result<byte, ByteError>
+
+  pub uncheckedByteAt(index: usize) -> byte
+
+  pub first() -> Result<byte, ByteError>
+
+  pub last() -> Result<byte, ByteError>
+
+  pub chunks(size: usize) -> ByteCursor
+
+  pub windows(size: usize) -> ByteCursor
+}
+
+pub extend ByteMutView {
+  pub checkedOffset(offset: usize) -> bool {
+    return offset <= length
+  }
+
+  pub checkedRange(start: usize, count: usize) -> bool {
+    return start <= length && count <= length - start
+  }
+
+  pub set(index: usize, value: byte) -> Result<void, ByteError>
+
+  pub fill(value: byte) -> Result<void, ByteError>
+
+  pub copyFrom(source: ByteView) -> Result<void, ByteError>
+
+  pub moveWithin(from: usize, to: usize, count: usize) -> Result<void, ByteError>
+
+  pub swap(left: usize, right: usize) -> Result<void, ByteError>
+
+  pub zeroize() -> Result<void, ByteError>
+}

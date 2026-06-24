@@ -1,0 +1,212 @@
+import core::{Vec}
+import core::text::{*}
+import declaration::{DeclarationRecord}
+import frontend::{FrontendProduct}
+
+pub OwnershipAuthorityTable {
+  rowCount: i64 = 0
+  diagnosticCount: i64 = 0
+  ownerCount: i64 = 0
+  uniqueOwnerCount: i64 = 0
+  sharedOwnerCount: i64 = 0
+  weakViewCount: i64 = 0
+  pinnedOwnerCount: i64 = 0
+  arenaRegionCount: i64 = 0
+  globalOwnerCount: i64 = 0
+  permanentOwnerCount: i64 = 0
+  externalHandleCount: i64 = 0
+  moveOnlyOwnerCount: i64 = 0
+  rawViewCount: i64 = 0
+  callableBoundaryCount: i64 = 0
+  backendAuthorityCount: i64 = 0
+  rows: Vec<OwnershipAuthorityRow> = []
+  diagnostics: Vec<OwnershipRuleDiagnosticRow> = []
+  nameLookup: TypeNameLookupIndex = {}
+  deterministic: bool = true
+}
+
+impl OwnershipAuthorityTable {
+  pub forFrontend(frontend: FrontendProduct) -> This {
+    return This.fromRecords(
+      frontend.declarations.records.recordValues,
+      frontend.valid
+    )
+  }
+
+  pub fromRecords(records: Vec<DeclarationRecord>, recordsValid: bool) -> This {
+    let table = This {
+      nameLookup: TypeNameLookupIndex.withCapacity(records.count as usize)
+      deterministic: recordsValid
+    }
+    let index: i64 = 0
+    while index < records.count {
+      table.addRecord(records[index])
+      index = index + 1
+    }
+    return table
+  }
+
+  addRecord(record: DeclarationRecord) {
+    let row = OwnershipAuthorityRow.fromRecord(rows.count, record)
+    if row.authorityKind == Unknown {
+      return
+    }
+    row.diagnosticStart = diagnostics.count
+    addDiagnosticsForRow(row)
+    row.diagnosticCount = diagnostics.count - row.diagnosticStart
+    let rowIndex = rows.count as usize
+    rows.push(row)
+    nameLookup.add("", row.name, rowIndex)
+    rowCount = rows.count
+    if row.ownsStorage {
+      ownerCount = ownerCount + 1
+    }
+    match row.authorityKind {
+      UniqueOwner => ++uniqueOwnerCount
+      SharedOwner => ++sharedOwnerCount
+      WeakView => ++weakViewCount
+      PinnedOwner => ++pinnedOwnerCount
+      ArenaRegion => ++arenaRegionCount
+      GlobalOwner => ++globalOwnerCount
+      PermanentOwner => ++permanentOwnerCount
+      ExternalHandle => ++externalHandleCount
+      _ => {}
+    }
+    if row.moveOnly {
+      moveOnlyOwnerCount = moveOnlyOwnerCount + 1
+    }
+    if row.authorityKind == RawView {
+      rawViewCount = rawViewCount + 1
+    }
+    if row.authorityKind == CallableBoundary {
+      callableBoundaryCount = callableBoundaryCount + 1
+    }
+    if row.backendAuthorityRequired {
+      backendAuthorityCount = backendAuthorityCount + 1
+    }
+  }
+
+  addDiagnosticsForRow(row: OwnershipAuthorityRow) {
+    if row.authorityKind == WeakView && row.ownsStorage {
+      diagnostics.push(OwnershipRuleDiagnosticRow(
+        diagnostics.count,
+        "QTOWN0001",
+        row.key,
+        "weak ownership row must not own storage"
+      ))
+    }
+    if row.authorityKind == CallableBoundary && row.canEscapeScope {
+      diagnostics.push(OwnershipRuleDiagnosticRow(
+        diagnostics.count,
+        "QTOWN0002",
+        row.key,
+        "callable boundary must not grant scope escape by default"
+      ))
+    }
+    diagnosticCount = diagnostics.count
+  }
+}
+
+impl view OwnershipAuthorityTable {
+  pub typeNameMatchesOwner(typeName: string, ownerName: string) -> bool {
+    if typeName == ownerName {
+      return true
+    }
+    let ownerLength = ownerName.byteLength() as i64
+    let typeLength = typeName.byteLength() as i64
+    if typeLength <= ownerLength + 2 {
+      return false
+    }
+    if typeName.uncheckedByteAt(ownerLength) != 60 {
+      return false
+    }
+    if typeName.uncheckedByteAt(typeLength - 1) != 62 {
+      return false
+    }
+    let index: i64 = 0
+    while index < ownerLength {
+      if typeName.uncheckedByteAt(index) != ownerName.uncheckedByteAt(index) {
+        return false
+      }
+      index = index + 1
+    }
+    return true
+  }
+
+  pub rowForName(name: string) -> OwnershipAuthorityRow {
+    match nameLookup.rowFor(name) {
+      Some(row) => return rows[row]
+      None => {}
+    }
+    return OwnershipAuthorityRow()
+  }
+
+  pub rowForTypeName(typeName: string) -> OwnershipAuthorityRow {
+    let row = rowForName(typeName)
+    if row.valid {
+      return row
+    }
+    let baseName = this.ownerBaseName(typeName)
+    if baseName != typeName {
+      return rowForName(baseName)
+    }
+    return OwnershipAuthorityRow()
+  }
+
+  pub ownerBaseName(typeName: string) -> string {
+    let index: i64 = 0
+    while index < typeName.byteLength() as i64 {
+      if typeName.uncheckedByteAt(index) == 60 {
+        return typeName.slice(0, index).toString()
+      }
+      index = index + 1
+    }
+    return typeName
+  }
+
+  pub hasRows => rowCount > 0
+
+  pub hasOwners => ownerCount > 0
+
+  pub smartOwnerCount =>
+    uniqueOwnerCount +
+    sharedOwnerCount +
+    pinnedOwnerCount +
+    arenaRegionCount +
+    globalOwnerCount +
+    permanentOwnerCount +
+    externalHandleCount
+
+  pub backendAuthorityReady => backendAuthorityCount == rowCount
+
+  pub rowsOwned =>
+    rows.valid &&
+    diagnostics.valid &&
+    nameLookup.valid &&
+    rows.count == rowCount &&
+    diagnostics.count == diagnosticCount
+
+  pub clean => diagnosticCount == 0
+
+  pub firstDiagnosticMessage: string => match diagnostics.count > 0 {
+    true => diagnostics[0].message
+    false => ""
+  }
+
+  pub countsConsistent =>
+    rowCount >= ownerCount &&
+    rowCount >= smartOwnerCount &&
+    rowCount >= weakViewCount &&
+    ownerCount == smartOwnerCount &&
+    moveOnlyOwnerCount == uniqueOwnerCount + pinnedOwnerCount + arenaRegionCount + externalHandleCount &&
+    rowCount >= rawViewCount &&
+    rowCount >= callableBoundaryCount &&
+    rowCount == backendAuthorityCount
+
+  pub valid =>
+    deterministic &&
+    rowsOwned &&
+    clean &&
+    countsConsistent &&
+    backendAuthorityReady
+}

@@ -1,0 +1,32 @@
+pub enum AstExprKind {
+  Literal
+  Name
+  Call
+  Access
+  Binary
+  Record
+  Vec
+  Map
+  ThisValue
+  ThisUpdate
+  Unknown
+}
+
+pub AstExpr {
+  id: i64
+  node: AstNode
+  kind: AstExprKind
+}
+
+impl AstExpr {
+  pub AstExpr(id: i64, kind: AstExprKind, node: AstNode) =
+    This { id, node, kind }
+}
+
+impl view AstExpr {
+  pub valid => id > 0 && node.valid && kind != AstExprKind.Unknown
+  pub callable => kind == AstExprKind.Call
+  pub access => kind == AstExprKind.Access
+  pub literal => kind == AstExprKind.Literal
+  pub aggregateLiteral => kind == AstExprKind.Record || kind == AstExprKind.Vec || kind == AstExprKind.Map
+}

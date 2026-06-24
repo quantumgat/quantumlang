@@ -1,0 +1,42 @@
+pub Manifest {
+  packageName: string
+  importRoot: string
+  version: string = "0.1.0"
+  edition: string = "2026"
+  sourceRoot: string = "."
+  appMain: string = "main.qn"
+  valid: bool = true
+}
+
+impl Manifest {
+  pub Manifest(
+    packageName: string,
+    importRoot: string
+  ) =
+    This { packageName, importRoot }
+
+  pub Manifest(
+    packageName: string,
+    version: string,
+    edition: string,
+    importRoot: string,
+    sourceRoot: string,
+    appMain: string
+  ) =
+    This { packageName, version, edition, importRoot, sourceRoot, appMain }
+
+  pub compiler() =
+    This("qtlc1", "qtlc1")
+}
+
+impl view Manifest {
+  pub appPackage => appMain != ""
+
+  pub libraryPackage => importRoot != ""
+
+  pub hasSourceRoot => sourceRoot != ""
+
+  pub quantum2026 => edition == "2026"
+
+  pub buildable => valid && packageName != "" && hasSourceRoot
+}

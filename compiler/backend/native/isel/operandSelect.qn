@@ -1,0 +1,39 @@
+pub OperandSelect {
+  sourceKind: string
+  selectedKind: string
+  widthBits: i64
+  registerRequired: bool = false
+  diagnosticCode: string = ""
+}
+
+impl OperandSelect {
+  pub OperandSelect(sourceKind: string, selectedKind: string, widthBits: i64) =
+    This {
+      sourceKind
+      selectedKind
+      widthBits
+    }
+
+  pub fromOperand(operand: Operand) =
+    This {
+      sourceKind: operand.kind
+      selectedKind: operand.kind
+      widthBits: operand.widthBits
+      registerRequired: operand.register
+      diagnosticCode: match operand.valid {
+        true => ""
+        false => "QNATIVE0304"
+      }
+    }
+}
+
+impl view OperandSelect {
+  pub valid: bool =>
+    diagnosticCode == "" &&
+    sourceKind != "" &&
+    selectedKind != "" &&
+    widthBits > 0
+
+  pub keepsShape: bool => valid && sourceKind == selectedKind
+  pub debugName: string => "isel.operand.{sourceKind}.{selectedKind}.{widthBits}"
+}

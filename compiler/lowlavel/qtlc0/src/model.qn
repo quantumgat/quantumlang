@@ -1,0 +1,67 @@
+pub OwnerBox {
+  id: i64
+  value: i64
+}
+
+pub OwnerView {
+  value: i64
+}
+
+pub OwnerTable {
+  boxValue: OwnerBox
+  borrowedValue: i64
+  movedValue: i64
+  pointerValue: i64
+  mutableValue: i64
+  valid: bool
+}
+
+pub RawOwnerPtr {
+  address: i64 = 0
+  valid: bool = false
+}
+
+impl OwnerBox {
+  pub OwnerBox(id: i64, value: i64) =
+    This { id, value }
+
+  pub sample() =
+    This(7, 42)
+
+  pub readValue() =
+    value
+
+  pub withValue(next: i64) -> This =
+    this { value: next }
+}
+
+impl OwnerView {
+  pub OwnerView(value: i64) =
+    This { value }
+}
+
+impl OwnerTable {
+  pub OwnerTable(
+    boxValue: OwnerBox,
+    borrowedValue: i64,
+    movedValue: i64,
+    pointerValue: i64,
+    mutableValue: i64
+  ) =
+    This {
+      boxValue
+      borrowedValue
+      movedValue
+      pointerValue
+      mutableValue
+      valid: borrowedValue == boxValue.value &&
+             movedValue == boxValue.value &&
+             pointerValue == boxValue.value &&
+             mutableValue > boxValue.value
+    }
+}
+
+impl RawOwnerPtr {
+  pub RawOwnerPtr(address: i64) =
+    This { address: address, valid: true }
+}

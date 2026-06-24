@@ -1,0 +1,79 @@
+pub Once<T> {
+  value: T
+  initialized: bool = false
+  generation: u64 = 0
+}
+
+impl Once<T> {
+  pub Once(value: T) =
+    This {
+      value
+      initialized: true
+    }
+
+  pub get() -> T {
+    return value
+  }
+
+  pub set(value: T) -> This {
+    if initialized {
+      return this
+    }
+    return this {
+      value
+      initialized: true
+      generation: generation + 1
+    }
+  }
+
+  pub init(value: T) -> This {
+    return set(value)
+  }
+
+  pub reset(value: T) -> This {
+    return this {
+      value
+      initialized: true
+      generation: generation + 1
+    }
+  }
+
+  pub clear() -> This {
+    return this {
+      initialized: false
+      generation: generation + 1
+    }
+  }
+}
+
+impl view Once<T> {
+  pub ready => initialized
+
+  pub live => initialized
+
+  pub empty => initialized == false
+
+  pub readable => initialized
+
+  pub writable => initialized == false
+
+  pub initializedOnce => initialized
+
+  pub pending => initialized == false
+
+  pub stable => initialized
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return live && generation == currentGeneration
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub expired(currentGeneration: u64) -> bool {
+    return stale(currentGeneration)
+  }
+
+  pub valid => initialized || initialized == false
+}

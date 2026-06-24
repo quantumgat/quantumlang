@@ -1,0 +1,17 @@
+import core::{TypeId}
+
+pub FieldLayout {
+  name: string
+  typeId: TypeId
+  offset: u64
+  size: u64
+  alignment: u64
+}
+
+impl view FieldLayout {
+  pub valid: bool =>
+    name != "" &&
+    typeId.id.valid &&
+    alignment > 0 &&
+    offset % alignment == 0
+}

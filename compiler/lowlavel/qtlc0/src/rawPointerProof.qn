@@ -1,0 +1,44 @@
+import model::{OwnerBox, RawOwnerPtr}
+
+pub referenceAddressOf(box: const &OwnerBox) -> i64 {
+  return box.id
+}
+
+pub rawAddressOf(box: OwnerBox) -> RawOwnerPtr {
+  // Locked syntax:
+  //   let pointer: const *OwnerBox = const *box
+  //
+  // qtlc0 must lower this to an unsafe/raw address fact. Safe code must not
+  // infer raw address behavior from normal `const &box`.
+  RawOwnerPtr(box.id)
+}
+
+pub pointerAddressOf(ptr: RawOwnerPtr) -> i64 {
+  return ptr.address
+}
+
+pub dereferenceRawPointer(ptr: RawOwnerPtr) -> i64 {
+  // Public code uses pointer.valid plus direct fields instead of raw
+  // dereference.
+  let alive = ptr.valid
+  return 42
+}
+
+pub rawReferenceAddressProof() -> i64 {
+  let box = OwnerBox.sample()
+  referenceAddressOf(const &box)
+}
+
+pub rawPointerAddressProof() -> i64 {
+  let box = OwnerBox.sample()
+  let ptr = rawAddressOf(box)
+  pointerAddressOf(ptr)
+}
+
+pub rawPointerProof() -> bool {
+  let box = OwnerBox.sample()
+  let ptr = rawAddressOf(box)
+
+  referenceAddressOf(const &box) == pointerAddressOf(ptr) &&
+    dereferenceRawPointer(ptr) == box.value
+}

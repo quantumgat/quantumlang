@@ -1,0 +1,9 @@
+pub proof_i32() -> i64 {
+  let a: i32 = 21
+  let b: i32 = 2
+  let c: i32 = a * b
+  let d: i32 = c / 3
+  if d != 14 { return 11 }
+  println("i32 ok: {d}")
+  return 0
+}

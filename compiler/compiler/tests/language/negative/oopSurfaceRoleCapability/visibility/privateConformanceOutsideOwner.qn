@@ -1,0 +1,3 @@
+pub outsideOwner(route: PublicRouteCarrier) -> i64 {
+  return route.extend.privateRouteValue()
+}

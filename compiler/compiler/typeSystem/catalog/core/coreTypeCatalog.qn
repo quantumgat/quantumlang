@@ -1,0 +1,208 @@
+pub coreTypeCount() -> usize {
+  return 56
+}
+
+pub isCoreTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return isTextBytesTypeName(canonical) ||
+    isDecimalFixedBigTypeName(canonical) ||
+    isComplexMathTypeName(canonical) ||
+    isCollectionFamilyTypeName(canonical) ||
+    isCommunicationTypeName(canonical) ||
+    isConcurrencyTypeName(canonical) ||
+    isQuantumTypeName(canonical) ||
+    isDynamicTypeName(canonical)
+}
+
+pub coreTypeFamily(name: string) -> CoreTypeFamily {
+  let canonical = canonicalTypeAliasName(name)
+  if isTextBytesTypeName(canonical) {
+    return CoreTypeFamily.TextBytes
+  }
+  if canonical == "dec" || canonical == "dec32" || canonical == "dec64" ||
+    canonical == "dec128" || canonical == "dec256" {
+    return CoreTypeFamily.Decimal
+  }
+  if canonical == "fixed" {
+    return CoreTypeFamily.Fixed
+  }
+  if canonical == "BigInt" || canonical == "BigUint" {
+    return CoreTypeFamily.BigInteger
+  }
+  if canonical == "complex64" || canonical == "complex128" ||
+    canonical == "complex256" || canonical == "complex" {
+    return CoreTypeFamily.Complex
+  }
+  if canonical.startsWith("complex<") {
+    return CoreTypeFamily.Complex
+  }
+  if canonical == "rat64" {
+    return CoreTypeFamily.Rational
+  }
+  if canonical == "simd<i64,4>" || canonical == "simd<u64,4>" ||
+    canonical.startsWith("simd<") {
+    return CoreTypeFamily.Simd
+  }
+  if canonical == "vector<2,f64>" || canonical == "vector<3,f64>" ||
+    canonical.startsWith("vector<") {
+    return CoreTypeFamily.Vector
+  }
+  if canonical == "matrix<2,f64>" || canonical == "matrix<3,f64>" ||
+    canonical.startsWith("matrix<") {
+    return CoreTypeFamily.Matrix
+  }
+  if canonical == "tensor<2,2,2,f64>" ||
+    canonical == "tensor<3,3,3,f64>" ||
+    canonical.startsWith("tensor<") {
+    return CoreTypeFamily.Tensor
+  }
+  if canonical == "field<64>" || canonical.startsWith("field<") {
+    return CoreTypeFamily.Field
+  }
+  if canonical == "overflow<i64>" || canonical == "overflow<u64>" ||
+    canonical.startsWith("overflow<") {
+    return CoreTypeFamily.Overflow
+  }
+  if canonical == "Option" || canonical == "Result" ||
+    canonical.startsWith("Option<") || canonical.startsWith("Result<") {
+    return CoreTypeFamily.Carrier
+  }
+  if isCollectionFamilyTypeName(canonical) {
+    return CoreTypeFamily.Collection
+  }
+  if isCommunicationTypeName(canonical) {
+    return CoreTypeFamily.Communication
+  }
+  if isConcurrencyTypeName(canonical) {
+    return CoreTypeFamily.Concurrency
+  }
+  if isQuantumTypeName(canonical) {
+    return CoreTypeFamily.Quantum
+  }
+  if isDynamicTypeName(canonical) {
+    return CoreTypeFamily.Dynamic
+  }
+  return CoreTypeFamily.Unknown
+}
+
+pub isTextBytesTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "string" || canonical == "str" ||
+    canonical == "bytes" || canonical == "BytesView" ||
+    canonical == "BytesMutView"
+}
+
+pub isDecimalFixedBigTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "dec" || canonical == "dec32" || canonical == "dec64" ||
+    canonical == "dec128" || canonical == "dec256" ||
+    canonical == "fixed" || canonical == "BigInt" || canonical == "BigUint"
+}
+
+pub isComplexMathTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "complex64" || canonical == "complex128" ||
+    canonical == "complex256" || canonical == "complex" ||
+    canonical.startsWith("complex<") ||
+    canonical == "rat64" ||
+    canonical == "simd<i64,4>" || canonical == "simd<u64,4>" ||
+    canonical.startsWith("simd<") ||
+    canonical == "vector<2,f64>" || canonical == "vector<3,f64>" ||
+    canonical.startsWith("vector<") ||
+    canonical == "matrix<2,f64>" || canonical == "matrix<3,f64>" ||
+    canonical.startsWith("matrix<") ||
+    canonical == "tensor<2,2,2,f64>" || canonical == "tensor<3,3,3,f64>" ||
+    canonical.startsWith("tensor<") ||
+    canonical == "field<64>" || canonical.startsWith("field<") ||
+    canonical == "overflow<i64>" || canonical == "overflow<u64>" ||
+    canonical.startsWith("overflow<")
+}
+
+pub isCollectionFamilyTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "Option" || canonical == "Result" ||
+    canonical == "Vec" || canonical == "Map" || canonical == "Set" ||
+    canonical == "Slice" || canonical == "Array" ||
+    canonical == "Range" || canonical == "RangeBound" ||
+    canonical == "RangeFrom" || canonical == "RangeTo" ||
+    canonical == "RangeToInclusive" || canonical == "RangeFull" ||
+    canonical == "Index" || canonical == "Arena" ||
+    canonical.startsWith("Option<") || canonical.startsWith("Result<") ||
+    canonical.startsWith("Vec<") || canonical.startsWith("Map<") ||
+    canonical.startsWith("Set<") || canonical.startsWith("Slice<") ||
+    canonical.startsWith("Array<") || canonical.startsWith("Range<") ||
+    canonical.startsWith("RangeBound<") ||
+    canonical.startsWith("RangeFrom<") ||
+    canonical.startsWith("RangeTo<") ||
+    canonical.startsWith("RangeToInclusive<") ||
+    canonical.startsWith("Index<") || canonical.startsWith("Arena<")
+}
+
+pub isCommunicationTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "event" || canonical == "operation" ||
+    canonical == "stream" || canonical == "channel" ||
+    canonical == "signal" || canonical == "sink" ||
+    canonical.startsWith("event<") ||
+    canonical.startsWith("operation<") ||
+    canonical.startsWith("stream<") ||
+    canonical.startsWith("channel<") ||
+    canonical.startsWith("signal<") ||
+    canonical.startsWith("sink<")
+}
+
+pub isConcurrencyTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "atomic" ||
+    canonical.startsWith("atomic<")
+}
+
+pub isQuantumTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "qubit" || canonical == "qreg" ||
+    canonical == "qresult" || canonical == "bit" || canonical == "bits" ||
+    canonical == "qfunc" || canonical == "qany" ||
+    canonical.startsWith("qreg<") || canonical.startsWith("bits<")
+}
+
+pub isDynamicTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "any"
+}
+
+pub isRuntimeManagedBuiltinTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "string" || canonical == "str" ||
+    canonical == "bytes" || canonical == "BytesView" ||
+    canonical == "BytesMutView" ||
+    canonical == "BigInt" || canonical == "BigUint" ||
+    canonical == "Vec" || canonical == "Map" || canonical == "Set" ||
+    canonical == "Slice" || canonical == "Array" ||
+    canonical == "event" || canonical == "operation" ||
+    canonical == "stream" || canonical == "channel" ||
+    canonical == "signal" || canonical == "sink" ||
+    canonical == "any" ||
+    canonical.startsWith("Vec<") || canonical.startsWith("Map<") ||
+    canonical.startsWith("Set<") || canonical.startsWith("Slice<") ||
+    canonical.startsWith("Array<") ||
+    canonical.startsWith("event<") ||
+    canonical.startsWith("operation<") ||
+    canonical.startsWith("stream<") ||
+    canonical.startsWith("channel<") ||
+    canonical.startsWith("signal<") ||
+    canonical.startsWith("sink<")
+}
+
+pub isTargetGatedCoreTypeName(name: string) -> bool {
+  let canonical = canonicalTypeAliasName(name)
+  return canonical == "dec256" || canonical == "complex256" ||
+    canonical == "simd<i64,4>" || canonical == "simd<u64,4>" ||
+    canonical == "vector<2,f64>" || canonical == "vector<3,f64>" ||
+    canonical == "matrix<2,f64>" || canonical == "matrix<3,f64>" ||
+    canonical == "tensor<2,2,2,f64>" || canonical == "tensor<3,3,3,f64>" ||
+    canonical.startsWith("simd<") || canonical.startsWith("vector<") ||
+    canonical.startsWith("matrix<") || canonical.startsWith("tensor<") ||
+    canonical.startsWith("field<") || canonical.startsWith("overflow<") ||
+    isConcurrencyTypeName(canonical) ||
+    isQuantumTypeName(canonical)
+}

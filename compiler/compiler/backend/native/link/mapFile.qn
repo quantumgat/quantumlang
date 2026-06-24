@@ -1,0 +1,48 @@
+pub MapFile {
+  outputPath: string
+  executableHash: string
+  symbolCount: i64
+  byteCount: i64
+  deterministic: bool = true
+  diagnosticCode: string = ""
+}
+
+impl MapFile {
+  pub MapFile(
+    outputPath: string,
+    executableHash: string,
+    symbolCount: i64,
+    byteCount: i64
+  ) =
+    This {
+      outputPath
+      executableHash
+      symbolCount
+      byteCount
+    }
+
+  pub fromExecutable(executable: Executable, symbolCount: i64) =
+    This {
+      outputPath: "{executable.outputPath}.map"
+      executableHash: executable.executableHash
+      symbolCount
+      byteCount: symbolCount * 32
+      deterministic: executable.deterministic
+      diagnosticCode: match executable.valid && symbolCount >= 0 {
+        true => ""
+        false => "QNATIVE0830"
+      }
+    }
+}
+
+impl view MapFile {
+  pub valid => diagnosticCode == "" &&
+    outputPath != "" &&
+    executableHash != "" &&
+    symbolCount >= 0 &&
+    byteCount >= 0 &&
+    deterministic
+  pub hasSymbols => symbolCount > 0
+  pub mapHash => "map:{outputPath}:{executableHash}:{symbolCount}:{byteCount}"
+  pub debugName => "map.{symbolCount}.{byteCount}"
+}

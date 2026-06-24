@@ -1,0 +1,6 @@
+[module]
+name = "tests"
+visibility = "package"
+root = "mod.qn"
+owner = "qtlang/compiler/tests"
+role = "compiler-test-fixtures"

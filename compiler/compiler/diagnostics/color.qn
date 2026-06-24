@@ -1,0 +1,27 @@
+pub DiagnosticColor {
+  enabled: bool = false
+  autoDetect: bool = false
+  machineReadableDisabled: bool = true
+}
+
+impl DiagnosticColor {
+  pub autoColor() =
+    This {
+      enabled: true,
+      autoDetect: true,
+      machineReadableDisabled: true,
+    }
+
+  pub plain() =
+    This {}
+}
+
+impl view DiagnosticColor {
+  pub terminalAware => enabled && autoDetect
+
+  pub safeForMachineOutput => machineReadableDisabled
+
+  pub plainOutput => enabled == false
+
+  pub valid => machineReadableDisabled || enabled == false
+}

@@ -1,0 +1,428 @@
+import core::{DeclarationId, ModuleId, NameId, SymbolId, TypeId, Vec}
+import declaration::{DeclarationKind, DeclarationRecord}
+import source::{SourceSpan}
+import syntax::{AstCallableParameter, AstGenericParameter, AstRoleConformance, AstRoleVisibility}
+
+pub TypeSymbol {
+  id: SymbolId = {}
+  declarationId: DeclarationId = {}
+  typeId: TypeId = {}
+  moduleId: ModuleId = {}
+  nameId: NameId = {}
+  genericParameterCount: i64 = 0
+  genericParameters: Vec<string> = []
+  parameters: Vec<string> = []
+  genericParameterRows: Vec<AstGenericParameter> = []
+  parameterRows: Vec<AstCallableParameter> = []
+  roleConformances: Vec<AstRoleConformance> = []
+  typeName: string = ""
+  returnTypeName: string = ""
+  ownerTypeName: string = ""
+  memberKind: string = ""
+  name: string = ""
+  moduleName: string = ""
+  span: SourceSpan = {}
+  kind: TypeSymbolKind = TypeSymbolKind.Unknown
+  public: bool = false
+  resolved: bool = true
+}
+
+impl TypeSymbol {
+  pub module(name: string) =
+    This { name, moduleName: name, kind: TypeSymbolKind.Module, public: true }
+
+  pub function(name: string, moduleName: string) =
+    This { name, moduleName, kind: TypeSymbolKind.Function, public: true }
+
+  pub typeDecl(name: string, moduleName: string) =
+    This { name, moduleName, kind: TypeSymbolKind.Type, public: true }
+
+  pub value(name: string, moduleName: string) =
+    This { name, moduleName, kind: TypeSymbolKind.Value }
+
+  pub importSymbol(name: string, moduleName: string) =
+    This { name, moduleName, kind: TypeSymbolKind.Import, public: true }
+
+  pub fromRecord(record: DeclarationRecord) =
+    This {
+      id: SymbolId(
+        This.stablePackageHash(record),
+        This.stableModuleHash(record),
+        This.stableDeclarationHash(record),
+        This.symbolDisambiguator(record)
+      )
+      declarationId: DeclarationId(
+        This.stablePackageHash(record),
+        This.stableModuleHash(record),
+        This.stableDeclarationHash(record),
+        This.symbolDisambiguator(record)
+      )
+      typeId: TypeId(
+        This.stablePackageHash(record),
+        This.stableModuleHash(record),
+        This.stableTypeHash(record),
+        This.symbolDisambiguator(record)
+      )
+      moduleId: ModuleId(
+        This.stablePackageHash(record),
+        This.stableModuleHash(record)
+      )
+      nameId: NameId(This.stableDeclarationHash(record))
+      genericParameterCount: record.genericParameterCount
+      genericParameters: record.genericParameters
+      parameters: record.parameters
+      genericParameterRows: record.genericParameterRows
+      parameterRows: record.parameterRows
+      roleConformances: record.roleConformances
+      typeName: This.typeNameForRecord(record)
+      returnTypeName: record.callableResult
+      ownerTypeName: record.ownerTypeName
+      memberKind: record.memberKind
+      name: record.name
+      moduleName: record.modulePath
+      span: record.span
+      kind: This.kindForRecord(record)
+      public: record.publicVisible
+      resolved: record.resolved
+    }
+
+  pub local(name: string, moduleId: ModuleId, span: SourceSpan, nodeId: i64) =
+    This.local(name, "value", moduleId, span, nodeId)
+
+  pub local(
+    name: string,
+    typeName: string,
+    moduleId: ModuleId,
+    span: SourceSpan,
+    nodeId: i64
+  ) =
+    This {
+      id: SymbolId(
+        moduleId.id.packageHash,
+        moduleId.id.moduleHash,
+        span.start + 1,
+        nodeId
+      )
+      typeId: TypeId(
+        moduleId.id.packageHash,
+        moduleId.id.moduleHash,
+        span.start + 1,
+        nodeId
+      )
+      moduleId
+      nameId: NameId(span.start + 1)
+      typeName
+      name
+      moduleName: "{moduleId.id.moduleHash}"
+      span
+      kind: TypeSymbolKind.Value
+      resolved: true
+    }
+
+  pub genericParameter(
+    name: string,
+    owner: TypeSymbol,
+    ordinal: i64
+  ) =
+    This {
+      id: SymbolId(
+        owner.moduleId.id.packageHash,
+        owner.moduleId.id.moduleHash,
+        owner.id.id.localHash,
+        ordinal + 1
+      )
+      typeId: TypeId(
+        owner.moduleId.id.packageHash,
+        owner.moduleId.id.moduleHash,
+        owner.typeId.id.localHash,
+        ordinal + 1
+      )
+      moduleId: owner.moduleId
+      nameId: NameId(owner.nameId.id.value + ordinal + 1)
+      typeName: name
+      name
+      moduleName: owner.moduleName
+      span: owner.span
+      kind: TypeSymbolKind.Type
+      resolved: true
+    }
+
+  pub specializedFor(receiverTypeName: string) -> This {
+    if ownerTypeName == "" ||
+       receiverTypeName == "" ||
+       ownerTypeName == receiverTypeName {
+      return this
+    }
+
+    let parameter = This.singleGenericArgument(ownerTypeName)
+    let argument = This.singleGenericArgument(receiverTypeName)
+    if parameter == "" || argument == "" {
+      return this
+    }
+
+    return this {
+      typeName: This.substituteGenericType(typeName, parameter, argument)
+      returnTypeName: This.substituteGenericType(
+        returnTypeName,
+        parameter,
+        argument
+      )
+      ownerTypeName: receiverTypeName
+    }
+  }
+
+  pub ownerMatches(receiverTypeName: string) -> bool {
+    if ownerTypeName == receiverTypeName {
+      return true
+    }
+    return This.genericBaseName(ownerTypeName) != "" &&
+      This.genericBaseName(ownerTypeName) ==
+        This.genericBaseName(receiverTypeName)
+  }
+
+  pub roleConformanceAt(index: i64) -> AstRoleConformance {
+    if index < 0 || index >= roleConformances.count {
+      return AstRoleConformance()
+    }
+    return roleConformances[index]
+  }
+
+  pub roleConformanceNameAt(index: i64) -> string {
+    if index < 0 || index >= roleConformances.count {
+      return ""
+    }
+    return roleConformances[index].roleName
+  }
+
+  pub roleConformanceVisibilityAt(index: i64) -> AstRoleVisibility {
+    if index < 0 || index >= roleConformances.count {
+      return AstRoleVisibility.Unknown
+    }
+    return roleConformances[index].visibility
+  }
+
+  genericBaseName(typeName: string) -> string {
+    let open = typeName.find("<")
+    if open < 0 {
+      return typeName
+    }
+    return typeName.slice(0, open).toString()
+  }
+
+  singleGenericArgument(typeName: string) -> string {
+    let open = typeName.find("<")
+    let close = typeName.lastIndexOf(">")
+    if open < 0 || close <= open || typeName.contains(",") {
+      return ""
+    }
+    return typeName.slice(open + 1, close).toString()
+  }
+
+  substituteGenericType(
+    typeName: string,
+    parameter: string,
+    argument: string
+  ) -> string {
+    if typeName == parameter {
+      return argument
+    }
+    if typeName == "" || parameter == "" || argument == "" {
+      return typeName
+    }
+
+    let result: string = typeName
+    result = result.replace(
+      "<{parameter}>",
+      "<{argument}>"
+    )
+    result = result.replace(
+      "<{parameter},",
+      "<{argument},"
+    )
+    result = result.replace(
+      ",{parameter},",
+      ",{argument},"
+    )
+    result = result.replace(
+      ",{parameter}>",
+      ",{argument}>"
+    )
+    return result
+  }
+
+  typeNameForKind(kind: TypeSymbolKind, name: string) -> string {
+    if kind == TypeSymbolKind.Type ||
+       kind == TypeSymbolKind.Enum ||
+       kind == TypeSymbolKind.Role {
+      return name
+    }
+    if kind == TypeSymbolKind.Function ||
+       kind == TypeSymbolKind.Impl ||
+       kind == TypeSymbolKind.View ||
+       kind == TypeSymbolKind.Context ||
+       kind == TypeSymbolKind.Extract ||
+       kind == TypeSymbolKind.Extend {
+      return "callable"
+    }
+    if kind == TypeSymbolKind.Module || kind == TypeSymbolKind.Import {
+      return "module"
+    }
+    if kind == TypeSymbolKind.Value { return "value" }
+    return ""
+  }
+
+  typeNameForRecord(record: DeclarationRecord) -> string {
+    if record.memberValue {
+      return record.callableResult
+    }
+    return This.typeNameForKind(
+      This.kindForRecord(record),
+      record.name
+    )
+  }
+
+  kindForRecord(record: DeclarationRecord) -> TypeSymbolKind {
+    if record.memberValue {
+      return TypeSymbolKind.Value
+    }
+    if record.callableResult == "enum" {
+      return TypeSymbolKind.Enum
+    }
+    return This.kindForDeclaration(record.kind)
+  }
+
+  stablePackageHash(record: DeclarationRecord) -> u64 {
+    if record.fileId.id.packageHash != 0 {
+      return record.fileId.id.packageHash
+    }
+    return 1
+  }
+
+  stableModuleHash(record: DeclarationRecord) -> u64 {
+    if record.fileId.id.moduleHash != 0 {
+      return record.fileId.id.moduleHash
+    }
+    return record.id
+  }
+
+  stableDeclarationHash(record: DeclarationRecord) -> u64 {
+    if record.rows.start > 0 {
+      return record.rows.start
+    }
+    if record.fileId.id.localHash != 0 {
+      return record.fileId.id.localHash
+    }
+    return record.id
+  }
+
+  stableTypeHash(record: DeclarationRecord) -> u64 {
+    return This.stableDeclarationHash(record) + This.kindOrdinal(
+      This.kindForDeclaration(record.kind)
+    )
+  }
+
+  symbolDisambiguator(record: DeclarationRecord) -> u64 {
+    return This.kindOrdinal(This.kindForDeclaration(record.kind))
+  }
+
+  kindOrdinal(kind: TypeSymbolKind) -> u64 {
+    if kind == TypeSymbolKind.Module { return 1 }
+    if kind == TypeSymbolKind.Type { return 2 }
+    if kind == TypeSymbolKind.Impl { return 3 }
+    if kind == TypeSymbolKind.View { return 4 }
+    if kind == TypeSymbolKind.Role { return 5 }
+    if kind == TypeSymbolKind.Function { return 6 }
+    if kind == TypeSymbolKind.Value { return 7 }
+    if kind == TypeSymbolKind.Import { return 8 }
+    if kind == TypeSymbolKind.Context { return 9 }
+    if kind == TypeSymbolKind.Extract { return 10 }
+    if kind == TypeSymbolKind.Extend { return 11 }
+    if kind == TypeSymbolKind.Enum { return 12 }
+    return 0
+  }
+
+  kindForDeclaration(kind: DeclarationKind) -> TypeSymbolKind {
+    if kind == DeclarationKind.Module { return TypeSymbolKind.Module }
+    if kind == DeclarationKind.Type { return TypeSymbolKind.Type }
+    if kind == DeclarationKind.Enum { return TypeSymbolKind.Enum }
+    if kind == DeclarationKind.Impl { return TypeSymbolKind.Impl }
+    if kind == DeclarationKind.View { return TypeSymbolKind.View }
+    if kind == DeclarationKind.Role { return TypeSymbolKind.Role }
+    if kind == DeclarationKind.Function { return TypeSymbolKind.Function }
+    if kind == DeclarationKind.Context { return TypeSymbolKind.Context }
+    if kind == DeclarationKind.Extract { return TypeSymbolKind.Extract }
+    if kind == DeclarationKind.Extend { return TypeSymbolKind.Extend }
+    if kind == DeclarationKind.Import { return TypeSymbolKind.Import }
+    return TypeSymbolKind.Unknown
+  }
+}
+
+impl view TypeSymbol {
+  pub hasName => name != ""
+
+  pub hasModule => moduleName != ""
+
+  pub exported => public
+
+  pub private => public == false
+
+  pub declaration => kind != TypeSymbolKind.Import
+
+  pub stableIdentity =>
+    id.valid &&
+    declarationId.valid &&
+    typeId.valid &&
+    moduleId.valid &&
+    nameId.valid
+
+  pub behavioral =>
+    kind == TypeSymbolKind.Impl ||
+    kind == TypeSymbolKind.View ||
+    kind == TypeSymbolKind.Function ||
+    kind == TypeSymbolKind.Context ||
+    kind == TypeSymbolKind.Extract ||
+    kind == TypeSymbolKind.Extend
+
+  pub generic => genericParameterCount > 0
+
+  pub callableParameterCount: i64 => {
+    if parameterRows.nonEmpty {
+      parameterRows.count
+    } else {
+      parameters.count
+    }
+  }
+
+  pub structuredGenericParameters =>
+    genericParameterRows.count == genericParameterCount
+
+  pub structuredParameters =>
+    parameterRows.count == parameters.count
+
+  pub hasRoleConformances => roleConformances.nonEmpty
+
+  pub roleConformanceCount: i64 => roleConformances.count
+
+  pub member => ownerTypeName != ""
+
+  pub memberCallable =>
+    member &&
+    (memberKind == "method" ||
+     (memberKind == "" && callableParameterCount > 0))
+
+  pub memberValue =>
+    member &&
+    (memberKind == "field" ||
+     memberKind == "property" ||
+     memberKind == "enum-variant" ||
+     (memberKind == "" && callableParameterCount == 0))
+
+  pub valid =>
+    stableIdentity &&
+    hasName &&
+    hasModule &&
+    span.valid &&
+    kind != TypeSymbolKind.Unknown &&
+    typeName != "" &&
+    resolved
+}

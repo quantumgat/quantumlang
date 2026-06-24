@@ -1,0 +1,11 @@
+pub EscapedUser {
+  name: string = ""
+}
+
+global escapedUserPointer: const *EscapedUser = null
+
+pub localPointerEscapesGlobal() -> bool {
+  let user: EscapedUser = { name: "A" }
+  escapedUserPointer = const &user
+  return escapedUserPointer.valid
+}

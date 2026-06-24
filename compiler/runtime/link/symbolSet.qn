@@ -1,0 +1,40 @@
+pub RuntimeSymbolSet {
+  startupSymbol: string
+  initSymbol: string
+  exitSymbol: string
+  exportedCount: i64
+}
+
+impl RuntimeSymbolSet {
+  pub RuntimeSymbolSet(
+    startupSymbol: string,
+    initSymbol: string,
+    exitSymbol: string,
+    exportedCount: i64
+  ) =
+    This {
+      startupSymbol
+      initSymbol
+      exitSymbol
+      exportedCount
+    }
+
+  pub core() =
+    This {
+      startupSymbol: RuntimeStartup.entry().symbolName
+      initSymbol: RuntimeInit.core().symbolName
+      exitSymbol: RuntimeExit.core().symbolName
+      exportedCount: 1
+    }
+}
+
+impl view RuntimeSymbolSet {
+  pub valid: bool =>
+    startupSymbol != "" &&
+    initSymbol != "" &&
+    exitSymbol != "" &&
+    exportedCount > 0
+
+  pub exportsStartup: bool => valid && startupSymbol == RuntimeStartup.entry().symbolName
+  pub symbolHash: string => "runtime.symbols:{startupSymbol}:{initSymbol}:{exitSymbol}:{exportedCount}"
+}

@@ -1,0 +1,18 @@
+pub LiteralTypingPolicy {
+  boolLiteralType: string = "bool"
+  defaultIntegerType: string = "i32"
+  defaultFloatType: string = "f64"
+  stringLiteralType: string = "string"
+  bytesLiteralType: string = "bytes"
+  byteLiteralType: string = "byte"
+  optionNoneRequiresTarget: bool = true
+  emptyArrayRequiresTarget: bool = true
+  mapRequiresQuotedKeysOrTarget: bool = true
+  emptySetRequiresTarget: bool = true
+  rangeRequiresTypedBounds: bool = true
+  recordLiteralAnonymousType: string = "record"
+}
+
+impl LiteralTypingPolicy {
+  pub quantum => This {}
+}

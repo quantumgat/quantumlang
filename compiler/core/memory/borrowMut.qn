@@ -1,0 +1,91 @@
+pub BorrowMut<T> {
+  pointer: *T = null
+  owner: CompilerId = {}
+  generation: u64 = 0
+  active: bool = false
+}
+
+impl BorrowMut<T> {
+  pub BorrowMut(pointer: *T) =
+    This {
+      pointer
+      active: pointer.valid
+    }
+
+  pub BorrowMut(pointer: *T, owner: CompilerId, generation: u64) =
+    This {
+      pointer
+      owner
+      generation
+      active: pointer.valid
+    }
+
+  pub ptr() -> *T {
+    return pointer
+  }
+
+  pub cptr() -> const *T {
+    if pointer.valid == false {
+      return null
+    }
+    return const *pointer
+  }
+
+  pub asRef() -> Borrow<T> {
+    return Borrow<T>(cptr(), owner, generation)
+  }
+
+  pub freeze() -> Borrow<T> {
+    return asRef()
+  }
+
+  pub close() -> This {
+    return this {
+      active: false
+    }
+  }
+
+  pub release() -> This {
+    return close()
+  }
+}
+
+impl view BorrowMut<T> {
+  pub readable => valid
+
+  pub writable => valid
+
+  pub live => active
+
+  pub empty => active == false
+
+  pub hasOwner => owner.valid
+
+  pub readOnly => false
+
+  pub unique => true
+
+  pub shared => false
+
+  pub liveFor(currentGeneration: u64) -> bool {
+    return valid && generation == currentGeneration
+  }
+
+  pub stale(currentGeneration: u64) -> bool {
+    return generation != currentGeneration
+  }
+
+  pub expired(currentGeneration: u64) -> bool {
+    return stale(currentGeneration)
+  }
+
+  pub sameOwner(value: CompilerId) -> bool {
+    return owner == value
+  }
+
+  pub sameGen(value: u64) -> bool {
+    return generation == value
+  }
+
+  pub valid => active && pointer.valid
+}

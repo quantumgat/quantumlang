@@ -1,0 +1,66 @@
+pub QdbCommitRow {
+  revision: u64 = 0
+  sequence: u64 = 0
+  queryRow: u64 = 0
+  productRow: u64 = 0
+  productHash: Fingerprint = {}
+  previousCommitHash: Fingerprint = {}
+  commitHash: Fingerprint = {}
+  state: QdbCommitState = QdbCommitState.Prepared
+}
+
+impl QdbCommitRow {
+  pub completed(
+    revision: u64,
+    sequence: u64,
+    queryRow: u64,
+    productRow: u64,
+    productHash: Fingerprint,
+    previousCommitHash: Fingerprint,
+    commitHash: Fingerprint
+  ) -> This =
+    This {
+      revision
+      sequence
+      queryRow
+      productRow
+      productHash
+      previousCommitHash
+      commitHash
+      state: QdbCommitState.Durable
+    }
+
+  pub publish() -> This =
+    this { state: QdbCommitState.Published }
+
+  pub reject() -> This =
+    this { state: QdbCommitState.Rejected }
+}
+
+impl view QdbCommitRow {
+  pub completedProduct: bool =>
+    queryRow > 0 &&
+    productRow > 0 &&
+    productHash.nonzero
+
+  pub hashChained: bool =>
+    commitHash.nonzero &&
+    (
+      sequence == 1 ||
+      previousCommitHash.nonzero
+    )
+
+  pub durable: bool =>
+    state == QdbCommitState.Durable ||
+    state == QdbCommitState.Published
+
+  pub published: bool => state == QdbCommitState.Published
+  pub rejected: bool => state == QdbCommitState.Rejected
+
+  pub valid: bool =>
+    revision > 0 &&
+    sequence > 0 &&
+    completedProduct &&
+    hashChained &&
+    rejected == false
+}

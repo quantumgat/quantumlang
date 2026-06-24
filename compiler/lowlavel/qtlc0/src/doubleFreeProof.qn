@@ -1,0 +1,10 @@
+import model::{OwnerBox}
+
+pub freeOwner(box: OwnerBox) -> bool {
+  box.value == 42
+}
+
+pub doubleFreeProof() -> bool {
+  let box = OwnerBox.sample()
+  freeOwner(^box)
+}

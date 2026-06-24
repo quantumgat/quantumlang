@@ -1,0 +1,41 @@
+pub MathQuantumPack {
+  decimalValue: dec64 = 10.5
+  complexValue: complex128
+  vectorValue: vector<3,f64>
+  matrixValue: matrix<2,f64>
+  tensorValue: tensor<2,2,2,f64>
+  classicalBit: bit
+  classicalBits: bits<8>
+  state: qubit
+  register: qreg<4>
+  marker: i64 = 1
+}
+
+impl view MathQuantumPack {
+  pub prepared: bool => marker == 1
+}
+
+pub pointerMathQuantumMatrixStatus() -> i64 {
+  let pack: MathQuantumPack = {
+    complexValue: complex128(1.0, 2.0)
+    vectorValue: vector<3,f64>(1.0, 2.0, 3.0)
+    matrixValue: matrix<2,f64>(1.0, 0.0, 0.0, 1.0)
+    tensorValue: tensor<2,2,2,f64>(
+      1.0, 0.0, 0.0, 1.0,
+      0.0, 1.0, 1.0, 0.0
+    )
+    classicalBit: bit 1
+    classicalBits: bits<8> 0b10101010
+    state: |0>
+    register: |0000>
+  }
+  let pointer: *MathQuantumPack = &pack
+
+  if pointer.valid {
+    pointer.marker = 2
+    if pointer.marker != 2 { return 1 }
+    return 0
+  }
+
+  return 2
+}

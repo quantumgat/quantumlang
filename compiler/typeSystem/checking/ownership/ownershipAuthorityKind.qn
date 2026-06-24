@@ -1,0 +1,51 @@
+pub enum OwnershipAuthorityKind {
+  LocalValue
+  UniqueOwner
+  SharedOwner
+  WeakView
+  PinnedOwner
+  ArenaRegion
+  GlobalOwner
+  PermanentOwner
+  ExternalHandle
+  RawView
+  CallableBoundary
+  Unknown
+}
+
+impl view OwnershipAuthorityKind {
+  pub name: string => match this {
+    LocalValue => "local-value"
+    UniqueOwner => "unique-owner"
+    SharedOwner => "shared-owner"
+    WeakView => "weak-view"
+    PinnedOwner => "pinned-owner"
+    ArenaRegion => "arena-region"
+    GlobalOwner => "global-owner"
+    PermanentOwner => "permanent-owner"
+    ExternalHandle => "external-handle"
+    RawView => "raw-view"
+    CallableBoundary => "callable-boundary"
+    Unknown => "unknown"
+  }
+
+  pub ownsStorage: bool => match true {
+    this == LocalValue => true
+    this == UniqueOwner => true
+    this == SharedOwner => true
+    this == PinnedOwner => true
+    this == ArenaRegion => true
+    this == GlobalOwner => true
+    this == PermanentOwner => true
+    this == ExternalHandle => true
+    _ => false
+  }
+
+  pub canEscapeScope: bool => match true {
+    this == GlobalOwner => true
+    this == PermanentOwner => true
+    this == SharedOwner => true
+    this == WeakView => true
+    _ => false
+  }
+}

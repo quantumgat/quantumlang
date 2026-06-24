@@ -1,0 +1,7 @@
+pub proof_decimal() -> i64 {
+  let a: dec64 = 10.5
+  let b: dec64 = 2.5
+  let c: dec64 = a + b
+  println("dec64 ok: {c}")
+  return 0
+}

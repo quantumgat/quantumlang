@@ -1,0 +1,40 @@
+pub enum OwnershipAddressKind {
+  Value
+  Reference
+  ConstReference
+  Pointer
+  ConstPointer
+  SmartOwner
+  GlobalOwner
+  ExternalHandle
+  Unknown
+}
+
+impl view OwnershipAddressKind {
+  pub name: string => match this {
+    Value => "value"
+    Reference => "reference"
+    ConstReference => "const-reference"
+    Pointer => "pointer"
+    ConstPointer => "const-pointer"
+    SmartOwner => "smart-owner"
+    GlobalOwner => "global-owner"
+    ExternalHandle => "external-handle"
+    Unknown => "unknown"
+  }
+
+  pub writable: bool => match this {
+    Reference => true
+    Pointer => true
+    SmartOwner => true
+    GlobalOwner => true
+    ExternalHandle => true
+    _ => false
+  }
+
+  pub readOnly: bool => match this {
+    ConstReference => true
+    ConstPointer => true
+    _ => false
+  }
+}

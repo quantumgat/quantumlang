@@ -1,0 +1,28 @@
+import model::{OwnerBox}
+
+pub syntaxBorrowReadOnly(box: const &OwnerBox) -> i64 {
+  return 1
+}
+
+pub syntaxBorrowWritable(box: &OwnerBox) -> i64 {
+  return 2
+}
+
+pub syntaxMove(box: OwnerBox) -> OwnerBox {
+  return ^box
+}
+
+pub syntaxPointerAddress(box: OwnerBox) -> bool {
+  let pointer: const *OwnerBox = const *box
+  if pointer.valid {
+    return pointer.value == box.value
+  }
+  return false
+}
+
+pub syntaxIntentProof() -> bool {
+  let box = OwnerBox.sample()
+  let moved = syntaxMove(box)
+
+  moved.value == 42 && syntaxPointerAddress(OwnerBox.sample())
+}

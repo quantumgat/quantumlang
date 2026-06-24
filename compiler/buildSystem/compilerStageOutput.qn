@@ -1,0 +1,70 @@
+import backend::{Layout}
+import buildSystem::{CompilerStageMaterialization}
+import host::{CompilerIo, OutputTransaction}
+
+pub CompilerStageOutput {
+  packageRoot: string
+  outputDirectory: string
+  buildPlanPath: string
+  bootstrapBridgeEnabled: bool = false
+}
+
+impl CompilerStageOutput {
+  pub CompilerStageOutput(packageRoot: string, bootstrapBridgeEnabled: bool) =
+    This {
+      packageRoot
+      outputDirectory: Layout.forPackage(packageRoot, "qtlc2", "debug").outputDir
+      buildPlanPath: Layout.forPackage(packageRoot, "qtlc2", "debug").buildPlanPath
+      bootstrapBridgeEnabled
+    }
+}
+
+context CompilerStageOutput {
+  pub materializeStatus(report: CompilerStageBuildReport) -> i64 {
+    if report.readyForMaterialization == false {
+      return -100
+    }
+
+    let io = CompilerIo(packageRoot)
+    if io.createDirectories(outputDirectory) != 0 {
+      return -101
+    }
+    let materialization = CompilerStageMaterialization.fromReport(
+      packageRoot,
+      report,
+      bootstrapBridgeEnabled
+    )
+    let materializeStatus = materialization.materializeStatus(io)
+    if materializeStatus != 0 {
+      return materializeStatus
+    }
+    if io.fileExists(report.outputPath) == false {
+      return -102
+    }
+
+    let output = OutputTransaction(buildPlanPath)
+    let text = "input={report.inputStage}\noutput={report.outputStage}\ntarget={report.outputPath}\nsource={report.sourceCheckStatus}\nproducts={report.deterministicProductStatus}\nmaterializer={materialization.materializerName}\nphysicalBridge={materialization.physicalBridgeName}\nprovenance={materialization.provenance}\n"
+
+    if output.prepare(io, outputDirectory) == false {
+      return -103
+    }
+    if output.writeText(io, text) == false {
+      return -104
+    }
+    if output.publish(io) == false {
+      return -105
+    }
+    return 0
+  }
+
+  pub materialize(report: CompilerStageBuildReport) -> bool {
+    return materializeStatus(report) == 0
+  }
+}
+
+impl view CompilerStageOutput {
+  pub valid: bool =>
+    packageRoot != "" &&
+    outputDirectory != "" &&
+    buildPlanPath != ""
+}

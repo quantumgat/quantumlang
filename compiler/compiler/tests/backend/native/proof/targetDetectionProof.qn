@@ -1,0 +1,89 @@
+import backend::native::{*}
+import host::{HostInfo}
+
+pub TargetDetectionProof {
+  hostInfoValid: bool
+  hostTargetValid: bool
+  detectorValid: bool
+  identityUsesHost: bool
+  objectPlanUsesHost: bool
+  linkPlanUsesObjectFormat: bool
+  valid: bool
+}
+
+pub targetDetectionProof() -> TargetDetectionProof {
+  let info = HostInfo.current()
+  let host = HostTarget.fromHost(info)
+  let detector = TargetDetector.current()
+  let identity = TargetIdentity.hostDefault()
+  let input = InputSummary(
+    "qtlang/compiler/tests/language/positive/oopSurfaceRoleCapability",
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  )
+  let objects = ObjectSetPlan.fromSummary(input)
+  let link = LinkTargetPlan.fromObjects(objects, "qtlc2")
+
+  let hostInfoValid =
+    info.valid &&
+    info.targetTriple == "x86_64-unknown-linux-gnu" &&
+    info.objectFormat == "elf" &&
+    info.abi == "sysv"
+
+  let hostTargetValid =
+    host.valid &&
+    host.triple == info.targetTriple &&
+    host.objectFormat == info.objectFormat &&
+    host.abi == info.abi
+
+  let detectorValid =
+    detector.valid &&
+    detector.hostTarget.triple == host.triple &&
+    detector.targetIdentity.objectFormat == host.objectFormat
+
+  let identityUsesHost =
+    identity.valid &&
+    identity.targetTriple == host.triple &&
+    identity.objectFormat == host.objectFormat &&
+    identity.abi == host.abi &&
+    identity.targetOptionsHash == host.targetOptionsHash
+
+  let objectPlanUsesHost =
+    objects.valid &&
+    objects.targetTriple == identity.targetTriple &&
+    objects.objectFormat == identity.objectFormat &&
+    objects.abi == identity.abi &&
+    objects.backendHash == identity.backendHash
+
+  let linkPlanUsesObjectFormat =
+    link.valid &&
+    link.targetTriple == objects.targetTriple &&
+    link.objectFormat == objects.objectFormat &&
+    link.abi == objects.abi &&
+    link.targetOptionsHash == identity.targetOptionsHash
+
+  let valid =
+    hostInfoValid &&
+    hostTargetValid &&
+    detectorValid &&
+    identityUsesHost &&
+    objectPlanUsesHost &&
+    linkPlanUsesObjectFormat
+
+  return TargetDetectionProof {
+    hostInfoValid
+    hostTargetValid
+    detectorValid
+    identityUsesHost
+    objectPlanUsesHost
+    linkPlanUsesObjectFormat
+    valid
+  }
+}
